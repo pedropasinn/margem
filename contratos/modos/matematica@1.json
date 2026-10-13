@@ -1,0 +1,74 @@
+{
+  "versao": 1,
+  "id": "matematica",
+  "revisao": 1,
+  "nome": "Matemática",
+  "descricao": "Leitura de texto matemático: definições, enunciados, passos não triviais de demonstração, técnicas reutilizáveis e dependências entre resultados. Preservar hipóteses, domínio e quantificadores; não pintar uma demonstração inteira.",
+  "funcoes": [
+    {
+      "chave": "definicao",
+      "rotulo": "Definição",
+      "pergunta": "O que exatamente este termo significa?",
+      "descricao": "Definição formal, com domínio e quantificadores.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "enunciado",
+      "rotulo": "Enunciado",
+      "pergunta": "O que o lema ou teorema afirma, e sob quais hipóteses?",
+      "descricao": "Enunciado de lema, proposição, teorema ou corolário.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "passo_nao_trivial",
+      "rotulo": "Passo não trivial",
+      "pergunta": "Por que este passo vale?",
+      "descricao": "Passo de demonstração que não é imediato e merece ser reconstruído.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "tecnica",
+      "rotulo": "Técnica",
+      "pergunta": "Que técnica reutilizável aparece aqui?",
+      "descricao": "Truque, construção ou estratégia de prova aplicável a outros problemas.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "dependencia",
+      "rotulo": "Dependência",
+      "pergunta": "De que resultado anterior este passo depende?",
+      "descricao": "Uso de resultado, definição ou hipótese anterior do texto.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.06,
+      "2": 0.15,
+      "3": 0.3
+    }
+  }
+}

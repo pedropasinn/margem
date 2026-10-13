@@ -1,0 +1,58 @@
+/*
+ * Karaokê (ElevenReader + Readwise): a faixa da frase, um bloco arredondado por linha em cor suave; a
+ * palavra em curso num bloco mais forte, com a tinta na cor de acento; o filete fino à esquerda do
+ * parágrafo. Tudo numa camada atrás das letras e atrás do SVG do Marcador (z-index −2 × −1), dentro
+ * do artigo (que isola o empilhamento e pinta o fundo). As cores saem dos tokens do tema.
+ */
+.capitulo {
+  --karaoke-faixa: color-mix(in srgb, var(--accent) 13%, transparent);
+  --karaoke-palavra: color-mix(in srgb, var(--accent) 30%, transparent);
+  --karaoke-palavra-tinta: var(--accent-texto);
+  --karaoke-filete: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+:root[data-tema="escuro"] .capitulo {
+  --karaoke-faixa: color-mix(in srgb, var(--accent) 22%, transparent);
+  --karaoke-palavra: color-mix(in srgb, var(--accent) 52%, transparent);
+  --karaoke-palavra-tinta: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]):not([data-tema="sepia"]) .capitulo {
+    --karaoke-faixa: color-mix(in srgb, var(--accent) 22%, transparent);
+    --karaoke-palavra: color-mix(in srgb, var(--accent) 52%, transparent);
+    --karaoke-palavra-tinta: #fff;
+  }
+}
+:root[data-tema="sepia"] .capitulo {
+  --karaoke-faixa: color-mix(in srgb, var(--accent) 13%, transparent);
+  --karaoke-palavra: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.camada-do-karaoke { position: absolute; inset: 0; z-index: -2; pointer-events: none; overflow: visible; }
+.camada-do-karaoke > div { position: absolute; left: 0; top: 0; will-change: transform; }
+.karaoke-faixa { border-radius: 6px; background: var(--karaoke-faixa); animation: karaoke-surgir .22s ease-out both; }
+.karaoke-palavra {
+  border-radius: 5px; background: var(--karaoke-palavra);
+  transition: transform .14s cubic-bezier(.3, .7, .4, 1), width .14s cubic-bezier(.3, .7, .4, 1), height .14s;
+}
+.karaoke-palavra[data-salto] { transition: none; }
+.karaoke-filete { border-radius: 1px; background: var(--karaoke-filete); animation: karaoke-surgir .22s ease-out both; }
+@keyframes karaoke-surgir { from { opacity: 0; } to { opacity: 1; } }
+
+::highlight(margem-karaoke-palavra) { color: var(--karaoke-palavra-tinta, var(--accent-texto)); }
+
+/* Voltar ao trecho atual: a pílula clara do ElevenReader, centrada sobre o texto, acima do player. */
+.voltar-ao-trecho {
+  position: fixed; z-index: 92; left: calc((100vw - var(--largura-guiada, 0px)) / 2); bottom: 128px; transform: translateX(-50%);
+  padding: 8px 16px; border: 1px solid var(--borda); border-radius: 999px;
+  background: var(--botao-fundo); color: var(--botao-texto);
+  font: 600 13px/1.2 var(--sans); white-space: nowrap; cursor: pointer;
+  box-shadow: 0 8px 26px -8px #0007;
+  animation: karaoke-surgir .18s ease-out both;
+}
+.voltar-ao-trecho:hover { background: var(--botao-hover); }
+.voltar-ao-trecho:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 899.98px) { .voltar-ao-trecho { left: 50%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .karaoke-palavra, .karaoke-faixa, .karaoke-filete, .voltar-ao-trecho { transition: none; animation: none; }
+}

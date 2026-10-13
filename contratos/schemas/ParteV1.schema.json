@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ParteV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "execucao_id",
+    "ordem",
+    "blocos_responsaveis",
+    "blocos_contexto",
+    "hash_entrada"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "execucao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "ordem": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "blocos_responsaveis": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "blocos_contexto": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "continuidade_anterior": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hash_entrada": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

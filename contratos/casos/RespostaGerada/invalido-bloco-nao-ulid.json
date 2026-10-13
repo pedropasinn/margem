@@ -1,0 +1,16 @@
+{
+  "texto": "A frase gira em torno da bússola.",
+  "pontos": [
+    {
+      "tipo": "estrutura",
+      "texto": "x",
+      "apoios": [
+        {
+          "bloco_id": "b1",
+          "citacao": "🧭"
+        }
+      ]
+    }
+  ],
+  "sugestoes_de_conexao": []
+}

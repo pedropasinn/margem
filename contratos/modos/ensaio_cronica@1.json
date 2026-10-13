@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "ensaio_cronica",
+  "revisao": 1,
+  "nome": "Ensaio e crônica",
+  "descricao": "Acompanhar a passagem da experiência à reflexão, seus desvios e revisões, sem impor tese definitiva ou moral ao fecho.",
+  "funcoes": [
+    {
+      "chave": "cena",
+      "rotulo": "Cena",
+      "pergunta": "Onde o texto apresenta cena?",
+      "descricao": "Flagrante, situação cotidiana ou experiência que põe a reflexão em movimento.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "problema",
+      "rotulo": "Problema",
+      "pergunta": "Onde o texto apresenta problema?",
+      "descricao": "Pergunta ou impasse que organiza o percurso.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "ideia_provisoria",
+      "rotulo": "Ideia provisória",
+      "pergunta": "Onde o texto apresenta ideia provisória?",
+      "descricao": "Reflexão ensaiada; conservar modalização e alcance.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "deslocamento",
+      "rotulo": "Deslocamento",
+      "pergunta": "Onde o texto apresenta deslocamento?",
+      "descricao": "Desvio, retorno ou autocorreção que modifica o percurso.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "contraponto",
+      "rotulo": "Contraponto",
+      "pergunta": "Onde o texto apresenta contraponto?",
+      "descricao": "Outra voz ou possibilidade que resiste à reflexão.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "linguagem",
+      "rotulo": "Linguagem",
+      "pergunta": "Onde o texto apresenta linguagem?",
+      "descricao": "Escolha verbal ou figura decisiva para o efeito do texto.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.12,
+      "3": 0.25
+    }
+  }
+}

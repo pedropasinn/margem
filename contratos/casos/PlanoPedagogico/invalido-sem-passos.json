@@ -1,0 +1,18 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000701",
+  "execucao_id": "00000000000000000000000040",
+  "secao_id": "00000000000000000000000060",
+  "modelo_id": "00000000000000000000000503",
+  "perfil_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "passos": [],
+  "apoios": [
+    {
+      "alvo_id": "00000000000000000000000101",
+      "tipo": "exemplo",
+      "texto": "Pense num cardápio impresso."
+    }
+  ],
+  "job_id": "00000000000000000000000093",
+  "criado_em": "2026-09-25T12:20:00Z"
+}

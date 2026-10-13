@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "jornalistica_factual",
+  "revisao": 1,
+  "nome": "Jornalismo factual",
+  "descricao": "Leitura de notícia e reportagem: reconstruir acontecimentos e apuração, preservando quem afirma, com qual apoio, em que data e com quais incertezas. Uma afirmação noticiada não é automaticamente um fato verificado; cenas e testemunhos não provam a representatividade do caso.",
+  "funcoes": [
+    {
+      "chave": "acontecimento",
+      "rotulo": "Acontecimento relatado",
+      "pergunta": "O que o texto noticia que aconteceu, a quem, quando e onde?",
+      "descricao": "Núcleo informativo com participantes e circunstâncias decisivas; manter a atribuição quando o relato depender dela.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "atribuicao",
+      "rotulo": "Atribuição",
+      "pergunta": "Quem afirma isto e de que posição ou acesso fala?",
+      "descricao": "Expressão que identifica a fonte, sua modalidade de acesso ou a mediação do repórter; não é selo de verdade.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "apuracao",
+      "rotulo": "Apuração e documento",
+      "pergunta": "Que observação, registro ou dado sustenta o relato?",
+      "descricao": "Base de apuração identificável no texto; distinguir documento, testemunho e observação de exemplo narrativo.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "contexto",
+      "rotulo": "Contexto explicativo",
+      "pergunta": "Que antecedente ou comparação muda a compreensão do acontecimento?",
+      "descricao": "Antecedente, base de comparação ou condição social indispensável; não todo pano de fundo.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "incerteza",
+      "rotulo": "Incerteza e contestação",
+      "pergunta": "O que permanece não confirmado, disputado ou corrigido?",
+      "descricao": "Ressalva, limite de apuração, negativa ou correção; conservar a voz e não produzir falsa equivalência.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "cena",
+      "rotulo": "Cena reveladora",
+      "pergunta": "Que episódio concreto torna visível o problema investigado?",
+      "descricao": "Cena que estrutura uma reportagem ou materializa um processo; não generalizar o episódio como evidência populacional.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.12,
+      "3": 0.24
+    }
+  }
+}

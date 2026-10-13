@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ProgressoV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "documento_id",
+    "versao_id",
+    "ancora",
+    "revisao_esperada",
+    "capitulos_concluidos",
+    "atualizado_em"
+  ],
+  "properties": {
+    "documento_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "ancora": {
+      "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+    },
+    "revisao_esperada": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "capitulos_concluidos": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "atualizado_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

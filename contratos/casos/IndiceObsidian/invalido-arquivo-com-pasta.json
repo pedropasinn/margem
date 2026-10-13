@@ -1,0 +1,16 @@
+{
+  "versao": 1,
+  "url_base": "https://maquina.tail1234.ts.net",
+  "marcas": "minhas",
+  "documentos": [
+    {
+      "documento_id": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "versao_id": "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "titulo": "Mostly Harmless Econometrics",
+      "arquivo": "livros/Mostly.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "itens": 12,
+      "atualizado_em": "2026-09-30T12:00:00.000Z"
+    }
+  ]
+}

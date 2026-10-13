@@ -1,0 +1,515 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "execucao_id",
+    "versao_id",
+    "secao_id",
+    "modo",
+    "revisao",
+    "estagio",
+    "base_id",
+    "lote_id",
+    "movimento",
+    "unidades",
+    "elementos",
+    "relacoes",
+    "dificuldades",
+    "criada_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "execucao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "secao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "modo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revisao"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+          "maxLength": 40
+        },
+        "revisao": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "revisao": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "estagio": {
+      "type": "string",
+      "enum": [
+        "analise_local",
+        "sintese",
+        "revisao"
+      ]
+    },
+    "base_id": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        }
+      ]
+    },
+    "lote_id": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        }
+      ]
+    },
+    "movimento": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/movimento"
+        }
+      ]
+    },
+    "unidades": {
+      "type": "array",
+      "items": {
+        "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/unidade"
+      },
+      "minItems": 0
+    },
+    "elementos": {
+      "type": "array",
+      "items": {
+        "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/elemento"
+      },
+      "minItems": 0
+    },
+    "relacoes": {
+      "type": "array",
+      "items": {
+        "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/relacao"
+      },
+      "minItems": 0
+    },
+    "dificuldades": {
+      "type": "array",
+      "items": {
+        "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/dificuldade"
+      },
+      "minItems": 0
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "elemento": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "nucleo",
+        "papel",
+        "ancoras",
+        "enunciado",
+        "qualificadores",
+        "centralidade",
+        "notas",
+        "origem"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "nucleo": {
+          "type": "string",
+          "enum": [
+            "afirmacao",
+            "conceito",
+            "hipotese",
+            "evidencia",
+            "exemplo",
+            "objecao",
+            "passo",
+            "elemento_textual"
+          ]
+        },
+        "papel": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+              "maxLength": 40
+            }
+          ]
+        },
+        "ancoras": {
+          "type": "array",
+          "items": {
+            "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+          },
+          "minItems": 1
+        },
+        "enunciado": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "qualificadores": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "centralidade": {
+          "type": "integer",
+          "enum": [
+            1,
+            2,
+            3
+          ]
+        },
+        "notas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "tipo",
+              "texto"
+            ],
+            "properties": {
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "LEITURA",
+                  "INVESTIGAR",
+                  "OBJECAO",
+                  "TENSAO"
+                ]
+              },
+              "texto": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            }
+          },
+          "minItems": 0
+        },
+        "origem": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "estagio",
+            "job_id"
+          ],
+          "properties": {
+            "estagio": {
+              "type": "string",
+              "enum": [
+                "analise_local",
+                "sintese",
+                "revisao"
+              ]
+            },
+            "job_id": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            }
+          }
+        }
+      }
+    },
+    "relacao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tipo",
+        "origem_id",
+        "destino_id",
+        "explicacao",
+        "confianca",
+        "retrospectiva",
+        "origem"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "suporta",
+            "desenvolve",
+            "pressupoe",
+            "contrasta",
+            "exemplifica",
+            "retoma",
+            "responde",
+            "tensiona",
+            "ecoa"
+          ]
+        },
+        "origem_id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "destino_id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "explicacao": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "confianca": {
+          "type": "string",
+          "enum": [
+            "alta",
+            "media",
+            "baixa"
+          ]
+        },
+        "retrospectiva": {
+          "type": "boolean"
+        },
+        "origem": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "estagio",
+            "job_id"
+          ],
+          "properties": {
+            "estagio": {
+              "type": "string",
+              "enum": [
+                "analise_local",
+                "sintese",
+                "revisao"
+              ]
+            },
+            "job_id": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            }
+          }
+        }
+      }
+    },
+    "dificuldade": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tipo",
+        "ancoras",
+        "descricao",
+        "origem"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "premissa_implicita",
+            "mudanca_de_notacao",
+            "sintaxe_complexa",
+            "conceito_sem_definicao",
+            "salto_argumentativo",
+            "referencia_externa",
+            "ambiguidade"
+          ]
+        },
+        "ancoras": {
+          "type": "array",
+          "items": {
+            "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+          },
+          "minItems": 1
+        },
+        "descricao": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "origem": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "estagio",
+            "job_id"
+          ],
+          "properties": {
+            "estagio": {
+              "type": "string",
+              "enum": [
+                "analise_local",
+                "sintese",
+                "revisao"
+              ]
+            },
+            "job_id": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            }
+          }
+        }
+      }
+    },
+    "unidade": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "bloco_inicio",
+        "bloco_fim",
+        "titulo",
+        "funcao_no_capitulo"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "bloco_inicio": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "bloco_fim": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "titulo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "funcao_no_capitulo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "movimento": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "texto",
+        "etapas"
+      ],
+      "properties": {
+        "texto": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "etapas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "unidade_ids",
+              "descricao"
+            ],
+            "properties": {
+              "unidade_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "descricao": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          },
+          "minItems": 0
+        }
+      }
+    },
+    "nota": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tipo",
+        "texto"
+      ],
+      "properties": {
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "LEITURA",
+            "INVESTIGAR",
+            "OBJECAO",
+            "TENSAO"
+          ]
+        },
+        "texto": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      }
+    }
+  }
+}

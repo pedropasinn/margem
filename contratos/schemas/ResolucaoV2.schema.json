@@ -1,0 +1,306 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ResolucaoV2.schema.json",
+  "title": "Sessão de resolução de um exercício recortado de um documento",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "documento_id",
+    "versao_id",
+    "origem",
+    "texto_extraido",
+    "resolucao",
+    "execucao",
+    "mensagens",
+    "criada_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 2
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "documento_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "origem": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "pagina",
+            "retangulo",
+            "imagem_sha256"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "recorte"
+            },
+            "pagina": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            },
+            "retangulo": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x",
+                "y",
+                "largura",
+                "altura"
+              ],
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "largura": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "altura": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "imagem_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "ancora"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "trecho"
+            },
+            "ancora": {
+              "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+            }
+          }
+        }
+      ]
+    },
+    "texto_extraido": {
+      "type": "string",
+      "maxLength": 20000
+    },
+    "exercicio": {
+      "description": "Onde o exercício está no livro, quando veio da descoberta em lote (ou foi reconhecido nela): capítulo, seção, número e a ordem no livro.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capitulo",
+        "secao",
+        "numero",
+        "ordem"
+      ],
+      "properties": {
+        "capitulo": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "secao": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "numero": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "pattern": "\\S"
+        },
+        "ordem": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      }
+    },
+    "resolucao": {
+      "anyOf": [
+        {
+          "$ref": "https://margem.local/contratos/ResolucaoGeradaV1.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "execucao": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "modelo",
+            "esforco"
+          ],
+          "properties": {
+            "modelo": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "\\S"
+            },
+            "esforco": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "\\S"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "mensagens": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "autor",
+              "texto",
+              "criada_em"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "autor": {
+                "const": "leitor"
+              },
+              "texto": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000,
+                "pattern": "\\S"
+              },
+              "criada_em": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "autor",
+              "texto",
+              "passos",
+              "execucao",
+              "criada_em"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "autor": {
+                "const": "ia"
+              },
+              "texto": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8000,
+                "pattern": "\\S"
+              },
+              "passos": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "$ref": "https://margem.local/contratos/ResolucaoGeradaV1.schema.json#/$defs/passo"
+                }
+              },
+              "execucao": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "modelo",
+                  "esforco"
+                ],
+                "properties": {
+                  "modelo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "pattern": "\\S"
+                  },
+                  "esforco": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "pattern": "\\S"
+                  }
+                }
+              },
+              "criada_em": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

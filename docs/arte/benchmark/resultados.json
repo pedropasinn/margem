@@ -1,0 +1,64 @@
+[
+  {
+    "obra": "educacao",
+    "registros": [
+      {
+        "etapa": "modelo",
+        "modelo": "gpt-6-astra",
+        "duracao_ms": 44065,
+        "sha256": "44c7d61dadc08494ab844e0e45242bd3c4a1e72e317b1fd6ceafa81a7f089d96"
+      },
+      {
+        "etapa": "curta",
+        "modelo": "gpt-6-astra",
+        "duracao_ms": 50869,
+        "sha256": "d565b38eb69145ae43e1fb1b0786b64f8ba9691edc14ad56aff38e40b37a1dea"
+      }
+    ],
+    "falhas_brutas": [
+      "fala_apressada"
+    ],
+    "falhas_apos_temporizacao": [],
+    "duracao_s": 41.75,
+    "avaliador": "Codex autor do experimento; não é avaliação humana independente",
+    "identidade": "preservada pelo serviço a partir do dossiê",
+    "autoria_incerteza": "preservada",
+    "fontes": "somente IDs do dossiê",
+    "intencao": "não documentada, explicitamente",
+    "ancoras": "inspeção visual plausível; algumas regiões mais largas que o detalhe",
+    "tese": "uma relação visual principal",
+    "gancho": "observacional e não enganoso; pouco memorável",
+    "fechamento": "retoma a tese, mas repete informação",
+    "limitacao": "Duas obras, uma tentativa por etapa; não prova equivalência aos canais nem generalização."
+  },
+  {
+    "obra": "tolo",
+    "registros": [
+      {
+        "etapa": "modelo",
+        "modelo": "gpt-6-astra",
+        "duracao_ms": 54228,
+        "sha256": "0797beed95a23322ce2aef2d73958c94c2f0ac5fc9d25715b238c32f4f660713"
+      },
+      {
+        "etapa": "curta",
+        "modelo": "gpt-6-astra",
+        "duracao_ms": 55669,
+        "sha256": "2690cf83a4e91053098f84107ee1416ccb05940eb10f795a05c1a9d3d59e4cb8"
+      }
+    ],
+    "falhas_brutas": [],
+    "falhas_apos_temporizacao": [],
+    "duracao_s": 47.3,
+    "avaliador": "Codex autor do experimento; não é avaliação humana independente",
+    "identidade": "preservada pelo serviço a partir do dossiê",
+    "autoria_incerteza": "preservada",
+    "fontes": "somente IDs do dossiê",
+    "intencao": "não documentada, explicitamente",
+    "ancoras": "inspeção visual plausível; algumas regiões mais largas que o detalhe",
+    "tese": "uma relação visual principal",
+    "gancho": "observacional e não enganoso; pouco memorável",
+    "fechamento": "retoma a tese, mas repete informação",
+    "limitacao": "Duas obras, uma tentativa por etapa; não prova equivalência aos canais nem generalização."
+  }
+]

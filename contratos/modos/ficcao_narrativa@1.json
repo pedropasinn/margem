@@ -1,0 +1,84 @@
+{
+  "versao": 1,
+  "id": "ficcao_narrativa",
+  "revisao": 1,
+  "nome": "Ficção narrativa",
+  "descricao": "Ler conto, novela e capítulo de romance distinguindo voz, focalização, tempo, acontecimentos, personagens, espaço e composição. Ajustar escala e fechamento ao texto recebido. Não atribuir falas ao autor, pensamentos a fatos ou lacunas a falhas. Conservar incertezas e hipóteses. A análise global considera o capítulo inteiro e serve à releitura.",
+  "funcoes": [
+    {
+      "chave": "evento",
+      "rotulo": "Acontecimento e estado",
+      "pergunta": "Que mudança ou estado altera as possibilidades da narrativa?",
+      "descricao": "Ação ou estado narrativamente relevante, com estatuto explícito: ocorrido, relatado, imaginado ou negado. Ex.: “Rui trancou a gaveta.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "voz",
+      "rotulo": "Voz narrativa",
+      "pergunta": "Quem narra ou assume a palavra e de que posição?",
+      "descricao": "Instância narradora, discurso citado, distância ou registro. Ex.: “Não sei contar o que ela sentiu.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "focalizacao",
+      "rotulo": "Focalização e saber",
+      "pergunta": "Que acesso à informação esta passagem permite ou restringe?",
+      "descricao": "Seleção perceptiva ou cognitiva da narrativa; separar narrador, observador e personagem. Ex.: “Para Rui, a sala estava vazia.”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "tempo",
+      "rotulo": "Tempo",
+      "pergunta": "Que relação entre ordem, duração ou frequência dos acontecimentos se torna decisiva?",
+      "descricao": "Anacronia, elipse, cena, resumo, repetição ou marco temporal relevante. Ex.: “Na véspera, a chave ainda estava ali.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "personagem",
+      "rotulo": "Construção da personagem",
+      "pergunta": "Que ato, fala ou descrição sustenta uma caracterização?",
+      "descricao": "Indício explícito ou inferência delimitada de disposição, relação ou transformação; evitar diagnóstico e biografia inventados. Ex.: “Devolveu a carta sem abri-la.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "composicao",
+      "rotulo": "Composição",
+      "pergunta": "Que escolha de sequência, contraste, omissão ou fecho modifica a leitura?",
+      "descricao": "Arranjo textual, motivos recorrentes e espaço apoiados em passagens identificáveis; não confundir encerramento do capítulo com solução da história. Ex.: “A resposta só veio no envelope seguinte.”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

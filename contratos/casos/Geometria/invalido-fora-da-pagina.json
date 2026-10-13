@@ -1,0 +1,32 @@
+{
+  "versao": 1,
+  "versao_id": "00000000000000000000000000",
+  "fonte": "pdf_texto",
+  "motor": "teste/1",
+  "paginas": [
+    {
+      "numero": 1,
+      "largura": 100,
+      "altura": 100,
+      "rotacao": 0
+    }
+  ],
+  "palavras": [
+    {
+      "bloco_id": "00000000000000000000000001",
+      "inicio_utf16": 0,
+      "fim_utf16": 4,
+      "pagina": 1,
+      "quad": [
+        0,
+        0,
+        102,
+        0,
+        102,
+        10,
+        0,
+        10
+      ]
+    }
+  ]
+}

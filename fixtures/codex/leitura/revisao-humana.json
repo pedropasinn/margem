@@ -1,0 +1,21 @@
+{
+  "versao": 1,
+  "passos": [
+    {
+      "tipo": "ok",
+      "modelo": "executor-falso",
+      "conteudo": {
+        "alteracoes": [
+          {
+            "marca_id": "000000000000000000000M0003",
+            "op": "remover",
+            "depois": {},
+            "motivo": "Redundante com a marca seguinte."
+          }
+        ],
+        "consistencia_das_cores": "As cores estão consistentes; a única alteração é uma remoção por redundância.",
+        "observacoes": []
+      }
+    }
+  ]
+}

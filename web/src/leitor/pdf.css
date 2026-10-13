@@ -1,0 +1,14 @@
+.leitor-pdf { max-width: none; }
+.capitulo-pdf { background: transparent; }
+.pdf-folha { margin: 0 auto 24px; }
+.pdf-pagina { position: relative; isolation: isolate; background: white; color: #111; box-shadow: 0 2px 12px #0002; outline: 1px solid var(--border-subtle); }
+.pdf-conteudo { position: absolute; inset: 0; }
+.pdf-conteudo canvas { display: block; }
+.pdf-pagina .textLayer { z-index: 3; }
+.pdf-pagina .pdf-marcas { z-index: 2; mix-blend-mode: multiply; }
+.pdf-alvos { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+.pdf-alvos span { position: absolute; pointer-events: none; }
+.pdf-alvos span:focus-visible { outline: 2px solid #444; }
+.pdf-numero { font: 12px var(--sans); color: var(--text-secondary); text-align: right; margin: 8px 0 0; }
+.zoom-pdf { display: flex; flex-wrap: wrap; gap: 4px; }
+

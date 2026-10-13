@@ -1,0 +1,75 @@
+{
+  "versao": 2,
+  "id": "00000000000000000000000001",
+  "documento_id": "00000000000000000000000002",
+  "versao_id": "00000000000000000000000003",
+  "origem": {
+    "tipo": "recorte",
+    "pagina": 12,
+    "retangulo": {
+      "x": 0.1,
+      "y": 0.2,
+      "largura": 0.8,
+      "altura": 0.25
+    },
+    "imagem_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "texto_extraido": "3. Resolva a equação 2x + 3 = 11.",
+  "resolucao": {
+    "enunciado": "Resolva a equação 2x + 3 = 11 e verifique.",
+    "legibilidade": "boa",
+    "itens": [
+      {
+        "rotulo": "",
+        "enunciado": "2x + 3 = 11",
+        "estrategia": "Isolar x: tirar o 3 dos dois lados e dividir por 2.",
+        "passos": [
+          {
+            "texto": "Subtraia 3 dos dois lados.",
+            "calculo": "2x + 3 − 3 = 11 − 3  →  2x = 8"
+          },
+          {
+            "texto": "Divida os dois lados por 2.",
+            "calculo": "x = 8/2 = 4"
+          }
+        ],
+        "resposta": "x = 4",
+        "verificacao": "2·4 + 3 = 11 ✓"
+      }
+    ],
+    "conceitos": [
+      "equação do 1º grau",
+      "operação inversa"
+    ],
+    "observacao": null
+  },
+  "execucao": {
+    "modelo": "gpt-5",
+    "esforco": "high"
+  },
+  "mensagens": [
+    {
+      "id": "00000000000000000000000010",
+      "autor": "leitor",
+      "texto": "Por que se subtrai 3 dos dois lados?",
+      "criada_em": "2026-09-27T10:05:00Z"
+    },
+    {
+      "id": "00000000000000000000000011",
+      "autor": "ia",
+      "texto": "Para manter a igualdade: o que se faz de um lado se faz do outro.",
+      "passos": [
+        {
+          "texto": "Uma balança em equilíbrio continua equilibrada.",
+          "calculo": null
+        }
+      ],
+      "execucao": {
+        "modelo": "gpt-5",
+        "esforco": "medium"
+      },
+      "criada_em": "2026-09-27T10:06:00Z"
+    }
+  ],
+  "criada_em": "2026-09-27T10:00:00Z"
+}

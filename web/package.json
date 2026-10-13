@@ -1,0 +1,30 @@
+{
+  "name": "@margem/web",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --configLoader runner",
+    "test": "vitest run --configLoader runner",
+    "capturas": "node tests/leitor.spec.ts && node tests/margem.spec.ts && node tests/j11.spec.ts && node tests/j18.spec.ts && node tests/j21.spec.ts && node tests/j24.spec.ts && node tests/onboarding.spec.ts && node tests/primeira-execucao.spec.ts"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.16",
+    "katex": "^0.18.9",
+    "mermaid": "^12.0.0",
+    "motion": "^13.4.6",
+    "pdfjs-dist": "6.3.289",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^25.0.1",
+    "vite": "^6.4.3"
+  }
+}

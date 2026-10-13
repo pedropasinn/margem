@@ -1,0 +1,352 @@
+{
+  "snapshot": {
+    "versao_id": "00000000000000000000000100",
+    "documento_id": "00000000000000000000000101",
+    "secao": {
+      "id": "00000000000000000000000102",
+      "titulo": "Círculo vicioso",
+      "ordem": 0,
+      "nivel": 1,
+      "bloco_inicio": "00000000000000000000000001",
+      "bloco_fim": "00000000000000000000000005"
+    },
+    "blocos": [
+      {
+        "id": "00000000000000000000000001",
+        "tipo": "capitulo",
+        "texto": "Círculo vicioso",
+        "ordem": 0,
+        "inline": [],
+        "origens": []
+      },
+      {
+        "id": "00000000000000000000000002",
+        "tipo": "estrofe",
+        "texto": "Bailando no ar, gemia inquieto vaga-lume:\n— “Quem me dera que fosse aquela loura estrela,\nQue arde no eterno azul, como uma eterna vela!”\nMas a estrela, fitando a lua, com ciúme:",
+        "ordem": 1,
+        "inline": [],
+        "origens": []
+      },
+      {
+        "id": "00000000000000000000000003",
+        "tipo": "estrofe",
+        "texto": "— “Pudesse eu copiar o transparente lume,\nQue, da grega coluna à gótica janela,\nContemplou, suspirosa, a fronte amada e bela!”\nMas a lua, fitando o sol, com azedume:",
+        "ordem": 2,
+        "inline": [],
+        "origens": []
+      },
+      {
+        "id": "00000000000000000000000004",
+        "tipo": "estrofe",
+        "texto": "— “Mísera! tivesse eu aquela enorme, aquela\nClaridade imortal, que toda a luz resume.”\nMas o sol, inclinando a rútila capela:",
+        "ordem": 3,
+        "inline": [],
+        "origens": []
+      },
+      {
+        "id": "00000000000000000000000005",
+        "tipo": "estrofe",
+        "texto": "— “Pesa-me esta brilhante auréola de nume...\nEnfara-me esta azul e desmedida umbela...\nPor que não nasci eu um simples vaga-lume?”",
+        "ordem": 4,
+        "inline": [],
+        "origens": []
+      }
+    ],
+    "marcas": [
+      {
+        "id": "00000000000000000000000020",
+        "ancora": {
+          "versao_id": "00000000000000000000000100",
+          "bloco_id": "00000000000000000000000002",
+          "inicio_utf16": 0,
+          "fim_utf16": 41,
+          "citacao": "Bailando no ar, gemia inquieto vaga-lume:",
+          "prefixo": "",
+          "sufixo": "\n— “Quem me dera que fosse aquel"
+        },
+        "funcao": "imagem",
+        "saliencia": 1,
+        "camada_id": "00000000000000000000000103",
+        "modo": {
+          "id": "literaria",
+          "revisao": 1
+        },
+        "subfaixas": [],
+        "comentario": {
+          "tipo": "LEITURA",
+          "rotulo": "A imagem abre o desejo",
+          "texto": "O movimento do vaga-lume inicia a comparação."
+        },
+        "origem": "parte",
+        "validade": "resolvida",
+        "visivel": true,
+        "avaliacao": "nao_avaliada",
+        "criada_em": "2026-09-24T12:00:00Z"
+      },
+      {
+        "id": "00000000000000000000000021",
+        "ancora": {
+          "versao_id": "00000000000000000000000100",
+          "bloco_id": "00000000000000000000000003",
+          "inicio_utf16": 0,
+          "fim_utf16": 41,
+          "citacao": "— “Pudesse eu copiar o transparente lume,",
+          "prefixo": "",
+          "sufixo": "\nQue, da grega coluna à gótica j"
+        },
+        "funcao": "voz",
+        "saliencia": 2,
+        "camada_id": "00000000000000000000000103",
+        "modo": {
+          "id": "literaria",
+          "revisao": 1
+        },
+        "subfaixas": [],
+        "comentario": {
+          "tipo": "LEITURA",
+          "rotulo": "Voz em cadeia",
+          "texto": "Cada astro deseja a luz do próximo."
+        },
+        "origem": "parte",
+        "validade": "resolvida",
+        "visivel": true,
+        "avaliacao": "nao_avaliada",
+        "criada_em": "2026-09-24T12:00:00Z"
+      },
+      {
+        "id": "00000000000000000000000022",
+        "ancora": {
+          "versao_id": "00000000000000000000000100",
+          "bloco_id": "00000000000000000000000004",
+          "inicio_utf16": 0,
+          "fim_utf16": 43,
+          "citacao": "— “Mísera! tivesse eu aquela enorme, aquela",
+          "prefixo": "",
+          "sufixo": "\nClaridade imortal, que toda a l"
+        },
+        "funcao": "som_e_ritmo",
+        "saliencia": 3,
+        "camada_id": "00000000000000000000000103",
+        "modo": {
+          "id": "literaria",
+          "revisao": 1
+        },
+        "subfaixas": [],
+        "comentario": {
+          "tipo": "LEITURA",
+          "rotulo": "A repetição do som",
+          "texto": "A repetição acompanha o desejo."
+        },
+        "origem": "parte",
+        "validade": "resolvida",
+        "visivel": true,
+        "avaliacao": "nao_avaliada",
+        "criada_em": "2026-09-24T12:00:00Z"
+      },
+      {
+        "id": "00000000000000000000000023",
+        "ancora": {
+          "versao_id": "00000000000000000000000100",
+          "bloco_id": "00000000000000000000000005",
+          "inicio_utf16": 87,
+          "fim_utf16": 130,
+          "citacao": "Por que não nasci eu um simples vaga-lume?”",
+          "prefixo": "esta azul e desmedida umbela...\n",
+          "sufixo": ""
+        },
+        "funcao": "virada",
+        "saliencia": 1,
+        "camada_id": "00000000000000000000000103",
+        "modo": {
+          "id": "literaria",
+          "revisao": 1
+        },
+        "subfaixas": [],
+        "comentario": {
+          "tipo": "LEITURA",
+          "rotulo": "O círculo se fecha",
+          "texto": "O sol deseja voltar ao início da cadeia."
+        },
+        "origem": "parte",
+        "validade": "resolvida",
+        "visivel": true,
+        "avaliacao": "nao_avaliada",
+        "criada_em": "2026-09-24T12:00:00Z"
+      }
+    ],
+    "assets": {},
+    "revisao_marcas": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recuperacao": [],
+    "anterior": null,
+    "proxima": null,
+    "camada": "00000000000000000000000103",
+    "camadas": [
+      {
+        "id": "00000000000000000000000103",
+        "tipo": "execucao",
+        "modo": {
+          "id": "literaria",
+          "revisao": 1
+        },
+        "criada_em": "2026-09-24T12:00:00Z",
+        "marcas": 4
+      },
+      {
+        "id": "00000000000000000000000104",
+        "tipo": "importacao",
+        "modo": {
+          "id": "argumentativa",
+          "revisao": 1
+        },
+        "criada_em": "2026-09-20T12:00:00Z",
+        "marcas": 0
+      }
+    ],
+    "precedencia": [],
+    "anotacoes": [],
+    "conversas": [],
+    "conexoes": [],
+    "primeiro_eu": {
+      "ativo": false,
+      "liberado": true
+    }
+  },
+  "modos": [
+    {
+      "versao": 1,
+      "id": "literaria",
+      "revisao": 1,
+      "nome": "Literária",
+      "descricao": "Leitura de poema e prosa literária: como o texto produz sentido pela imagem, pelo som, pela voz, pelas viradas, pela forma e pelo diálogo com outros textos. Marcar o que sustenta uma interpretação, não enfeitar cada verso.",
+      "funcoes": [
+        {
+          "chave": "imagem",
+          "rotulo": "Imagem",
+          "pergunta": "Que imagem ou figura concreta este trecho constrói?",
+          "descricao": "Imagem sensorial, metáfora, comparação ou figura que carrega sentido.",
+          "cor": {
+            "claro": "#FFD926",
+            "escuro": "#FFD926"
+          }
+        },
+        {
+          "chave": "som_e_ritmo",
+          "rotulo": "Som e ritmo",
+          "pergunta": "Que efeito de som ou de ritmo sustenta o sentido aqui?",
+          "descricao": "Aliteração, assonância, cadência, pausa ou repetição sonora com efeito observável.",
+          "cor": {
+            "claro": "#B98CFF",
+            "escuro": "#B98CFF"
+          }
+        },
+        {
+          "chave": "voz",
+          "rotulo": "Voz",
+          "pergunta": "Quem fala aqui, para quem e em que tom?",
+          "descricao": "Eu lírico, narrador, interlocutor, mudança de pessoa ou de registro.",
+          "cor": {
+            "claro": "#52ABFF",
+            "escuro": "#52ABFF"
+          }
+        },
+        {
+          "chave": "virada",
+          "rotulo": "Virada",
+          "pergunta": "Onde o texto muda de direção?",
+          "descricao": "Volta, contraste, ironia ou revelação que reorganiza o que veio antes.",
+          "cor": {
+            "claro": "#FF8A3D",
+            "escuro": "#FF8A3D"
+          }
+        },
+        {
+          "chave": "forma",
+          "rotulo": "Forma",
+          "pergunta": "Que escolha formal pesa neste trecho?",
+          "descricao": "Estrofe, metro, rima, enjambement, quebra de linha ou disposição na página.",
+          "cor": {
+            "claro": "#59D675",
+            "escuro": "#59D675"
+          }
+        },
+        {
+          "chave": "intertexto",
+          "rotulo": "Intertexto",
+          "pergunta": "A que outro texto ou tradição este trecho responde?",
+          "descricao": "Alusão, citação, paródia ou forma herdada, identificável no próprio texto.",
+          "cor": {
+            "claro": "#2EC4B6",
+            "escuro": "#2EC4B6"
+          }
+        }
+      ],
+      "comentarios": [
+        "AUTOR",
+        "LEITURA",
+        "INVESTIGAR",
+        "CONEXAO",
+        "TENSAO"
+      ],
+      "saliencia": {
+        "alvo_por_nivel": {
+          "1": 0.08,
+          "2": 0.18,
+          "3": 0.35
+        }
+      }
+    },
+    {
+      "versao": 1,
+      "id": "argumentativa",
+      "revisao": 1,
+      "nome": "Argumentativa",
+      "descricao": "O método de F1: reconstruir o argumento pelas teses, pelos conceitos e condições que elas pressupõem e pelas justificativas que as sustentam. A cor indica a função do trecho, não sua verdade nem a concordância do leitor.",
+      "funcoes": [
+        {
+          "chave": "tese",
+          "rotulo": "Tese",
+          "pergunta": "O que o autor está afirmando ou demonstrando?",
+          "descricao": "Proposição principal, conclusão de uma seção ou resultado de um argumento. Amarelo.",
+          "cor": {
+            "claro": "#FFD926",
+            "escuro": "#FFD926"
+          }
+        },
+        {
+          "chave": "conceito",
+          "rotulo": "Conceito",
+          "pergunta": "O que preciso entender ou assumir para acompanhar essa afirmação?",
+          "descricao": "Definição, distinção, hipótese, pressuposto ou condição de validade. Verde.",
+          "cor": {
+            "claro": "#59D675",
+            "escuro": "#59D675"
+          }
+        },
+        {
+          "chave": "justificativa",
+          "rotulo": "Justificativa",
+          "pergunta": "Por que aceitar a afirmação ou como ela funciona?",
+          "descricao": "Passo explicativo, mecanismo, evidência, contraexemplo ou exemplo decisivo. Azul.",
+          "cor": {
+            "claro": "#52ABFF",
+            "escuro": "#52ABFF"
+          }
+        }
+      ],
+      "comentarios": [
+        "AUTOR",
+        "LEITURA",
+        "INVESTIGAR",
+        "OBJECAO",
+        "CONEXAO"
+      ],
+      "saliencia": {
+        "alvo_por_nivel": {
+          "1": 0.04,
+          "2": 0.1,
+          "3": 0.2
+        }
+      }
+    }
+  ]
+}

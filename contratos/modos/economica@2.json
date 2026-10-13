@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "economica",
+  "revisao": 2,
+  "nome": "Economia empírica",
+  "descricao": "Reconstruir pergunta, estimando, identificação e resultados, distinguindo evidência observada, mecanismos propostos e limites de generalização.",
+  "funcoes": [
+    {
+      "chave": "conceito",
+      "rotulo": "Conceito",
+      "pergunta": "Onde o texto apresenta conceito?",
+      "descricao": "Definição, estimando e notação: ATT, LATE, efeito local.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "hipotese",
+      "rotulo": "Hipótese",
+      "pergunta": "Onde o texto apresenta hipótese?",
+      "descricao": "Pressuposto identificador ou do modelo; tendências paralelas, exclusão e monotonicidade.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "identificacao",
+      "rotulo": "Identificação",
+      "pergunta": "Onde o texto apresenta identificação?",
+      "descricao": "Desenho, variação, comparação e testes ligados a uma ameaça: placebo, pré-tendências e robustez.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "resultado",
+      "rotulo": "Resultado",
+      "pergunta": "Onde o texto apresenta resultado?",
+      "descricao": "Estimativa com comparador, unidade, população, horizonte e incerteza; magnitude não é significância.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "mecanismo",
+      "rotulo": "Mecanismo",
+      "pergunta": "Onde o texto apresenta mecanismo?",
+      "descricao": "Canal proposto ou testado; correlação com mediador não demonstra mediação.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "limitacao",
+      "rotulo": "Limitação",
+      "pergunta": "Onde o texto apresenta limitação?",
+      "descricao": "Alcance local, validade externa, construção e cobertura dos dados.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "PREREQUISITO",
+    "TENSAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.12,
+      "3": 0.25
+    }
+  }
+}

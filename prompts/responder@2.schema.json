@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/responder@2.schema.json",
+  "title": "Resposta a uma pergunta sobre um trecho, versão 1",
+  "description": "RespostaGeradaV1, restrita: até 3 sugestões de conexão. Sem ids, offsets nem prefixo/sufixo.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["texto", "pontos", "sugestoes_de_conexao"],
+  "properties": {
+    "texto": { "type": "string", "minLength": 1, "maxLength": 20000, "pattern": "\\S" },
+    "pontos": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20,
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tipo", "texto", "apoios"],
+            "properties": {
+              "tipo": { "type": "string", "enum": ["explicacao", "estrutura", "objecao", "conexao"] },
+              "texto": { "type": "string", "minLength": 1, "maxLength": 4000, "pattern": "\\S" },
+              "apoios": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 10,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["bloco_id", "citacao"],
+                  "properties": {
+                    "bloco_id": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+                    "citacao": { "type": "string", "minLength": 1 }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tipo", "texto", "apoios"],
+            "properties": {
+              "tipo": { "type": "string", "enum": ["pergunta"] },
+              "texto": { "type": "string", "minLength": 1, "maxLength": 4000, "pattern": "\\S" },
+              "apoios": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": 10,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["bloco_id", "citacao"],
+                  "properties": {
+                    "bloco_id": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+                    "citacao": { "type": "string", "minLength": 1 }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "sugestoes_de_conexao": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["destino_bloco_id", "citacao", "relacao", "justificativa"],
+        "properties": {
+          "destino_bloco_id": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "citacao": { "type": "string", "minLength": 1 },
+          "relacao": { "type": "string", "enum": ["semelhanca", "contraste", "tensao", "prerequisito", "desenvolve", "exemplo"] },
+          "justificativa": { "type": "string", "minLength": 1, "maxLength": 2000, "pattern": "\\S" }
+        }
+      }
+    }
+  }
+}

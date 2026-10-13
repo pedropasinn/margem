@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/EtiquetaV1.schema.json",
+  "title": "Etiqueta do leitor sobre uma marca ou anotação",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "versao_id",
+    "alvo",
+    "nome",
+    "criada_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "alvo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tipo",
+        "id"
+      ],
+      "properties": {
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "marca",
+            "anotacao"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        }
+      }
+    },
+    "nome": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "pattern": "^\\S(?:[^\\r\\n]*\\S)?$(?![\\s\\S])"
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

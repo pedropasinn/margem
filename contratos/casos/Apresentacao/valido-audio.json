@@ -1,0 +1,21 @@
+{
+  "versao": 1,
+  "plano_id": "00000000000000000000000701",
+  "dispositivo": "audio",
+  "telas": [
+    {
+      "passo": 0,
+      "tipo": "narracao",
+      "blocos": [
+        "00000000000000000000000001"
+      ],
+      "texto": null
+    },
+    {
+      "passo": 0,
+      "tipo": "comentario",
+      "blocos": [],
+      "texto": "Note a hipótese."
+    }
+  ]
+}

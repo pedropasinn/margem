@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/arte-revisao@2.schema.json",
+  "title": "Revisão crítica do modelo da obra, algoritmo v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "regioes",
+    "afirmacoes",
+    "tese"
+  ],
+  "properties": {
+    "regioes": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "indice",
+          "veredito",
+          "forma",
+          "motivo"
+        ],
+        "properties": {
+          "indice": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "veredito": {
+            "type": "string",
+            "enum": [
+              "manter",
+              "ajustar",
+              "cortar"
+            ]
+          },
+          "forma": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/forma"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "motivo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          }
+        }
+      }
+    },
+    "afirmacoes": {
+      "type": "array",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "indice",
+          "veredito",
+          "texto",
+          "tipo",
+          "confianca",
+          "evidencia",
+          "motivo"
+        ],
+        "properties": {
+          "indice": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "veredito": {
+            "type": "string",
+            "enum": [
+              "manter",
+              "corrigir",
+              "cortar"
+            ]
+          },
+          "texto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 400
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tipo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "observacao",
+                  "fato",
+                  "interpretacao_documentada",
+                  "inferencia_ia",
+                  "intencao_desconhecida"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confianca": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "alta",
+                  "media",
+                  "baixa",
+                  "nao_aplicavel"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidencia": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "motivo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          }
+        }
+      }
+    },
+    "tese": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "indice",
+        "texto",
+        "motivo"
+      ],
+      "properties": {
+        "indice": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "texto": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "motivo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        }
+      }
+    }
+  },
+  "$defs": {
+    "forma": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "x",
+            "y",
+            "largura",
+            "altura"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "bbox"
+            },
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "largura": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            "altura": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "x",
+            "y"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "ponto"
+            },
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "pontos"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "poligono"
+            },
+            "pontos": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "minItems": 3
+            }
+          }
+        }
+      ]
+    }
+  }
+}

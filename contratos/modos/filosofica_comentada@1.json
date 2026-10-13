@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "filosofica_comentada",
+  "revisao": 1,
+  "nome": "Filosofia com comentários",
+  "descricao": "Distinguir a voz de Aristóteles da de Mário Ferreira dos Santos (tradutor, autor das súmulas, notas e comentários) e dos filósofos citados. Não atribuir interpretações do comentador ou dos escolásticos ao autor original. Separar tese, conceito, distinção, argumento, objeção e consequência, preservando terminologia e divergências. A fonte digitalizada contém erros de OCR: não corrigir citações silenciosamente nem inventar letras gregas; registrar passagens ilegíveis como limite, sem apoiar teses nelas. Comentários em português; texto-fonte preservado.",
+  "funcoes": [
+    {
+      "chave": "tese",
+      "rotulo": "Tese",
+      "pergunta": "Que posição o autor defende aqui?",
+      "descricao": "Afirmação que o autor sustenta como sua, não a de um interlocutor.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "conceito",
+      "rotulo": "Conceito",
+      "pergunta": "Que termo é definido ou usado em sentido próprio?",
+      "descricao": "Definição ou uso técnico de um termo do qual o argumento depende.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "distincao",
+      "rotulo": "Distinção",
+      "pergunta": "Que duas coisas o autor separa e por quê?",
+      "descricao": "Distinção terminológica ou conceitual que o argumento exige.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    },
+    {
+      "chave": "argumento",
+      "rotulo": "Argumento",
+      "pergunta": "Por que razões a tese deveria ser aceita?",
+      "descricao": "Premissas e passos inferenciais apresentados pelo autor.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "objecao",
+      "rotulo": "Objeção",
+      "pergunta": "Que objeção o texto considera e como responde?",
+      "descricao": "Posição contrária ou dificuldade tratada pelo próprio autor, com a resposta dada.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "consequencia",
+      "rotulo": "Consequência",
+      "pergunta": "O que decorre da tese, segundo o autor?",
+      "descricao": "Implicação que o autor tira explicitamente da posição defendida.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.12,
+      "3": 0.25
+    }
+  }
+}

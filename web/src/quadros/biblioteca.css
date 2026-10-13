@@ -1,0 +1,18 @@
+/* Quadros na Biblioteca: a capa é a pintura inteira (sem corte), sobre o fundo da capa. */
+.capa-do-quadro { position: relative; align-items: center; justify-content: center; padding: 0; background: var(--painel); }
+.capa-do-quadro img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.capa-mini.capa-do-quadro { padding: 3px; box-sizing: border-box; }
+.capa-mini.capa-do-quadro img { border-radius: 2px; }
+.capa-icone-quadro { position: absolute; right: 2px; bottom: 2px; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; background: var(--bg); color: var(--texto-2); }
+.capa-cartao.capa-do-quadro { padding: 12px; }
+.capa-cartao.capa-do-quadro img { box-shadow: 0 2px 8px #0000002e; }
+.capa-do-painel { display: grid; box-sizing: border-box; overflow: hidden; place-items: center; height: 220px; margin-bottom: 18px; padding: 12px; border-radius: var(--r-12); background: var(--painel); }
+.capa-do-painel img { max-width: 100%; max-height: 196px; width: auto; height: auto; object-fit: contain; box-shadow: 0 2px 8px #0000002e; }
+
+/* Sem acervo instalado (J110): a mesma condução da biblioteca vazia, com o botão e o comando. */
+.acervo-ausente .acervo-em-preparacao { display: grid; justify-items: center; gap: 6px; font-size: 14px; }
+.acervo-ausente .acervo-comando { display: grid; justify-items: center; gap: 8px; width: min(560px, 100%); font-size: 14px; }
+.acervo-ausente .acervo-comando-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; }
+.acervo-ausente .acervo-comando code { overflow-x: auto; padding: 6px 10px; border: 1px solid var(--borda); border-radius: var(--r-8); background: var(--surface-1); color: var(--texto-1); font-size: 13px; white-space: nowrap; text-align: left; }
+.acervo-ausente .acervo-comando .ui-icon { min-height: 32px; width: 32px; min-width: 32px; }
+.acervo-ausente + .linhas-biblioteca:empty { display: none; }

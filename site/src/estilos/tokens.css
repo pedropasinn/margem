@@ -1,0 +1,99 @@
+/*
+ * Tokens do site, copiados de `web/src/ui/tokens.css` (o app) para a página comercial falar a
+ * mesma língua visual: fundo branco, texto em alfas do preto, bordas cinza com base 3D, pílulas,
+ * azul #456dff da linha de margem do ícone. Duas famílias, como no app: serifa para o texto de
+ * leitura, Figtree para a interface.
+ */
+:root {
+  color-scheme: light;
+  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+
+  --bg: #fff;
+  --bg-2: #f8f8f8;
+  --painel: #f5f5f5;
+  --bg-hover: rgba(0, 0, 0, .04);
+
+  --texto-1: #000;
+  --texto-2: rgba(0, 0, 0, .68);
+  --texto-3: rgba(0, 0, 0, .56);
+
+  --borda: rgba(0, 0, 0, .1);
+  --borda-hover: rgba(0, 0, 0, .3);
+  --borda-3d: #e5e5e5;
+  --borda-3d-hover: #b8b8b8;
+
+  --accent: #456dff;
+  --accent-texto: #2f4fd6;
+  --accent-suave: #e6ecff;
+  --error-texto: #a82a2a;
+  --error-bg: #ffdfdf;
+  --sucesso-texto: #1f7a3d;
+  --sucesso-bg: #dcf5e3;
+  --aviso-texto: #7a4f00;
+  --aviso-bg: #fff4d6;
+
+  --botao-fundo: #000;
+  --botao-texto: #fff;
+  --botao-base: #4d4d4d;
+  --botao-hover: #262626;
+
+  /* Cores das funções, as mesmas dos modos de leitura (`contratos/modos`). */
+  --f-tese: #ffd926;
+  --f-conceito: #59d675;
+  --f-argumento: #52abff;
+  --f-objecao: #ff8a3d;
+  --f-consequencia: #b98cff;
+  --f-distincao: #2ec4b6;
+  --opacidade-marca: .32;
+  --mistura-marca: multiply;
+  --folha: #fff;
+  --sombra-folha: 0 1px 2px rgba(0, 0, 0, .06), 0 12px 40px rgba(0, 0, 0, .08);
+
+  --r-8: 8px;
+  --r-12: 12px;
+  --r-16: 16px;
+  --r-24: 24px;
+  --r-pilula: 999px;
+  --base-3d: 4px;
+  --container: 1200px;
+  --gutter: clamp(16px, 4vw, 40px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #141414;
+    --bg-2: #1a1a1a;
+    --painel: #222;
+    --bg-hover: rgba(255, 255, 255, .08);
+
+    --texto-1: #fff;
+    --texto-2: rgba(255, 255, 255, .74);
+    --texto-3: rgba(255, 255, 255, .6);
+
+    --borda: rgba(255, 255, 255, .16);
+    --borda-hover: rgba(255, 255, 255, .45);
+    --borda-3d: #3d3d3d;
+    --borda-3d-hover: #6b6b6b;
+
+    --accent-texto: #9db2ff;
+    --accent-suave: #1c2547;
+    --error-texto: #ffb4b4;
+    --error-bg: #3a1c1c;
+    --sucesso-texto: #8fe0a8;
+    --sucesso-bg: #173522;
+    --aviso-texto: #f2cf8d;
+    --aviso-bg: #332b1c;
+
+    --botao-fundo: #fff;
+    --botao-texto: #141414;
+    --botao-base: #9e9e9e;
+    --botao-hover: #e0e0e0;
+
+    --opacidade-marca: .42;
+    --mistura-marca: screen;
+    --folha: #1c1c1c;
+    --sombra-folha: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 40px rgba(0, 0, 0, .35);
+  }
+}

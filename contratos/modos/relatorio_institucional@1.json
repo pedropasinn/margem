@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "relatorio_institucional",
+  "revisao": 1,
+  "nome": "Relatório institucional e nota de política",
+  "descricao": "Leitura de relatório de organismo e nota técnica de política pública: separar mandato, diagnóstico, base de dados, método, recomendação, implementação e limites. Preservar unidades, período, população, versão e diferença entre dados observados, estimados e projetados.",
+  "funcoes": [
+    {
+      "chave": "problema",
+      "rotulo": "Problema e mandato",
+      "pergunta": "Que problema a instituição examina e dentro de qual escopo?",
+      "descricao": "Questão pública, população e mandato de análise; não confundir objetivo institucional com resultado demonstrado.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "achado",
+      "rotulo": "Achado ou diagnóstico",
+      "pergunta": "O que a análise conclui sobre a situação?",
+      "descricao": "Resultado descritivo ou analítico com alcance e comparação preservados.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "base",
+      "rotulo": "Base de dados e método",
+      "pergunta": "Com quais dados e procedimento se chega ao achado?",
+      "descricao": "Fonte, definição de indicador, método ou hipótese decisiva; registrar estimativa/projeção quando explicitadas.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "recomendacao",
+      "rotulo": "Recomendação",
+      "pergunta": "Que ação a instituição recomenda, e a quem?",
+      "descricao": "Proposta de política, distinta do diagnóstico e de medida já implementada.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "implementacao",
+      "rotulo": "Implementação e acompanhamento",
+      "pergunta": "Como a proposta seria executada e acompanhada?",
+      "descricao": "Instrumento, responsável, recurso, prazo, indicador ou condição operacional efetivamente informados.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "limite",
+      "rotulo": "Limite e incerteza",
+      "pergunta": "Que restrição afeta a análise ou a recomendação?",
+      "descricao": "Limite de dados, desenho, extrapolação, custo, cenário ou validade da recomendação.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.14,
+      "3": 0.27
+    }
+  }
+}

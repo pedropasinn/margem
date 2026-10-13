@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/visual-diagrama@2.schema.json",
+  "title": "Fluxograma Mermaid vertical das ideias de um trecho ou capítulo, versão 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["titulo", "codigo", "nos"],
+  "properties": {
+    "titulo": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "\\S" },
+    "codigo": { "type": "string", "minLength": 12, "maxLength": 20000 },
+    "nos": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 80,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "rotulo", "citacao"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$" },
+          "rotulo": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "citacao": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["bloco_id", "texto"],
+                "properties": {
+                  "bloco_id": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+                  "texto": { "type": "string", "minLength": 1, "maxLength": 1000 }
+                }
+              },
+              { "type": "null" }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

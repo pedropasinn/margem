@@ -1,0 +1,83 @@
+{
+  "versao": 1,
+  "id": "literaria",
+  "revisao": 1,
+  "nome": "Literária",
+  "descricao": "Leitura de poema e prosa literária: como o texto produz sentido pela imagem, pelo som, pela voz, pelas viradas, pela forma e pelo diálogo com outros textos. Marcar o que sustenta uma interpretação, não enfeitar cada verso.",
+  "funcoes": [
+    {
+      "chave": "imagem",
+      "rotulo": "Imagem",
+      "pergunta": "Que imagem ou figura concreta este trecho constrói?",
+      "descricao": "Imagem sensorial, metáfora, comparação ou figura que carrega sentido.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "som_e_ritmo",
+      "rotulo": "Som e ritmo",
+      "pergunta": "Que efeito de som ou de ritmo sustenta o sentido aqui?",
+      "descricao": "Aliteração, assonância, cadência, pausa ou repetição sonora com efeito observável.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "voz",
+      "rotulo": "Voz",
+      "pergunta": "Quem fala aqui, para quem e em que tom?",
+      "descricao": "Eu lírico, narrador, interlocutor, mudança de pessoa ou de registro.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "virada",
+      "rotulo": "Virada",
+      "pergunta": "Onde o texto muda de direção?",
+      "descricao": "Volta, contraste, ironia ou revelação que reorganiza o que veio antes.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "forma",
+      "rotulo": "Forma",
+      "pergunta": "Que escolha formal pesa neste trecho?",
+      "descricao": "Estrofe, metro, rima, enjambement, quebra de linha ou disposição na página.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "intertexto",
+      "rotulo": "Intertexto",
+      "pergunta": "A que outro texto ou tradição este trecho responde?",
+      "descricao": "Alusão, citação, paródia ou forma herdada, identificável no próprio texto.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO",
+    "TENSAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.08,
+      "2": 0.18,
+      "3": 0.35
+    }
+  }
+}

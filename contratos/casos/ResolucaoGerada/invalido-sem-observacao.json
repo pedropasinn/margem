@@ -1,0 +1,27 @@
+{
+  "enunciado": "Resolva a equação 2x + 3 = 11 e verifique.",
+  "legibilidade": "boa",
+  "itens": [
+    {
+      "rotulo": "",
+      "enunciado": "2x + 3 = 11",
+      "estrategia": "Isolar x: tirar o 3 dos dois lados e dividir por 2.",
+      "passos": [
+        {
+          "texto": "Subtraia 3 dos dois lados.",
+          "calculo": "2x + 3 − 3 = 11 − 3  →  2x = 8"
+        },
+        {
+          "texto": "Divida os dois lados por 2.",
+          "calculo": "x = 8/2 = 4"
+        }
+      ],
+      "resposta": "x = 4",
+      "verificacao": "2·4 + 3 = 11 ✓"
+    }
+  ],
+  "conceitos": [
+    "equação do 1º grau",
+    "operação inversa"
+  ]
+}

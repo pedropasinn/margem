@@ -1,0 +1,12 @@
+{
+  "versao": 1,
+  "passos": [
+    { "quando": { "ordem": 1 }, "tipo": "json_truncado", "bruto": "{\"marcas\": [{\"funcao\": \"tese\"," },
+    { "quando": { "ordem": 2 }, "tipo": "fora_do_schema", "conteudo": { "marcas": [{ "funcao": "rosa", "citacao": "" }] } },
+    { "quando": { "ordem": 3 }, "tipo": "timeout" },
+    { "quando": { "ordem": 4 }, "tipo": "cota", "not_before": "2026-09-21T10:27:00.000Z", "mensagem": "usage limit atingido; volta às 10:27." },
+    { "quando": { "ordem": 5 }, "tipo": "auth", "mensagem": "Sessão do Codex ausente: rode codex login." },
+    { "quando": { "ordem": 6 }, "tipo": "processo", "mensagem": "A CLI terminou com código 137." },
+    { "quando": { "ordem": 7 }, "tipo": "cancelado" }
+  ]
+}

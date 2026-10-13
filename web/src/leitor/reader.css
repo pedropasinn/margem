@@ -1,0 +1,511 @@
+/*
+ * Leitor: SVG atrás das letras, sem alterar o fundo do texto; duas famílias tipográficas;
+ * texto centralizado na viewport, margem independente à direita.
+ */
+:root {
+  --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif;
+  --sans: "Figtree Variable", Figtree, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  /* As cores da superfície vêm dos tokens da interface (`ui/tokens.css`); as das funções são do leitor. */
+  --fundo: var(--bg, #fff);
+  --texto: var(--texto-1, #000);
+  --discreto: var(--texto-2, rgba(0, 0, 0, .65));
+  --linha: var(--borda, rgba(0, 0, 0, .1));
+  --tese: #ffd926;
+  --conceito: #59d675;
+  --justificativa: #52abff;
+  --sublinhado: var(--texto-1, #000);
+}
+
+html,
+body {
+  margin: 0;
+  background-color: var(--fundo);
+  color: var(--texto);
+}
+
+/* Texto centrado na viewport, 850 px por padrão (pedido de produto, 24/09). A margem de notas usa o
+   que sobra à direita do texto: entre 220 e 340 px, sempre a 40 px dele e a 24 px da borda. */
+/* `--largura-util` é a janela menos a barra da leitura guiada, quando aberta: o texto se centra nela. */
+.leitor-controlado {
+  --largura-util: 100vw;
+  --medida-texto: min(var(--largura-leitura, 850px), calc(var(--largura-util) - 48px));
+  --intervalo-margem: 40px;
+  --largura-margem: clamp(220px, calc((var(--largura-util) - var(--medida-texto)) / 2 - var(--intervalo-margem) - 24px), 340px);
+}
+@media (min-width: 900px) {
+  html.com-leitura-guiada .leitor-controlado { --largura-util: calc(100vw - var(--largura-guiada, 0px)); }
+}
+
+.leitor {
+  display: grid;
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  width: var(--medida-texto, min(var(--largura-leitura, 850px), calc(100% - 48px)));
+  margin-inline: auto;
+  /* Compensa a scrollbar: o eixo exigido é innerWidth / 2. */
+  left: calc((var(--largura-util, 100vw) - 100%) / 2);
+  padding-block: clamp(2rem, 5vw, 4rem);
+  padding-inline: 0;
+  font-family: var(--serif);
+  font-size: var(--tamanho-leitura, 22px);
+  line-height: var(--entrelinha-leitura, 1.6);
+  overflow-wrap: break-word;
+}
+
+/* Prosa justificada (pedido de produto, 24/09), com hifenização pelo idioma do documento (`lang` no
+   artigo). Poema, títulos, epígrafe, código, equação e legendas continuam alinhados à esquerda. */
+.capitulo :is(.bloco-paragrafo, .bloco-citacao, .bloco-lista, .bloco-nota_rodape) {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphenate-limit-chars: 7 3 3;
+}
+/* Aparência → Alinhamento "À esquerda": sem justificar e sem hifenizar (guia da British Dyslexia
+   Association). Vale também no celular, onde a prosa já fica à esquerda mas hifenizada. */
+:root[data-alinhamento="esquerda"] .capitulo :is(.bloco-paragrafo, .bloco-citacao, .bloco-lista, .bloco-nota_rodape) {
+  text-align: left;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+}
+/* Aparência → Espaçamento: letras e palavras mais afastadas (Zorzi et al., 2012); o máximo fica nos
+   valores do WCAG 1.4.12. Vale no texto refluível e nas notas; o PDF fica como o original. */
+:root[data-espacamento="amplo"] .leitor:not(.leitor-pdf) { letter-spacing: .05em; word-spacing: .08em; }
+:root[data-espacamento="maximo"] .leitor:not(.leitor-pdf) { letter-spacing: .12em; word-spacing: .16em; }
+
+.capitulo {
+  position: relative;
+  isolation: isolate;
+  /* Superfície constante para o SVG compor multiply/screen dentro do artigo. */
+  background-color: var(--fundo);
+  grid-column: 1;
+  min-width: 0;
+}
+
+/* Coluna direita das notas de margem. Posição relativa: as notas são postas em absoluto
+   dentro dela e por isso nunca empurram nem cobrem o texto. */
+.margem {
+  position: absolute;
+  left: calc(100% + var(--intervalo-margem, 56px));
+  top: clamp(2rem, 5vw, 4rem);
+  bottom: 0;
+  width: var(--largura-margem, 320px);
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--discreto);
+}
+
+/* Abaixo disto não cabem 220 px de margem ao lado de 850 px de texto: as notas vão para a folha. */
+@media (max-width: 1417.98px) { .margem { display: none; } }
+
+.titulo-da-secao {
+  margin: 0 0 1.6rem;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.bloco {
+  margin: 0 0 1.05rem;
+}
+
+/* Texto único: a abertura de um artigo, logo abaixo do título, e o fim do texto no lugar dos capítulos. */
+.abertura-do-texto { margin: -1rem 0 2rem; font: 400 14px/1.5 var(--sans); color: var(--discreto); user-select: none; }
+.abertura-do-texto span + span::before { content: " · "; }
+.texto-unico .titulo-da-secao { font-size: 32px; }
+.fim-do-texto { display: flex; flex-direction: column; align-items: center; gap: 16px; margin: 56px 0 32px; font-family: var(--sans); }
+.fim-do-texto-sinal { font: 400 20px/1 var(--serif); color: var(--discreto); letter-spacing: .3em; }
+.fim-do-texto-lido { margin: 0; font-size: 14px; color: var(--discreto); }
+.fim-do-texto a { font-size: 14px; color: var(--discreto); }
+
+.epigrafe {
+  color: var(--discreto);
+  font-style: italic;
+}
+
+.bloco-citacao {
+  margin-inline: 0;
+  padding-inline: 1.5rem;
+  color: var(--discreto);
+}
+
+.bloco-codigo {
+  overflow-x: auto;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.lista {
+  margin: 0 0 1.05rem;
+  padding-inline-start: 1.2rem;
+}
+
+.lista .bloco {
+  margin-bottom: 0.35rem;
+}
+
+figure.bloco {
+  margin-inline: 0;
+}
+
+.asset {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.legenda {
+  margin-top: 0.4rem;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--discreto);
+}
+
+.bloco-nota_rodape {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--discreto);
+}
+
+.nota-ref {
+  font-family: var(--sans);
+  font-size: 0.7em;
+}
+
+/* O desenho pertence ao SVG: segmentos preservam os estilos da fonte original. */
+.segmento { text-decoration: none; }
+
+/* ------------------------------------------------------------------ J09: margem e folha */
+
+.filtros { position: sticky; top: var(--altura-casca-leitor, 0px); z-index: 60; display: flex; align-items: center; gap: 10px; padding-block: 8px; padding-inline: 24px; background: var(--surface-1); font: 13px var(--sans); }
+.filtros > .ui-button, .filtros > .voltar { flex-shrink: 0; font-size: 13px; }
+.filtros > .ui-button:not(.ui-icon) { padding-inline: 8px; }
+.atencao-na-barra { flex-shrink: 0; margin-left: auto; }  /* abre o grupo da direita */
+.capitulo-na-barra { color: var(--texto-3); white-space: nowrap; font-size: 13px; }
+.barra-camada { margin-left: auto; flex-shrink: 0; }
+.barra-camada .controle-camada > span:first-child { display: none; }
+/* Na barra, a camada mostra o próprio nome (e não a palavra "Camada"), cortado com reticências. */
+.barra-camada .ui-select { width: auto; max-width: 240px; }
+.barra-camada .camada-compacta { display: none; }
+.controles-moveis .camada-compacta { display: none; }
+.controle-camada { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; }
+.controle-camada .ui-select { min-width: 0; }
+.controle-camada .ui-button { background: var(--bg-2); }
+.controle-atencao { position: relative; display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.valor-atencao { display: none; position: absolute; top: 100%; right: 0; padding: 6px 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--surface-2); white-space: nowrap; }
+.controle-atencao:hover .valor-atencao, .controle-atencao:focus-within .valor-atencao { display: block; }
+.pontos-atencao { background: transparent; gap: 0; padding: 0; }
+.pontos-atencao > .ui-button { padding: 0; width: 24px; min-height: 40px; font-size: 15px; }
+.ponto-atencao { display: block; width: 7px; height: 7px; border: 1px solid currentColor; border-radius: 50%; }
+.ponto-atencao[data-preenchido=true] { background: currentColor; }
+.pontos-atencao [aria-checked=true] { background: transparent; }
+.controles-moveis { display: grid; gap: 12px; }
+.tipos-marcas { display: grid; grid-template-columns: 1fr 1fr; }
+.legenda-funcoes { display: flex; flex-wrap: wrap; gap: 8px 12px; font: 12px/1.5 var(--sans); color: var(--texto-2); }
+.nota {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  max-width: 38ch;
+  margin: 0;
+}
+
+.nota-cabeca {
+  margin: 0;
+}
+
+.nota-numero {
+  display: inline-grid;
+  place-items: center;
+  /* 24 px: o alvo mínimo do WCAG 2.5.8. */
+  min-width: 24px;
+  height: 24px;
+  margin-inline-end: 0.5rem;
+  padding: 0 5px;
+  border: 1.5px solid var(--linha);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--discreto);
+}
+
+/* O anel leva a cor da função; o algarismo, a mesma cor misturada ao texto (4,5:1, ver `estiloDoNumero`). */
+.nota-numero.funcao-tese {
+  border-color: var(--tese);
+  color: color-mix(in srgb, var(--tese) var(--mistura-do-numero, 50%), var(--texto-1, #000));
+}
+
+.nota-numero.funcao-conceito {
+  border-color: var(--conceito);
+  color: color-mix(in srgb, var(--conceito) var(--mistura-do-numero, 50%), var(--texto-1, #000));
+}
+
+.nota-numero.funcao-justificativa {
+  border-color: var(--justificativa);
+  color: color-mix(in srgb, var(--justificativa) var(--mistura-do-numero, 50%), var(--texto-1, #000));
+}
+
+/* Marca periférica (saliência 3, só sublinhada no texto): o círculo fica tracejado, como o das dificuldades. */
+.nota-numero.periferica { border-style: dashed; }
+.nota-rotulo {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.nota-texto {
+  margin: 0.2rem 0 0 calc(24px + 0.5rem);
+  line-height: 1.45;
+}
+
+/* Deslocada demais do trecho: fica o resumo de uma linha e abre inteira ao ativar. */
+.nota.resumo .nota-texto {
+  max-height: 1.45em;
+  overflow: hidden;
+}
+
+/* Ativação na margem: o mesmo sublinhado do trecho, nunca fundo nem peso. */
+.nota.ativa .nota-rotulo {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+.nota-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.9rem;
+  margin: 0.45rem 0 0 calc(24px + 0.5rem);
+}
+
+.nota-origem {
+  color: var(--discreto);
+}
+
+/* Ocultar, confirmar e rejeitar: só símbolos, em três botões colados com o relevo 3D de `.ui-button`.
+   Cada um afunda sozinho ao clicar; confirmada ganha fundo verde e rejeitada, vermelho. O nome de cada
+   ação vem no aria-label e no title. */
+.grupo-de-icones {
+  display: inline-flex;
+  align-self: center;
+  padding-block-end: var(--base-3d);
+}
+.grupo-de-icones > .ui-icon {
+  width: 40px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 2px solid var(--borda-3d);
+  border-radius: 0;
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  box-shadow: 0 var(--base-3d) 0 var(--borda-3d);
+  transition: border-color .15s, background .15s, color .15s, box-shadow .1s, transform .1s;
+}
+.grupo-de-icones > .ui-icon + .ui-icon { margin-inline-start: -2px; }
+.grupo-de-icones > .ui-icon:first-child { border-start-start-radius: var(--r-pilula); border-end-start-radius: var(--r-pilula); }
+.grupo-de-icones > .ui-icon:last-child { border-start-end-radius: var(--r-pilula); border-end-end-radius: var(--r-pilula); }
+.grupo-de-icones > .ui-icon:hover {
+  position: relative;
+  z-index: 1;
+  border-color: var(--borda-3d-hover);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  box-shadow: 0 var(--base-3d) 0 var(--borda-3d-hover);
+}
+.grupo-de-icones > .ui-icon:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--borda-3d-hover); }
+/* Escolhida, só o fundo muda: borda, base e ícone seguem os dos outros botões. */
+.grupo-de-icones > .ui-icon.confirmar[aria-pressed="true"] { background: var(--sucesso-bg); }
+.grupo-de-icones > .ui-icon.rejeitar[aria-pressed="true"] { background: var(--error-bg); }
+.grupo-de-icones > .ui-icon:focus-visible { position: relative; z-index: 3; outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.recuperacao {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  margin-block-start: 1.6rem;
+  color: var(--discreto);
+}
+
+.recuperacao ul {
+  margin: 0.3rem 0 0;
+  padding-inline-start: 1.1rem;
+}
+
+.rodape-do-leitor {
+  grid-column: 1;
+  margin-block-start: 2.5rem;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+}
+
+.aviso-do-progresso {
+  margin: 0.5rem 0 0;
+  color: var(--discreto);
+}
+
+/* Folha inferior: toque e telas estreitas. Não rola o documento. */
+.folha {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 2;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 1rem clamp(1rem, 4vw, 2rem) 1.3rem;
+  background-color: var(--fundo);
+  border-block-start: 1px solid var(--linha);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+}
+
+.folha-cabeca { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.folha-citacao {
+  margin: 0.2rem 0 0;
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: var(--discreto);
+}
+
+.folha-funcao {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0.2rem;
+  color: var(--discreto);
+}
+.folha-fechar { flex: none; margin: -6px -8px 0 0; }
+
+.folha .nota-rotulo,
+.folha .nota-texto {
+  margin: 0.2rem 0 0 calc(24px + 0.5rem);
+  line-height: 1.45;
+}
+.folha .nota-texto { font-family: var(--serif); font-size: 1.05rem; color: var(--texto-1); }
+
+.folha-acoes {
+  margin: 0.8rem 0 0;
+}
+
+.leitor-controlado { min-width: 0; }
+/* A faixa de progresso na borda de cima da página (a barra do leitor fica presa no topo). */
+.progresso-capitulo { position: absolute; left: 0; right: 0; top: 0; z-index: 1; height: 2px; overflow: hidden; pointer-events: none; }
+.progresso-capitulo span { display: block; height: 100%; background: var(--accent); transform: scaleX(var(--progresso-capitulo, 0)); transform-origin: left; }
+.nota-texto { line-height: 1.5; margin-top: 6px; }
+.nota { max-width: none; font-size: 14px; transition: opacity .15s; }
+.nota-rotulo { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.margem[data-ativa] .nota:not(.ativa) { opacity: .65; }
+.margem.recolhida .nota:not(.ativa) .nota-rotulo,
+.margem.recolhida .nota:not(.ativa) .nota-texto { display: none; }
+.margem.recolhida .nota-numero { cursor: pointer; }
+/* As notas que não seguem um grifo (as dificuldades) abrem com o mouse ou o foco sobre elas mesmas. */
+.margem.recolhida .nota-pessoal:is(:hover, :focus-within) :is(.nota-rotulo, .nota-texto) { display: revert; }
+/* Nota de uma marca oculta: só o número, apagado, marcando que ali há uma nota. */
+.nota.oculta .nota-rotulo,
+.nota.oculta .nota-texto { display: none; }
+.nota.oculta { width: fit-content; }
+.nota.oculta .nota-numero { cursor: pointer; opacity: .55; }
+.nota.oculta .nota-numero:hover, .nota.oculta .nota-numero:focus-visible { opacity: 1; }
+.navegacao-capitulos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 48px 0 24px; }
+/* Anterior e próximo: duas superfícies da família (borda e base 3D), com o título do capítulo. */
+.cartao-capitulo { display: grid; gap: 4px; padding: 16px 20px; border: 2px solid var(--borda-3d); border-radius: var(--r-16, 16px); background: var(--surface-1, var(--bg)); box-shadow: 0 var(--base-3d, 4px) 0 var(--borda-3d); color: var(--texto-1); text-decoration: none; transition: border-color .2s, transform .1s, box-shadow .1s; }
+.cartao-capitulo:hover { border-color: var(--borda-3d-hover); box-shadow: 0 var(--base-3d, 4px) 0 var(--borda-3d-hover); text-decoration: none; }
+.cartao-capitulo:active { transform: translateY(var(--base-3d, 4px)); box-shadow: none; }
+.cartao-capitulo.proxima { grid-column: 2; text-align: right; }
+.cartao-capitulo-rotulo { font: 600 12px/1.4 var(--sans); letter-spacing: .48px; text-transform: uppercase; color: var(--texto-3); }
+.cartao-capitulo-titulo { font: 600 16px/1.35 var(--sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .navegacao-capitulos { grid-template-columns: 1fr; } .cartao-capitulo.proxima { grid-column: 1; } }
+.navegacao-capitulos:empty { display: none; }
+.folha { z-index: 65; border-radius: 16px 16px 0 0; box-shadow: 0 -8px 32px #0001; }
+@media (max-width: 899.98px) {
+  .leitor { padding-block: 32px; }
+  .titulo-da-secao { font-size: 24px; }
+  .texto-unico .titulo-da-secao { font-size: 27px; }
+  .filtros { gap: 4px; padding: 8px 12px; }
+  .capitulo-na-barra, .barra-camada, .atencao-na-barra { display: none; }
+  .filtros .aparencia { margin-left: auto; }
+  .controles-moveis { display: grid; gap: 12px; }
+  .pontos-atencao > .ui-button { width: 40px; }
+}
+
+.legenda-compacta { font-size: 12px; gap: 8px; white-space: nowrap; flex-wrap: nowrap; }
+@media (max-width: 1399px) { .legenda-compacta { display: none; } }
+
+
+/* Celular: coluna estreita demais para justificar sem abrir buracos entre as palavras. A prosa fica
+   alinhada à esquerda (com hifenização) e no piso de 20 px da UI editorial. */
+@media (max-width: 599.98px) {
+  /* O padrão (22) desce ao piso de 20 px; quem escolheu letra maior continua com ela, 2 px abaixo. */
+  .leitor { font-size: max(min(var(--tamanho-leitura, 22px), 20px), calc(var(--tamanho-leitura, 22px) - 2px)); line-height: min(var(--entrelinha-leitura, 1.6), 1.55); }
+  .capitulo :is(.bloco-paragrafo, .bloco-citacao, .bloco-lista, .bloco-nota_rodape) { text-align: left; }
+}
+
+/* Sem margem: os números das notas na lateral direita, na altura da linha; até três por fileira. */
+.numeros-na-lateral { position: fixed; inset: 0; z-index: 57; pointer-events: none; }
+.numeros-na-lateral .numero-lateral {
+  position: absolute; width: 14px; height: 14px; min-width: 0; margin: 0; padding: 0; box-sizing: border-box;
+  display: grid; place-items: center; border: 1.2px solid currentColor; border-radius: 50%;
+  /* O anel da cor do fundo separa um círculo do outro na pilha. */
+  background: var(--fundo-lateral, var(--fundo)); box-shadow: 0 0 0 1.5px var(--fundo-lateral, var(--fundo));
+  font: 700 7.5px/1 var(--sans); pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: left .18s ease;
+}
+.numeros-na-lateral .numero-lateral::after { content: ''; position: absolute; inset: -7px; }
+.numeros-na-lateral .mais-numeros { border: 0; background: var(--chip-lateral, var(--superficie-2, #ececea)); color: var(--chip-lateral-texto, var(--texto-2)); font-weight: 600; letter-spacing: -.02em; }
+@media (prefers-reduced-motion: reduce) { .numeros-na-lateral .numero-lateral { transition: none; } }
+.numeros-na-lateral .numero-lateral.periferica { border-style: dashed; }
+.numeros-na-lateral .nota-numero-dificuldade { color: var(--aviso-lateral, var(--aviso-texto, #b26b00)); border-color: currentColor; }
+/* Com a folha aberta, a lateral dela fica por cima da outra (e das bolinhas das chaves). */
+.numeros-na-lateral:has(.folha), .braquetes.compactas:has(.folha) { z-index: 61; }
+.folha .nota-dificuldade .nota-cabeca { display: flex; align-items: center; gap: .5rem; margin: 0; }
+.folha .nota-dificuldade .nota-cabeca .nota-rotulo { margin: 0; }
+/* Uma coisa de cada vez: com uma folha aberta, o outro lado sai de cena para não confundir. */
+body:has(.braquetes.compactas .folha) .numeros-na-lateral,
+body:has(.numeros-na-lateral .folha, .folha[aria-label='Nota do trecho']) .braquetes.compactas { visibility: hidden; }
+/* No PDF as bolinhas ficam sobre a folha, que é sempre branca: o fundo delas é o da folha, não o do tema. */
+.numeros-na-lateral.sobre-pagina, .braquetes.compactas.sobre-pagina { --tinta-dos-numeros: #000; --mistura-do-numero: 50%; --fundo-lateral: #fff; --chip-lateral: #ececea; --chip-lateral-texto: #555; --aviso-lateral: #b26b00; }
+
+/* Balão sobre o grifo: uma pílula escura com quatro botões redondos; etiquetas e "mais" num cartão logo abaixo. */
+.balao-da-marca { position: fixed; z-index: 70; display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 6px; font: 14px/1.5 var(--sans); pointer-events: auto; }
+.balao-botoes { display: flex; gap: 2px; padding: 3px; border-radius: var(--r-pilula); background: var(--texto-1); color: var(--bg); box-shadow: 0 6px 20px #0003; }
+.balao-botoes .balao-botao { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; min-height: 34px; box-shadow: none; transform: none; }
+.balao-botoes .balao-botao:hover, .balao-botoes .balao-botao:focus-visible, .balao-botoes .balao-botao[aria-expanded="true"] { background: color-mix(in srgb, var(--bg) 14%, transparent); outline: none; }
+.balao-botoes .balao-botao:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.balao-menu, .balao-etiquetas { min-width: 240px; max-width: min(320px, calc(100vw - 16px)); margin: 0; padding: 6px; list-style: none; border-radius: 12px; background: var(--painel); color: var(--texto-1); box-shadow: 0 10px 28px #0004; font-size: 14px; }
+.balao-da-marca.abaixo { flex-direction: column; }
+.balao-menu button { display: flex; justify-content: space-between; gap: 16px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.balao-menu button:hover, .balao-menu button:focus-visible { background: var(--bg-hover); outline: none; }
+.balao-menu kbd { font: 500 12px var(--sans); color: var(--texto-3); }
+.balao-etiquetas { min-width: 280px; padding: 10px; }
+.balao-rotulo { margin: 0 0 6px; color: var(--texto-3); font: 500 12px var(--sans); letter-spacing: .02em; }
+.balao-rotulo + .chips-de-funcao, .balao-rotulo + .chips-de-dificuldade { margin-bottom: 10px; }
+.chips-de-funcao, .chips-de-dificuldade { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.balao-etiquetas .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--borda-3d); border-radius: 999px; background: none; color: var(--texto-2); font: 13px var(--sans); cursor: pointer; }
+.balao-etiquetas .chip:hover:not(:disabled), .balao-etiquetas .chip:focus-visible { border-color: var(--texto-2); outline: none; }
+.balao-etiquetas .chip[aria-checked="true"], .balao-etiquetas .chip[aria-pressed="true"] { border-color: transparent; background: var(--accent-suave); color: var(--accent-texto); }
+.balao-etiquetas .chip:disabled { opacity: .5; cursor: default; }
+.chip-cor { width: 10px; height: 10px; border-radius: 50%; }
+.balao-nota-de-edicao { margin: -4px 0 10px; color: var(--texto-3); font: 12px var(--sans); }
+.balao-nota-de-edicao button { border: 0; background: none; color: var(--texto-2); font: 600 12px var(--sans); text-decoration: underline; cursor: pointer; padding: 0; }
+.balao-erro { margin: 8px 0 0; color: var(--aviso-texto); font-size: 13px; }
+.aviso-desfazer { position: fixed; z-index: 72; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 12px 10px 18px; border-radius: 999px; background: #262a33; color: #e8eaf0; font: 14px var(--sans); box-shadow: 0 8px 24px #0004; }
+.aviso-desfazer button { border: 0; background: none; color: #fff; font: 600 14px var(--sans); cursor: pointer; }
+.aviso-desfazer kbd { font: 500 12px var(--sans); color: #9aa0ad; margin-left: 4px; }
+
+.ilustracao-importada { display: block; max-width: 100%; height: auto; margin: 1.5rem auto; }
+
+.lista > li[data-marcador]::marker { content: attr(data-marcador) " "; }
+
+/* O percorrer (Player v2) é o player central inferior: o texto não se desloca nem perde os números. */
+
+.etiqueta-livre-entrada { display: flex; gap: 6px; }
+.etiqueta-livre-entrada input { min-width: 0; width: 100%; border: 1px solid var(--borda-3d); border-radius: 6px; padding: 6px; background: var(--painel); color: var(--texto-1); font: 13px var(--sans); }
+.etiqueta-livre + .chips-de-dificuldade { margin-top: 8px; }
+
+.sintese-capitulo p { white-space: pre-wrap; }
+.sintese-capitulo li + li { margin-top: .5em; }

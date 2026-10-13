@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "critica_literaria",
+  "revisao": 1,
+  "nome": "Crítica e resenha literária",
+  "descricao": "Ler um texto que lê e avalia outro: separar afirmação crítica, evidência citada, operação interpretativa, conceito, interlocutores, limites e juízo. Diferenciar texto crítico, obra-objeto, tradução e edição. Uma citação interna não equivale a conferência da obra inteira. Resenha pode orientar uma escolha sem desenvolver argumento extenso.",
+  "funcoes": [
+    {
+      "chave": "tese_critica",
+      "rotulo": "Tese crítica",
+      "pergunta": "O que este crítico sustenta sobre a obra e com que alcance?",
+      "descricao": "Afirmação interpretativa atribuída ao crítico, não ao autor da obra analisada. Ex.: “O retorno da chave altera o sentido do fecho.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "evidencia_textual",
+      "rotulo": "Evidência textual",
+      "pergunta": "Que passagem ou característica da obra é apresentada como apoio?",
+      "descricao": "Citação ou descrição usada pelo crítico; indicar quando só foi verificada dentro da crítica. Ex.: “A resenha cita: ‘A chave ficou.’”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "procedimento",
+      "rotulo": "Operação de leitura",
+      "pergunta": "Como o crítico passa do vestígio textual à interpretação?",
+      "descricao": "Comparação, contextualização, análise formal ou inferência identificável. Ex.: “Ao repetir o objeto sem seu dono, o texto…”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "conceito_criterio",
+      "rotulo": "Conceito ou critério",
+      "pergunta": "Que conceito, valor ou regra orienta a leitura e o julgamento?",
+      "descricao": "Termo analítico ou padrão de avaliação efetivamente empregado. Ex.: “Chamo de distância essa recusa de explicar.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "interlocucao",
+      "rotulo": "Interlocução crítica",
+      "pergunta": "A quem esta leitura responde, adere ou se contrapõe?",
+      "descricao": "Posição alheia apresentada com atribuição e diferença explicitadas. Ex.: “Ao contrário da leitura de X, proponho…”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "juizo",
+      "rotulo": "Juízo e recomendação",
+      "pergunta": "Que avaliação ou orientação é dada e segundo qual critério?",
+      "descricao": "Valoração ou recomendação atribuída ao crítico; não equivale a fato objetivo. Ex.: “É uma leitura exigente pela alternância de vozes.”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.06,
+      "2": 0.15,
+      "3": 0.3
+    }
+  }
+}

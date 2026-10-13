@@ -1,0 +1,28 @@
+{
+  "name": "margem-extensao",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Extensão de navegador que envia páginas web para a biblioteca do Margem.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/construir.mjs",
+    "empacotar": "node scripts/construir.mjs --zip",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "node scripts/e2e.mjs"
+  },
+  "devDependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "@types/chrome": "^0.3.4",
+    "@types/jsdom": "^30.0.0",
+    "@types/turndown": "^5.0.6",
+    "@types/webextension-polyfill": "^0.12.6",
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.1.1",
+    "turndown": "^7.2.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3",
+    "web-ext": "^10.7.0",
+    "webextension-polyfill": "^0.12.0"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "versao": 1,
+  "id": "01K0000000000000000000N001",
+  "roteiro_id": "01K0000000000000000000R001",
+  "sha256_audio": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "voz_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "job_colab": "job_0123abcd",
+  "receita": "margem-poesia-omnivoice",
+  "duracao_s": 30.5,
+  "falas": [
+    {
+      "fala_id": "f001",
+      "inicio_s": 0,
+      "fim_s": 30.5
+    }
+  ],
+  "criado_em": "2026-09-29T23:10:00.000Z"
+}

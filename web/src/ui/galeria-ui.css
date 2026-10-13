@@ -1,0 +1,8 @@
+.galeria-ui { width: min(1200px, calc(100% - 48px)); margin: 32px auto 80px; display: grid; gap: 24px; }
+.galeria-ui header .ui-segmented { width: min(360px, 100%); }
+.galeria-ui h2 { margin-bottom: 20px; }
+.amostras-ui { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; margin-block: 16px; }
+.amostras-ui > div { display: flex; flex-wrap: wrap; gap: 12px; }
+.grade-ui { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 24px; }
+.grade-ui label { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.exemplo-borda { display: flex; justify-content: end; margin-top: 24px; }

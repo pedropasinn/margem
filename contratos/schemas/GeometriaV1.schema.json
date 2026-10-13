@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/GeometriaV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "versao_id",
+    "fonte",
+    "motor",
+    "paginas",
+    "palavras"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "fonte": {
+      "enum": [
+        "pdf_texto",
+        "ocr"
+      ]
+    },
+    "motor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "paginas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "numero",
+          "largura",
+          "altura",
+          "rotacao"
+        ],
+        "properties": {
+          "numero": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "largura": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "altura": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "rotacao": {
+            "enum": [
+              0,
+              90,
+              180,
+              270
+            ]
+          }
+        }
+      }
+    },
+    "palavras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bloco_id",
+          "inicio_utf16",
+          "fim_utf16",
+          "pagina",
+          "quad"
+        ],
+        "properties": {
+          "bloco_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "inicio_utf16": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "fim_utf16": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pagina": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "quad": {
+            "type": "array",
+            "minItems": 8,
+            "maxItems": 8,
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  }
+}

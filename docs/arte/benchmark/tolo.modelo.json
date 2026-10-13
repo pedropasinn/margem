@@ -1,0 +1,315 @@
+{
+  "versao": 1,
+  "id": "01M3SQA5QN93TVE2N4B0TXFW84",
+  "revisao": 1,
+  "identidade": {
+    "titulo": "Tolo Risonho",
+    "titulo_original": "Laughing Fool",
+    "artista": "Possivelmente Jacob Cornelisz. van Oostsanen",
+    "data": "c. 1500",
+    "tecnica": "Óleo sobre painel",
+    "afirmacoes": [
+      "01M3SPS2BK340QJ4XRV6MBEJGP"
+    ]
+  },
+  "imagem": {
+    "url": "/arte/tolo.jpg",
+    "sha256": "0ab5611795003aab332726e7e553748e877f5923f0ddb635bfd9d9710c366d8b",
+    "largura": 2681,
+    "altura": 4000,
+    "credito": "Reprodução em domínio público via Wikimedia Commons; original preservado.",
+    "fonte_id": "01M3SPS2BJ5WW2117RBY5476JA"
+  },
+  "localizacao": {
+    "instituicao_proprietaria": "Davis Museum, Wellesley College",
+    "localizacao_conhecida": null,
+    "atualmente_exposto": null,
+    "sala": null,
+    "verificado_em": "2026-09-30",
+    "fontes": [
+      "01M3SPS2BJGA6XJ47BQB6QK6AZ"
+    ]
+  },
+  "fontes": [
+    {
+      "id": "01M3SPS2BJGA6XJ47BQB6QK6AZ",
+      "titulo": "Davis Museum via Google Arts & Culture — Laughing Fool",
+      "url": "https://artsandculture.google.com/asset/laughing-fool/6wE-fhjus-fQCw?hl=en",
+      "categoria": "google_arts",
+      "consultado_em": "2026-09-30"
+    },
+    {
+      "id": "01M3SPS2BJ89YP33BPB7VTCFR9",
+      "titulo": "Virtuelles Fastnachtsmuseum — Devil and Fool",
+      "url": "https://virtuelles-fastnachtsmuseum.de/themenbereiche/devil-and-fool/?lang=en",
+      "categoria": "museu",
+      "consultado_em": "2026-09-30"
+    },
+    {
+      "id": "01M3SPS2BJ5WW2117RBY5476JA",
+      "titulo": "Wikimedia Commons — reprodução, domínio público",
+      "url": "https://commons.wikimedia.org/wiki/File:Laughing_Fool.jpg",
+      "categoria": "secundaria",
+      "consultado_em": "2026-09-30"
+    }
+  ],
+  "regioes": [
+    {
+      "rotulo": "Rosto e mão levantada",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.303,
+        "y": 0.177,
+        "largura": 0.414,
+        "altura": 0.381
+      },
+      "id": "01M3SQA5QMFHXT7CSR713K212T",
+      "imagem_sha256": "0ab5611795003aab332726e7e553748e877f5923f0ddb635bfd9d9710c366d8b"
+    },
+    {
+      "rotulo": "Capuz amarelo com pontas vermelhas",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.069,
+        "y": 0.035,
+        "largura": 0.619,
+        "altura": 0.435
+      },
+      "id": "01M3SQA5QNMT75PH4PPQ5FANNB",
+      "imagem_sha256": "0ab5611795003aab332726e7e553748e877f5923f0ddb635bfd9d9710c366d8b"
+    },
+    {
+      "rotulo": "Mão inferior e óculos",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.048,
+        "y": 0.715,
+        "largura": 0.472,
+        "altura": 0.256
+      },
+      "id": "01M3SQA5QNXYDP97NJECTAN2KA",
+      "imagem_sha256": "0ab5611795003aab332726e7e553748e877f5923f0ddb635bfd9d9710c366d8b"
+    },
+    {
+      "rotulo": "Cetro com cabeça figurada",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.749,
+        "y": 0.022,
+        "largura": 0.225,
+        "altura": 0.467
+      },
+      "id": "01M3SQA5QNAV3WMHJ2JDTNT774",
+      "imagem_sha256": "0ab5611795003aab332726e7e553748e877f5923f0ddb635bfd9d9710c366d8b"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "id": "01M3SPS2BK340QJ4XRV6MBEJGP",
+      "texto": "Laughing Fool, cerca de 1500, é óleo sobre painel, possivelmente de Jacob Cornelisz. van Oostsanen.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "A ficha do Davis Museum no Google Arts & Culture qualifica a atribuição como possível.",
+      "fontes": [
+        "01M3SPS2BJGA6XJ47BQB6QK6AZ"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "proveniencia": {
+        "autor": "curadoria",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    },
+    {
+      "texto": "O dossiê identifica a obra como Laughing Fool (Tolo Risonho), cerca de 1500, óleo sobre painel, possivelmente de Jacob Cornelisz. van Oostsanen.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "A pesquisa fornecida transcreve esses dados da ficha do Davis Museum no Google Arts & Culture e mantém expressamente a atribuição como possível.",
+      "fontes": [
+        "01M3SPS2BJGA6XJ47BQB6QK6AZ"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "id": "01M3SQA5QN7PT68B29N7NSG89M",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "A figura mostra os dentes em um sorriso e mantém uma mão aberta diante do rosto, ocultando parte dele.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "A boca aberta revela duas fileiras de dentes; os dedos atravessam a testa e a região de um dos olhos.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQA5QMFHXT7CSR713K212T"
+      ],
+      "apoios": [],
+      "id": "01M3SQA5QNJQ7T6R6J5BVG7R8G",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "O capuz amarelo apresenta uma grande extensão semelhante a uma orelha à esquerda e uma sequência de pontas vermelhas no alto.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "A extensão lateral possui interior escuro e borda clara; formas triangulares vermelhas acompanham o contorno superior do capuz.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQA5QNMT75PH4PPQ5FANNB"
+      ],
+      "apoios": [],
+      "id": "01M3SQA5QN55F2ZWNM0RAW9DAB",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "A mão inferior segura uma armação de óculos de grandes aros, afastada dos olhos.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "Dois aros unidos aparecem diante do tronco, junto aos dedos da mão situada na parte inferior esquerda.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQA5QNXYDP97NJECTAN2KA"
+      ],
+      "apoios": [],
+      "id": "01M3SQA5QN3W6KR9J61NZRYXM9",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "À direita, atrás da figura, aparece um objeto alongado encimado por uma pequena cabeça de boca aberta.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "A cabeça figurada ocupa o canto superior direito e se liga a uma haste parcialmente encoberta por formas vermelhas e escuras.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQA5QNAV3WMHJ2JDTNT774"
+      ],
+      "apoios": [],
+      "id": "01M3SQA5QNJQMCP9XHX73WCECQ",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "O Fastnachtsmuseum interpreta os óculos como atributo da simplicidade do tolo.",
+      "tipo": "interpretacao_documentada",
+      "confianca": "alta",
+      "evidencia": "O trecho curatorial resumido no dossiê associa explicitamente os óculos à simplicidade, no contexto da descrição do traje, do capuz e do cetro.",
+      "fontes": [
+        "01M3SPS2BJ89YP33BPB7VTCFR9"
+      ],
+      "regioes": [
+        "01M3SQA5QNXYDP97NJECTAN2KA"
+      ],
+      "apoios": [],
+      "id": "01M3SQA5QN59Z1J6E94VGB3AGB",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "A disposição das mãos permite uma leitura que conecta o gesto diante dos olhos aos óculos mantidos abaixo do rosto.",
+      "tipo": "inferencia_ia",
+      "confianca": "media",
+      "evidencia": "A associação proposta decorre da presença simultânea de uma mão encobrindo parte do rosto e da outra segurando os óculos longe dos olhos.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQA5QMFHXT7CSR713K212T",
+        "01M3SQA5QNXYDP97NJECTAN2KA"
+      ],
+      "apoios": [
+        "01M3SQA5QNJQ7T6R6J5BVG7R8G",
+        "01M3SQA5QN3W6KR9J61NZRYXM9"
+      ],
+      "id": "01M3SQA5QN1B68VGKPZ5BF7XC3",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "Não é possível determinar se o pintor pretendeu comunicar simplicidade por meio dos óculos.",
+      "tipo": "intencao_desconhecida",
+      "confianca": "nao_aplicavel",
+      "evidencia": "O dossiê fornece uma interpretação curatorial desse atributo, mas nenhum testemunho sobre a intenção do autor.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQA5QNXYDP97NJECTAN2KA"
+      ],
+      "apoios": [
+        "01M3SQA5QN59Z1J6E94VGB3AGB"
+      ],
+      "id": "01M3SQA5QN208ZY4TSRAPJRYBY",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    }
+  ],
+  "estudo": [
+    {
+      "tema": "composicao",
+      "afirmacoes": [
+        "01M3SQA5QNJQ7T6R6J5BVG7R8G",
+        "01M3SQA5QN55F2ZWNM0RAW9DAB",
+        "01M3SQA5QN3W6KR9J61NZRYXM9",
+        "01M3SQA5QNJQMCP9XHX73WCECQ",
+        "01M3SQA5QN1B68VGKPZ5BF7XC3"
+      ]
+    },
+    {
+      "tema": "iconografia",
+      "afirmacoes": [
+        "01M3SQA5QN55F2ZWNM0RAW9DAB",
+        "01M3SQA5QN3W6KR9J61NZRYXM9",
+        "01M3SQA5QNJQMCP9XHX73WCECQ",
+        "01M3SQA5QN59Z1J6E94VGB3AGB"
+      ]
+    },
+    {
+      "tema": "tecnica",
+      "afirmacoes": [
+        "01M3SQA5QN7PT68B29N7NSG89M"
+      ]
+    },
+    {
+      "tema": "historia",
+      "afirmacoes": [
+        "01M3SQA5QN7PT68B29N7NSG89M"
+      ]
+    },
+    {
+      "tema": "artista",
+      "afirmacoes": [
+        "01M3SQA5QN7PT68B29N7NSG89M"
+      ]
+    },
+    {
+      "tema": "interpretacoes",
+      "afirmacoes": [
+        "01M3SQA5QN59Z1J6E94VGB3AGB",
+        "01M3SQA5QN1B68VGKPZ5BF7XC3",
+        "01M3SQA5QN208ZY4TSRAPJRYBY"
+      ]
+    }
+  ],
+  "limites": [
+    "A identificação depende do dossiê; a atribuição a Jacob Cornelisz. van Oostsanen permanece possível, sem confirmação de autoria.",
+    "A reprodução permite observar formas e cores, mas não verificar materialmente o suporte, as camadas pictóricas, eventuais intervenções ou a presença de lentes nos aros.",
+    "As coordenadas são normalizadas em relação à imagem inteira fornecida, incluindo suas bordas.",
+    "A pesquisa se limita aos dados e resumos fornecidos; os links não foram consultados e nenhuma pesquisa externa foi realizada.",
+    "O material fornecido não estabelece intenção autoral nem localização de exposição atual.",
+    "Saída automática candidata; não publicada no catálogo curado."
+  ]
+}

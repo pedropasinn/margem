@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/MarcaV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "ancora",
+    "funcao",
+    "subfaixas",
+    "comentario",
+    "origem",
+    "validade",
+    "visivel",
+    "avaliacao",
+    "criada_em"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "ancora": {
+      "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+    },
+    "funcao": {
+      "type": "string",
+      "enum": [
+        "tese",
+        "conceito",
+        "justificativa",
+        "nenhuma"
+      ]
+    },
+    "subfaixas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "inicio_utf16",
+          "fim_utf16"
+        ],
+        "properties": {
+          "inicio_utf16": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "fim_utf16": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "minItems": 0
+    },
+    "comentario": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "rotulo",
+            "texto"
+          ],
+          "properties": {
+            "tipo": {
+              "type": "string",
+              "enum": [
+                "AUTOR",
+                "LEITURA",
+                "INVESTIGAR",
+                "OBJECAO",
+                "CONEXAO"
+              ]
+            },
+            "rotulo": {
+              "type": "string",
+              "minLength": 1
+            },
+            "texto": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "origem": {
+      "type": "string",
+      "enum": [
+        "parte",
+        "revisao_consistencia",
+        "revisao_cobertura",
+        "manual",
+        "importacao"
+      ]
+    },
+    "validade": {
+      "type": "string",
+      "enum": [
+        "resolvida",
+        "ambigua",
+        "orfa"
+      ]
+    },
+    "visivel": {
+      "type": "boolean"
+    },
+    "avaliacao": {
+      "type": "string",
+      "enum": [
+        "nao_avaliada",
+        "confirmada",
+        "rejeitada"
+      ]
+    },
+    "execucao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "job_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "subfaixas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "inicio_utf16",
+          "fim_utf16"
+        ],
+        "properties": {
+          "inicio_utf16": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "fim_utf16": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "minItems": 0
+    }
+  }
+}

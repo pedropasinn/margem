@@ -1,0 +1,10 @@
+{
+  "versao": 1,
+  "passos": [
+    {
+      "tipo": "cota",
+      "not_before": "2026-09-21T10:27:00.000Z",
+      "mensagem": "Cota da conta esgotada; execução adiada."
+    }
+  ]
+}

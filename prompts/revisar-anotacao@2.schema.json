@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/revisar-anotacao@2.schema.json",
+  "title": "Revisão de uma nota do leitor, versão 2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["texto", "motivo"],
+  "properties": {
+    "texto": { "type": "string", "minLength": 1, "maxLength": 8000, "pattern": "\\S" },
+    "motivo": { "type": "string", "minLength": 1, "maxLength": 600, "pattern": "\\S" }
+  }
+}

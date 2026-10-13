@@ -1,0 +1,169 @@
+{
+  "versao": 1,
+  "obra_id": "01M3SPS2BJ9DKKD6XTST8JFMAF",
+  "revisao_modelo": 1,
+  "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c",
+  "tese": "A diferença entre os olhares transforma o livro em uma pequena cena de ensino.",
+  "afirmacoes_da_tese": [
+    "01M3SPS2BJ1Q3K8NYM0BD6R4RT",
+    "01M3SPS2BJ9TVSYA4ZSEKPH0S9",
+    "01M3SPS2BJDCM88FNYFV7R58N7"
+  ],
+  "tempo": "estimado",
+  "batidas": [
+    {
+      "inicio_s": 0,
+      "fim_s": 5.55,
+      "narracao": "O livro está aberto. Mas os dois parecem prestar atenção à mesma coisa?",
+      "legenda": "O livro está aberto. Mas os dois parecem prestar atenção à mesma coisa?",
+      "papel": "abertura",
+      "afirmacoes": [
+        "01M3SPS2BJ1Q3K8NYM0BD6R4RT",
+        "01M3SPS2BJ9TVSYA4ZSEKPH0S9"
+      ],
+      "regiao_id": "01M3SPS2BJ0XRC8X7G816AYERA",
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 5.55,
+      "fim_s": 10.7,
+      "narracao": "Nas mãos da menina, a página chega quase ao focinho do cão.",
+      "legenda": "Nas mãos da menina, a página chega quase ao focinho do cão.",
+      "papel": "evidencia_visual",
+      "afirmacoes": [
+        "01M3SPS2BJ1Q3K8NYM0BD6R4RT"
+      ],
+      "regiao_id": "01M3SPS2BJCQ4B773N23V0D7H9",
+      "camera": {
+        "de": {
+          "x": 0.15000000000000002,
+          "y": 0.18999999999999997,
+          "largura": 0.5800000000000001,
+          "altura": 0.35
+        },
+        "para": {
+          "x": 0.15000000000000002,
+          "y": 0.18999999999999997,
+          "largura": 0.5800000000000001,
+          "altura": 0.35
+        }
+      }
+    },
+    {
+      "inicio_s": 10.7,
+      "fim_s": 15.85,
+      "narracao": "Agora compare os olhares: ela baixa a cabeça; ele olha para cima.",
+      "legenda": "Agora compare os olhares: ela baixa a cabeça; ele olha para cima.",
+      "papel": "evidencia_visual",
+      "afirmacoes": [
+        "01M3SPS2BJ9TVSYA4ZSEKPH0S9"
+      ],
+      "regiao_id": "01M3SPS2BJP41MRQ623PKFDD88",
+      "camera": {
+        "de": {
+          "x": 0.32,
+          "y": 0.18000000000000002,
+          "largura": 0.49,
+          "altura": 0.34
+        },
+        "para": {
+          "x": 0.32,
+          "y": 0.18000000000000002,
+          "largura": 0.49,
+          "altura": 0.34
+        }
+      }
+    },
+    {
+      "inicio_s": 15.85,
+      "fim_s": 19.8,
+      "narracao": "Rivière chamou esta pintura de Educação Obrigatória, em 1887.",
+      "legenda": "Rivière chamou esta pintura de Educação Obrigatória, em 1887.",
+      "papel": "contexto",
+      "afirmacoes": [
+        "01M3SPS2BJM657P3SXAQCZJYGP"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 19.8,
+      "fim_s": 26.15,
+      "narracao": "Podemos ler o cão como um aluno distraído. É uma interpretação, não uma intenção comprovada.",
+      "legenda": "Podemos ler o cão como um aluno distraído. É uma interpretação, não uma intenção comprovada.",
+      "papel": "interpretacao",
+      "afirmacoes": [
+        "01M3SPS2BJDCM88FNYFV7R58N7",
+        "01M3SPS2BJYSSBEN5K7T1B8DAD"
+      ],
+      "regiao_id": "01M3SPS2BJ0XRC8X7G816AYERA",
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 26.15,
+      "fim_s": 31.7,
+      "narracao": "Volte ao conjunto: o livro aproxima as figuras, mas não reúne sua atenção.",
+      "legenda": "Volte ao conjunto: o livro aproxima as figuras, mas não reúne sua atenção.",
+      "papel": "fechamento",
+      "afirmacoes": [
+        "01M3SPS2BJ1Q3K8NYM0BD6R4RT",
+        "01M3SPS2BJ9TVSYA4ZSEKPH0S9",
+        "01M3SPS2BJDCM88FNYFV7R58N7"
+      ],
+      "regiao_id": "01M3SPS2BJ0XRC8X7G816AYERA",
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    }
+  ]
+}

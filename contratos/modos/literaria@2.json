@@ -1,0 +1,84 @@
+{
+  "versao": 1,
+  "id": "literaria",
+  "revisao": 2,
+  "nome": "Poesia",
+  "descricao": "Ler poemas pela relação entre situação enunciativa, imagem, ritmo, sintaxe, disposição dos versos e movimento. Distinguir formas fixas e verso livre sem impor metro, volta ou mensagem única. Preservar quebras de linha; não equiparar eu lírico a autor biográfico. Intertextos exigem evidência recebida; sem ela, formular questão.",
+  "funcoes": [
+    {
+      "chave": "imagem",
+      "rotulo": "Imagem",
+      "pergunta": "Que associação sensorial ou figurativa organiza esta passagem?",
+      "descricao": "Imagem ou figura cuja operação verbal altera a leitura. Explicar a associação e seu alcance, sem traduzir tudo em símbolo fixo. Ex.: “A rua mastiga os passos.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "som_e_ritmo",
+      "rotulo": "Som e ritmo",
+      "pergunta": "Que recorrência, acento ou pausa perceptível participa do sentido?",
+      "descricao": "Efeito sonoro sustentado pelas palavras recebidas; distinguir padrão escrito de realização oral não disponível. Ex.: “Passo, paro, passo.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "voz",
+      "rotulo": "Voz e endereçamento",
+      "pergunta": "Quem enuncia, a quem se dirige e como essa posição muda?",
+      "descricao": "Pessoa, destinatário, dêixis ou registro que configura a situação do poema. Não identifica automaticamente o autor. Ex.: “Tu, que nunca chegaste, escuta.”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "virada",
+      "rotulo": "Virada",
+      "pergunta": "Onde uma mudança verificável reorganiza o movimento do poema?",
+      "descricao": "Mudança de direção, tom, interlocução ou perspectiva sustentada pelo antes e depois. Não exige volta em posição pré-fixada. Ex.: “Mas hoje a porta fica aberta.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "forma",
+      "rotulo": "Forma, sintaxe e corte",
+      "pergunta": "O que esta construção ou quebra faz à sequência de leitura?",
+      "descricao": "Organização estrófica, rima, metro conferido, corte de verso ou tensão com a sintaxe. Citação de corte só atravessa versos no mesmo bloco. Ex.: “Guardei a noite\nna xícara vazia.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "intertexto",
+      "rotulo": "Intertexto sustentado",
+      "pergunta": "Que vestígio verificável aproxima este trecho de outro texto ou tradição?",
+      "descricao": "Citação, alusão ou transformação formal com fonte explicitamente fornecida. Sem correspondência conferida, usar INVESTIGAR, não afirmar influência. Ex.: “como no verso que citei acima”.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.08,
+      "2": 0.18,
+      "3": 0.35
+    }
+  }
+}

@@ -1,0 +1,110 @@
+/*
+ * Sobre o vídeo (noite2/video-popups): legenda dos grifos (embaixo, centrada) e as pílulas de
+ * conceito (no rodapé da imagem, na região menos ocupada, acima da legenda). Interface em Figtree,
+ * citação na serifa.
+ */
+.quadro-do-video { position: relative; }
+
+/* ------------------------------------------------------------------ legenda dos grifos */
+.legenda-dos-grifos {
+  position: absolute; z-index: 2; left: 50%; bottom: 7%; transform: translateX(-50%);
+  width: max-content; max-width: min(78%, 900px); pointer-events: none; text-align: center;
+}
+.legenda-dos-grifos p {
+  display: inline; margin: 0; padding: .18em .5em; border-radius: 8px;
+  background: #000000b8; color: #ffffffa6; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  font: 600 clamp(15px, 2.1vw, 26px)/1.55 var(--sans);
+  text-decoration: underline 3px var(--cor-da-funcao, var(--accent)); text-underline-offset: .28em; text-decoration-skip-ink: none;
+  animation: legenda-surgir .18s ease-out both;
+}
+.legenda-dos-grifos [data-dita] { color: #fff; }
+@keyframes legenda-surgir { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ------------------------------------------------------------------ pílulas de conceito
+   Uma pílula de borda fina: à esquerda o timer-pizza na cor do grifo (`--cor-do-conceito`; sem
+   grifo, a de destaque), cujo setor escuro avança em 15 s até o círculo inteiro; à direita, o
+   rótulo curto. Entra como bolinha (o recorte `clip-path` só mostra o disco) e se abre na pílula
+   com uma mola curta. Ficam sobre a imagem (dentro das faixas pretas: `--folga-x/y`), na região que
+   `escolherRegiao` achou menos ocupada; várias se empilham, a mais nova embaixo. */
+.conceitos-no-video {
+  --margem-da-pilula: 12px;
+  position: absolute; z-index: 3;
+  left: calc(var(--folga-x, 0px) + var(--margem-da-pilula)); right: calc(var(--folga-x, 0px) + var(--margem-da-pilula));
+  top: calc(var(--folga-y, 0px) + var(--margem-da-pilula)); bottom: calc(var(--folga-y, 0px) + var(--margem-da-pilula));
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 6px;
+  pointer-events: none;
+}
+/* Com a legenda dos grifos na tela ("Só o vídeo"), a pilha sobe acima dela. */
+.conceitos-no-video[data-com-legenda]:not([data-regiao=cima]) { bottom: max(calc(var(--folga-y, 0px) + var(--margem-da-pilula)), calc(7% + 5.4em)); }
+.conceitos-no-video[data-regiao=baixo-centro] { align-items: center; }
+.conceitos-no-video[data-regiao=baixo-direita] { align-items: flex-end; }
+.conceitos-no-video[data-regiao=cima] { justify-content: flex-start; }
+/* Com um cartão aberto, só ele fica: o quadro do vídeo ao lado é baixo para a pilha e o cartão. */
+.conceitos-no-video:has([data-fase=aberto]) .conceito-no-video:not([data-fase=aberto]) { display: none; }
+
+.conceito-no-video {
+  --cor-da-pizza: var(--cor-do-conceito, var(--accent));
+  --mola: cubic-bezier(.34, 1.36, .64, 1);
+  display: flex; flex-direction: column; min-height: 0; max-width: 100%; pointer-events: auto;
+  filter: drop-shadow(0 4px 14px #00000047);
+  font: 13px/1.45 var(--sans); color: var(--texto-1);
+}
+.pilula-do-conceito {
+  /* O disco da bolinha: a pizza fica a 4 px da borda (1 de borda + 3 de respiro). */
+  --bolinha: inset(4px calc(100% - 28px) 4px 4px round 999px);
+  display: flex; align-items: center; gap: 8px; box-sizing: border-box; max-width: 100%; height: 32px;
+  padding: 3px 14px 3px 3px; border: 1px solid color-mix(in srgb, var(--texto-1) 70%, transparent); border-radius: 999px;
+  background: var(--surface-1); color: var(--texto-1); font: 600 13px/1 var(--sans); white-space: nowrap; cursor: pointer;
+  clip-path: inset(0 0 0 0 round 999px); transition: clip-path .42s var(--mola);
+}
+.pilula-do-conceito:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.rotulo-da-pilula { overflow: hidden; text-overflow: ellipsis; transition: opacity .2s ease-out .14s; }
+.conceito-no-video[data-fase=bolinha] .pilula-do-conceito { clip-path: var(--bolinha); transition: none; }
+.conceito-no-video[data-fase=bolinha] .rotulo-da-pilula { opacity: 0; transition: none; }
+.conceito-no-video[data-fase=bolinha] { animation: bolinha-surgir .2s var(--mola) both; }
+.conceito-no-video[data-fase=saindo] .pilula-do-conceito { clip-path: var(--bolinha); transition: clip-path .3s cubic-bezier(.5, 0, .75, 0); }
+.conceito-no-video[data-fase=saindo] .rotulo-da-pilula { opacity: 0; transition: opacity .1s; }
+.conceito-no-video[data-fase=saindo] { animation: bolinha-sumir .16s ease-in .3s both; }
+@keyframes bolinha-surgir { from { opacity: 0; scale: .4; } to { opacity: 1; scale: 1; } }
+@keyframes bolinha-sumir { to { opacity: 0; } }
+
+/* O timer-pizza: disco na cor do grifo, o setor que já passou escurecido, aro fino. */
+.pizza-do-conceito { display: block; flex: none; width: 24px; height: 24px; }
+.pizza-do-conceito .disco { fill: var(--cor-da-pizza); }
+.pizza-do-conceito .setor { fill: color-mix(in oklab, var(--cor-da-pizza) 22%, #000); }
+.pizza-do-conceito .aro { fill: none; stroke: color-mix(in srgb, var(--texto-1) 80%, transparent); stroke-width: 1.2; }
+
+/* O cartão: a pílula aberta, crescendo do canto dela. */
+.cartao-do-conceito {
+  box-sizing: border-box; width: min(360px, 100%); min-height: 0; overflow: hidden auto; padding: 12px 16px 14px; overscroll-behavior: contain;
+  background: var(--surface-1); border: 1px solid var(--borda); border-radius: 16px; outline: none;
+  animation: cartao-abrir .32s var(--mola) both;
+}
+.conceitos-no-video[data-regiao=baixo-esquerda] .cartao-do-conceito { transform-origin: 16px 100%; }
+.conceitos-no-video[data-regiao=baixo-centro] .cartao-do-conceito { transform-origin: 50% 100%; }
+.conceitos-no-video[data-regiao=baixo-direita] .cartao-do-conceito { transform-origin: calc(100% - 16px) 100%; }
+.conceitos-no-video[data-regiao=cima] .cartao-do-conceito { transform-origin: 16px 0; }
+@keyframes cartao-abrir { from { opacity: 0; scale: .7; } to { opacity: 1; scale: 1; } }
+.cabeca-do-cartao { display: flex; align-items: center; gap: 10px; }
+.titulo-do-conceito { margin: 0; font: 700 14px/1.3 var(--sans); }
+.cartao-do-conceito > p { margin: 8px 0 0; color: var(--texto-2); }
+.cartao-do-conceito blockquote { margin: 10px 0 0; color: var(--texto-3); font: italic 14px/1.45 var(--serif); }
+.acoes-do-conceito { display: flex; gap: 6px; margin-top: 12px; }
+.acoes-do-conceito .ui-button { min-height: 34px; padding: 4px 14px; font-size: 12px; }
+
+/* ------------------------------------------------------------------ preparar (no popover do player) */
+.preparar-conceitos { display: grid; gap: 6px; font-size: 12px; color: var(--texto-3); }
+.preparar-conceitos p { margin: 0; color: var(--texto-2); }
+.preparar-conceitos .ui-button { min-height: 34px; padding: 4px 12px; font-size: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Sem mola nem recorte animado: a pílula e o cartão aparecem e somem só com a opacidade. */
+  .pilula-do-conceito, .rotulo-da-pilula { transition: none; }
+  .conceito-no-video[data-fase] .pilula-do-conceito { clip-path: inset(0 0 0 0 round 999px); }
+  .conceito-no-video[data-fase] .rotulo-da-pilula { opacity: 1; }
+  .conceito-no-video[data-fase=bolinha] { animation: none; }
+  .conceito-no-video[data-fase=saindo] { animation: bolinha-sumir .15s linear both; }
+  .cartao-do-conceito { animation: cartao-surgir .15s linear both; }
+  .legenda-dos-grifos p { animation: none; }
+}
+@keyframes cartao-surgir { from { opacity: 0; } to { opacity: 1; } }

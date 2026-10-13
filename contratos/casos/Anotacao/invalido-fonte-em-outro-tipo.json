@@ -1,0 +1,22 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000060",
+  "versao_id": "00000000000000000000000020",
+  "ancora": {
+    "versao_id": "00000000000000000000000020",
+    "bloco_id": "00000000000000000000000001",
+    "inicio_utf16": 3,
+    "fim_utf16": 5,
+    "citacao": "🧭",
+    "prefixo": "Um ",
+    "sufixo": ", café e ﬁ."
+  },
+  "tipo": "impressao",
+  "texto": "O emoji no meio da frase me parece um desvio.",
+  "criada_em": "2026-09-23T12:00:00Z",
+  "atualizada_em": "2026-09-23T12:00:00Z",
+  "fonte": {
+    "titulo": "Livro"
+  },
+  "revisao_edicao": 1
+}

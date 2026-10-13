@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/VideoYoutubeV1.schema.json",
+  "title": "Vídeo do YouTube de um documento importado (J109)",
+  "description": "O que o leitor precisa para tocar o vídeo pelo player oficial embutido e o estado da transcrição. A sincronia palavra→tempo, quando existe, é uma MidiaV1 da versão (com o áudio local e fonte.url no YouTube); sem transcrição, o vídeo toca sem karaokê.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "documento_id",
+    "video_id",
+    "url",
+    "titulo",
+    "capitulos",
+    "transcricao"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "documento_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "video_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{11}$"
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^https://www\\.youtube\\.com/watch\\?v=[A-Za-z0-9_-]{11}$"
+    },
+    "titulo": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "canal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "publicado_em": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "duracao_s": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "capitulos": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "inicio_s",
+          "titulo"
+        ],
+        "properties": {
+          "inicio_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        }
+      }
+    },
+    "transcricao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "estado"
+      ],
+      "properties": {
+        "estado": {
+          "description": "pendente: a importação ainda corre; pronta: há texto com tempo (midia_id aponta a MidiaV1); sem_sincronia: há texto, mas a sincronia não pôde ser publicada (detalhe diz por quê); sem_transcricao: nem legendas no vídeo nem transcritor local; falhou: a importação desistiu (detalhe).",
+          "enum": [
+            "pendente",
+            "pronta",
+            "sem_sincronia",
+            "sem_transcricao",
+            "falhou"
+          ]
+        },
+        "origem": {
+          "enum": [
+            "legendas",
+            "legendas_automaticas",
+            "transcritor_local"
+          ]
+        },
+        "idioma": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 35
+        },
+        "midia_id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "detalhe": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    }
+  }
+}

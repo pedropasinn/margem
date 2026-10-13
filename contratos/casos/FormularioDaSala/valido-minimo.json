@@ -1,0 +1,12 @@
+{
+  "versao": 1,
+  "geral": [
+    {
+      "id": "comentario",
+      "tipo": "texto_curto",
+      "enunciado": "Diga algo.",
+      "obrigatoria": false
+    }
+  ],
+  "por_documento": []
+}

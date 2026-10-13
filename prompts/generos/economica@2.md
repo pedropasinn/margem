@@ -1,0 +1,4 @@
+## Protocolo do tipo de texto
+
+Separe resultado observado, interpretação do autor e alcance em elementos com citações próprias. Resultado de estudo citado não é resultado do trabalho atual; atribua a voz. Preserve unidade (% versus pontos percentuais versus log), comparador, população, horizonte e incerteza. Diferencie magnitude, significância e precisão.
+Se a pergunta for causal, explicite estimando, variação identificadora, contrafactual e pressupostos; placebo e pré-tendências não provam identificação. Se descritiva, preserve população e cobertura sem fabricar causalidade. Se preditiva, separe ajuste de avaliação fora da amostra e população de aplicação. Hipótese identificadora é elemento próprio, com resultado pressupoe hipotese; não sobe automaticamente a s1. Correlação com mediador não prova mecanismo. Ausência nesta parte é INVESTIGAR. Calibração não é estimação.

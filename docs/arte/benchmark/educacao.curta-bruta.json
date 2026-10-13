@@ -1,0 +1,142 @@
+{
+  "versao": 1,
+  "obra_id": "01M3SQ4ZA4QPTC7KRA5PW36B7C",
+  "revisao_modelo": 1,
+  "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c",
+  "tese": "O título e a proximidade entre criança, cão e livro permitem uma leitura bem-humorada do animal como aluno, proposta pela IA no modelo.",
+  "afirmacoes_da_tese": [
+    "01M3SQ4ZA4J2KRRFEGA7NGK0JK",
+    "01M3SQ4ZA4CH8T46RTEFQN2MNP",
+    "01M3SQ4ZA4M0HFG6Y020HBZ7C5",
+    "01M3SQ4ZA4ERGDX8VCW8ZJ2YPR"
+  ],
+  "tempo": "estimado",
+  "batidas": [
+    {
+      "inicio_s": 0,
+      "fim_s": 7,
+      "narracao": "Observe a cabeça inclinada da criança: seu olhar desce na direção do livro aberto.",
+      "legenda": "Observe a cabeça inclinada da criança: seu olhar desce na direção do livro aberto.",
+      "papel": "abertura",
+      "afirmacoes": [
+        "01M3SQ4ZA4CH8T46RTEFQN2MNP"
+      ],
+      "regiao_id": "01M3SQ4ZA2E1R30Y5CC7RB9WPD",
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0.28,
+          "y": 0.1,
+          "largura": 0.62,
+          "altura": 0.36
+        }
+      }
+    },
+    {
+      "inicio_s": 7,
+      "fim_s": 16,
+      "narracao": "O cão ocupa o primeiro plano, com a cabeça junto ao livro e o corpo parcialmente envolvido pelos braços da criança.",
+      "legenda": "O cão ocupa o primeiro plano, com a cabeça junto ao livro e o corpo parcialmente envolvido pelos braços da criança.",
+      "papel": "evidencia_visual",
+      "afirmacoes": [
+        "01M3SQ4ZA4M0HFG6Y020HBZ7C5"
+      ],
+      "regiao_id": "01M3SQ4ZA3QDM8X178NFH827AX",
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0.05,
+          "y": 0.24,
+          "largura": 0.88,
+          "altura": 0.72
+        }
+      }
+    },
+    {
+      "inicio_s": 16,
+      "fim_s": 22,
+      "narracao": "A capa avermelhada do livro marca esse encontro entre a criança e o cão.",
+      "legenda": "A capa avermelhada do livro marca esse encontro entre a criança e o cão.",
+      "papel": "evidencia_visual",
+      "afirmacoes": [
+        "01M3SQ4ZA46AW9XTR5T8KE6PRF"
+      ],
+      "regiao_id": "01M3SQ4ZA3QETRWGS40PRB3S63",
+      "camera": {
+        "de": {
+          "x": 0.25,
+          "y": 0.25,
+          "largura": 0.65,
+          "altura": 0.3
+        },
+        "para": {
+          "x": 0.27,
+          "y": 0.27,
+          "largura": 0.46,
+          "altura": 0.22
+        }
+      }
+    },
+    {
+      "inicio_s": 22,
+      "fim_s": 36,
+      "narracao": "Com o título Educação Obrigatória, essa proximidade permite imaginar o cão como aluno de uma lição bem-humorada. É uma interpretação proposta pela IA no modelo; a imagem não demonstra esse ensino.",
+      "legenda": "Com o título Educação Obrigatória, essa proximidade permite imaginar o cão como aluno de uma lição bem-humorada. É uma interpretação proposta pela IA no modelo; a imagem não demonstra esse ensino.",
+      "papel": "interpretacao",
+      "afirmacoes": [
+        "01M3SQ4ZA4J2KRRFEGA7NGK0JK"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 36,
+      "fim_s": 43,
+      "narracao": "Volte ao conjunto e acompanhe novamente essa proximidade: o olhar da criança, o livro e o cão entre seus braços.",
+      "legenda": "Volte ao conjunto e acompanhe novamente essa proximidade: o olhar da criança, o livro e o cão entre seus braços.",
+      "papel": "fechamento",
+      "afirmacoes": [
+        "01M3SQ4ZA4CH8T46RTEFQN2MNP",
+        "01M3SQ4ZA4M0HFG6Y020HBZ7C5"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    }
+  ]
+}

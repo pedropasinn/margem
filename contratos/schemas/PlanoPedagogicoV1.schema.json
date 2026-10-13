@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/PlanoPedagogicoV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "execucao_id",
+    "secao_id",
+    "modelo_id",
+    "perfil_hash",
+    "passos",
+    "apoios",
+    "job_id",
+    "criado_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "execucao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "secao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "modelo_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "perfil_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "passos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ordem",
+          "bloco_inicio",
+          "bloco_fim",
+          "foco",
+          "observar",
+          "explicacao",
+          "relacoes",
+          "parada"
+        ],
+        "properties": {
+          "ordem": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "bloco_inicio": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "bloco_fim": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "foco": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            },
+            "minItems": 0,
+            "uniqueItems": true
+          },
+          "observar": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "explicacao": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "curta",
+              "longa"
+            ],
+            "properties": {
+              "curta": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1200
+              },
+              "longa": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              }
+            }
+          },
+          "relacoes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            },
+            "minItems": 0,
+            "uniqueItems": true
+          },
+          "parada": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "tipo",
+                  "texto"
+                ],
+                "properties": {
+                  "tipo": {
+                    "type": "string",
+                    "enum": [
+                      "pergunta",
+                      "pausa"
+                    ]
+                  },
+                  "texto": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "apoios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "alvo_id",
+          "tipo",
+          "texto"
+        ],
+        "properties": {
+          "alvo_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "explicar",
+              "omitir",
+              "exemplo",
+              "recordar"
+            ]
+          },
+          "texto": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "minItems": 0
+    },
+    "job_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "criado_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/EsquemaDoCapituloV1.schema.json",
+  "title": "Esquema do capítulo: o capítulo resumido num fluxograma vertical (grupos em blocos de cor, nós tipados, ligações com rótulo), gerado uma vez a partir do modelo da compreensão",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "versao_id",
+    "secao_id",
+    "compreensao_id",
+    "modelo_id",
+    "titulo",
+    "grupos",
+    "nos",
+    "ligacoes",
+    "diagnosticos",
+    "execucao",
+    "criado_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "secao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "compreensao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "modelo_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "titulo": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "\\S"
+    },
+    "grupos": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "titulo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$"
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "\\S"
+          },
+          "resumo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    "nos": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "rotulo",
+          "tipo",
+          "grupo_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$"
+          },
+          "rotulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "\\S"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "conceito",
+              "tese",
+              "mecanismo",
+              "exemplo",
+              "questao",
+              "contraste",
+              "conclusao"
+            ]
+          },
+          "grupo_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$"
+          },
+          "detalhe": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "pattern": "\\S"
+          },
+          "elemento_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "ancora": {
+            "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+          }
+        }
+      }
+    },
+    "ligacoes": {
+      "type": "array",
+      "maxItems": 60,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "de",
+          "para"
+        ],
+        "properties": {
+          "de": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$"
+          },
+          "para": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$"
+          },
+          "rotulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "pattern": "\\S"
+          },
+          "forca": {
+            "type": "string",
+            "enum": [
+              "forte",
+              "fraca"
+            ]
+          }
+        }
+      }
+    },
+    "diagnosticos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "codigo",
+          "mensagem"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "mensagem": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      }
+    },
+    "execucao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelo",
+        "esforco",
+        "prompt_versao"
+      ],
+      "properties": {
+        "modelo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "esforco": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "prompt_versao": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "criado_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

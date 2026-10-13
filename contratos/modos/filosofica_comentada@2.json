@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "filosofica_comentada",
+  "revisao": 2,
+  "nome": "Filosofia comentada",
+  "descricao": "Distinguir texto-base, interpretação do comentador e aparato editorial. Identificar vozes com os dados da edição recebida; não pressupor autor, tradutor ou edição.",
+  "funcoes": [
+    {
+      "chave": "tese",
+      "rotulo": "Tese do texto-base",
+      "pergunta": "Onde o texto apresenta tese do texto-base?",
+      "descricao": "Afirmação sustentada pela fonte comentada, com voz explícita.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "conceito",
+      "rotulo": "Conceito",
+      "pergunta": "Onde o texto apresenta conceito?",
+      "descricao": "Definição do texto-base; diferenciar reformulação do comentador.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "distincao",
+      "rotulo": "Distinção",
+      "pergunta": "Onde o texto apresenta distinção?",
+      "descricao": "Separação conceitual efetivamente presente na fonte ou comentário, com atribuição.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "interpretacao",
+      "rotulo": "Interpretação",
+      "pergunta": "Onde o texto apresenta interpretação?",
+      "descricao": "Leitura proposta pelo comentador, não declaração direta da fonte.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "objecao",
+      "rotulo": "Objeção",
+      "pergunta": "Onde o texto apresenta objeção?",
+      "descricao": "Dificuldade ou posição contrária, distinguindo quem a formula.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "argumento",
+      "rotulo": "Argumento",
+      "pergunta": "Onde o texto apresenta argumento?",
+      "descricao": "Inferência do comentador ou da fonte; indicar a voz e suas premissas.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.12,
+      "3": 0.25
+    }
+  }
+}

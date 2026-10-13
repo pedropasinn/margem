@@ -1,0 +1,10 @@
+{
+  "versao": 1,
+  "descricao": "Grafias corretas de termos que aparecem nos vídeos de Fernando Ulrich (economia, mercado, política, tecnologia). Contexto para a revisão das transcrições (J90): o Codex usa a grafia daqui quando o termo aparecer, mas não deve procurar estes termos onde eles não foram ditos.",
+  "sobre_o_canal": "Quem fala é Fernando Ulrich, economista e comentarista de mercado, sozinho, em tom de conversa; às vezes ele toca trechos de áudio de outras pessoas.",
+  "termos": [
+    "IA (inteligência artificial)", "AGI", "superinteligência", "Anthropic", "OpenAI", "Claude", "ChatGPT", "GPT", "Gemini", "Google DeepMind", "xAI", "Grok", "Meta", "Llama", "DeepSeek", "Nvidia", "Microsoft", "Elon Musk", "Sam Altman", "Dario Amodei", "David Sacks", "open weights", "open source", "big techs", "data center", "chips", "IPO", "Nasdaq", "S&P 500", "valuation",
+    "STF", "TSE", "PGR", "Alexandre de Moraes", "André Mendonça", "Flávio Dino", "Flávio Bolsonaro", "Jair Bolsonaro", "Tarcísio de Freitas", "Lula", "Fernando Haddad", "Gleisi Hoffmann", "Banco Central", "Gabriel Galípolo", "Copom", "Selic", "IPCA", "PIB", "Tesouro", "arcabouço fiscal", "Bolsa Família", "Petrobras", "BNDES", "Caixa", "bets", "Polymarket", "Kalshi",
+    "Donald Trump", "Xi Jinping", "China", "Pequim", "Casa Branca", "Fed", "Treasuries", "tarifas", "terras raras", "Follow the Money", "Liberta Wealth", "bitcoin", "dólar", "real"
+  ]
+}

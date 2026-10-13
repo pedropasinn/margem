@@ -1,0 +1,39 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000601",
+  "execucao_id": "00000000000000000000000040",
+  "secao_id": "00000000000000000000000060",
+  "estagio": "revisao",
+  "job_ids": [
+    "00000000000000000000000092"
+  ],
+  "base_id": "00000000000000000000000502",
+  "resultado_id": "00000000000000000000000503",
+  "operacoes": [
+    {
+      "ordem": 0,
+      "op": "promover",
+      "motivo": "motivo concreto",
+      "evidencia": [
+        {
+          "versao_id": "00000000000000000000000020",
+          "bloco_id": "00000000000000000000000002",
+          "inicio_utf16": 0,
+          "fim_utf16": 19,
+          "citacao": "Logo, o produto cai",
+          "prefixo": "",
+          "sufixo": ""
+        }
+      ],
+      "alvo_id": "00000000000000000000000101",
+      "antes": {
+        "centralidade": 3
+      },
+      "depois": {
+        "centralidade": 1
+      }
+    }
+  ],
+  "criado_em": "2026-09-25T12:10:00Z",
+  "extra": 1
+}

@@ -1,0 +1,71 @@
+{
+  "versao": 1,
+  "id": "01K0000000000000000000E001",
+  "versao_id": "01K0000000000000000000V001",
+  "secao_id": "01K0000000000000000000S001",
+  "compreensao_id": "01K0000000000000000000C001",
+  "modelo_id": "01K0000000000000000000M001",
+  "titulo": "Como o capítulo chega à tese",
+  "grupos": [
+    {
+      "id": "G1",
+      "titulo": "Ponto de partida",
+      "resumo": "O problema que o capítulo enfrenta."
+    },
+    {
+      "id": "G2",
+      "titulo": "Desfecho"
+    }
+  ],
+  "nos": [
+    {
+      "id": "N1",
+      "rotulo": "Software está em tudo",
+      "tipo": "tese",
+      "grupo_id": "G1",
+      "detalhe": "O autor parte da presença do software.",
+      "elemento_id": "01K0000000000000000000A001",
+      "ancora": {
+        "versao_id": "01K0000000000000000000V002",
+        "bloco_id": "01K0000000000000000000B001",
+        "inicio_utf16": 4,
+        "fim_utf16": 13,
+        "citacao": "mar ao lé",
+        "prefixo": "Ó ",
+        "sufixo": "u"
+      }
+    },
+    {
+      "id": "N2",
+      "rotulo": "Dificuldades essenciais",
+      "tipo": "conceito",
+      "grupo_id": "G1"
+    },
+    {
+      "id": "N3",
+      "rotulo": "Não há bala de prata",
+      "tipo": "conclusao",
+      "grupo_id": "G2"
+    }
+  ],
+  "ligacoes": [
+    {
+      "de": "N1",
+      "para": "N2",
+      "rotulo": "leva a"
+    },
+    {
+      "de": "N2",
+      "para": "N3",
+      "rotulo": "sustenta",
+      "forca": "forte"
+    }
+  ],
+  "diagnosticos": [],
+  "execucao": {
+    "modelo": "gpt-6-astra",
+    "esforco": "medium",
+    "prompt_versao": "esquema-capitulo@1"
+  },
+  "criado_em": "2026-09-30T12:00:00.000Z"
+}

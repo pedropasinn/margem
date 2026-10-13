@@ -1,0 +1,21 @@
+{
+  "id": "00000000000000000000000060",
+  "execucao_id": "00000000000000000000000040",
+  "snapshot_base": "ef182f39e9db2f517ccf9f9f523578eb85f83d8a6e2c6e859109a64e8dbbd1ed",
+  "autor": "pedro",
+  "motivo_do_lote": "Confirmar leitura",
+  "operacoes": [
+    {
+      "ordem": 0,
+      "marca_id": "00000000000000000000000050",
+      "op": "avaliar",
+      "antes": {
+        "avaliacao": "nao_avaliada"
+      },
+      "depois": {
+        "avaliacao": "confirmada"
+      },
+      "motivo": "Conferido no texto"
+    }
+  ]
+}

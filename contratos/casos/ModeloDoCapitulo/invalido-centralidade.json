@@ -1,0 +1,98 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000501",
+  "execucao_id": "00000000000000000000000040",
+  "versao_id": "00000000000000000000000020",
+  "secao_id": "00000000000000000000000060",
+  "modo": {
+    "id": "argumentativa",
+    "revisao": 1
+  },
+  "revisao": 0,
+  "estagio": "analise_local",
+  "base_id": null,
+  "lote_id": null,
+  "movimento": null,
+  "unidades": [],
+  "elementos": [
+    {
+      "id": "00000000000000000000000101",
+      "nucleo": "hipotese",
+      "papel": "conceito",
+      "ancoras": [
+        {
+          "versao_id": "00000000000000000000000020",
+          "bloco_id": "00000000000000000000000001",
+          "inicio_utf16": 0,
+          "fim_utf16": 36,
+          "citacao": "Admitamos inicialmente que os preços",
+          "prefixo": "",
+          "sufixo": "são rígidos."
+        }
+      ],
+      "enunciado": "O autor supõe, por ora, preços rígidos.",
+      "qualificadores": [
+        "inicialmente"
+      ],
+      "centralidade": 0,
+      "notas": [
+        {
+          "tipo": "INVESTIGAR",
+          "texto": "A hipótese é retirada depois?"
+        }
+      ],
+      "origem": {
+        "estagio": "analise_local",
+        "job_id": "00000000000000000000000090"
+      }
+    },
+    {
+      "id": "00000000000000000000000102",
+      "nucleo": "afirmacao",
+      "papel": "tese",
+      "ancoras": [
+        {
+          "versao_id": "00000000000000000000000020",
+          "bloco_id": "00000000000000000000000002",
+          "inicio_utf16": 0,
+          "fim_utf16": 19,
+          "citacao": "Logo, o produto cai",
+          "prefixo": "",
+          "sufixo": ""
+        }
+      ],
+      "enunciado": "O produto cai.",
+      "qualificadores": [],
+      "centralidade": 1,
+      "notas": [],
+      "origem": {
+        "estagio": "analise_local",
+        "job_id": "00000000000000000000000090"
+      }
+    }
+  ],
+  "relacoes": [],
+  "dificuldades": [
+    {
+      "id": "00000000000000000000000301",
+      "tipo": "premissa_implicita",
+      "ancoras": [
+        {
+          "versao_id": "00000000000000000000000020",
+          "bloco_id": "00000000000000000000000002",
+          "inicio_utf16": 0,
+          "fim_utf16": 19,
+          "citacao": "Logo, o produto cai",
+          "prefixo": "",
+          "sufixo": ""
+        }
+      ],
+      "descricao": "A passagem do choque à queda do produto omite a hipótese de rigidez.",
+      "origem": {
+        "estagio": "analise_local",
+        "job_id": "00000000000000000000000090"
+      }
+    }
+  ],
+  "criada_em": "2026-09-25T12:00:00Z"
+}

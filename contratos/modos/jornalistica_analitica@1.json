@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "jornalistica_analitica",
+  "revisao": 1,
+  "nome": "Análise jornalística",
+  "descricao": "Leitura de análise que interpreta acontecimentos: separar base factual, explicação proposta, mecanismo, cenários e limites. Reconstruir o enquadramento sem inferir automaticamente intenção ideológica ou efeito sobre o público.",
+  "funcoes": [
+    {
+      "chave": "questao",
+      "rotulo": "Questão explicativa",
+      "pergunta": "Que acontecimento ou problema o texto procura explicar?",
+      "descricao": "Recorte do problema e pergunta organizadora; pode ser explícito ou ancorar uma formulação analítica em nota.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "interpretacao",
+      "rotulo": "Interpretação",
+      "pergunta": "Qual leitura do acontecimento o analista sustenta?",
+      "descricao": "Explicação central atribuída ao analista, não fato bruto nem previsão já realizada.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "base_factual",
+      "rotulo": "Base factual atribuída",
+      "pergunta": "Que informação sustenta a interpretação e de onde ela vem?",
+      "descricao": "Dado ou acontecimento com fonte, período e comparação preservados.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "mecanismo",
+      "rotulo": "Mecanismo proposto",
+      "pergunta": "Como o texto liga a causa ao efeito?",
+      "descricao": "Encadeamento explicativo apresentado, com mediações e condições; cronologia isolada não basta.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "cenario",
+      "rotulo": "Cenário",
+      "pergunta": "O que poderá ocorrer, sob que condições?",
+      "descricao": "Hipótese prospectiva com horizonte e condicionantes; não transformar possibilidade em promessa.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "limite",
+      "rotulo": "Alternativa e limite",
+      "pergunta": "Que explicação rival, ressalva ou incerteza restringe a análise?",
+      "descricao": "Limite explícito ou alternativa discutida; ausência de alternativa vira pergunta do assistente, não fala do autor.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.12,
+      "3": 0.24
+    }
+  }
+}

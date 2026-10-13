@@ -1,0 +1,4 @@
+## Protocolo do tipo de texto
+
+Preserve domínio, quantificadores e sua ordem: ∀∃ não equivale a ∃∀. Distinga hipótese, definição, enunciado e passo não trivial. Conjectura, exercício, prova omitida e remissão não são demonstração concluída; explicite o estatuto. Dependência usa pressupoe, não cor própria. Exemplo, não exemplo e contraexemplo têm função exemplo.
+Em livro-texto/aula, evidencie técnica reutilizável e casos-limite; em artigo, distinga novidade, lema e resultado citado. Na lógica, preserve hipóteses abertas e descarga. Em estatística, explicite regime assintótico e modo de convergência. No segmento formal econômico, existência não é unicidade e modelo não é evidência. Em algoritmos, modelo de custo é definição, invariante é passo e complexidade é enunciado. Na orientação pedagógica, peça reconstrução antes de oferecer explicação; não complete uma prova ausente.

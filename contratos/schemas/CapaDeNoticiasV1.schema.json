@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["sha256", "sha256_edicao", "descricao", "largura", "altura", "bytes"],
+  "properties": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sha256_edicao": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "descricao": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "largura": { "type": "integer", "minimum": 1, "maximum": 16384 },
+    "altura": { "type": "integer", "minimum": 1, "maximum": 16384 },
+    "bytes": { "type": "integer", "minimum": 1, "maximum": 26214400 }
+  }
+}

@@ -1,0 +1,44 @@
+/* Popup e opções na linguagem do app: tokens de web/src/ui/tokens.css, Figtree, pílulas com base 3D. */
+:root { --sans: 'Figtree Variable', system-ui, sans-serif; --text-primary: var(--texto-1); --text-secondary: var(--texto-2); }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--texto-1); font: 400 14px/1.45 var(--sans); }
+a { color: var(--accent-texto); }
+code { font-size: 12px; padding: 1px 4px; border-radius: 4px; background: var(--painel); overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
+
+.topo { display: flex; align-items: center; gap: 8px; color: var(--texto-2); font-weight: 600; }
+.topo h1 { margin: 0; font-size: 20px; color: var(--texto-1); }
+
+.popup main { width: 360px; padding: 16px; display: grid; gap: 12px; }
+.popup h1 { margin: 0; font-size: 17px; line-height: 1.3; font-weight: 700; overflow-wrap: anywhere; }
+.estado { color: var(--texto-3); padding: 12px 0; }
+.meta { margin: 4px 0 0; color: var(--texto-2); font-size: 13px; }
+.previa { margin: 8px 0 0; color: var(--texto-3); font-size: 13px; max-height: 6.2em; overflow: hidden; overflow-wrap: anywhere;
+  border-top: 1px solid var(--borda); padding-top: 8px; }
+.acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.popup .acoes .ui-button { flex: 1 1 auto; white-space: nowrap; padding-inline: 14px; }
+.rodape { display: flex; justify-content: space-between; color: var(--texto-3); font-size: 12px; }
+.aviso { margin: 0; padding: 10px 12px; border-radius: var(--r-12); font-size: 13px; overflow-wrap: anywhere; background: var(--painel); color: var(--texto-2); }
+.aviso[data-tipo=erro] { background: var(--error-bg); color: var(--error-texto); }
+.aviso[data-tipo=sucesso] { background: var(--sucesso-bg); color: var(--sucesso-texto); }
+.aviso a { color: inherit; font-weight: 600; }
+
+.ui-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 16px;
+  border: 2px solid var(--borda-3d); border-radius: var(--r-pilula); background: var(--bg); color: var(--texto-1);
+  font: 600 14px/1.3 var(--sans); cursor: pointer; box-shadow: 0 var(--base-3d) 0 var(--borda-3d); transition: border-color .15s, box-shadow .1s, transform .1s; }
+.ui-button:hover { border-color: var(--borda-3d-hover); box-shadow: 0 var(--base-3d) 0 var(--borda-3d-hover); }
+.ui-button.primary { background: var(--botao-fundo); color: var(--botao-texto); border-color: var(--botao-fundo); box-shadow: 0 var(--base-3d) 0 var(--botao-base); }
+.ui-button.primary:hover { background: var(--botao-hover); border-color: var(--botao-hover); }
+.ui-button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--borda-3d); }
+.ui-button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.ui-button:focus-visible, .ui-input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ui-input { width: 100%; min-height: 44px; padding: 10px 14px; border: 2px solid var(--borda-3d); border-radius: var(--r-12);
+  background: var(--bg); color: var(--texto-1); font: 400 14px/1.3 var(--sans); }
+.ui-input[aria-invalid=true] { border-color: var(--error-texto); }
+
+.opcoes main { max-width: 560px; margin: 0 auto; padding: 32px 16px; display: grid; gap: 24px; }
+.opcoes form { display: grid; gap: 6px; }
+.opcoes label { font-weight: 600; margin-top: 12px; }
+.ajuda { margin: 0; color: var(--texto-3); font-size: 13px; }
+.origem h2 { font-size: 16px; margin: 0 0 4px; }
+.origem p { margin: 4px 0; color: var(--texto-2); }

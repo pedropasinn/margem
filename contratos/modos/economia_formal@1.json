@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "economia_formal",
+  "revisao": 1,
+  "nome": "Economia formal",
+  "descricao": "Reconstruir o ambiente do modelo, hipóteses, equilíbrio e derivações; separar proposição formal, calibração e interpretação econômica.",
+  "funcoes": [
+    {
+      "chave": "ambiente",
+      "rotulo": "Ambiente",
+      "pergunta": "Onde o texto apresenta ambiente?",
+      "descricao": "Agentes, primitivas, informação e timing do modelo.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "hipotese",
+      "rotulo": "Hipótese",
+      "pergunta": "Onde o texto apresenta hipótese?",
+      "descricao": "Hipótese estrutural e fronteira do domínio de validade.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "equilibrio",
+      "rotulo": "Equilíbrio",
+      "pergunta": "Onde o texto apresenta equilíbrio?",
+      "descricao": "Conceito de solução, existência, unicidade e seleção.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "proposicao",
+      "rotulo": "Proposição",
+      "pergunta": "Onde o texto apresenta proposição?",
+      "descricao": "Enunciado formal ou resultado quantitativo de calibração, com estatuto explícito.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "derivacao",
+      "rotulo": "Derivação",
+      "pergunta": "Onde o texto apresenta derivação?",
+      "descricao": "Passo decisivo, lema e dependência da demonstração.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "interpretacao",
+      "rotulo": "Interpretação",
+      "pergunta": "Onde o texto apresenta interpretação?",
+      "descricao": "Estática comparativa, mecanismo e bem-estar, distintos do teorema.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

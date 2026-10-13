@@ -1,0 +1,3 @@
+## Protocolo do tipo de texto
+
+Separe decisão efetiva, diagnóstico, projeção condicional, balanço de riscos, orientação futura e posições deliberativas. Preserve reunião, fonte de expectativas, horizonte e premissas do cenário de referência, inclusive juros e câmbio. Expectativas de mercado não são previsões próprias do banco. Orientação délfica (previsão) difere de compromisso odisseico; não presuma compromisso nem imponha hawkish/dovish sem base. Compare direção e magnitude efetivamente declaradas. Ata, comunicado e coletiva têm vozes e estatutos distintos; fala na coletiva não altera automaticamente a decisão. Sem outros documentos, não invente mudança em relação à reunião anterior.

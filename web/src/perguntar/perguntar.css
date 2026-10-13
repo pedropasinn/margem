@@ -1,0 +1,79 @@
+/* Página "Perguntar": mesma casca das Notas (coluna de leitura de ~760 px), lista de conversas à esquerda. */
+.perguntar { display: grid; grid-template-columns: 220px minmax(0, 760px); gap: 48px; justify-content: center; align-items: start; }
+.perguntar-conversas { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.perguntar-conversas ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.perguntar-conversas a { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--r-8); color: var(--texto-2); text-decoration: none; overflow-wrap: anywhere; line-height: 1.35; }
+.perguntar-conversas a:hover { background: var(--bg-hover); color: var(--texto-1); }
+.perguntar-conversas a.active { background: var(--painel); color: var(--texto-1); font-weight: 600; }
+.perguntar-conversas .eyebrow { margin: 16px 10px 4px; }
+.perguntar-nova { font-weight: 600; }
+
+.perguntar-cabecalho h1 { font-size: clamp(28px, 2.5vw, 34px); overflow-wrap: anywhere; text-wrap: pretty; margin: 0 0 8px; }
+.perguntar-sub { color: var(--texto-2); margin: 0 0 24px; max-width: 62ch; }
+
+.perguntar-mensagem { padding: 18px 0; border-bottom: 1px solid var(--borda); }
+.perguntar-mensagem .eyebrow { margin-bottom: 6px; }
+.perguntar-texto-leitor { white-space: pre-wrap; margin: 0; font-size: 17px; color: var(--texto-1); }
+.perguntar-estado { margin-top: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.perguntar-aviso { margin: 4px 0 10px; padding: 8px 12px; border-radius: var(--r-8); background: var(--aviso-bg); color: var(--aviso-texto); font-size: 14px; }
+.perguntar-erro { color: var(--error-texto); font-size: 14px; margin: 0; }
+
+/* Resposta: prosa em serifa, como o leitor. */
+.perguntar-agente .markdown { font-family: var(--serif); font-size: 19px; line-height: 1.6; color: var(--texto-1); }
+.markdown > :first-child { margin-top: 0; }
+.markdown p, .markdown ul, .markdown ol, .markdown blockquote { margin: 0 0 14px; }
+.markdown ul, .markdown ol { padding-left: 1.4em; }
+.markdown li { margin: 4px 0; }
+.markdown h3, .markdown h4, .markdown h5, .markdown h6 { font-family: inherit; margin: 22px 0 8px; line-height: 1.3; }
+.markdown h3 { font-size: 22px; } .markdown h4 { font-size: 19px; } .markdown h5, .markdown h6 { font-size: 17px; }
+.markdown blockquote { margin-inline: 0; padding: 8px 14px; border-radius: var(--r-8); color: var(--texto-2); background: var(--bg-2); }
+.markdown code { font-size: .86em; padding: 1px 5px; border-radius: 4px; background: var(--painel); }
+.markdown pre { overflow-x: auto; padding: 12px 14px; border-radius: var(--r-8); background: var(--painel); font-size: 14px; line-height: 1.5; }
+.markdown pre code { padding: 0; background: none; }
+.markdown hr { border: 0; border-top: 1px solid var(--borda); margin: 20px 0; }
+.markdown-tabela { overflow-x: auto; margin: 0 0 16px; }
+.markdown table { border-collapse: collapse; font-family: var(--sans); font-size: 15px; line-height: 1.45; min-width: 100%; }
+.markdown th, .markdown td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--borda); }
+.markdown th { font-weight: 700; color: var(--texto-2); border-bottom-color: var(--borda-hover); }
+.markdown-diagrama, .perguntar-mapa { overflow: auto; margin: 0 0 14px; }
+.perguntar-mapa svg, .markdown-diagrama svg { max-width: 100%; height: auto; }
+
+.perguntar-marca { display: inline-flex; align-items: center; justify-content: center; min-width: 1.35em; height: 1.35em; padding: 0 4px; margin: 0 1px;
+  vertical-align: .32em; border: 0; border-radius: 999px; background: var(--accent-suave); color: var(--accent-texto);
+  font-family: var(--sans); font-size: 11px; font-weight: 700; line-height: 1; cursor: pointer; }
+.perguntar-marca:hover, .perguntar-marca:focus-visible { background: var(--accent); color: var(--accent-cheio-texto); }
+
+.perguntar-artefato { margin: 18px 0; padding: 18px 20px; border: 1px solid var(--borda); border-radius: var(--r-12); background: var(--surface-1); }
+.perguntar-artefato header { margin-bottom: 12px; }
+.perguntar-artefato h3 { margin: 0; font-size: 19px; }
+.perguntar-artefato-capitulo { color: var(--texto-2); font-size: 14px; }
+.perguntar-artefato .markdown { font-size: 17px; }
+.perguntar-artefato-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+
+.perguntar-fontes { margin-top: 14px; }
+.perguntar-fontes ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.perguntar-fonte { display: grid; grid-template-columns: 22px 1fr; column-gap: 8px; width: 100%; padding: 6px 8px; margin-left: -8px; border: 0; border-radius: var(--r-8);
+  background: none; color: inherit; text-align: left; cursor: pointer; font-size: 14px; line-height: 1.45; }
+.perguntar-fonte:hover, .perguntar-fonte:focus-visible { background: var(--bg-hover); }
+.perguntar-fonte-numero { grid-row: span 2; color: var(--accent-texto); font-weight: 700; font-size: 12px; padding-top: 2px; }
+.perguntar-fonte-texto { color: var(--texto-1); }
+.perguntar-fonte-onde { color: var(--texto-3); font-size: 13px; }
+
+.perguntar-detalhes { margin-top: 10px; color: var(--texto-3); font-size: 13px; }
+.perguntar-detalhes summary { cursor: pointer; }
+.perguntar-detalhes ul { margin: 6px 0; padding-left: 1.2em; }
+
+.perguntar-formulario { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+.perguntar-formulario textarea { min-height: 84px; font-size: 16px; }
+.perguntar-formulario-pe { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.perguntar-dica { color: var(--texto-3); font-size: 13px; }
+.perguntar-exemplos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.perguntar-exemplo { padding: 7px 12px; border: 1px solid var(--borda); border-radius: 999px; background: none; color: var(--texto-2); font-size: 14px; cursor: pointer; text-align: left; }
+.perguntar-exemplo:hover { border-color: var(--borda-hover); color: var(--texto-1); }
+
+@media (max-width: 1000px) {
+  .perguntar { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .perguntar-conversas { position: static; order: 2; border-top: 1px solid var(--borda); padding-top: 16px; }
+  .perguntar-agente .markdown { font-size: 18px; }
+  .perguntar-artefato { padding: 14px; }
+}

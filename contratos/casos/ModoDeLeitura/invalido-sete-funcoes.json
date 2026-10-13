@@ -1,0 +1,89 @@
+{
+  "versao": 1,
+  "id": "teste",
+  "revisao": 1,
+  "nome": "Teste",
+  "descricao": "Modo mínimo de teste.",
+  "funcoes": [
+    {
+      "chave": "f0",
+      "rotulo": "F0",
+      "pergunta": "O que o trecho diz sobre f0?",
+      "descricao": "Trechos de f0.",
+      "cor": {
+        "claro": "#000000",
+        "escuro": "#000000"
+      }
+    },
+    {
+      "chave": "f1",
+      "rotulo": "F1",
+      "pergunta": "O que o trecho diz sobre f1?",
+      "descricao": "Trechos de f1.",
+      "cor": {
+        "claro": "#000011",
+        "escuro": "#000011"
+      }
+    },
+    {
+      "chave": "f2",
+      "rotulo": "F2",
+      "pergunta": "O que o trecho diz sobre f2?",
+      "descricao": "Trechos de f2.",
+      "cor": {
+        "claro": "#000022",
+        "escuro": "#000022"
+      }
+    },
+    {
+      "chave": "f3",
+      "rotulo": "F3",
+      "pergunta": "O que o trecho diz sobre f3?",
+      "descricao": "Trechos de f3.",
+      "cor": {
+        "claro": "#000033",
+        "escuro": "#000033"
+      }
+    },
+    {
+      "chave": "f4",
+      "rotulo": "F4",
+      "pergunta": "O que o trecho diz sobre f4?",
+      "descricao": "Trechos de f4.",
+      "cor": {
+        "claro": "#000044",
+        "escuro": "#000044"
+      }
+    },
+    {
+      "chave": "f5",
+      "rotulo": "F5",
+      "pergunta": "O que o trecho diz sobre f5?",
+      "descricao": "Trechos de f5.",
+      "cor": {
+        "claro": "#000055",
+        "escuro": "#000055"
+      }
+    },
+    {
+      "chave": "f6",
+      "rotulo": "F6",
+      "pergunta": "O que o trecho diz sobre f6?",
+      "descricao": "Trechos de f6.",
+      "cor": {
+        "claro": "#000066",
+        "escuro": "#000066"
+      }
+    }
+  ],
+  "comentarios": [
+    "LEITURA"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

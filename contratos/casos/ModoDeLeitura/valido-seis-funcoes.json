@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "teste_seis",
+  "revisao": 3,
+  "nome": "Teste",
+  "descricao": "Modo mínimo de teste.",
+  "funcoes": [
+    {
+      "chave": "funcao_0",
+      "rotulo": "Funcao_0",
+      "pergunta": "O que o trecho diz sobre funcao_0?",
+      "descricao": "Trechos de funcao_0.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "funcao_1",
+      "rotulo": "Funcao_1",
+      "pergunta": "O que o trecho diz sobre funcao_1?",
+      "descricao": "Trechos de funcao_1.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "funcao_2",
+      "rotulo": "Funcao_2",
+      "pergunta": "O que o trecho diz sobre funcao_2?",
+      "descricao": "Trechos de funcao_2.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "funcao_3",
+      "rotulo": "Funcao_3",
+      "pergunta": "O que o trecho diz sobre funcao_3?",
+      "descricao": "Trechos de funcao_3.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "funcao_4",
+      "rotulo": "Funcao_4",
+      "pergunta": "O que o trecho diz sobre funcao_4?",
+      "descricao": "Trechos de funcao_4.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "funcao_5",
+      "rotulo": "Funcao_5",
+      "pergunta": "O que o trecho diz sobre funcao_5?",
+      "descricao": "Trechos de funcao_5.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.5,
+      "2": 0.5,
+      "3": 0.5
+    }
+  }
+}

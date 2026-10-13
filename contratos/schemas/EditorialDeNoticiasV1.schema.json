@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 180
+    },
+    "abertura": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 900
+    },
+    "roteiro": {
+      "type": "string",
+      "maxLength": 6500
+    },
+    "noticias": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 180
+          },
+          "resumo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1600
+          },
+          "importancia": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 700
+          },
+          "projeto": {
+            "enum": [
+              "Margem",
+              "Gibraltar",
+              "Series",
+              "Geral"
+            ],
+            "type": "string"
+          },
+          "natureza": {
+            "enum": [
+              "novidade",
+              "atualizacao",
+              "repertorio"
+            ],
+            "type": "string"
+          },
+          "evidencias": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "fonte_url": {
+                  "type": "string",
+                  "pattern": "^https://",
+                  "maxLength": 2048
+                },
+                "citacao": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1500
+                }
+              },
+              "required": [
+                "fonte_url",
+                "citacao"
+              ]
+            }
+          },
+          "limite": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "titulo",
+          "resumo",
+          "importancia",
+          "projeto",
+          "natureza",
+          "evidencias",
+          "limite"
+        ]
+      }
+    }
+  },
+  "required": [
+    "titulo",
+    "abertura",
+    "roteiro",
+    "noticias"
+  ]
+}

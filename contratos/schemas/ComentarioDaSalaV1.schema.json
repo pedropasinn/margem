@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ComentarioDaSalaV1.schema.json",
+  "title": "Comentário de um testador sobre um trecho literal de um documento da sala de teste",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "sala_id", "testador_id", "documento_id", "versao_id", "bloco_id", "inicio_utf16", "fim_utf16", "citacao", "texto", "criado_em"],
+  "properties": {
+    "id": { "$ref": "#/$defs/ulid" },
+    "sala_id": { "$ref": "#/$defs/ulid" },
+    "testador_id": { "$ref": "#/$defs/ulid" },
+    "documento_id": { "$ref": "#/$defs/ulid" },
+    "versao_id": { "$ref": "#/$defs/ulid" },
+    "bloco_id": { "$ref": "#/$defs/ulid" },
+    "inicio_utf16": { "type": "integer", "minimum": 0 },
+    "fim_utf16": { "type": "integer", "minimum": 1 },
+    "citacao": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "texto": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "criado_em": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "ulid": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" }
+  }
+}

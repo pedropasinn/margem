@@ -1,0 +1,14 @@
+# A amostra mistura CRLF e LF deliberadamente; preservar seus bytes e seu hash.
+fixtures/unicode-dificil.md -text -diff
+
+# Finais de linha da distribuição (J100): o que roda no Linux/container fica em LF mesmo num
+# clone do Windows com core.autocrlf; o script do PowerShell fica em CRLF.
+*.sh            text eol=lf
+*.env           text eol=lf
+*.yml           text eol=lf
+*.py            text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+prompts/**      text eol=lf
+*.sql           text eol=lf
+*.ps1           text eol=crlf

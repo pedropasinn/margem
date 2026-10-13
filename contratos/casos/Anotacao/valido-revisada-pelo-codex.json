@@ -1,0 +1,26 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000062",
+  "versao_id": "00000000000000000000000020",
+  "ancora": {
+    "versao_id": "00000000000000000000000020",
+    "bloco_id": "00000000000000000000000001",
+    "inicio_utf16": 3,
+    "fim_utf16": 5,
+    "citacao": "🧭",
+    "prefixo": "Um ",
+    "sufixo": ", café e ﬁ."
+  },
+  "tipo": "duvida",
+  "texto": "Por que 🧭 e não outra imagem?",
+  "criada_em": "2026-09-23T12:00:00Z",
+  "atualizada_em": "2026-09-23T12:00:00Z",
+  "marca_id": "00000000000000000000000050",
+  "revisao": {
+    "autor": "codex",
+    "texto_anterior": "Primeira versão da nota.",
+    "motivo": "Deixei explícita a premissa que a nota supunha.",
+    "em": "2026-09-23T12:00:00Z"
+  },
+  "revisao_edicao": 1
+}

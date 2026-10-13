@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/leitor-de-parte@1.schema.json",
+  "title": "Saída do leitor de parte, versão 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["marcas", "recuperacao", "mapa_da_secao", "resumo_da_parte", "limites", "leitura_integral"],
+  "properties": {
+    "marcas": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/marca_gerada" },
+      "description": "Marcas desta parte. MarcaGeradaV1: sem id, sem offsets, sem página."
+    },
+    "recuperacao": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["secao_id", "perguntas"],
+        "properties": {
+          "secao_id": { "$ref": "#/$defs/id" },
+          "perguntas": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "mapa_da_secao": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["secao_id", "afirmacao_principal", "definicoes", "condicoes", "duvidas_de_extracao"],
+        "properties": {
+          "secao_id": { "$ref": "#/$defs/id" },
+          "afirmacao_principal": { "type": "string", "minLength": 1 },
+          "definicoes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "condicoes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "duvidas_de_extracao": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "resumo_da_parte": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000,
+      "description": "O que a parte seguinte do mesmo capítulo precisa saber."
+    },
+    "limites": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "leitura_integral": { "type": "boolean" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "description": "Identificador recebido na entrada; o modelo apenas o ecoa."
+    },
+    "funcao": { "type": "string", "enum": ["tese", "conceito", "justificativa", "nenhuma"] },
+    "comentario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipo", "rotulo", "texto"],
+      "properties": {
+        "tipo": { "type": "string", "enum": ["AUTOR", "LEITURA", "INVESTIGAR", "OBJECAO", "CONEXAO"] },
+        "rotulo": { "type": "string", "minLength": 1 },
+        "texto": { "type": "string", "minLength": 1 }
+      }
+    },
+    "marca_gerada": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bloco_id", "citacao", "prefixo", "sufixo", "funcao", "sublinhar", "comentario"],
+      "properties": {
+        "bloco_id": { "$ref": "#/$defs/id" },
+        "citacao": { "type": "string", "minLength": 1 },
+        "prefixo": { "type": "string" },
+        "sufixo": { "type": "string" },
+        "funcao": { "$ref": "#/$defs/funcao" },
+        "sublinhar": {
+          "type": "array",
+          "minItems": 0,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "comentario": {
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/comentario" }]
+        }
+      }
+    }
+  }
+}

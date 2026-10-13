@@ -1,0 +1,47 @@
+/*
+ * Primeira execução (J103): composição dentro da linguagem dos primeiros passos (onboarding.css) e das
+ * primitives. Nada de cor, raio ou sombra novos; nenhum componente com faixa ou borda lateral.
+ */
+
+/* ---------- O diálogo ---------- */
+.card.boas-vindas.boas-vindas-da-instalacao { width: min(640px, 100%); gap: 18px; }
+.secao-da-instalacao { display: grid; gap: 8px; }
+.secao-da-instalacao h3 { font-size: 16px; line-height: 1.35; }
+.boas-vindas-da-instalacao .rodape-nota { color: var(--texto-2); font-size: 14px; }
+
+/* ---------- A checagem ---------- */
+.checagem-da-instalacao { display: grid; gap: 12px; }
+.checagem-da-instalacao .session-list > li { padding: 10px 0; }
+.checagem-da-instalacao .session-dot { width: 30px; height: 30px; }
+.checagem-da-instalacao .session-list > li[data-ok=false] .session-dot { border-color: var(--aviso-texto); color: var(--aviso-texto); }
+.checagem-da-instalacao .session-list .titulo { font-size: 15px; }
+.checagem-da-instalacao .linha-meta { font-size: 13px; }
+.instrucao { display: grid; gap: 8px; padding: 14px 18px; border-radius: var(--r-16); background: var(--bg-2); }
+.instrucao-titulo, .aviso-titulo { margin: 0; font-weight: 600; color: var(--texto-1); }
+.instrucao-texto { margin: 0; color: var(--texto-2); font-size: 14px; line-height: 1.55; }
+.verificar-de-novo { margin: 0; }
+
+/* ---------- Comando com botão de copiar ---------- */
+.comandos { display: grid; gap: 6px; }
+.comando-para-copiar { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.comando-rotulo { font-size: 12px; font-weight: 700; letter-spacing: .48px; text-transform: uppercase; color: var(--texto-3); }
+.comando-para-copiar code { overflow-x: auto; padding: 6px 10px; border: 1px solid var(--borda); border-radius: var(--r-8); background: var(--surface-1); color: var(--texto-1); font-size: 13px; white-space: nowrap; }
+.comando-para-copiar .ui-icon { min-height: 32px; width: 32px; min-width: 32px; }
+
+/* ---------- A faixa da casca e o aviso curto ---------- */
+.aviso.aviso-da-instalacao { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; margin: 0 0 24px; }
+.aviso-da-instalacao > svg { margin-top: 2px; }
+.aviso-da-instalacao .aviso-corpo { display: grid; gap: 6px; }
+.aviso-da-instalacao .aviso-titulo, .aviso-do-codex-curto .aviso-titulo { color: inherit; }
+.aviso-da-instalacao .instrucao-texto, .aviso-do-codex-curto .instrucao-texto { color: inherit; }
+.aviso-da-instalacao .aviso-link { margin: 0; font-size: 14px; }
+.aviso-da-instalacao .aviso-link a { color: inherit; font-weight: 600; text-decoration: underline; }
+.aviso-da-instalacao .ui-icon { color: inherit; margin: -6px -8px 0 0; }
+.app-shell.pagina-ampla > main > .aviso-da-instalacao { margin: 16px 32px 0; }
+.aviso.aviso-do-codex-curto { display: grid; gap: 6px; margin: 0; }
+
+@media (max-width: 799px) {
+  .comando-para-copiar { grid-template-columns: minmax(0, 1fr) auto; }
+  .comando-rotulo { grid-column: 1 / -1; }
+  .app-shell.pagina-ampla > main > .aviso-da-instalacao { margin: 16px 16px 0; }
+}

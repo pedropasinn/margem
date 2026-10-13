@@ -1,0 +1,51 @@
+{
+  "versao": 1,
+  "geral": [
+    {
+      "id": "primeira_impressao",
+      "tipo": "escala",
+      "enunciado": "Qual foi a sua primeira impressão?",
+      "obrigatoria": true,
+      "rotulos": {
+        "minimo": "Ruim",
+        "maximo": "Ótima"
+      }
+    },
+    {
+      "id": "usaria_de_novo",
+      "tipo": "escolha",
+      "enunciado": "Usaria de novo?",
+      "obrigatoria": true,
+      "opcoes": [
+        "Sim",
+        "Talvez",
+        "Não"
+      ]
+    },
+    {
+      "id": "comentario",
+      "tipo": "texto_longo",
+      "enunciado": "Algo mais?",
+      "obrigatoria": false,
+      "ajuda": "Pode ser curto.",
+      "opcoes": [
+        "a",
+        "b"
+      ]
+    }
+  ],
+  "por_documento": [
+    {
+      "id": "clareza",
+      "tipo": "escala",
+      "enunciado": "As notas foram claras?",
+      "obrigatoria": false
+    },
+    {
+      "id": "nota_util",
+      "tipo": "texto_curto",
+      "enunciado": "Qual nota foi a mais útil?",
+      "obrigatoria": false
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/IndiceObsidianV1.schema.json",
+  "title": "Índice da exportação para o Obsidian: uma nota Markdown por documento, com o hash do conteúdo",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "url_base",
+    "marcas",
+    "documentos"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "url_base": {
+      "description": "Endereço absoluto do Margem usado nos links de volta, sem barra no fim.",
+      "type": "string",
+      "pattern": "^https?://[^\\s/?#]+(/[^\\s?#]*)?$",
+      "not": {
+        "pattern": "/$"
+      }
+    },
+    "marcas": {
+      "description": "minhas: grifos do leitor e marcas da IA que ele confirmou, mudou ou comentou; todas: também as marcas visíveis da leitura padrão.",
+      "type": "string",
+      "enum": [
+        "minhas",
+        "todas"
+      ]
+    },
+    "documentos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "documento_id",
+          "versao_id",
+          "titulo",
+          "arquivo",
+          "sha256",
+          "itens",
+          "atualizado_em"
+        ],
+        "properties": {
+          "documento_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "versao_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arquivo": {
+            "description": "Nome do arquivo no vault: sem pasta e sem os caracteres que o Obsidian recusa.",
+            "type": "string",
+            "pattern": "^[^\\\\/:*?\"<>|#^\\[\\]]{1,200}\\.md$",
+            "not": {
+              "pattern": "^\\."
+            }
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "itens": {
+            "description": "Trechos exportados (marcas, notas e perguntas ancoradas).",
+            "type": "integer",
+            "minimum": 0
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

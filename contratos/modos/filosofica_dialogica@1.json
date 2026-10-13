@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "filosofica_dialogica",
+  "revisao": 1,
+  "nome": "Diálogo filosófico",
+  "descricao": "Acompanhar posições de interlocutores, testes de definições, assentimentos e aporias sem atribuir uma fala diretamente ao autor.",
+  "funcoes": [
+    {
+      "chave": "problema",
+      "rotulo": "Problema",
+      "pergunta": "Onde o texto apresenta problema?",
+      "descricao": "Questão que orienta a troca de falas.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "posicao",
+      "rotulo": "Posição",
+      "pergunta": "Onde o texto apresenta posição?",
+      "descricao": "Afirmação de uma voz identificada; não equivale à posição do autor.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "definicao_proposta",
+      "rotulo": "Definição proposta",
+      "pergunta": "Onde o texto apresenta definição proposta?",
+      "descricao": "Formulação testada ou reformulada pelos interlocutores.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "assentimento",
+      "rotulo": "Assentimento",
+      "pergunta": "Onde o texto apresenta assentimento?",
+      "descricao": "Concessão local necessária ao passo seguinte, com alcance explícito.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "refutacao",
+      "rotulo": "Refutação",
+      "pergunta": "Onde o texto apresenta refutação?",
+      "descricao": "Teste, conflito ou consequência que põe uma posição em dificuldade.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "aporia",
+      "rotulo": "Aporia",
+      "pergunta": "Onde o texto apresenta aporia?",
+      "descricao": "Impasse preservado pelo texto, sem conclusão inventada.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

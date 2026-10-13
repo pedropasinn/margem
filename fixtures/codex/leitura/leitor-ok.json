@@ -1,0 +1,78 @@
+{
+  "versao": 1,
+  "passos": [
+    {
+      "tipo": "ok",
+      "modelo": "executor-falso",
+      "conteudo": {
+        "marcas": [
+          {
+            "bloco_id": "000000000000000000000B0001",
+            "citacao": "Uma tese central organiza o argumento do capítulo.",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "tese",
+            "sublinhar": [],
+            "comentario": {
+              "tipo": "AUTOR",
+              "rotulo": "AUTOR · TESE",
+              "texto": "O capítulo se organiza em torno desta afirmação."
+            }
+          },
+          {
+            "bloco_id": "000000000000000000000B0002",
+            "citacao": "Um conceito vale somente sob certas condições declaradas.",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "conceito",
+            "sublinhar": [
+              "somente"
+            ],
+            "comentario": {
+              "tipo": "AUTOR",
+              "rotulo": "AUTOR · CONDIÇÃO",
+              "texto": "A validade do conceito depende das condições declaradas no trecho."
+            }
+          },
+          {
+            "bloco_id": "000000000000000000000B0004",
+            "citacao": "A justificativa aparece com uma evidência decisiva.",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "justificativa",
+            "sublinhar": [],
+            "comentario": {
+              "tipo": "LEITURA",
+              "rotulo": "→ LEITURA",
+              "texto": "A evidência sustenta a tese anunciada na abertura do capítulo."
+            }
+          }
+        ],
+        "recuperacao": [
+          {
+            "secao_id": "000000000000000000000S0000",
+            "perguntas": [
+              "Qual afirmação o capítulo defende e como a sustenta?"
+            ]
+          }
+        ],
+        "mapa_da_secao": [
+          {
+            "secao_id": "000000000000000000000S0000",
+            "afirmacao_principal": "O capítulo defende uma tese sustentada por uma evidência.",
+            "definicoes": [
+              "conceito"
+            ],
+            "condicoes": [
+              "certas condições declaradas"
+            ],
+            "duvidas_de_extracao": []
+          }
+        ],
+        "resumo_da_parte": "A parte fixa a tese do capítulo, define o conceito sob condições declaradas e apresenta a evidência decisiva.",
+        "limites": [],
+        "leitura_integral": true
+      }
+    }
+  ]
+}

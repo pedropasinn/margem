@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ExecucaoLeituraV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "versao_id",
+    "metodo_versao",
+    "prompt_versao",
+    "schema_versao",
+    "modelo",
+    "esforco",
+    "tamanho_parte_tokens",
+    "concorrencia",
+    "plano_partes",
+    "criada_em"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "metodo_versao": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt_versao": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_versao": {
+      "const": 1
+    },
+    "modelo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "esforco": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tamanho_parte_tokens": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "concorrencia": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "plano_partes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

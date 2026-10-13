@@ -1,0 +1,20 @@
+{
+  "versao": 2,
+  "revisao": 0,
+  "areas": [
+    {
+      "nome": "Economia",
+      "nivel": "avancado"
+    },
+    {
+      "nome": "Filosofia",
+      "nivel": "intermediario"
+    }
+  ],
+  "preferencias": [
+    "explicações conceituais",
+    "não explicar o básico"
+  ],
+  "observacoes": "",
+  "atualizado_em": "2026-09-25T12:00:00Z"
+}

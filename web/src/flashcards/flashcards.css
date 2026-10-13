@@ -1,0 +1,113 @@
+/* Flashcards: o cartão que vira (CartaoQueVira) e a página de estudo. */
+
+/*
+ * A mola do Flip Card do React Bits (stiffness 170, damping 20, massa 1: amortecimento 0,77, passa
+ * ~2% do alvo e assenta em ~0,6 s) amostrada em 25 pontos. Gerada por simulação; ver o PR.
+ */
+:root {
+  --mola-do-cartao: linear(0, 0.0461, 0.155, 0.2925, 0.4354, 0.5695, 0.6868, 0.7841, 0.861, 0.9191, 0.961, 0.9895, 1.0076, 1.0178, 1.0225, 1.0234, 1.0219, 1.0192, 1.0159, 1.0126, 1.0095, 1.0068, 1.0047, 1.0029, 1);
+  --tempo-do-cartao: 620ms;
+}
+
+.cartao-que-vira { position: relative; width: 100%; max-width: 640px; margin-inline: auto; perspective: 1100px; }
+.cartao-giro {
+  display: grid; width: 100%; min-height: 300px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left;
+  cursor: pointer; transform-style: preserve-3d; transition: transform var(--tempo-do-cartao) var(--mola-do-cartao); border-radius: var(--r-24);
+  -webkit-tap-highlight-color: transparent;
+}
+.cartao-giro:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.cartao-que-vira[data-virado] .cartao-giro { transform: rotateY(180deg); }
+.cartao-face {
+  grid-area: 1 / 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; min-width: 0;
+  padding: 40px 48px; background: var(--surface-1); border: 2px solid var(--borda-3d); border-radius: var(--r-24);
+  box-shadow: 0 var(--base-3d, 4px) 0 var(--borda-3d);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+.cartao-verso { transform: rotateY(180deg); }
+.cartao-face .eyebrow { margin: 0; }
+.cartao-texto { font-family: var(--serif); font-size: 24px; line-height: 1.45; color: var(--texto-1); text-wrap: pretty; overflow-wrap: anywhere; white-space: pre-wrap; }
+.cartao-verso .cartao-texto { font-size: 21px; }
+
+/* O erguer e a sombra que se abre no meio do giro; dois nomes iguais para a animação recomeçar a cada volta. */
+.cartao-sombra {
+  position: absolute; left: 12%; right: 12%; bottom: -18px; height: 24px; border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--texto-1) 22%, transparent), transparent); opacity: 0; pointer-events: none;
+}
+.cartao-que-vira[data-girou][data-virado] .cartao-giro { animation: cartao-erguer-a var(--tempo-do-cartao) ease-out; }
+.cartao-que-vira[data-girou]:not([data-virado]) .cartao-giro { animation: cartao-erguer-b var(--tempo-do-cartao) ease-out; }
+.cartao-que-vira[data-girou][data-virado] .cartao-sombra { animation: cartao-sombra-a var(--tempo-do-cartao) ease-out; }
+.cartao-que-vira[data-girou]:not([data-virado]) .cartao-sombra { animation: cartao-sombra-b var(--tempo-do-cartao) ease-out; }
+@keyframes cartao-erguer-a { 0%, 100% { scale: 1; } 40% { scale: 1.035; } }
+@keyframes cartao-erguer-b { 0%, 100% { scale: 1; } 40% { scale: 1.035; } }
+@keyframes cartao-sombra-a { 0%, 100% { opacity: 0; transform: scaleX(1); } 40% { opacity: 1; transform: scaleX(.7); } }
+@keyframes cartao-sombra-b { 0%, 100% { opacity: 0; transform: scaleX(1); } 40% { opacity: 1; transform: scaleX(.7); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cartao-giro, .cartao-que-vira[data-virado] .cartao-giro { transform: none; transition: none; animation: none !important; }
+  .cartao-que-vira .cartao-sombra { animation: none !important; }
+  .cartao-verso { transform: none; }
+  .cartao-face { transition: opacity 160ms ease, visibility 160ms; }
+  .cartao-que-vira:not([data-virado]) .cartao-verso, .cartao-que-vira[data-virado] .cartao-frente { opacity: 0; visibility: hidden; }
+}
+
+@media (max-width: 640px) {
+  .cartao-giro { min-height: 260px; }
+  .cartao-face { padding: 28px 24px; border-radius: var(--r-16); }
+  .cartao-texto { font-size: 21px; }
+  .cartao-verso .cartao-texto { font-size: 19px; }
+}
+
+/* ------------------------------------------------------------------ página */
+.flashcards { max-width: 760px; margin-inline: auto; }
+.flashcards-cabecalho .voltar { margin-bottom: 16px; }
+.flashcards-cabecalho h1 { font-size: clamp(28px, 2.5vw, 34px); overflow-wrap: anywhere; text-wrap: pretty; margin: 0 0 16px; }
+.flashcards-ferramentas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.flashcards-ferramentas > a.ui-button { min-height: 36px; height: 36px; padding: 0 14px; font-size: 13px; }
+.flashcards-ferramentas .ui-segmented { margin-right: auto; }
+.flashcards-aviso { margin: 20px 0 0; color: var(--texto-2); font-size: 14px; }
+
+.sessao-de-estudo { margin-top: 32px; }
+.sessao-contador { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 16px; color: var(--texto-3); font-size: 13px; }
+.sessao-contador .sessao-onde { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sessao-contador strong { color: var(--texto-1); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sessao-acoes { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 32px 0 0; }
+.sessao-acoes .ui-button { min-width: 112px; }
+.sessao-acoes kbd, .flashcards kbd { font: 600 11px/1 var(--sans); color: var(--texto-3); border: 1px solid var(--borda); border-radius: 4px; padding: 2px 5px; }
+.sessao-trecho { display: flex; justify-content: center; margin-top: 20px; font-size: 14px; }
+.sessao-trecho a { color: var(--texto-2); display: inline-flex; gap: 6px; align-items: center; }
+.sessao-fim { margin-top: 48px; text-align: center; }
+.sessao-fim h2 { margin: 0 0 8px; }
+.sessao-fim p { color: var(--texto-2); margin: 0; }
+
+.lista-de-cartoes { list-style: none; margin: 8px 0 0; padding: 0; }
+.flashcards-grupo { margin-top: 32px; }
+.flashcards-grupo h2 { font-size: 20px; margin: 0 0 4px; }
+.item-cartao { padding: 20px 0; border-bottom: 1px solid var(--borda); }
+.item-cartao-frente { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 1.45; color: var(--texto-1); text-wrap: pretty; }
+.item-cartao-verso { margin: 8px 0 0; color: var(--texto-2); font-size: 15px; line-height: 1.5; white-space: pre-wrap; }
+.item-cartao-trecho { display: block; margin-top: 10px; color: var(--texto-3); font-size: 14px; line-height: 1.5; }
+.item-cartao-trecho:hover { color: var(--texto-2); }
+.item-cartao-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; color: var(--texto-3); font-size: 13px; }
+.item-cartao-meta .item-cartao-acoes { margin-left: auto; display: flex; gap: 4px; }
+.item-cartao-meta .ui-button { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.item-cartao form { display: grid; gap: 10px; }
+.item-cartao form .ui-textarea { min-height: 72px; }
+.item-cartao form .botoes { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Criar flashcard a partir de uma seleção ou grifo (no leitor). */
+.formulario-de-flashcard { display: grid; gap: 12px; }
+.formulario-de-flashcard blockquote { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.5; color: var(--texto-2); }
+.formulario-de-flashcard label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--texto-2); }
+.formulario-de-flashcard .botoes { display: flex; gap: 8px; justify-content: flex-end; }
+.flashcards-ferramentas .ui-segmented .ui-button { white-space: nowrap; }
+@media (max-width: 640px) {
+  .sessao-acoes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .sessao-acoes:has(> :only-child) { display: flex; }
+  .sessao-acoes .ui-button { min-width: 0; padding: 10px 6px; }
+  .sessao-acoes .ui-button kbd { display: none; }
+  .item-cartao-meta .item-cartao-acoes { margin-left: 0; }
+}
+/* As respostas aparecem quando o giro já passou da metade, para não disputar o olhar com o cartão. */
+.sessao-acoes[role="group"] { animation: respostas-aparecem 200ms ease-out 240ms both; }
+@keyframes respostas-aparecem { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .sessao-acoes[role="group"] { animation: none; } }

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/AudioV2.schema.json",
+  "title": "Narração de capítulo ou trecho gerada por um provedor de voz (J106)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "versao_id",
+    "secao_id",
+    "titulo",
+    "sha256_audio",
+    "duracao_s",
+    "origem",
+    "trechos"
+  ],
+  "properties": {
+    "versao": {
+      "const": 2
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "secao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "titulo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sha256_audio": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "duracao_s": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "origem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provedor",
+        "voz_id",
+        "voz_nome",
+        "modelo_id",
+        "caracteres"
+      ],
+      "properties": {
+        "provedor": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+        },
+        "voz_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+        },
+        "voz_nome": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "modelo_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.-]{1,64}$"
+        },
+        "caracteres": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "trechos": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "inicio_s",
+          "fim_s",
+          "ancora"
+        ],
+        "properties": {
+          "inicio_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "fim_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "ancora": {
+            "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+          }
+        }
+      }
+    }
+  }
+}

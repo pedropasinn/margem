@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/roteirizar-visita@2.schema.json",
+  "title": "Saída do roteiro da visita guiada",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "abertura",
+    "paradas",
+    "fechamento",
+    "perguntas",
+    "ponte"
+  ],
+  "properties": {
+    "abertura": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1500
+    },
+    "paradas": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 14,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tipo",
+          "titulo",
+          "inicio",
+          "fim",
+          "elementos",
+          "relacoes",
+          "dificuldades",
+          "notas",
+          "visuais",
+          "narracao",
+          "pergunta",
+          "transicao"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "tese",
+              "conceito",
+              "argumento",
+              "exemplo",
+              "relacao",
+              "retorno",
+              "dificuldade",
+              "visual",
+              "nota",
+              "pergunta"
+            ]
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "inicio": {
+            "type": "string",
+            "pattern": "^B[0-9]{3,}$"
+          },
+          "fim": {
+            "type": "string",
+            "pattern": "^B[0-9]{3,}$"
+          },
+          "elementos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^L[0-9]{2,}$"
+            },
+            "uniqueItems": true
+          },
+          "relacoes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^R[0-9]{2,}$"
+            },
+            "uniqueItems": true
+          },
+          "dificuldades": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^D[0-9]{2,}$"
+            },
+            "uniqueItems": true
+          },
+          "notas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^N[0-9]+$"
+            },
+            "uniqueItems": true
+          },
+          "visuais": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^V[0-9]+$"
+            },
+            "uniqueItems": true
+          },
+          "narracao": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1600
+          },
+          "pergunta": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              }
+            ]
+          },
+          "transicao": {
+            "type": "string",
+            "maxLength": 400
+          }
+        }
+      }
+    },
+    "fechamento": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1500
+    },
+    "perguntas": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 600
+      }
+    },
+    "ponte": {
+      "type": "string",
+      "maxLength": 800
+    }
+  }
+}

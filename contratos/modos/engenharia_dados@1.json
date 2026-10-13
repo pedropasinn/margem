@@ -1,0 +1,53 @@
+{
+  "versao": 1,
+  "id": "engenharia_dados",
+  "revisao": 1,
+  "nome": "Engenharia de dados",
+  "descricao": "Leitura de arquitetura e gestão de dados: conceitos, mecanismos, decisões e compromissos de data mesh, data fabric, produtos de dados, integração, metadados e governança. Distinguir arquitetura técnica de responsabilidades organizacionais. Preservar contexto, condições e custos das recomendações; descentralização e centralização não são soluções universais. Distinguir padrões, exemplos de fornecedores e opinião do autor. O livro permanece no idioma original; comentários e orientação em português. Não inventar detalhes de figuras ausentes da extração, nem conhecimentos ou opiniões do leitor.",
+  "funcoes": [
+    {
+      "chave": "tese",
+      "rotulo": "Decisão ou princípio",
+      "pergunta": "Que decisão, princípio ou recomendação o autor defende, e em quais condições?",
+      "descricao": "Princípios, recomendações e conclusões sobre projeto, processo e qualidade; preservar limites e trade-offs.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "conceito",
+      "rotulo": "Conceito",
+      "pergunta": "Que conceito, responsabilidade, contrato ou distinção preciso entender?",
+      "descricao": "Definições e distinções técnicas, responsabilidades, pressupostos e condições de validade.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "justificativa",
+      "rotulo": "Mecanismo ou exemplo",
+      "pergunta": "Como funciona, por que funciona e que exemplo ou evidência sustenta a decisão?",
+      "descricao": "Mecanismos, passos, exemplos de código e contraexemplos que explicam ou justificam uma escolha.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

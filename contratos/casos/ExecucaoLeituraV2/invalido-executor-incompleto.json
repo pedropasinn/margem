@@ -1,0 +1,21 @@
+{
+  "id": "00000000000000000000000040",
+  "versao_id": "00000000000000000000000020",
+  "metodo_versao": "v1",
+  "prompt_versao": "v1",
+  "schema_versao": 2,
+  "tamanho_parte_tokens": 45000,
+  "concorrencia": 4,
+  "plano_partes": [
+    "00000000000000000000000030"
+  ],
+  "criada_em": "2026-09-20T18:00:00Z",
+  "modo": {
+    "id": "argumentativa",
+    "revisao": 1
+  },
+  "nivel_de_atencao_alvo": 2,
+  "executor": {
+    "modelo": "executor-falso"
+  }
+}

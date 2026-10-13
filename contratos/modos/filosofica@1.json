@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "filosofica",
+  "revisao": 1,
+  "nome": "Filosófica",
+  "descricao": "Leitura de texto filosófico: separar a tese defendida, os conceitos e distinções, os argumentos, as objeções consideradas e as consequências. Não atribuir ao autor a posição que ele apresenta para refutar.",
+  "funcoes": [
+    {
+      "chave": "tese",
+      "rotulo": "Tese",
+      "pergunta": "Que posição o autor defende aqui?",
+      "descricao": "Afirmação que o autor sustenta como sua, não a de um interlocutor.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "conceito",
+      "rotulo": "Conceito",
+      "pergunta": "Que termo é definido ou usado em sentido próprio?",
+      "descricao": "Definição ou uso técnico de um termo do qual o argumento depende.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "distincao",
+      "rotulo": "Distinção",
+      "pergunta": "Que duas coisas o autor separa e por quê?",
+      "descricao": "Distinção terminológica ou conceitual que o argumento exige.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    },
+    {
+      "chave": "argumento",
+      "rotulo": "Argumento",
+      "pergunta": "Por que razões a tese deveria ser aceita?",
+      "descricao": "Premissas e passos inferenciais apresentados pelo autor.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "objecao",
+      "rotulo": "Objeção",
+      "pergunta": "Que objeção o texto considera e como responde?",
+      "descricao": "Posição contrária ou dificuldade tratada pelo próprio autor, com a resposta dada.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "consequencia",
+      "rotulo": "Consequência",
+      "pergunta": "O que decorre da tese, segundo o autor?",
+      "descricao": "Implicação que o autor tira explicitamente da posição defendida.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.12,
+      "3": 0.25
+    }
+  }
+}

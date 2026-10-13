@@ -1,0 +1,31 @@
+{
+  "versao": 2,
+  "id": "01K0000000000000000000A001",
+  "versao_id": "00000000000000000000000020",
+  "secao_id": "00000000000000000000000030",
+  "titulo": "Narração do capítulo",
+  "sha256_audio": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "duracao_s": 4.2,
+  "origem": {
+    "provedor": "elevenlabs",
+    "voz_id": "JBFqnCBsd6RMkjVDRZzb",
+    "voz_nome": "George",
+    "modelo_id": "eleven_multilingual_v2",
+    "caracteres": 17
+  },
+  "trechos": [
+    {
+      "inicio_s": 0,
+      "fim_s": 9,
+      "ancora": {
+        "versao_id": "00000000000000000000000020",
+        "bloco_id": "00000000000000000000000001",
+        "inicio_utf16": 3,
+        "fim_utf16": 5,
+        "citacao": "🧭",
+        "prefixo": "Um ",
+        "sufixo": ", café e ﬁ."
+      }
+    }
+  ]
+}

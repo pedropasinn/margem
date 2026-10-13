@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/MarcaGeradaV2.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bloco_id",
+    "citacao",
+    "prefixo",
+    "sufixo",
+    "funcao",
+    "saliencia",
+    "sublinhar",
+    "comentario"
+  ],
+  "properties": {
+    "bloco_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "citacao": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prefixo": {
+      "type": "string"
+    },
+    "sufixo": {
+      "type": "string"
+    },
+    "funcao": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+      "maxLength": 40
+    },
+    "saliencia": {
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "sublinhar": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "comentario": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "rotulo",
+            "texto"
+          ],
+          "properties": {
+            "tipo": {
+              "type": "string",
+              "enum": [
+                "AUTOR",
+                "LEITURA",
+                "INVESTIGAR",
+                "OBJECAO",
+                "CONEXAO",
+                "TENSAO",
+                "PREREQUISITO"
+              ]
+            },
+            "rotulo": {
+              "type": "string",
+              "minLength": 1
+            },
+            "texto": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "comentario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tipo",
+        "rotulo",
+        "texto"
+      ],
+      "properties": {
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "AUTOR",
+            "LEITURA",
+            "INVESTIGAR",
+            "OBJECAO",
+            "CONEXAO",
+            "TENSAO",
+            "PREREQUISITO"
+          ]
+        },
+        "rotulo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "texto": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "comentario_nulo": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "rotulo",
+            "texto"
+          ],
+          "properties": {
+            "tipo": {
+              "type": "string",
+              "enum": [
+                "AUTOR",
+                "LEITURA",
+                "INVESTIGAR",
+                "OBJECAO",
+                "CONEXAO",
+                "TENSAO",
+                "PREREQUISITO"
+              ]
+            },
+            "rotulo": {
+              "type": "string",
+              "minLength": 1
+            },
+            "texto": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "funcao": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+      "maxLength": 40
+    }
+  }
+}

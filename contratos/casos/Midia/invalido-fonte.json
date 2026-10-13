@@ -1,0 +1,46 @@
+{
+ "versao": 1,
+ "id": "000000000000000000000M0001",
+ "documento_id": "000000000000000000000D0001",
+ "versao_id": "000000000000000000000V0001",
+ "tipo": "audio",
+ "titulo": "Amostra",
+ "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "mime": "audio/mpeg",
+ "bytes": 1000,
+ "duracao_s": 4.0,
+ "fonte": {
+  "url": "http://inseguro"
+ },
+ "transcricao": {
+  "motor": "faster-whisper large-v3 + whisperx",
+  "idioma": "pt",
+  "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ },
+ "capitulos": [],
+ "palavras": [
+  {
+   "bloco_id": "000000000000000000000B0001",
+   "inicio_utf16": 0,
+   "fim_utf16": 3,
+   "inicio_s": 0.1,
+   "fim_s": 0.4
+  },
+  {
+   "bloco_id": "000000000000000000000B0001",
+   "inicio_utf16": 4,
+   "fim_utf16": 6,
+   "inicio_s": 0.5,
+   "fim_s": 0.9
+  }
+ ],
+ "frases": [
+  {
+   "bloco_id": "000000000000000000000B0001",
+   "inicio_utf16": 0,
+   "fim_utf16": 7,
+   "inicio_s": 0.1,
+   "fim_s": 0.9
+  }
+ ]
+}

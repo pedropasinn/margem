@@ -1,0 +1,14 @@
+{
+  "bloco_id": "00000000000000000000000001",
+  "citacao": "🧭",
+  "prefixo": "Um ",
+  "sufixo": ", ",
+  "funcao": "nenhuma",
+  "saliencia": 2,
+  "sublinhar": [],
+  "comentario": {
+    "tipo": "PREREQUISITO",
+    "rotulo": "PRÉ-REQUISITO",
+    "texto": "Saber o que é ligadura."
+  }
+}

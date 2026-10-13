@@ -1,0 +1,52 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000701",
+  "execucao_id": "00000000000000000000000040",
+  "secao_id": "00000000000000000000000060",
+  "modelo_id": "00000000000000000000000503",
+  "perfil_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "passos": [
+    {
+      "ordem": 0,
+      "bloco_inicio": "00000000000000000000000001",
+      "bloco_fim": "00000000000000000000000001",
+      "foco": [
+        "00000000000000000000000101"
+      ],
+      "observar": "Note o 'inicialmente'.",
+      "explicacao": {
+        "curta": "A hipótese é provisória.",
+        "longa": "O autor apresenta a rigidez como provisória, mas tudo depois depende dela."
+      },
+      "relacoes": [
+        "00000000000000000000000201"
+      ],
+      "parada": {
+        "tipo": "pergunta",
+        "texto": "O que acontece se os preços forem flexíveis?"
+      }
+    },
+    {
+      "ordem": 1,
+      "bloco_inicio": "00000000000000000000000001",
+      "bloco_fim": "00000000000000000000000002",
+      "foco": [],
+      "observar": "A conclusão.",
+      "explicacao": {
+        "curta": "Consequência.",
+        "longa": "A queda do produto sai da rigidez."
+      },
+      "relacoes": [],
+      "parada": null
+    }
+  ],
+  "apoios": [
+    {
+      "alvo_id": "00000000000000000000000101",
+      "tipo": "exemplo",
+      "texto": "Pense num cardápio impresso."
+    }
+  ],
+  "job_id": "00000000000000000000000093",
+  "criado_em": "2026-09-25T12:20:00Z"
+}

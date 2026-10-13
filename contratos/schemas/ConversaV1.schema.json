@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ConversaV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "versao_id",
+    "ancora",
+    "mensagens",
+    "estado",
+    "criada_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "ancora": {
+      "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+    },
+    "marca_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "anotacao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "mensagens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/mensagem"
+      }
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "aberta",
+        "arquivada"
+      ]
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "mensagem": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "autor",
+            "texto",
+            "criada_em"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            },
+            "autor": {
+              "const": "pedro"
+            },
+            "texto": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8000,
+              "pattern": "\\S"
+            },
+            "criada_em": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "autor",
+            "texto",
+            "citacoes",
+            "criada_em"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            },
+            "autor": {
+              "const": "ia"
+            },
+            "texto": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 20000,
+              "pattern": "\\S"
+            },
+            "citacoes": {
+              "type": "array",
+              "minItems": 0,
+              "items": {
+                "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+              }
+            },
+            "contexto": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "snapshot_hash",
+                "blocos"
+              ],
+              "properties": {
+                "snapshot_hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "blocos": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+                  }
+                }
+              }
+            },
+            "execucao": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "modelo",
+                "esforco"
+              ],
+              "properties": {
+                "modelo": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "esforco": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "criada_em": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

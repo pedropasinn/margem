@@ -1,0 +1,18 @@
+{
+  "versao": 1,
+  "geral": [],
+  "por_documento": [
+    {
+      "id": "clareza",
+      "tipo": "escala",
+      "enunciado": "As notas foram claras?",
+      "obrigatoria": false
+    },
+    {
+      "id": "nota_util",
+      "tipo": "texto_curto",
+      "enunciado": "Qual nota foi a mais útil?",
+      "obrigatoria": false
+    }
+  ]
+}

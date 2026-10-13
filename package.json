@@ -1,0 +1,49 @@
+{
+  "name": "margem",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Leitor de textos marcados: ingestão, marcação por Codex em duas passagens, leitor com notas na margem.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "web",
+    "servico",
+    "contratos",
+    "core"
+  ],
+  "scripts": {
+    "preflight": "bash tools/preflight.sh",
+    "dev": "node tools/dev.mjs",
+    "api": "node --import tsx servico/src/api.ts",
+    "worker": "node --import tsx servico/src/worker/main.ts",
+    "portao": "node --import tsx servico/src/sala/portao.ts",
+    "typecheck": "tsc -b",
+    "pree2e": "npm run build --workspace @margem/web",
+    "e2e": "node --import tsx tests/e2e/resiliencia.ts",
+    "auditar": "node --import tsx servico/src/ferramentas/auditar.ts",
+    "avaliar": "node --import tsx servico/src/ferramentas/avaliar.ts",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "test:ferramentas": "node --test tools/tests/*.test.mjs",
+    "narrar-visita": "node --import tsx servico/src/ferramentas/narrar-visita.ts",
+    "preparar-visita": "node --import tsx servico/src/ferramentas/preparar-visita.ts",
+    "preparar-leitura-comentada": "node --import tsx servico/src/ferramentas/preparar-leitura-comentada.ts",
+    "narrar-leitura-comentada": "node --import tsx servico/src/ferramentas/narrar-leitura-comentada.ts",
+    "exemplo-obsidian": "node --import tsx servico/src/ferramentas/exemplo-obsidian.ts",
+    "arte:empacotar": "node --import tsx servico/src/ferramentas/empacotar-acervo.ts",
+    "arte:instalar": "node --import tsx servico/src/ferramentas/instalar-acervo.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@vitest/coverage-v8": "^3.2.7",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "eslint": "^9.39.5",
+    "playwright": "^1.63.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^3.2.7"
+  }
+}

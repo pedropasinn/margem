@@ -1,0 +1,221 @@
+/*
+ * Barra de leitura enxuta (Player v2, etapa 1). Três grupos: à esquerda o voltar e o sumário; no centro
+ * a posição; à direita as ferramentas, separadas do painel por um traço fino. Só ícones, cada um com a
+ * dica (rótulo e atalho) em hover ou foco. Mesma família e mesma superfície da barra anterior.
+ */
+.barra-do-leitor.filtros {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  min-height: 56px;
+  box-sizing: border-box;
+  padding: 8px 16px;
+}
+.barra-grupo { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.barra-esquerda { justify-self: start; }
+.barra-centro { justify-self: center; }
+.barra-direita { justify-self: end; }
+.barra-direita .acoes-da-barra { margin: 0 8px 0 0; }
+
+.botao-da-barra.ui-icon {
+  position: relative;
+  width: 36px; height: 36px; min-height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-8);
+  color: var(--texto-2);
+}
+.botao-da-barra.ui-icon:hover { color: var(--texto-1); background: var(--bg-hover); }
+.botao-da-barra.ui-icon:is([aria-expanded="true"], [aria-pressed="true"]) { color: var(--texto-1); background: var(--bg-hover); }
+.botao-da-barra.ui-icon:disabled { opacity: .35; }
+a.botao-da-barra { text-decoration: none; }
+.separador-da-barra { width: 1px; height: 20px; margin-inline: 8px; background: var(--borda); flex-shrink: 0; }
+
+/* A dica: rótulo e, quando há, o atalho. Aparece sob o botão, como no Readwise. */
+.barra-do-leitor [data-dica]:is(:hover, :focus-visible)::after,
+.painel-esquerdo [data-dica]:is(:hover, :focus-visible)::after,
+.pilula-de-leitura [data-dica]:is(:hover, :focus-visible)::after,
+.dicas-acima [data-dica]:is(:hover, :focus-visible)::after {
+  content: attr(data-dica);
+  position: absolute; z-index: 120; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  padding: 5px 9px; border-radius: 6px;
+  background: #262626; color: #fff;
+  font: 500 12px/1.3 var(--sans); white-space: pre; pointer-events: none;
+}
+.barra-do-leitor [data-dica][data-atalho]:is(:hover, :focus-visible)::after,
+.painel-esquerdo [data-dica][data-atalho]:is(:hover, :focus-visible)::after,
+.pilula-de-leitura [data-dica][data-atalho]:is(:hover, :focus-visible)::after,
+.dicas-acima [data-dica][data-atalho]:is(:hover, :focus-visible)::after { content: attr(data-dica) "   " attr(data-atalho); }
+/* Nos controles da base da tela (pílula, players), a dica sobe. */
+.pilula-de-leitura [data-dica], .dicas-acima [data-dica] { position: relative; }
+.pilula-de-leitura [data-dica]::after, .dicas-acima [data-dica]::after { top: auto !important; bottom: calc(100% + 8px); }
+.pilula-de-leitura > :last-child[data-dica]::after { left: auto; right: 0; transform: none; }
+.barra-direita > :last-child[data-dica]::after, .barra-direita > :nth-last-child(2)[data-dica]::after { left: auto; right: 0; transform: none; }
+.barra-esquerda > :first-child[data-dica]::after, .painel-esquerdo [data-dica]::after { left: 0; transform: none; }
+
+/* A posição no centro: o número; no hover, − e + dos lados, numa pílula discreta. */
+.posicao-na-barra {
+  display: inline-flex; align-items: center; gap: 0;
+  padding: 2px; border: 1px solid transparent; border-radius: var(--r-8);
+  font: 13px var(--sans); color: var(--texto-3);
+}
+.posicao-na-barra:is(:hover, :focus-within) { border-color: var(--borda); }
+.posicao-atual {
+  position: relative; border: 0; background: transparent; cursor: pointer;
+  min-height: 24px; padding: 4px 8px; border-radius: 6px; font: inherit; color: inherit; white-space: nowrap;
+}
+.posicao-atual:disabled { cursor: default; }
+.posicao-atual:hover:not(:disabled) { background: var(--bg-hover); }
+.posicao-numero { color: var(--texto-1); font-weight: 600; }
+.posicao-passo.ui-icon { width: 28px; height: 28px; min-height: 28px; padding: 0; visibility: hidden; color: var(--texto-2); }
+.posicao-na-barra:is(:hover, :focus-within) .posicao-passo { visibility: visible; }
+.ir-para form { display: flex; align-items: flex-end; gap: 8px; }
+.ir-para label { display: grid; gap: 6px; flex: 1; font-size: 13px; }
+
+/* Popovers pequenos da barra: atenção e ouvir. */
+.menu-da-barra.ui-popover { padding: 8px; }
+.popover-atencao.ui-popover { padding: 14px 16px; }
+.popover-atencao .controle-atencao { justify-content: space-between; }
+.popover-atencao .valor-atencao { display: inline; position: static; padding: 0; border: 0; background: none; color: var(--texto-3); }
+.lista-de-acoes { list-style: none; margin: 0; padding: 0; }
+.lista-de-acoes .ui-button { width: 100%; justify-content: flex-start; gap: 12px; padding: 10px 12px; text-align: left; white-space: normal; font-weight: 500; }
+.lista-de-acoes .ui-button > span { display: grid; gap: 2px; }
+.lista-de-acoes .ui-button[aria-pressed="true"] { background: var(--bg-hover); }
+.acao-detalhe { color: var(--texto-3); font-size: 12px; font-weight: 400; }
+
+/* O painel esquerdo: sumário (e, no PDF, miniaturas), sobreposto como o direito, sem deslocar o texto. */
+.painel-esquerdo {
+  position: fixed; z-index: 58; left: 0; bottom: 0; top: calc(var(--altura-casca-leitor, 0px) + 56px);
+  /* Cabe na faixa à esquerda do texto (sem cobri-lo); onde a faixa é estreita demais, sobrepõe com sombra. */
+  width: clamp(240px, calc((var(--largura-util, 100vw) - var(--medida-texto, 850px)) / 2 - 16px), 300px); max-width: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column;
+  background: var(--bg-2); border-right: 1px solid var(--borda); border-top: 1px solid var(--borda);
+  border-top-right-radius: var(--r-12);
+  font: 14px/1.5 var(--sans); color: var(--texto-1);
+}
+.painel-esquerdo-cabeca { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 6px 20px; }
+.painel-esquerdo-titulo { font-weight: 600; }
+.painel-esquerdo-conteudo { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 24px; }
+.painel-esquerdo .capitulos-titulo { margin: 4px 8px; font-size: 15px; }
+.painel-esquerdo .capitulos-conta { margin: 0 8px 8px; font-size: 13px; }
+.painel-esquerdo .progress-track { margin: 0 8px 12px; }
+.painel-esquerdo .capitulos a:not(.voltar) { padding: 8px; border-radius: var(--r-8); text-decoration: none; }
+.painel-esquerdo .capitulos a:hover { background: var(--bg-hover); color: var(--texto-1); }
+
+@media (max-width: 799px) {
+  .painel-esquerdo { top: auto; width: 100%; height: 75dvh; border-right: 0; border-radius: var(--r-16) var(--r-16) 0 0; box-shadow: 0 -8px 32px #0003; z-index: 91; }
+}
+@media (max-width: 599.98px) {
+  .barra-do-leitor.filtros { padding: 8px 6px; gap: 2px; grid-template-columns: auto minmax(0, 1fr) auto; }
+  .separador-da-barra { margin-inline: 2px; }
+  .posicao-total { display: none; }
+  .barra-do-leitor .posicao-passo { display: none; }
+  .botao-da-barra.ui-icon { width: 34px; }
+}
+
+/* A pílula do canto inferior direito (Player v2, etapa 2): zoom e próxima página no PDF, A− e A+ no texto. */
+.pilula-de-leitura .zoom-atual { min-width: 48px; min-height: 24px; padding: 4px 6px; border: 0; border-radius: 6px; background: none; color: var(--texto-2); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+.pilula-de-leitura .zoom-atual:hover, .pilula-de-leitura .zoom-atual:focus-visible { background: var(--bg-hover); color: var(--texto-1); }
+.pilula-de-leitura {
+  position: fixed; z-index: 57; right: 20px; bottom: 20px;
+  display: inline-flex; align-items: center; gap: 2px; padding: 4px;
+  border: 1px solid var(--borda); border-radius: var(--r-pilula);
+  background: var(--surface-1, var(--bg)); box-shadow: 0 4px 16px #0000001f;
+  font: 13px var(--sans); color: var(--texto-2);
+}
+.pilula-de-leitura .ui-icon { width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: 50%; color: var(--texto-2); }
+.pilula-de-leitura .ui-icon:hover:not(:disabled) { color: var(--texto-1); }
+.pilula-de-leitura .ui-icon:disabled { opacity: .35; }
+.pilula-valor { min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; color: var(--texto-3); }
+.pilula-traco { width: 1px; height: 18px; margin-inline: 2px; background: var(--borda); }
+/* Com o painel direito aberto (ao lado do texto), a pílula fica à esquerda dele. */
+@media (min-width: 800px) {
+  .leitor-controlado:has(> .painel-do-leitor) .pilula-de-leitura { right: 420px; }
+}
+/* No celular, a pílula não disputa a base com o player de mídia nem com a folha da nota. */
+@media (max-width: 599.98px) {
+  .pilula-de-leitura { right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .pilula-de-leitura .ui-icon { width: 30px; height: 30px; min-height: 30px; }
+}
+html:has(.player-midia) .pilula-de-leitura, html:has(.folha) .pilula-de-leitura { display: none; }
+@media print { .pilula-de-leitura { display: none; } }
+
+/* Painel esquerdo (etapa 7): Sumário e Miniaturas no alto; as miniaturas como as do Readwise. */
+.vistas-do-painel { display: flex; gap: 2px; padding: 2px; border-radius: var(--r-8); background: var(--bg-hover); }
+.vistas-do-painel button { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 0; border-radius: 6px; background: none; color: var(--texto-3); font: 500 13px var(--sans); cursor: pointer; }
+.vistas-do-painel button[aria-selected="true"] { background: var(--bg); color: var(--texto-1); box-shadow: 0 1px 2px #0000001a; }
+.miniaturas { list-style: none; margin: 0; padding: 8px 0; display: grid; justify-items: center; gap: 14px; }
+.miniatura { position: relative; display: grid; justify-items: center; gap: 6px; padding: 6px; border: 2px solid transparent; border-radius: var(--r-8); background: none; cursor: pointer; }
+.miniatura canvas { display: block; background: #fff; box-shadow: 0 1px 4px #0000002b; border-radius: 2px; }
+.miniatura:hover { background: var(--bg-hover); }
+.miniatura[aria-current="page"] { border-color: var(--accent); }
+.miniatura-numero { min-width: 22px; padding: 0 6px; border-radius: 999px; font: 600 11px/18px var(--sans); color: var(--texto-3); }
+.miniatura[aria-current="page"] .miniatura-numero { background: var(--accent); color: #fff; }
+
+/* Seções dentro do capítulo no sumário: recuadas, menores; a seta abre e fecha as de cada capítulo. */
+.painel-esquerdo .capitulos .linha-do-capitulo { display: flex; align-items: center; gap: 2px; }
+.painel-esquerdo .capitulos .linha-do-capitulo > a { flex: 1; min-width: 0; }
+.painel-esquerdo .abrir-secoes { flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--r-8); background: none; color: var(--texto-3); cursor: pointer; }
+.painel-esquerdo .abrir-secoes:hover { background: var(--bg-hover); color: var(--texto-1); }
+.painel-esquerdo .abrir-secoes svg { transition: transform .15s; transform: rotate(-90deg); }
+.painel-esquerdo .abrir-secoes[aria-expanded="true"] svg { transform: none; }
+.painel-esquerdo .secoes-do-capitulo { margin: 0 0 6px; padding: 0; list-style: none; }
+.painel-esquerdo .capitulos a.secao-do-sumario { display: block; padding: 5px 8px 5px 30px; font-size: 13px; line-height: 1.4; color: var(--texto-2); }
+.painel-esquerdo .capitulos a.secao-do-sumario.profundidade-2 { padding-left: 46px; font-size: 12.5px; color: var(--texto-3); }
+.painel-esquerdo .capitulos a.secao-do-sumario:hover { color: var(--texto-1); }
+@media (prefers-reduced-motion: reduce) { .painel-esquerdo .abrir-secoes svg { transition: none; } }
+
+/* Busca no documento (Ctrl F): um painel à direita, abaixo da barra, que não cobre o texto nem o trava. */
+.busca-no-documento {
+  position: fixed; z-index: 70; right: 16px; top: calc(var(--altura-casca-leitor, 0px) + 64px);
+  /* Na faixa à direita do texto (onde vive a margem), como o painel esquerdo do outro lado: o texto
+     centrado não é coberto; só onde a faixa é estreita demais o painel sobrepõe, com sombra. */
+  width: clamp(240px, calc((100vw - min(var(--largura-leitura, 850px), calc(100vw - 48px))) / 2 - 32px), 380px); max-height: calc(100dvh - var(--altura-casca-leitor, 0px) - 88px);
+  display: flex; flex-direction: column; box-sizing: border-box;
+  border: 2px solid var(--borda-3d); border-radius: var(--r-16); background: var(--surface-1); box-shadow: 0 12px 40px #0002;
+  font: 14px/1.5 var(--sans); color: var(--texto-1);
+}
+.busca-no-documento-campo { position: relative; display: flex; align-items: center; gap: 2px; padding: 10px 8px 10px 12px; }
+.busca-no-documento-lupa { position: absolute; left: 22px; top: 24px; height: 16px; display: flex; color: var(--texto-3); pointer-events: none; }
+.busca-no-documento-campo .ui-input { flex: 1; min-width: 0; height: 36px; padding-left: 32px; font-size: 14px; }
+.busca-no-documento-campo .ui-icon { width: 32px; height: 32px; min-height: 32px; }
+.busca-no-documento-contagem { flex-shrink: 0; margin: 0 4px 0 8px; font-size: 12px; color: var(--texto-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.busca-no-documento-contagem:empty { display: none; }
+.busca-no-documento-lista { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; list-style: none; margin: 0; padding: 0 8px 12px; border-top: 1px solid var(--borda); }
+.busca-no-documento-lista ul { list-style: none; margin: 0; padding: 0; }
+.busca-no-documento-capitulo { display: flex; justify-content: space-between; gap: 12px; margin: 12px 8px 4px; font-size: 12px; font-weight: 700; color: var(--texto-3); }
+.busca-no-documento-capitulo > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.busca-no-documento-trecho {
+  display: block; width: 100%; padding: 8px; border: 0; border-radius: var(--r-8); background: none; cursor: pointer;
+  font: 15px/1.45 var(--serif); color: var(--texto-2); text-align: left;
+}
+.busca-no-documento-trecho:hover, .busca-no-documento-trecho:focus-visible { background: var(--bg-hover); color: var(--texto-1); }
+.busca-no-documento-trecho[aria-current="true"] { background: var(--accent-suave); color: var(--texto-1); }
+.busca-no-documento mark, .busca-no-texto mark { background: none; color: var(--texto-1); text-decoration: underline 2px var(--accent); text-underline-offset: 3px; }
+.busca-no-documento-pagina { font: 12px var(--sans); color: var(--texto-3); }
+.busca-no-documento-nota { margin: 0; padding: 8px 16px 12px; font-size: 12px; color: var(--texto-3); }
+@media (max-width: 640px) {
+  .busca-no-documento { right: 8px; left: 8px; width: auto; }
+}
+/* Na faixa estreita, a contagem desce para baixo do campo. */
+.busca-no-documento-campo { flex-wrap: wrap; }
+.busca-no-documento-contagem { order: 1; flex-basis: 100%; margin: 4px 0 0 4px; }
+
+/* O progresso no livro fica no canto inferior esquerdo, espelhando a pílula do zoom à direita. */
+.progresso-no-livro {
+  position: fixed; z-index: 56; left: 20px; bottom: 26px;
+  display: flex; gap: 8px; font: 11px/1.35 var(--sans); white-space: nowrap; color: var(--texto-3);
+  pointer-events: none;
+}
+@media (max-width: 600px) {
+  .progresso-no-livro { left: 12px; bottom: calc(16px + env(safe-area-inset-bottom)); flex-direction: column; gap: 0; }
+}
+
+/* Tela de toque: os controles do leitor chegam a 44 px de altura (a barra perde 2 px de respiro em cima
+   e embaixo e continua com 56); a pílula ganha botões de 44 px. */
+@media (pointer: coarse) {
+  .barra-do-leitor.filtros { padding-block: 6px; }
+  .botao-da-barra.ui-icon { height: 44px; min-height: 44px; }
+  .posicao-atual { min-height: 44px; }
+  .pilula-de-leitura .ui-icon { width: 44px; height: 44px; min-height: 44px; }
+  .pilula-de-leitura .zoom-atual { min-height: 44px; }
+}

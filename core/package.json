@@ -1,0 +1,21 @@
+{
+  "name": "@margem/core",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./eink": "./src/eink.ts",
+    "./audio": "./src/audio.ts",
+    "./midia": "./src/midia.ts",
+    "./fluxograma": "./src/fluxograma.ts",
+    "./visita": "./src/visita.ts",
+    "./leitura-comentada": "./src/leitura-comentada.ts",
+    "./karaoke": "./src/karaoke.ts",
+    "./youtube": "./src/youtube.ts"
+  },
+  "types": "./src/index.ts"
+}

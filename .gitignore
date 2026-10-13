@@ -1,0 +1,18 @@
+node_modules/
+node_modules
+motor/.venv/
+motor/.venv
+.env*
+dist/
+coverage/
+*.tsbuildinfo
+__pycache__/
+.pytest_cache/
+fixtures/**/saida/
+tests/e2e/saida/
+avaliacao/bancada-50/reprojecao/
+
+.local/
+
+# Distribuição (J100): backups locais e a configuração gerada pelo instalador.
+distribuicao/backups/

@@ -1,0 +1,4 @@
+# Execução do motor; versões do ambiente validado em 25/09/2026.
+PyMuPDF==1.28.2
+# numpy: camada de texto da transcrição de PDF escaneado (tools/camada-da-transcricao.py), usada na imagem Docker.
+numpy==2.5.4

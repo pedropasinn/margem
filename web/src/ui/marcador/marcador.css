@@ -1,0 +1,21 @@
+.camada-de-marcas, .destaque-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: -1;
+  mix-blend-mode: var(--mistura-marca, multiply);
+}
+.destaque { position: relative; isolation: isolate; }
+.destaque-svg { inset: auto; left: 0; top: 0; }
+[data-animacao="aguardando"] { opacity: 0; }
+[data-animacao="desenhando"] .traco-faixa { animation: desenhar-faixa var(--duracao-marca) ease-out both; }
+[data-animacao="desenhando"] .traco-linha { animation: desenhar-linha var(--duracao-marca) ease-out both; }
+@keyframes desenhar-faixa { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes desenhar-linha { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-animacao] { opacity: 1; }
+  [data-animacao] path { animation: none !important; }
+}

@@ -1,0 +1,165 @@
+{
+  "descricao": "Resposta sobre o último verso do soneto, com núcleo (terceto 1 e 2) e contexto (título e quartetos). Erros típicos: aspas retas, palavra repetida, bloco que não estava no contexto, apoio repetido, sugestão para o próprio trecho e uma sugestão além das três.",
+  "tipo": "resposta",
+  "modo": {
+    "id": "literaria",
+    "revisao": 1
+  },
+  "versao_id": "01K5J17V000000000000000001",
+  "conversa_id": "01K5J17K000000000000000001",
+  "blocos": [
+    {
+      "id": "01K5J17B000000000000000010",
+      "ordem": 10,
+      "tipo": "secao",
+      "texto": "Círculo vicioso"
+    },
+    {
+      "id": "01K5J17B000000000000000011",
+      "ordem": 11,
+      "tipo": "estrofe",
+      "texto": "Bailando no ar, gemia inquieto vaga-lume:\n— “Quem me dera que fosse aquela loira estrela,\nQue arde no eterno azul, como uma eterna vela!”\nMas a estrela, fitando a lua, com ciúme:"
+    },
+    {
+      "id": "01K5J17B000000000000000012",
+      "ordem": 12,
+      "tipo": "estrofe",
+      "texto": "— “Pudesse eu copiar o transparente lume,\nQue, da grega coluna à gótica janela,\nContemplou, suspirosa, a fronte amada e bela!”\nMas a lua, fitando o sol, com azedume:"
+    },
+    {
+      "id": "01K5J17B000000000000000013",
+      "ordem": 13,
+      "tipo": "estrofe",
+      "texto": "— “Mísera! tivesse eu aquela enorme, aquela\nClaridade imortal, que toda a luz resume!”\nMas o sol, inclinando a rútila capela:"
+    },
+    {
+      "id": "01K5J17B000000000000000014",
+      "ordem": 14,
+      "tipo": "estrofe",
+      "texto": "— “Pesa-me esta brilhante auréola de nume...\nEnfara-me esta azul e desmedida umbela...\nPor que não nasci eu um simples vaga-lume?”"
+    }
+  ],
+  "nucleo": [
+    "01K5J17B000000000000000013",
+    "01K5J17B000000000000000014"
+  ],
+  "ancora": {
+    "bloco_id": "01K5J17B000000000000000014",
+    "citacao": "Por que não nasci eu um simples vaga-lume?"
+  },
+  "pergunta": "Por que o poema termina de volta no vaga-lume?",
+  "resposta": {
+    "texto": "Porque o soneto é montado como uma cadeia de desejos que dá a volta: o vaga-lume do primeiro verso quer ser a estrela, a estrela quer ser a lua, a lua quer ser o sol, e o sol, no fim, quer ser o vaga-lume. O título já anuncia o círculo. Uma leitura possível é que ninguém na cadeia está satisfeito com o próprio lugar, nem quem está no topo.",
+    "pontos": [
+      {
+        "tipo": "estrutura",
+        "texto": "O primeiro e o último verso terminam na mesma palavra, e isso fecha o círculo.",
+        "apoios": [
+          {
+            "bloco_id": "01K5J17B000000000000000011",
+            "citacao": "Bailando no ar, gemia inquieto vaga-lume:"
+          },
+          {
+            "bloco_id": "01K5J17B000000000000000014",
+            "citacao": "Por que não nasci eu um simples vaga-lume?"
+          }
+        ]
+      },
+      {
+        "tipo": "explicacao",
+        "texto": "Cada estrofe passa a palavra ao astro seguinte pelo mesmo verso de transição.",
+        "apoios": [
+          {
+            "bloco_id": "01K5J17B000000000000000012",
+            "citacao": "Mas a lua, fitando o sol, com azedume:"
+          },
+          {
+            "bloco_id": "01K5J17B000000000000000013",
+            "citacao": "Mas o sol, inclinando a rútila capela:"
+          }
+        ]
+      },
+      {
+        "tipo": "explicacao",
+        "texto": "O vaga-lume começa desejando a estrela.",
+        "apoios": [
+          {
+            "bloco_id": "01K5J17B000000000000000011",
+            "citacao": "— \"Quem me dera"
+          }
+        ]
+      },
+      {
+        "tipo": "objecao",
+        "texto": "O sol não parece desejar o vaga-lume por inveja, como os outros, mas por cansaço.",
+        "apoios": [
+          {
+            "bloco_id": "01K5J17B000000000000000014",
+            "citacao": "esta"
+          },
+          {
+            "bloco_id": "01K5J17B000000000000000014",
+            "citacao": "Pesa-me esta brilhante auréola de nume..."
+          }
+        ]
+      },
+      {
+        "tipo": "conexao",
+        "texto": "O vaga-lume do fim retoma o do começo.",
+        "apoios": [
+          {
+            "bloco_id": "01K5J17B000000000000000099",
+            "citacao": "vaga-lume"
+          },
+          {
+            "bloco_id": "01K5J17B000000000000000011",
+            "citacao": "Bailando no ar, gemia inquieto vaga-lume:"
+          }
+        ]
+      },
+      {
+        "tipo": "pergunta",
+        "texto": "O cansaço do sol muda o sentido do desejo dos outros três?",
+        "apoios": []
+      }
+    ],
+    "sugestoes_de_conexao": [
+      {
+        "destino_bloco_id": "01K5J17B000000000000000011",
+        "citacao": "Bailando no ar, gemia inquieto vaga-lume:",
+        "relacao": "desenvolve",
+        "justificativa": "O último verso retoma o primeiro e inverte a direção do desejo."
+      },
+      {
+        "destino_bloco_id": "01K5J17B000000000000000014",
+        "citacao": "Por que não nasci eu um simples vaga-lume?",
+        "relacao": "semelhanca",
+        "justificativa": "O mesmo verso."
+      },
+      {
+        "destino_bloco_id": "01K5J17B000000000000000012",
+        "citacao": "Mas a lua, fitando o sol, com azedume:",
+        "relacao": "exemplo",
+        "justificativa": "Outro elo da cadeia de desejos, com o mesmo verso de transição."
+      },
+      {
+        "destino_bloco_id": "01K5J17B000000000000000013",
+        "citacao": "Claridade imortal",
+        "relacao": "tensao",
+        "justificativa": "A claridade que a lua deseja é o que pesa ao sol."
+      }
+    ]
+  },
+  "esperado": {
+    "citacoes": 5,
+    "sugestoes": 2,
+    "diagnosticos": {
+      "citacao_ausente": 1,
+      "ponto_sem_apoio": 1,
+      "citacao_ambigua": 1,
+      "bloco_fora_do_contexto": 1,
+      "conexao_para_a_origem": 1,
+      "sugestoes_excedentes": 1
+    }
+  }
+}

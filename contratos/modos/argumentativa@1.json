@@ -1,0 +1,53 @@
+{
+  "versao": 1,
+  "id": "argumentativa",
+  "revisao": 1,
+  "nome": "Argumentativa",
+  "descricao": "O método de F1: reconstruir o argumento pelas teses, pelos conceitos e condições que elas pressupõem e pelas justificativas que as sustentam. A cor indica a função do trecho, não sua verdade nem a concordância do leitor.",
+  "funcoes": [
+    {
+      "chave": "tese",
+      "rotulo": "Tese",
+      "pergunta": "O que o autor está afirmando ou demonstrando?",
+      "descricao": "Proposição principal, conclusão de uma seção ou resultado de um argumento. Amarelo.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "conceito",
+      "rotulo": "Conceito",
+      "pergunta": "O que preciso entender ou assumir para acompanhar essa afirmação?",
+      "descricao": "Definição, distinção, hipótese, pressuposto ou condição de validade. Verde.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "justificativa",
+      "rotulo": "Justificativa",
+      "pergunta": "Por que aceitar a afirmação ou como ela funciona?",
+      "descricao": "Passo explicativo, mecanismo, evidência, contraexemplo ou exemplo decisivo. Azul.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

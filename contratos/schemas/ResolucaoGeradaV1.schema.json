@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ResolucaoGeradaV1.schema.json",
+  "title": "Resolução passo a passo de um exercício, como o modelo devolve",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "enunciado",
+    "legibilidade",
+    "itens",
+    "conceitos",
+    "observacao"
+  ],
+  "properties": {
+    "enunciado": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8000,
+      "pattern": "\\S"
+    },
+    "legibilidade": {
+      "type": "string",
+      "enum": [
+        "boa",
+        "parcial",
+        "ruim"
+      ]
+    },
+    "itens": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rotulo",
+          "enunciado",
+          "estrategia",
+          "passos",
+          "resposta",
+          "verificacao"
+        ],
+        "properties": {
+          "rotulo": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "enunciado": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "pattern": "\\S"
+          },
+          "estrategia": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "pattern": "\\S"
+          },
+          "passos": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 40,
+            "items": {
+              "$ref": "#/$defs/passo"
+            }
+          },
+          "resposta": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "pattern": "\\S"
+          },
+          "verificacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "conceitos": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120,
+        "pattern": "\\S"
+      }
+    },
+    "observacao": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "passo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "texto",
+        "calculo"
+      ],
+      "properties": {
+        "texto": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "\\S"
+        },
+        "calculo": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

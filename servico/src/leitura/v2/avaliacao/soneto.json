@@ -1,0 +1,238 @@
+{
+  "descricao": "Soneto “Círculo vicioso” (Machado de Assis, Falenas, 1870) em quatro estrofes, modo literária, nível 3. Erros típicos: aspas retas no lugar das curvas, barra no lugar da quebra de verso, palavra repetida na estrofe, função de outro modo, saliência ausente, comentário fora do modo, marca no título (contexto), sobreposição e sublinhado que não está na citação.",
+  "tipo": "leitura",
+  "modo": {
+    "id": "literaria",
+    "revisao": 1
+  },
+  "nivel": 3,
+  "versao_id": "01K5J17V000000000000000001",
+  "camada_id": "01K5J17C000000000000000001",
+  "blocos": [
+    {
+      "id": "01K5J17B000000000000000010",
+      "ordem": 10,
+      "tipo": "secao",
+      "texto": "Círculo vicioso"
+    },
+    {
+      "id": "01K5J17B000000000000000011",
+      "ordem": 11,
+      "tipo": "estrofe",
+      "texto": "Bailando no ar, gemia inquieto vaga-lume:\n— “Quem me dera que fosse aquela loira estrela,\nQue arde no eterno azul, como uma eterna vela!”\nMas a estrela, fitando a lua, com ciúme:"
+    },
+    {
+      "id": "01K5J17B000000000000000012",
+      "ordem": 12,
+      "tipo": "estrofe",
+      "texto": "— “Pudesse eu copiar o transparente lume,\nQue, da grega coluna à gótica janela,\nContemplou, suspirosa, a fronte amada e bela!”\nMas a lua, fitando o sol, com azedume:"
+    },
+    {
+      "id": "01K5J17B000000000000000013",
+      "ordem": 13,
+      "tipo": "estrofe",
+      "texto": "— “Mísera! tivesse eu aquela enorme, aquela\nClaridade imortal, que toda a luz resume!”\nMas o sol, inclinando a rútila capela:"
+    },
+    {
+      "id": "01K5J17B000000000000000014",
+      "ordem": 14,
+      "tipo": "estrofe",
+      "texto": "— “Pesa-me esta brilhante auréola de nume...\nEnfara-me esta azul e desmedida umbela...\nPor que não nasci eu um simples vaga-lume?”"
+    }
+  ],
+  "responsaveis": [
+    "01K5J17B000000000000000011",
+    "01K5J17B000000000000000012",
+    "01K5J17B000000000000000013",
+    "01K5J17B000000000000000014"
+  ],
+  "saida": {
+    "marcas": [
+      {
+        "bloco_id": "01K5J17B000000000000000011",
+        "citacao": "fitando a lua, com ciúme",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "voz",
+        "saliencia": 3,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000011",
+        "citacao": "Mas a estrela, fitando a lua, com ciúme:",
+        "prefixo": "eterna vela!”\n",
+        "sufixo": "",
+        "funcao": "forma",
+        "saliencia": 1,
+        "sublinhar": [],
+        "comentario": {
+          "tipo": "LEITURA",
+          "rotulo": "→ LEITURA",
+          "texto": "O verso de fecho de cada quarteto repete a fórmula “Mas a X, fitando a Y”: cada desejo passa adiante para o astro seguinte, e é essa repetição que monta o círculo do título."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000011",
+        "citacao": "— \"Quem me dera que fosse aquela loira estrela,",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "imagem",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": {
+          "tipo": "AUTOR",
+          "rotulo": "AUTOR · IMAGEM",
+          "texto": "O vaga-lume deseja ser a estrela."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000013",
+        "citacao": "aquela enorme, aquela\nClaridade imortal",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "forma",
+        "saliencia": 2,
+        "sublinhar": [
+          "aquela\nClaridade"
+        ],
+        "comentario": {
+          "tipo": "LEITURA",
+          "rotulo": "→ LEITURA",
+          "texto": "O corte depois do segundo “aquela” suspende o objeto do desejo no fim do verso; a claridade só chega no verso seguinte, como se custasse a vir."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000013",
+        "citacao": "aquela",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "imagem",
+        "saliencia": 3,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000014",
+        "citacao": "Por que não nasci eu um simples vaga-lume?",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "tese",
+        "saliencia": 1,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000014",
+        "citacao": "Por que não nasci eu um simples vaga-lume?",
+        "prefixo": "",
+        "sufixo": "”",
+        "funcao": "virada",
+        "saliencia": 1,
+        "sublinhar": [],
+        "comentario": {
+          "tipo": "LEITURA",
+          "rotulo": "→ LEITURA",
+          "texto": "O desejo do sol devolve o poema ao vaga-lume do primeiro verso: o círculo fecha, e quem estava no topo quer o lugar de baixo."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000013",
+        "citacao": "Mas o sol, inclinando a rútila capela:",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "virada",
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000011",
+        "citacao": "vaga-lume: / — “Quem",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "forma",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000012",
+        "citacao": "Contemplou, suspirosa, a fronte amada e bela!”",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "voz",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": {
+          "tipo": "OBJECAO",
+          "rotulo": "× OBJEÇÃO",
+          "texto": "A lua fala como amante, e não como astro."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000010",
+        "citacao": "Círculo vicioso",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "intertexto",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000014",
+        "citacao": "Enfara-me esta azul e desmedida umbela...",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "som_e_ritmo",
+        "saliencia": 3,
+        "sublinhar": [
+          "desmedida",
+          "capela"
+        ],
+        "comentario": {
+          "tipo": "LEITURA",
+          "rotulo": "→ LEITURA",
+          "texto": "As reticências dos dois primeiros versos do terceto alongam o cansaço do sol antes da pergunta final."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000014",
+        "citacao": "auréola de nume",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "nenhuma",
+        "saliencia": 3,
+        "sublinhar": [],
+        "comentario": {
+          "tipo": "INVESTIGAR",
+          "rotulo": "? INVESTIGAR",
+          "texto": "“Nume” é divindade: o sol se queixa da própria divindade ou da auréola que os outros lhe atribuem?"
+        }
+      }
+    ],
+    "resumo_da_parte": "O soneto encadeia quatro desejos: o vaga-lume quer ser estrela, a estrela quer ser lua, a lua quer ser sol e o sol quer ser vaga-lume. Cada quarteto e o primeiro terceto terminam passando a palavra ao astro seguinte. O último terceto fecha o círculo do título.",
+    "limites": [],
+    "leitura_integral": true
+  },
+  "esperado": {
+    "publicadas": 5,
+    "indices_publicados": [
+      1,
+      3,
+      6,
+      11,
+      12
+    ],
+    "diagnosticos": {
+      "sobreposicao_na_camada": 1,
+      "citacao_ausente": 2,
+      "citacao_ambigua": 1,
+      "funcao_fora_do_modo": 1,
+      "marca_invalida": 1,
+      "comentario_fora_do_modo": 1,
+      "bloco_fora_da_parte": 1,
+      "sublinhar_nao_resolvido": 1
+    }
+  }
+}

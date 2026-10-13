@@ -1,0 +1,33 @@
+{
+  "versao": 1,
+  "documento": {
+    "titulo": "Unicode",
+    "idioma": "pt-BR",
+    "formato": "md",
+    "sha256_original": "dac8da7f1d2425390aea6b904b7e81caa2843915e2b3f9cf48160914b79f03fa"
+  },
+  "canonizacao": {
+    "motor": "fixture-v1",
+    "gerado_em": "2026-09-20T18:00:00Z"
+  },
+  "hash_estrutural": "020a089baa68f7ae1b9db38f3eed91e2a67783911adcd33fac0346ec80fd77ba",
+  "secoes": [],
+  "blocos": [
+    {
+      "id": "00000000000000000000000001",
+      "ordem": 0,
+      "tipo": "estrofe",
+      "texto": "Primeiro verso\n   \nTerceiro verso",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 1
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "limites": []
+}

@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ExecucaoCompreensaoV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "versao_id",
+    "schema_versao",
+    "modo",
+    "prompts",
+    "executor",
+    "tamanho_parte_tokens",
+    "plano_partes",
+    "criada_em"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "schema_versao": {
+      "const": 3
+    },
+    "modo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revisao"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+          "maxLength": 40
+        },
+        "revisao": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "analise",
+        "sintese",
+        "revisao",
+        "plano"
+      ],
+      "properties": {
+        "analise": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "sintese": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "revisao": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "plano": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelo",
+        "esforco"
+      ],
+      "properties": {
+        "modelo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "esforco": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "tamanho_parte_tokens": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "plano_partes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

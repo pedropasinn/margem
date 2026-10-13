@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/AnotacaoV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "versao_id",
+    "ancora",
+    "tipo",
+    "texto",
+    "criada_em",
+    "atualizada_em",
+    "revisao_edicao"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "ancora": {
+      "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "impressao",
+        "observacao",
+        "hipotese",
+        "duvida",
+        "fonte",
+        "nota"
+      ]
+    },
+    "texto": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8000,
+      "pattern": "\\S"
+    },
+    "marca_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "revisao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "autor",
+        "texto_anterior",
+        "motivo",
+        "em"
+      ],
+      "description": "A última revisão feita pelo Codex (job `revisar_anotacao`): o texto do leitor antes dela e o motivo.",
+      "properties": {
+        "autor": {
+          "const": "codex"
+        },
+        "texto_anterior": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000,
+          "pattern": "\\S"
+        },
+        "motivo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600,
+          "pattern": "\\S"
+        },
+        "em": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "fonte": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "titulo"
+      ],
+      "properties": {
+        "titulo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "pattern": "\\S"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://",
+          "maxLength": 2000
+        },
+        "pagina": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "atualizada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revisao_edicao": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647,
+      "description": "Contador de concorrência; distinto da revisão textual do Codex."
+    }
+  },
+  "if": {
+    "properties": {
+      "tipo": {
+        "const": "fonte"
+      }
+    },
+    "required": [
+      "tipo"
+    ]
+  },
+  "then": {
+    "properties": {
+      "fonte": true
+    },
+    "required": [
+      "fonte"
+    ]
+  },
+  "else": {
+    "not": {
+      "properties": {
+        "fonte": true
+      },
+      "required": [
+        "fonte"
+      ]
+    }
+  }
+}

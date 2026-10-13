@@ -1,0 +1,364 @@
+/* Compreensão do capítulo (J31): estado na barra, leitura guiada, braquetes e perfil. */
+.acoes-da-barra { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.acoes-da-barra + .atencao-na-barra { margin-left: 16px; }
+.botao-guiada[aria-pressed='true'] { color: var(--accent-texto); }
+.estado-compreensao { font: 13px/1 var(--sans); color: var(--texto-2); white-space: nowrap; }
+.estado-compreensao[data-estado='falhou'] { color: var(--error-texto); }
+
+/* Largura da barra da leitura guiada. Registrada para que a transição anime a barra e o texto juntos. */
+@property --largura-guiada { syntax: '<length>'; inherits: true; initial-value: 0px; }
+html.com-leitura-guiada { transition: --largura-guiada .32s cubic-bezier(.2, .7, .2, 1); }
+html.arrastando-guiada { transition: none; }
+html.arrastando-guiada, html.arrastando-guiada * { cursor: col-resize; user-select: none; }
+@media (min-width: 900px) {
+  html.com-leitura-guiada body { padding-right: var(--largura-guiada, 0px); }
+  /* A barra do leitor e o progresso da rolagem ficam só sobre o texto, sem passar por baixo da barra
+     lateral, qualquer que seja a largura que o navegador dê ao corpo da página. */
+  html.com-leitura-guiada .filtros { box-sizing: border-box; max-width: calc(100vw - var(--largura-guiada, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { html.com-leitura-guiada { transition: none; } }
+
+/* O véu fica por cima do texto e não intercepta o ponteiro: é camada, nunca fundo do texto. Tem a cor
+   do próprio fundo da página, então o que está fora do passo some, e se desfaz em degradê perto dele. */
+.veu-guiado { position: fixed; inset: 0; right: var(--largura-guiada, 0px); z-index: 55; pointer-events: none; }
+.veu-guiado > div {
+  --veu: color-mix(in srgb, var(--fundo) 97%, transparent);
+  position: fixed; left: 0; right: var(--largura-guiada, 0px); transition: top .18s ease, height .18s ease;
+}
+.veu-guiado > .veu-cima { background: linear-gradient(to bottom, var(--veu) 0, var(--veu) calc(100% - 96px), transparent 100%); }
+.veu-guiado > .veu-meio { background: linear-gradient(to bottom, transparent 0, var(--veu) 48px, var(--veu) calc(100% - 48px), transparent 100%); }
+.veu-guiado > .veu-baixo { background: linear-gradient(to top, var(--veu) 0, var(--veu) calc(100% - 96px), transparent 100%); }
+@media (prefers-reduced-motion: reduce) { .veu-guiado > div { transition: none; } }
+@media (max-width: 899.98px) { .veu-guiado, .veu-guiado > div { right: 0; } }
+
+/* Barra lateral à direita, do topo ao fim da janela, lado a lado com o texto. Entra deslizando junto
+   com a variável: a largura do conteúdo é a final, e o deslocamento é o que ainda falta abrir. */
+.painel-guiado {
+  position: fixed; z-index: 75; top: var(--altura-casca-leitor, 0px); right: 0; bottom: 0;
+  width: var(--largura-guiada-alvo, 30vw);
+  transform: translateX(calc(var(--largura-guiada-alvo, 30vw) - var(--largura-guiada, 0px)));
+  background: var(--surface-1); box-shadow: -12px 0 32px #0000001a;
+  font: 14px/1.55 var(--sans); color: var(--texto-1);
+  display: flex; flex-direction: column;
+}
+.conteudo-guiado { flex: 1; min-height: 0; box-sizing: border-box; overflow: auto; display: grid; align-content: start; gap: 14px; padding: 22px 28px 28px 32px; }
+.divisor-guiado {
+  position: absolute; top: 0; bottom: 0; left: -6px; width: 12px; cursor: col-resize; touch-action: none; z-index: 1;
+}
+.divisor-guiado::after {
+  content: ''; position: absolute; top: 50%; left: 4px; width: 4px; height: 44px; margin-top: -22px;
+  border-radius: 4px; background: var(--borda-3d-hover); opacity: .6; transition: opacity .15s, background .15s;
+}
+.divisor-guiado:hover::after, .divisor-guiado:focus-visible::after, html.arrastando-guiada .divisor-guiado::after { opacity: 1; background: var(--accent); }
+.divisor-guiado:focus-visible { outline: none; }
+.cabeca-guiada { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.observar-guiado { margin: 0; color: var(--texto-2); }
+.explicacao-guiada { margin: 0; white-space: pre-wrap; }
+.parada-guiada { margin: 0; display: grid; gap: 4px; }
+.apoios-guiados { margin: 0; padding-left: 18px; color: var(--texto-2); }
+/* O roteiro do passo: as marcas do trecho e as ligações, cada uma apontando para o texto. */
+.roteiro-guiado, .relacoes-guiadas { display: grid; gap: 6px; }
+.roteiro-guiado ol, .relacoes-guiadas ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.item-guiado {
+  display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; width: 100%; padding: 8px 8px 8px 4px;
+  border: 0; border-radius: 8px; background: none; color: var(--texto-1); font: inherit; font-size: 14px; line-height: 1.45; text-align: left; cursor: pointer;
+}
+.item-guiado:is(:hover, :focus-visible) { background: var(--superficie-2, rgba(0, 0, 0, .04)); }
+.item-guiado:disabled { cursor: default; }
+.item-guiado .nota-numero { margin-top: 1px; }
+.item-guiado-texto { display: grid; gap: 2px; }
+.item-guiado .nota-rotulo { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-3); }
+.ligacao-guiada .nota-rotulo { color: var(--cor-relacao); }
+.pino-ligacao { width: 3px; height: 100%; min-height: 28px; margin-left: 9px; border-radius: 2px; background: var(--cor-relacao); }
+.citacao-guiada { color: var(--texto-2); font-size: 13px; }
+/* Citações clicáveis: link de texto, nunca botão com a cara do navegador. */
+.painel-guiado .citacao-link, .popover-braquete .citacao-link {
+  appearance: none; border: 0; background: none; padding: 0; margin: 0; font: inherit; font-size: 13px; line-height: 1.45;
+  text-align: left; color: var(--accent-texto); cursor: pointer;
+}
+.painel-guiado .citacao-link:hover, .popover-braquete .citacao-link:hover { text-decoration: underline; }
+.painel-guiado .citacao-link:disabled { color: var(--texto-3); cursor: default; text-decoration: none; }
+.navegacao-guiada {
+  flex-shrink: 0; display: flex; justify-content: space-between; gap: 8px;
+  padding: 14px 28px calc(18px + var(--base-3d) + env(safe-area-inset-bottom, 0px)) 32px;
+  border-top: 1px solid var(--borda); background: var(--surface-1);
+}
+/* Enquanto a barra está aberta, ela faz o papel da margem: as notas e as braquetes saem de cena. */
+html.com-leitura-guiada .margem { display: none; }
+@media (max-width: 899.98px) {
+  .painel-guiado {
+    top: auto; left: 0; width: auto; max-height: 45vh; transform: none; border-left: 0; border-top: 1px solid var(--borda);
+    border-radius: 16px 16px 0 0; box-shadow: 0 -8px 28px #0002; animation: subir-guiada .28s ease-out both;
+  }
+  .painel-guiado.saindo { animation: descer-guiada .28s ease-in both; }
+  .conteudo-guiado { padding: 16px 18px; font-size: 15px; line-height: 1.5; }
+  .navegacao-guiada { padding: 12px 20px calc(12px + var(--base-3d) + env(safe-area-inset-bottom, 0px)); }
+  .divisor-guiado { display: none; }
+}
+@keyframes subir-guiada { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes descer-guiada { from { transform: none; } to { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) { .painel-guiado, .painel-guiado.saindo { animation: none; } }
+
+/* Braquetes: uma cor por relação. Apagadas em repouso; a que está sob o mouse acende e as outras recuam. */
+.braquetes { position: fixed; inset: 0; z-index: 55; pointer-events: none; }
+:is(.braquetes, .painel-guiado, .mapa-capitulo) .cor-0 { --cor-relacao: #d4524a; }
+:is(.braquetes, .painel-guiado, .mapa-capitulo) .cor-1 { --cor-relacao: #e08a26; }
+:is(.braquetes, .painel-guiado, .mapa-capitulo) .cor-2 { --cor-relacao: #2f9e8f; }
+:is(.braquetes, .painel-guiado, .mapa-capitulo) .cor-3 { --cor-relacao: #7c63cc; }
+:is(.braquetes, .painel-guiado, .mapa-capitulo) .cor-4 { --cor-relacao: #3a82c4; }
+.braquetes-desenho { position: absolute; inset: 0; overflow: visible; }
+.relacao-braquete { color: var(--cor-relacao); opacity: .28; transition: opacity .18s ease; }
+.braquetes[data-acesa] .relacao-braquete:not(.acesa) { opacity: .08; }
+.relacao-braquete.acesa { opacity: 1; }
+/* Sob o mouse, esperando para acender: um pouco mais nítida, para se saber qual vai acender. */
+.relacao-braquete.candidata { opacity: .6; }
+.alvo-braquete.candidata { opacity: .75; }
+.braquete { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.relacao-braquete.retrospectiva .espinha { stroke-dasharray: 4 3; }
+.relacao-braquete.acesa .braquete { stroke-width: 2.2; }
+/* Faixa larga e invisível sobre o traço: passar perto já acende a relação. */
+.alvo-do-traco { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+.alvo-braquete {
+  position: absolute; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent;
+  color: var(--cor-relacao); opacity: .35; pointer-events: auto; cursor: pointer; transition: opacity .18s ease;
+}
+.alvo-braquete::after { content: ''; position: absolute; inset: 5px; border: 2px solid currentColor; border-radius: 50%; background: var(--fundo); transition: opacity .12s ease; }
+/* Aceso, o card toma o lugar do círculo: o círculo some (o botão continua como âncora de hover, foco e clique). */
+.alvo-braquete.acesa::after { opacity: 0; }
+.braquetes[data-acesa] .alvo-braquete:not(.acesa) { opacity: .1; }
+.alvo-braquete.acesa, .alvo-braquete:focus-visible { opacity: 1; }
+.alvo-braquete:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Véu da relação acesa: uma camada na cor do fundo, recortada por uma máscara. Página: branco (véu
+   cheio); resto dos parágrafos: cinza (véu leve); citações: preto (sem véu). */
+.veu-relacao { position: fixed; inset: 0; width: calc(100% - var(--largura-guiada, 0px)); height: 100%; pointer-events: none; animation: surgir-veu .2s ease-out both; }
+.veu-relacao .veu-cor { fill: var(--fundo); opacity: .9; }
+.veu-relacao .veu-pagina { fill: #fff; }
+.veu-relacao .veu-paragrafo { fill: #707070; }
+.veu-relacao .veu-citacao { fill: #000; }
+/* PDF: sombra em vez de névoa. Tudo escurece, menos os dois trechos, que ficam no contraste do original. */
+.veu-relacao.veu-pdf .veu-cor { fill: #0d1017; opacity: .46; }
+@keyframes surgir-veu { from { opacity: 0; } to { opacity: 1; } }
+
+/* Os dois trechos não cabem na tela: o texto entre eles se recolhe numa dobra, com o que foi recolhido
+   indicado no lugar. O texto recolhido não muda de fonte nem de cor: só sai de cena até o mouse sair. */
+[data-colapsado]:not([data-colapsado='marco']) { display: none !important; }
+[data-colapsado='marco'] {
+  position: relative; height: 2.6rem; margin-block: .6rem; overflow: hidden; font-size: 0 !important; line-height: 0 !important;
+  color: transparent; border-block: 1px dashed var(--borda-3d-hover); animation: surgir-veu .2s ease-out both;
+}
+[data-colapsado='marco'] * { display: none; }
+/* Com o texto recolhido, as notas dos trechos que saíram de cena não teriam onde ficar: a margem espera. */
+.leitor-controlado:has([data-colapsado]) .margem { visibility: hidden; }
+[data-colapsado='marco']::before {
+  content: '· · ·   ' attr(data-recolhidos) '   · · ·'; position: absolute; inset: 0; display: grid; place-items: center;
+  font: 12px/1 var(--sans); letter-spacing: .06em; color: var(--texto-3); white-space: pre;
+}
+
+/* No PDF, que não se dobra: a janela divide a página ao meio, sobre a coluna do texto. */
+.janela-dividida {
+  position: fixed; top: 72px; max-height: calc(100dvh - 96px); display: grid; grid-template-rows: auto auto auto;
+  border: 1px solid var(--borda); border-radius: var(--r-16); background: var(--surface-1); box-shadow: 0 16px 48px #0000002e;
+  pointer-events: none; overflow: hidden; animation: surgir-veu .2s ease-out both;
+}
+.painel-da-janela {
+  display: grid; align-content: start; gap: 6px; padding: 18px 28px 20px; overflow: hidden; max-height: calc((100dvh - 200px) / 2);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+}
+.texto-da-janela { margin: 0; font-family: var(--serif); font-size: calc(var(--tamanho-leitura, 22px) * .9); line-height: 1.6; color: var(--texto-1); }
+.texto-da-janela .contexto { color: var(--texto-3); }
+.divisoria-da-janela {
+  display: grid; gap: 2px; padding: 10px 28px; border-block: 1px solid var(--borda); background: var(--surface-2, var(--bg-2));
+  font: 13px/1.45 var(--sans); color: var(--texto-2);
+}
+.divisoria-da-janela > span { font-weight: 600; color: var(--cor-relacao); }
+.divisoria-da-janela > p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { .veu-relacao, .janela-dividida { animation: none; } }
+/* A explicação da relação, ao lado do círculo, enquanto ela está acesa. Não recebe o mouse. */
+.popover-braquete {
+  /* Anotação estrutural, não card de painel: fundo do próprio leitor, borda finíssima na cor da relação,
+     sem sombra, raio pequeno. A legenda (a relação) interrompe a borda; a frase é o conteúdo. */
+  --relation-color: var(--cor-relacao);
+  /* O fundo do card é o do ambiente em volta dele: no texto, o do leitor (o véu clareia até ele); no
+     PDF, o mesmo fundo escurecido pelo véu. A legenda usa a mesma cor e corta a borda sem virar aba. */
+  --fundo-do-card: var(--fundo);
+  position: absolute; box-sizing: border-box; width: 340px; min-width: 160px; min-height: 76px; margin: 0; padding: 14px 20px 18px; pointer-events: none;
+  /* Centrado na altura do círculo, que ele substitui. */
+  transform: translateY(-50%);
+  background: var(--fundo-do-card); border: .5px solid var(--relation-color); border-radius: 5px;
+  /* A espinha entra no card por cima e por baixo, no ponto do círculo (3/4 da largura). */
+  /* Abre a partir do ponto do círculo para os dois lados: o círculo vira o card, não aparece um card solto. */
+  animation: abrir-do-braquete .18s cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes abrir-do-braquete { from { opacity: 0; clip-path: inset(40% calc(100% - var(--origem-do-card, 75%)) 40% var(--origem-do-card, 75%) round 5px); } to { opacity: 1; clip-path: inset(0 0 0 0 round 5px); } }
+@media (prefers-reduced-motion: reduce) { .popover-braquete { animation: surgir-veu .08s ease-out both; } }
+.popover-braquete legend {
+  padding: 0 5px; margin-left: -3px; background: var(--fundo-do-card); color: var(--relation-color);
+  font: 500 11px/13px var(--sans); letter-spacing: .08em; text-transform: uppercase;
+}
+.braquetes.no-pdf .popover-braquete { --fundo-do-card: color-mix(in srgb, #0d1017 46%, var(--fundo)); }
+.popover-braquete p { margin: 6px 0 0; font: 400 15px/23px var(--sans); color: color-mix(in srgb, var(--texto-1) 88%, var(--bg)); }
+/* O fio que liga o card ao círculo do braquete, na mesma cor. */
+/* Celular: pontos na borda do parágrafo; tocar abre a relação numa folha inferior. */
+.braquetes.compactas { z-index: 58; }
+.pontos-braquete {
+  position: absolute; width: 36px; height: 24px; padding: 0 0 0 4px; border: 0; background: none; pointer-events: auto; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+/* A pilha: cada ponto cobre a borda do anterior, com um anel da cor do fundo entre eles. */
+.pontos-braquete > span {
+  position: absolute; top: 4px; margin-left: 4px; width: 9px; height: 9px; box-sizing: border-box; border-radius: 50%;
+  background: var(--cor-relacao); box-shadow: 0 0 0 1.5px var(--fundo-lateral, var(--fundo));
+}
+.pontos-braquete > span.retrospectiva { background: var(--fundo-lateral, var(--fundo)); border: 1.5px solid var(--cor-relacao); }
+.pontos-braquete > .mais-pontos {
+  width: auto; height: 11px; top: 3px; padding: 0 3px; border-radius: 6px; background: var(--chip-lateral, var(--superficie-2, #ececea)); color: var(--chip-lateral-texto, var(--texto-2));
+  font: 600 8px/11px var(--sans);
+}
+.braquetes.compactas .ponta-escolhida { fill: currentColor; stroke: var(--fundo-lateral, var(--fundo)); stroke-width: 1.5; }
+.folha-braquete { pointer-events: auto; display: grid; gap: 10px; padding-bottom: calc(1.3rem + env(safe-area-inset-bottom, 0px)); }
+.folha-braquete .ponta-da-folha .eyebrow { color: var(--cor-relacao); }
+.ponta-da-folha.escolhida { outline: 1.5px solid var(--cor-relacao); }
+.explicacao-braquete { font-family: var(--serif); font-size: 1.02rem; line-height: 1.45; color: var(--texto-1); }
+.pontas-da-folha { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ponta-da-folha {
+  display: grid; gap: 4px; width: 100%; padding: 10px 12px; border: 0; border-radius: 8px;
+  background: var(--superficie-2, rgba(0, 0, 0, .04)); color: var(--texto-2); font: inherit; text-align: left; cursor: pointer;
+}
+.citacao-da-ponta { font-family: var(--serif); font-size: .98rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+.perfil-do-leitor fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.perfil-do-leitor legend { font: 600 13px var(--sans); margin-bottom: 4px; }
+.linha-area { display: grid; grid-template-columns: 1fr 160px 36px; gap: 8px; align-items: center; }
+
+/* Leitura guiada: as chaves do passo, acesas por cima do véu, apontam o outro trecho. */
+.braquetes.guiadas { z-index: 56; }
+.braquetes.guiadas .relacao-braquete { opacity: 1; transition: opacity .18s ease; }
+.braquetes.guiadas .relacao-braquete.recuada { opacity: .25; }
+.braquetes.guiadas .circulo-guiado { fill: var(--fundo, #fff); stroke: currentColor; stroke-width: 1.6; }
+
+/* Mapa do capítulo: por cima do leitor, numa folha que rola; os arcos das relações na sarjeta. */
+.mapa-capitulo { position: fixed; inset: 0; z-index: 110; display: flex; flex-direction: column; overscroll-behavior: contain; background: var(--fundo, var(--bg)); }
+.mapa-rolagem { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.mapa-folha { box-sizing: border-box; width: min(760px, 100%); margin: 0 auto; padding: 8px 24px 64px; font-family: var(--sans); }
+.movimento-do-mapa { margin: 14px 0 22px; font: 17px/1.55 var(--serif); color: var(--texto-2); }
+.mapa-corpo { position: relative; }
+.arcos-do-mapa { position: absolute; left: 0; top: 0; overflow: visible; }
+.arco-do-mapa { fill: none; stroke: var(--cor-relacao); stroke-width: 1.4; opacity: .45; transition: opacity .15s ease; }
+.arco-do-mapa.retrospectiva { stroke-dasharray: 4 3; }
+.arco-do-mapa.aceso { opacity: 1; stroke-width: 2; }
+.arco-do-mapa.apagado { opacity: .08; }
+.unidade-do-mapa { margin: 0 0 22px; }
+.etapa-do-mapa { margin: 26px 0 10px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); }
+.unidade-do-mapa h3 { display: flex; align-items: baseline; gap: 10px; margin: 0; font: 600 16px/1.35 var(--sans); }
+.indice-da-unidade { font-size: 12px; color: var(--texto-3); }
+.funcao-da-unidade { margin: 2px 0 8px; font-size: 13px; color: var(--texto-2); }
+.unidade-do-mapa ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.elemento-do-mapa { transition: opacity .15s ease; }
+.elemento-do-mapa.recuado { opacity: .4; }
+.linha-do-mapa {
+  display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: start; width: 100%; padding: 6px 8px 6px 0;
+  border: 0; border-radius: 8px; background: none; color: var(--texto-1); font: inherit; text-align: left; cursor: pointer;
+}
+.linha-do-mapa:is(:hover, :focus-visible), .escolhido > .linha-do-mapa { background: var(--superficie-2, rgba(0, 0, 0, .04)); }
+.numero-do-mapa {
+  display: grid; place-items: center; width: 20px; height: 20px; margin-top: 1px; box-sizing: border-box;
+  border: 1.4px solid var(--texto-3); border-radius: 50%; color: var(--texto-2); font: 700 10px/1 var(--sans);
+}
+.centralidade-3 .numero-do-mapa { border-style: dashed; }
+.enunciado-do-mapa { font: 16px/1.45 var(--serif); }
+.centralidade-1 .enunciado-do-mapa { font-size: 17px; color: var(--texto-1); }
+.centralidade-2 .enunciado-do-mapa { color: var(--texto-1); }
+.centralidade-3 .enunciado-do-mapa { font-size: 15px; color: var(--texto-2); }
+.ligacoes-do-mapa { min-width: 18px; padding: 1px 6px; border-radius: 999px; background: var(--superficie-2, #ececea); color: var(--texto-2); font-size: 11px; text-align: center; }
+.detalhe-do-mapa { margin: 4px 0 10px 32px; display: grid; gap: 8px; }
+.citacao-do-mapa { margin: 0; font: italic 15px/1.45 var(--serif); color: var(--texto-2); }
+.detalhe-do-mapa ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ligacao-do-mapa { display: grid; gap: 2px; width: 100%; padding: 6px 10px; border: 0; border-radius: 8px; background: var(--superficie-2, rgba(0, 0, 0, .04)); color: var(--texto-1); font: 14px/1.4 var(--serif); text-align: left; cursor: pointer; }
+.ligacao-do-mapa .eyebrow { color: var(--cor-relacao); font-family: var(--sans); }
+.ir-ao-texto { justify-self: start; }
+.perifericos-do-mapa { margin: 4px 0 0 32px; padding: 2px 0; border: 0; background: none; color: var(--texto-3); font: 13px var(--sans); cursor: pointer; }
+@media (max-width: 599.98px) { .mapa-folha { padding: 4px 14px 48px; } .enunciado-do-mapa { font-size: 15px; } .centralidade-1 .enunciado-do-mapa { font-size: 16px; } }
+@media (prefers-reduced-motion: reduce) { .arco-do-mapa, .elemento-do-mapa { transition: none; } }
+
+
+/* Dobra do braquete no PDF: recortes reais da página, aproximados sobre o leitor, que fica intacto atrás.
+   Sem cartão, sem sombra grande: o véu tem a cor do leitor, e os recortes, a da folha. */
+.dobra-pdf { position: absolute; inset: 0; pointer-events: none; }
+.dobra-pdf-veu { position: absolute; inset: 0; }
+/* O leitor some atrás (a cor do fundo, quase opaca) e escurece como o véu do braquete: a dobra fica no
+   mesmo tom da página com as pontas perto, e só as citações ficam no contraste do original. */
+.dobra-pdf-veu::before { content: ''; position: absolute; inset: 0; background: var(--fundo); opacity: .94; }
+.dobra-pdf-veu::after { content: ''; position: absolute; inset: 0; background: #0d1017; opacity: .46; }
+.dobra-pdf-recorte { position: absolute; pointer-events: auto; will-change: transform, opacity; }
+.dobra-pdf-recorte .recorte-pdf { background: #fff; box-shadow: 0 0 0 1px #0000000a; }
+/* Nos recortes, as marcas por cima da página (a camada de marcas é, por padrão, de fundo). */
+.recorte-pdf-pagina { isolation: isolate; }
+.recorte-pdf-pagina canvas { z-index: 1; }
+.recorte-pdf-pagina .camada-de-marcas { z-index: 2; mix-blend-mode: multiply; }
+/* O véu do braquete dentro do recorte: o mesmo escuro do leitor, com as citações limpas. */
+.dobra-pdf-veu-do-recorte { position: absolute; z-index: 1; left: 0; top: 0; pointer-events: none; }
+.dobra-pdf-veu-do-recorte .veu-cor { fill: #0d1017; opacity: .46; }
+/* A lateral direita do recorte: os números das notas. A página fica dentro da folha, no canto de baixo. */
+.recorte-pdf-lateral { position: absolute; top: 0; width: 56px; overflow: hidden; pointer-events: none; }
+.recorte-pdf-notas { position: absolute; left: 0; top: 0; width: 100%; }
+.recorte-pdf-notas .nota-numero { position: absolute; left: 0; margin: 0; background: var(--fundo); }
+.recorte-pdf-pagina-numero { position: absolute; z-index: 2; width: 36px; text-align: right; color: #6b707a; font: 12px/18px var(--sans); font-variant-numeric: tabular-nums; pointer-events: none; }
+.recorte-pdf { position: relative; overflow: hidden; }
+.recorte-pdf-pagina { position: absolute; left: 0; top: 0; }
+.recorte-pdf-pagina canvas { position: absolute; left: 0; top: 0; display: block; }
+.recorte-pdf-pagina .camada-de-marcas { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+/* A dobra: um vinco curto entre os dois recortes, com a sombra mínima de papel dobrado. */
+.dobra-pdf-vinco { position: absolute; display: flex; align-items: center; justify-content: center; transform-origin: center; }
+.dobra-pdf-vinco::before, .dobra-pdf-vinco::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, #ffffff38 12%, #ffffff38 88%, transparent); }
+.dobra-pdf-vinco::before { top: 3px; }
+.dobra-pdf-vinco::after { bottom: 3px; }
+.dobra-pdf-omitido { position: relative; z-index: 1; padding: 0 10px; color: #e6e8ee; font: 11px/1 var(--sans); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.dobra-pdf-omitido::before, .dobra-pdf-omitido::after { content: '···'; margin: 0 6px; }
+.dobra-pdf-braquete { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.dobra-pdf-braquete .alvo-do-traco { pointer-events: stroke; }
+
+/* Famílias radiais: contador com semianel esquerdo; as pontas abrem para a margem. */
+.pontas-agrupadas { position: absolute; inset: 0; pointer-events: none; }
+.pilha-de-pontas, .centro-familia { position: absolute; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; pointer-events: auto; border-radius: 50%; color: var(--texto-1); }
+.semianel-pontas { width: 100%; height: 100%; overflow: visible; }
+.semianel-pontas path { fill: none; stroke: var(--cor-relacao); stroke-width: 9; }
+.numero-familia { position: absolute; top: 11px; left: 0; right: 0; text-align: center; font: 700 17px/22px var(--sans); text-shadow: 0 1px var(--fundo), 1px 0 var(--fundo), -1px 0 var(--fundo); }
+.pontas-espalhadas { position: fixed; height: 186px; pointer-events: auto; z-index: 2; }
+.centro-familia { left: 60px; top: 56px; z-index: 3; }
+.leque-pontas .centro-familia .semianel-pontas { animation: drenar-semianel .45s .1s both; }
+.leque-pontas.recolhendo .centro-familia .semianel-pontas { animation: restaurar-semianel .28s both; }
+.ponta-agrupada { position: absolute; left: 64px; top: 60px; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; transform: translate(var(--orb-x), var(--orb-y)); animation: abrir-ponta .65s cubic-bezier(.16,.82,.22,1) both; }
+.orb-relacao { position: relative; display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: var(--cor-relacao); color: #fff; box-shadow: 0 4px 12px #00000024, inset 0 0 0 1.5px #00000020; animation: crescer-ponta .65s both; }
+.ponta-agrupada.chegada .orb-relacao { background: var(--fundo); color: var(--cor-relacao); box-shadow: 0 4px 12px #00000018, inset 0 0 0 2px var(--cor-relacao); }
+.icone-da-relacao { width: 21px; height: 21px; }
+.direcao-ponta { position: absolute; right: -3px; bottom: -3px; width: 14px; height: 14px; border-radius: 50%; background: var(--fundo); color: var(--cor-relacao); font: 11px/14px var(--sans); box-shadow: 0 0 0 1px var(--cor-relacao); }
+.ponta-agrupada[aria-pressed='true'] .orb-relacao, .ponta-agrupada:focus-visible .orb-relacao { outline: 2px solid var(--cor-relacao); outline-offset: 3px; }
+.pilha-de-pontas:focus-visible, .centro-familia:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.paginas-leque { position: absolute; top: 160px; left: 4px; right: 4px; display: flex; align-items: center; justify-content: space-between; border-radius: 12px; background: var(--fundo); color: var(--texto-2); font: 11px/20px var(--sans); }
+.paginas-leque button { border: 0; background: transparent; color: inherit; cursor: pointer; }
+.paginas-leque button:disabled { opacity: .35; cursor: default; }
+.recolhendo .ponta-agrupada { animation: recolher-ponta .28s ease-in both; pointer-events: none; }
+.recolhendo .orb-relacao { animation: none; }
+.recolhendo .paginas-leque { visibility: hidden; }
+@keyframes abrir-ponta { from { transform: translate(0,0) scale(.3); opacity: 0; } to { transform: translate(var(--orb-x),var(--orb-y)) scale(1); opacity: 1; } }
+@keyframes crescer-ponta { 0% { transform: scale(.6); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes recolher-ponta { from { transform: translate(var(--orb-x),var(--orb-y)) scale(1); opacity: 1; } to { transform: translate(0,0) scale(.3); opacity: 0; } }
+@keyframes drenar-semianel { to { transform: scale(.1); opacity: 0; } }
+@keyframes restaurar-semianel { from { transform: scale(.1); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .leque-pontas *, .leque-pontas.recolhendo * { animation-duration: .001ms !important; animation-delay: 0ms !important; } }
+
+/* No modo radial, página e controles secundários recuam; relação e nota ficam na frente. */
+.braquetes.em-pontos .veu-relacao { z-index: 0; }
+.braquetes.em-pontos .braquetes-desenho { z-index: 3; }
+.braquetes.em-pontos .popover-braquete { z-index: 4; --fundo-do-card: var(--fundo); }
+.braquetes.em-pontos .dobra-pdf, .braquetes.em-pontos .janela-dividida { z-index: 3; }
+/* Preserva os alvos do mouse para não interromper o hover ao ocultar as bolinhas. */
+.braquetes.em-pontos[data-acesa] .pontas-agrupadas { opacity: 0; }
+.braquetes.em-pontos .dobra-pdf-veu::before { opacity: 0; }
+
+/* Duas linhas de contexto nas pontas da dobra, com a largura e os segmentos do original. */
+[data-recorte-texto] { position: relative; overflow: hidden; margin-block: .6rem; display: flow-root; }
+
+.ponta-avulsa { pointer-events: auto; transform: none; animation: none; }
+.ponta-avulsa .orb-relacao { animation: none; }

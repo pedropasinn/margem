@@ -1,0 +1,120 @@
+/*
+ * Leitor de quadro: a casca do leitor (barra, painel direito, painel esquerdo, pílula de zoom, player
+ * central) em volta da pintura. O palco ocupa o que sobra da tela; o painel direito, aberto, encolhe o
+ * palco (a pintura não fica por baixo dele). As regiões são traços discretos, acesos no hover e no foco.
+ */
+.leitor-de-quadro { position: fixed; inset: 0; background: var(--bg-2); color: var(--texto-1); font-family: var(--sans); }
+.leitor-de-quadro > .barra-do-quadro { position: fixed; top: 0; left: 0; right: 0; z-index: 60; border-bottom: 1px solid var(--borda); }
+.estado-do-quadro { display: grid; place-content: center; gap: 16px; justify-items: center; color: var(--texto-3); }
+
+.titulo-do-quadro { display: grid; justify-items: center; gap: 0; min-width: 0; max-width: min(56vw, 640px); line-height: 1.25; }
+.titulo-do-quadro .titulo { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 600 14px var(--sans); color: var(--texto-1); }
+.titulo-do-quadro .autor { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; color: var(--texto-3); }
+
+.palco-do-quadro { position: fixed; z-index: 1; top: 56px; left: 0; right: 0; bottom: 0; }
+.tela-do-quadro { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; }
+.tela-do-quadro.arrastando { cursor: grabbing; }
+.palco-estado { position: absolute; inset: 0; display: grid; place-content: center; margin: 0; color: var(--texto-3); font-size: 14px; }
+@media (min-width: 800px) {
+  .leitor-de-quadro[data-painel] .palco-do-quadro { right: 400px; }
+  .leitor-de-quadro[data-regioes] .palco-do-quadro { left: 280px; }
+  .leitor-de-quadro[data-painel] .pilula-do-quadro { right: 420px; }
+  .leitor-de-quadro[data-painel] .player-central { left: calc(50% - 200px); }
+  .leitor-de-quadro[data-painel] .legenda-do-quadro-moldura, .leitor-de-quadro[data-painel] .cartao-do-quadro { margin-right: 400px; }
+}
+
+/* Regiões: um halo escuro e um traço claro, finos (não escalam com o zoom); acesas na cor de acento. */
+.regiao-do-quadro { cursor: pointer; outline: none; }
+.regiao-do-quadro > * { fill: transparent; vector-effect: non-scaling-stroke; transition: stroke .15s, stroke-width .15s, opacity .15s; }
+.regiao-do-quadro > :nth-child(2) { stroke: #000; stroke-opacity: .35; stroke-width: 3; }
+.regiao-do-quadro > :nth-child(3) { stroke: #fff; stroke-opacity: .8; stroke-width: 1.25; }
+.regioes-do-quadro:not(.com-contornos) .regiao-do-quadro:not(.acesa) > * { opacity: 0; }
+.regioes-do-quadro.com-contornos .regiao-do-quadro:not(.acesa) { opacity: .55; }
+.regiao-do-quadro:is(:hover, :focus-visible) > * { opacity: 1; }
+.regiao-do-quadro:is(:hover, :focus-visible), .regiao-do-quadro.acesa { opacity: 1; }
+.regiao-do-quadro:is(:hover, :focus-visible, .acesa) > :nth-child(3) { stroke: var(--accent); stroke-opacity: 1; stroke-width: 2.25; fill: color-mix(in srgb, var(--accent) 10%, transparent); }
+.regiao-do-quadro:is(:hover, :focus-visible, .acesa) > :nth-child(2) { stroke-opacity: .5; stroke-width: 5; }
+
+/* A pílula de zoom, a mesma do PDF. */
+.pilula-do-quadro { z-index: 57; }
+
+/* Painel esquerdo: a lista de regiões, como o sumário. */
+.regioes-do-painel { top: 56px; }
+.lista-de-regioes { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.lista-de-regioes button { display: grid; gap: 2px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--r-8); background: none; color: var(--texto-1); font: 14px/1.35 var(--sans); text-align: left; cursor: pointer; }
+.lista-de-regioes button:hover, .lista-de-regioes button[aria-pressed="true"] { background: var(--bg-hover); }
+
+/* Painel direito: Análise. */
+.topo-da-analise { gap: 14px; }
+.seletor-de-analise { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--texto-3); }
+.seletor-de-analise .ui-select { flex: 1; min-width: 0; }
+.tese-do-quadro { margin: 0; font: 400 19px/1.45 var(--serif); color: var(--texto-1); }
+.acoes-da-analise { display: flex; flex-wrap: wrap; gap: 8px; }
+.acoes-da-analise .ui-button { display: inline-flex; gap: 8px; font-size: 13px; }
+.grupo-de-afirmacoes h3 { margin-top: 26px; }
+.afirmacoes-do-quadro > li { padding-bottom: 16px; margin-bottom: 16px; }
+.afirmacoes-do-quadro .painel-leitor-trecho.ui-button { gap: 8px; }
+.texto-da-afirmacao { font: 400 16px/1.5 var(--serif); color: var(--texto-1); }
+.regioes-da-afirmacao { display: inline-flex; align-items: center; gap: 6px; color: var(--texto-3); font-size: 12.5px; }
+.evidencia-da-afirmacao { margin: 8px 4px 0; color: var(--texto-2); font-size: 13.5px; }
+.evidencia-da-afirmacao p { margin: 0 0 8px; }
+.evidencia-da-afirmacao a, .fontes-do-quadro a { display: block; margin: 4px 0; color: var(--accent-texto); overflow-wrap: anywhere; }
+/* O tipo da afirmação: o ponto diz a natureza (cheio = visto ou documentado; anel = interpretação; tracejado = inferência; vazio = intenção desconhecida). */
+.tipo-da-afirmacao { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; flex: 0 0 auto; }
+.tipo-da-afirmacao[data-tipo="observacao"] { background: var(--accent); }
+.tipo-da-afirmacao[data-tipo="fato"] { background: var(--texto-1); }
+.tipo-da-afirmacao[data-tipo="interpretacao_documentada"] { box-shadow: inset 0 0 0 2px var(--texto-2); }
+.tipo-da-afirmacao[data-tipo="inferencia_ia"] { border: 1.5px dashed var(--texto-2); width: 6px; height: 6px; }
+.tipo-da-afirmacao[data-tipo="intencao_desconhecida"] { box-shadow: inset 0 0 0 1px var(--texto-3); }
+.metadados-do-quadro { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+.fontes-do-quadro, .limites-do-quadro { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+.fontes-do-quadro li { display: grid; gap: 2px; }
+.limites-do-quadro { gap: 10px; color: var(--texto-2); }
+
+/* A legenda da análise curta: uma faixa de leitura sobre a base da pintura, com o karaokê do leitor. */
+.legenda-do-quadro-moldura { position: fixed; z-index: 86; left: 0; right: 0; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 112px); display: flex; justify-content: center; padding-inline: 16px; pointer-events: none; }
+.legenda-do-quadro {
+  --karaoke-palavra: color-mix(in srgb, var(--accent) 30%, transparent);
+  position: relative; isolation: isolate; max-width: 720px; margin: 0; padding: 12px 18px;
+  border: 1px solid var(--borda); border-radius: var(--r-12);
+  background: color-mix(in srgb, var(--bg) 92%, transparent); box-shadow: 0 6px 24px #0000001f;
+  font: 400 20px/1.5 var(--serif); color: var(--texto-2); pointer-events: auto;
+}
+:root[data-tema="escuro"] .legenda-do-quadro { --karaoke-palavra: color-mix(in srgb, var(--accent) 52%, transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]):not([data-tema="sepia"]) .legenda-do-quadro { --karaoke-palavra: color-mix(in srgb, var(--accent) 52%, transparent); } }
+.legenda-do-quadro .bloco-da-legenda { position: absolute; left: 0; top: 0; z-index: -1; will-change: transform; }
+.legenda-do-quadro .dita { color: var(--texto-1); }
+.legenda-do-quadro .atual { color: var(--accent-texto); }
+:root[data-tema="escuro"] .legenda-do-quadro .atual { color: #fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]):not([data-tema="sepia"]) .legenda-do-quadro .atual { color: #fff; } }
+.legenda-do-quadro .por-vir { color: var(--texto-3); }
+.voltar-a-camera { left: 50%; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 200px); }
+
+/* O cartão do Percorrer: como a nota do Percorrer de grifos, no canto do palco, acima do player. */
+.cartao-do-quadro {
+  position: fixed; z-index: 86; left: 24px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 84px); width: min(380px, calc(100vw - 48px));
+  max-height: 44vh; overflow-y: auto; box-sizing: border-box; padding: 14px 16px;
+  border: 1px solid var(--borda); border-radius: var(--r-12); background: var(--surface-1, var(--bg)); box-shadow: 0 6px 24px #0000001a;
+  font: 14px/1.5 var(--sans); color: var(--texto-1);
+}
+.cartao-do-quadro .eyebrow { display: flex; align-items: center; margin-bottom: 6px; color: var(--texto-3); font: 600 11.5px/1.3 var(--sans); letter-spacing: .03em; text-transform: uppercase; }
+.fala-no-quadro { margin: 0; font: 400 17px/1.5 var(--serif); }
+.regioes-no-cartao { margin: 8px 0 0; color: var(--texto-3); font-size: 12.5px; }
+.cartao-do-quadro details { margin-top: 8px; color: var(--texto-2); font-size: 13px; }
+.cartao-do-quadro summary { cursor: pointer; color: var(--texto-3); }
+.cartao-do-quadro a { display: block; color: var(--accent-texto); overflow-wrap: anywhere; }
+.percorrer-do-quadro .contagem-do-percorrer span { max-width: 340px; }
+
+@media (max-width: 799.98px) {
+  .regioes-do-painel { top: auto; }
+}
+@media (max-width: 599.98px) {
+  .titulo-do-quadro .autor { display: none; }
+  .titulo-do-quadro { max-width: 100%; }
+  .barra-do-quadro .separador-da-barra { display: none; }
+  .legenda-do-quadro-moldura { bottom: calc(max(8px, env(safe-area-inset-bottom)) + 128px); padding-inline: 8px; }
+  .legenda-do-quadro { padding: 10px 12px; font-size: 17px; }
+  .cartao-do-quadro { left: 8px; right: 8px; width: auto; bottom: calc(max(8px, env(safe-area-inset-bottom)) + 64px); max-height: 38vh; }
+  .fala-no-quadro { font-size: 15.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .regiao-do-quadro > * { transition: none; } }

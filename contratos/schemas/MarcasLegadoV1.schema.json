@@ -1,0 +1,53 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["capitulo", "leitura_integral", "limites", "marcas", "recuperacao"],
+  "properties": {
+    "capitulo": {"type": "string", "description": "Número e título do capítulo lido."},
+    "leitura_integral": {"type": "boolean", "description": "true somente se todo o texto legível foi lido."},
+    "limites": {"type": "array", "items": {"type": "string"}, "description": "Trechos não cobertos, páginas problemáticas, problemas da entrada. Vazio se não houver."},
+    "marcas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "pagina_pdf", "funcao", "citacao", "sublinhar", "comentario"],
+        "properties": {
+          "id": {"type": "string", "description": "m01, m02, ... em ordem de leitura."},
+          "pagina_pdf": {"type": "integer", "description": "Número 'pdf N' do marcador de página que precede o trecho."},
+          "funcao": {"type": "string", "enum": ["tese", "conceito", "justificativa", "nenhuma"], "description": "tese=amarelo; conceito=verde; justificativa=azul; nenhuma=sem cor, só colchete na margem para ancorar um comentário."},
+          "citacao": {"type": "string", "description": "Trecho copiado literalmente do arquivo de texto, contíguo, dentro de um único parágrafo e de uma única página. Sem marcadores de página."},
+          "sublinhar": {"type": "array", "items": {"type": "string"}, "description": "Palavras ou expressões dentro da citação que merecem sublinhado (restrições, quantificadores, condições). Vazio se nenhuma."},
+          "comentario": {
+            "anyOf": [
+              {"type": "null"},
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["tipo", "rotulo", "texto"],
+                "properties": {
+                  "tipo": {"type": "string", "enum": ["AUTOR", "LEITURA", "INVESTIGAR", "OBJECAO", "CONEXAO"], "description": "AUTOR=paráfrase fiel; LEITURA=→ consequência inferida pelo assistente; INVESTIGAR=? dúvida ou pergunta; OBJECAO=× objeção fundamentada; CONEXAO=↔ relação sugerida."},
+                  "rotulo": {"type": "string", "description": "Rótulo curto conforme o método, ex.: 'AUTOR · DEFINIÇÃO', 'AUTOR · TESE', 'AUTOR · MECANISMO', 'AUTOR · CONDIÇÃO', '→ LEITURA', '? INVESTIGAR', '× OBJEÇÃO', '↔ CONEXÃO SUGERIDA'."},
+                  "texto": {"type": "string", "description": "Uma ideia, uma a três frases, em português."}
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "recuperacao": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pagina_pdf", "secao", "perguntas"],
+        "properties": {
+          "pagina_pdf": {"type": "integer", "description": "Página pdf em que a seção termina."},
+          "secao": {"type": "string"},
+          "perguntas": {"type": "array", "items": {"type": "string"}, "description": "Poucas perguntas (1 a 4) que permitam recuperar o argumento sem consultar o texto."}
+        }
+      }
+    }
+  }
+}

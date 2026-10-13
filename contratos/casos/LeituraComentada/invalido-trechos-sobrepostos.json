@@ -1,0 +1,119 @@
+{
+  "versao": 1,
+  "id": "01K0000000000000000000C001",
+  "execucao_id": "01K0000000000000000000E001",
+  "versao_id": "01K0000000000000000000V001",
+  "secao_id": "01K0000000000000000000S001",
+  "modelo_id": "01K0000000000000000000M001",
+  "fontes_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "capitulo": {
+    "titulo": "Capítulo um",
+    "numero": 1,
+    "total": 2
+  },
+  "trechos": [
+    {
+      "id": "t0001",
+      "bloco_id": "01K0000000000000000000B001",
+      "inicio_utf16": 0,
+      "fim_utf16": 49,
+      "texto": "Admitamos inicialmente que os preços são rígidos.",
+      "falado": "Admitamos inicialmente que os preços são rígidos."
+    },
+    {
+      "id": "t0002",
+      "bloco_id": "01K0000000000000000000B002",
+      "inicio_utf16": 0,
+      "fim_utf16": 25,
+      "texto": "O choque reduz o produto.",
+      "falado": "O choque reduz o produto."
+    },
+    {
+      "id": "t0003",
+      "bloco_id": "01K0000000000000000000B002",
+      "inicio_utf16": 3,
+      "fim_utf16": 55,
+      "texto": "Somente com preços rígidos o choque reduz o produto.",
+      "falado": "Somente com preços rígidos o choque reduz o produto."
+    }
+  ],
+  "pausas": [
+    {
+      "id": "p001",
+      "depois_de": "t0001",
+      "fontes": [
+        {
+          "tipo": "grifo",
+          "id": "01K0000000000000000000G001"
+        }
+      ],
+      "foco": [
+        {
+          "versao_id": "01K0000000000000000000V001",
+          "bloco_id": "01K0000000000000000000B001",
+          "inicio_utf16": 0,
+          "fim_utf16": 48,
+          "citacao": "Admitamos inicialmente que os preços são rígidos",
+          "prefixo": "",
+          "sufixo": ""
+        }
+      ],
+      "pontas": [],
+      "texto": "Repare: o autor chama a hipótese de inicial. Guarde isso.",
+      "falado": "Repare: o autor chama a hipótese de inicial. Guarde isso."
+    },
+    {
+      "id": "p002",
+      "depois_de": "t0003",
+      "fontes": [
+        {
+          "tipo": "grifo",
+          "id": "01K0000000000000000000G002"
+        },
+        {
+          "tipo": "relacao",
+          "id": "01K0000000000000000000R001"
+        }
+      ],
+      "foco": [
+        {
+          "versao_id": "01K0000000000000000000V001",
+          "bloco_id": "01K0000000000000000000B002",
+          "inicio_utf16": 26,
+          "fim_utf16": 77,
+          "citacao": "Somente com preços rígidos o choque reduz o produto",
+          "prefixo": "",
+          "sufixo": ""
+        }
+      ],
+      "pontas": [
+        {
+          "versao_id": "01K0000000000000000000V001",
+          "bloco_id": "01K0000000000000000000B001",
+          "inicio_utf16": 0,
+          "fim_utf16": 48,
+          "citacao": "Admitamos inicialmente que os preços são rígidos",
+          "prefixo": "",
+          "sufixo": ""
+        }
+      ],
+      "texto": "Aqui a conclusão volta à hipótese do começo: sem preços rígidos, nada disso vale.",
+      "falado": "Aqui a conclusão volta à hipótese do começo: sem preços rígidos, nada disso vale."
+    }
+  ],
+  "saltados": [
+    {
+      "bloco_id": "01K0000000000000000000B003",
+      "tipo": "codigo"
+    }
+  ],
+  "proxima_secao_id": "01K0000000000000000000S002",
+  "diagnosticos": [],
+  "execucao": {
+    "modelo": "gpt-6-astra",
+    "esforco": "medium",
+    "prompt": "comentar-leitura@1"
+  },
+  "job_id": "01K0000000000000000000J001",
+  "criado_em": "2026-09-29T23:00:00.000Z"
+}

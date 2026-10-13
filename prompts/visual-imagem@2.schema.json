@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/visual-imagem@2.schema.json",
+  "title": "Texto alternativo da imagem gerada para um trecho, versão 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["descricao"],
+  "properties": {
+    "descricao": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "\\S" }
+  }
+}

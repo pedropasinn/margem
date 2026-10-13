@@ -1,0 +1,10 @@
+{
+  "job_id": "00000000000000000000000070",
+  "attempt": 1,
+  "lease_token": "00000000000000000000000071",
+  "estado": "adiado",
+  "diagnosticos": [],
+  "modelo": "executor-falso",
+  "duracao_ms": 12,
+  "not_before": "2026-09-21T18:00:00Z"
+}

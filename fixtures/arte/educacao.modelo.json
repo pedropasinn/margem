@@ -1,0 +1,267 @@
+{
+  "versao": 1,
+  "id": "01M3SPS2BJ9DKKD6XTST8JFMAF",
+  "revisao": 1,
+  "identidade": {
+    "titulo": "Educação Obrigatória",
+    "titulo_original": "Compulsory Education",
+    "artista": "Briton Rivière",
+    "data": "1887",
+    "tecnica": "Óleo sobre tela",
+    "afirmacoes": [
+      "01M3SPS2BJM657P3SXAQCZJYGP"
+    ]
+  },
+  "imagem": {
+    "url": "/arte/educacao.jpg",
+    "sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c",
+    "largura": 2826,
+    "altura": 3992,
+    "credito": "Reprodução em domínio público via Wikimedia Commons; original preservado.",
+    "fonte_id": "01M3SPS2BH8EETQ86A9M3PGSZK"
+  },
+  "localizacao": {
+    "instituicao_proprietaria": "Art Gallery of New South Wales — aquisição registrada em 2020–21",
+    "localizacao_conhecida": null,
+    "atualmente_exposto": null,
+    "sala": null,
+    "verificado_em": "2026-09-30",
+    "fontes": [
+      "01M3SPS2BG87V4YP5785TJZXGV"
+    ]
+  },
+  "fontes": [
+    {
+      "id": "01M3SPS2BG87V4YP5785TJZXGV",
+      "titulo": "Art Gallery of NSW — relatório anual 2020–21, p. 25",
+      "url": "https://data.nsw.gov.au/data/dataset/43c8ca68-42ac-4375-ba74-58b6a647c938/resource/87340171-38d6-4c1a-97a8-9cea625f7c92/download/agnsw_annual_report_20_21_211026_final_online_19789.pdf",
+      "categoria": "instituicao_proprietaria",
+      "consultado_em": "2026-09-30"
+    },
+    {
+      "id": "01M3SPS2BH3YZCYQKPEBTVZ6EW",
+      "titulo": "UK Parliament — frequência escolar e lei de 1880",
+      "url": "https://hansard.parliament.uk/Commons/1881-07-08/debates/20cb03fe-8687-4b1a-a33c-9dd2af5c4110/ElementaryEducationAct1880%E2%80%94TheStandardOfExemption%E2%80%94Bye-LawsForSchoolAttendance",
+      "categoria": "arquivo",
+      "consultado_em": "2026-09-30"
+    },
+    {
+      "id": "01M3SPS2BH8EETQ86A9M3PGSZK",
+      "titulo": "Wikimedia Commons — reprodução, domínio público",
+      "url": "https://commons.wikimedia.org/wiki/File:Briton_Rivi%C3%A8re_Compulsory_Education.jpg",
+      "categoria": "secundaria",
+      "consultado_em": "2026-09-30"
+    }
+  ],
+  "regioes": [
+    {
+      "id": "01M3SPS2BJ0XRC8X7G816AYERA",
+      "rotulo": "Menina e cão",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.12,
+        "y": 0.12,
+        "largura": 0.8,
+        "altura": 0.82
+      }
+    },
+    {
+      "id": "01M3SPS2BJCQ4B773N23V0D7H9",
+      "rotulo": "O livro aberto",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.28,
+        "y": 0.29,
+        "largura": 0.32,
+        "altura": 0.15
+      }
+    },
+    {
+      "id": "01M3SPS2BJP41MRQ623PKFDD88",
+      "rotulo": "O olhar do cão",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.45,
+        "y": 0.28,
+        "largura": 0.23,
+        "altura": 0.14
+      }
+    },
+    {
+      "id": "01M3SPS2BJEPDJSCZFF1WP31VQ",
+      "rotulo": "O rosto da menina",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.58,
+        "y": 0.19,
+        "largura": 0.21,
+        "altura": 0.1
+      }
+    }
+  ],
+  "afirmacoes": [
+    {
+      "id": "01M3SPS2BJM657P3SXAQCZJYGP",
+      "texto": "Compulsory Education é uma pintura de Briton Rivière, de 1887, em óleo sobre tela.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "O relatório anual lista artista, título, data e técnica na relação de aquisições.",
+      "fontes": [
+        "01M3SPS2BG87V4YP5785TJZXGV"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "proveniencia": {
+        "autor": "curadoria",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    },
+    {
+      "id": "01M3SPS2BJ1Q3K8NYM0BD6R4RT",
+      "texto": "Um livro aberto fica diante do cão, apoiado nas mãos da menina.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "As duas páginas e a capa vermelha estão visíveis entre as figuras.",
+      "fontes": [],
+      "regioes": [
+        "01M3SPS2BJCQ4B773N23V0D7H9"
+      ],
+      "apoios": [],
+      "proveniencia": {
+        "autor": "curadoria",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    },
+    {
+      "id": "01M3SPS2BJ9TVSYA4ZSEKPH0S9",
+      "texto": "Os olhos do cão se orientam para cima, enquanto a menina inclina a cabeça para o livro.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "Compare a posição dos olhos com a página e com o rosto da menina.",
+      "fontes": [],
+      "regioes": [
+        "01M3SPS2BJP41MRQ623PKFDD88",
+        "01M3SPS2BJEPDJSCZFF1WP31VQ"
+      ],
+      "apoios": [],
+      "proveniencia": {
+        "autor": "curadoria",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    },
+    {
+      "id": "01M3SPS2BJ2SC0GY09FCN1YBNF",
+      "texto": "A lei de 1880 exigiu regras locais de frequência escolar em todos os distritos da Inglaterra e do País de Gales.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "Resposta de Mundella de 8/7/1881 explicita distritos, território e prazo de implementação.",
+      "fontes": [
+        "01M3SPS2BH3YZCYQKPEBTVZ6EW"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "proveniencia": {
+        "autor": "curadoria",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    },
+    {
+      "id": "01M3SPS2BJDCM88FNYFV7R58N7",
+      "texto": "O contraste entre livro e olhar permite ler a cena como uma aula cujo aluno tem outra atenção.",
+      "tipo": "inferencia_ia",
+      "confianca": "media",
+      "evidencia": "Leitura proposta a partir da disposição do livro e da direção dos olhares; não demonstra intenção do artista.",
+      "fontes": [],
+      "regioes": [
+        "01M3SPS2BJ0XRC8X7G816AYERA"
+      ],
+      "apoios": [
+        "01M3SPS2BJ1Q3K8NYM0BD6R4RT",
+        "01M3SPS2BJ9TVSYA4ZSEKPH0S9"
+      ],
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    },
+    {
+      "id": "01M3SPS2BJYSSBEN5K7T1B8DAD",
+      "texto": "A intenção do artista quanto à lei de 1880 não foi documentada neste dossiê.",
+      "tipo": "intencao_desconhecida",
+      "confianca": "nao_aplicavel",
+      "evidencia": "Nenhuma fonte consultada aqui contém declaração de Rivière sobre essa relação.",
+      "fontes": [],
+      "regioes": [],
+      "apoios": [],
+      "proveniencia": {
+        "autor": "curadoria",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    },
+    {
+      "id": "01M3SPS2BJZY9FG78YKNC5S2QV",
+      "texto": "A obra consta nas aquisições do relatório 2020–21 da Art Gallery of New South Wales.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "Relação de doações, p. 25; esse registro não informa exposição ou sala atuais.",
+      "fontes": [
+        "01M3SPS2BG87V4YP5785TJZXGV"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "proveniencia": {
+        "autor": "curadoria",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    }
+  ],
+  "estudo": [
+    {
+      "tema": "composicao",
+      "afirmacoes": [
+        "01M3SPS2BJ1Q3K8NYM0BD6R4RT",
+        "01M3SPS2BJ9TVSYA4ZSEKPH0S9"
+      ]
+    },
+    {
+      "tema": "tecnica",
+      "afirmacoes": [
+        "01M3SPS2BJM657P3SXAQCZJYGP"
+      ]
+    },
+    {
+      "tema": "historia",
+      "afirmacoes": [
+        "01M3SPS2BJZY9FG78YKNC5S2QV"
+      ]
+    },
+    {
+      "tema": "artista",
+      "afirmacoes": [
+        "01M3SPS2BJM657P3SXAQCZJYGP"
+      ]
+    },
+    {
+      "tema": "contexto",
+      "afirmacoes": [
+        "01M3SPS2BJ2SC0GY09FCN1YBNF"
+      ]
+    },
+    {
+      "tema": "interpretacoes",
+      "afirmacoes": [
+        "01M3SPS2BJDCM88FNYFV7R58N7",
+        "01M3SPS2BJYSSBEN5K7T1B8DAD"
+      ]
+    }
+  ],
+  "limites": [
+    "Exposição atual, sala e localização física não verificadas.",
+    "Análise curada para demonstrar o mecanismo; não é uma análise automática publicada.",
+    "Biografia, obras relacionadas e pesquisa técnica extensa ainda não incluídas."
+  ]
+}

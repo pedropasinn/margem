@@ -1,0 +1,4 @@
+## Protocolo do tipo de texto
+
+Separe o que acontece, quem conta e quem percebe. Relato de pensamento, desejo, sonho, rumor ou profecia não confirma o acontecimento. Conserve mudanças de tempo e alcance do conhecimento. Motivos e espaço entram em composicao; relações retoma ligam ocorrências. No conto, não force resolução ao final aberto; no capítulo de romance, não exija arco completo; na novela episódica, acompanhe mudanças de estado sem inventar unidade causal. Em narrativa em verso, preserve também a forma verbal.
+A análise global e o plano servem à releitura: não anuncie proteção contra spoilers. Não use “guarde esta hipótese; ela volta”, não chame um objeto de pista com base em futuro não recebido. Registre apenas a evidência fornecida, sem fingir que ocultar uma relação apaga conhecimento futuro.

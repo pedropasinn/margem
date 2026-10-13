@@ -1,0 +1,53 @@
+{
+  "versao": 1,
+  "id": "engenharia_software",
+  "revisao": 1,
+  "nome": "Engenharia de software",
+  "descricao": "Leitura de livros didáticos de engenharia de software: distinguir conceitos, decisões de projeto e mecanismos. Preservar condições, contexto e trade-offs das recomendações; não transformar heurísticas em leis universais. Relacionar processos, requisitos, arquitetura, testes e manutenção. Usar código como exemplo técnico, sem executá-lo. Não inventar o conteúdo de diagramas ausentes nem atribuir ao leitor conhecimentos não informados.",
+  "funcoes": [
+    {
+      "chave": "tese",
+      "rotulo": "Decisão ou princípio",
+      "pergunta": "Que decisão, princípio ou recomendação o autor defende, e em quais condições?",
+      "descricao": "Princípios, recomendações e conclusões sobre projeto, processo e qualidade; preservar limites e trade-offs.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "conceito",
+      "rotulo": "Conceito",
+      "pergunta": "Que conceito, responsabilidade, contrato ou distinção preciso entender?",
+      "descricao": "Definições e distinções técnicas, responsabilidades, pressupostos e condições de validade.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "justificativa",
+      "rotulo": "Mecanismo ou exemplo",
+      "pergunta": "Como funciona, por que funciona e que exemplo ou evidência sustenta a decisão?",
+      "descricao": "Mecanismos, passos, exemplos de código e contraexemplos que explicam ou justificam uma escolha.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

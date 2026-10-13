@@ -1,0 +1,117 @@
+/*
+ * Primeiros passos: composição dentro da linguagem existente (tokens.css, primitives.css,
+ * componentes.css). Nada de cor, raio ou sombra novos: superfícies `.card`, botões das primitives,
+ * eyebrow, session-list e progress-track são os mesmos do resto do app.
+ */
+
+/* ---------- Boas-vindas ---------- */
+.veu-boas-vindas { display: grid; place-items: center; padding: 24px 16px; overflow-y: auto; z-index: 130; background: color-mix(in srgb, var(--bg) 78%, transparent); }
+.card.boas-vindas { position: relative; width: min(600px, 100%); max-height: calc(100dvh - 48px); overflow-y: auto; display: grid; gap: 16px; padding: 28px 32px; box-shadow: 0 12px 40px #0002; outline: none; }
+.boas-vindas h2 { font-size: 26px; outline: none; }
+.boas-vindas-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -4px -8px -4px 0; }
+.boas-vindas-topo .eyebrow { margin: 0; }
+.boas-vindas-lead { margin: 0; color: var(--texto-2); font-size: 16px; line-height: 1.55; }
+.boas-vindas-lead strong { color: var(--texto-1); font-weight: 600; }
+.boas-vindas-rodape { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; }
+.boas-vindas-rodape .button-row { margin-left: auto; }
+
+.pontos-das-telas { display: inline-flex; gap: 6px; }
+.pontos-das-telas > span { width: 6px; height: 6px; border-radius: 50%; background: var(--borda-3d-hover); transition: width .2s; }
+.pontos-das-telas > span[data-atual=true] { width: 18px; border-radius: var(--r-pilula); background: var(--texto-1); }
+
+/* A amostra: a mesma composição do leitor (serifa, marca em SVG, nota em sans sem caixa). */
+.amostra-do-leitor { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 28px; align-items: start; margin: 4px 0 0; padding: 20px 24px; border-radius: var(--r-16); background: var(--bg-2); }
+.amostra-texto { margin: 0; font: 400 19px/1.6 var(--serif); color: var(--texto-1); }
+.amostra-nota { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; align-items: center; font: 14px/1.5 var(--sans); color: var(--texto-2); }
+.amostra-numero { display: grid; place-items: center; width: 22px; height: 22px; border: 1.5px solid; border-radius: 50%; font-size: 12px; font-weight: 700; }
+.amostra-rotulo { font-size: 12px; font-weight: 700; letter-spacing: .48px; text-transform: uppercase; color: var(--texto-2); }
+.amostra-comentario { grid-column: 1 / -1; }
+
+.gestos { display: grid; gap: 18px; margin: 4px 0 0; padding: 0; list-style: none; }
+.gestos li { display: flex; gap: 14px; align-items: flex-start; }
+.gestos h3 { font-size: 16px; line-height: 1.35; }
+.gestos p { margin: 2px 0 0; color: var(--texto-2); font-size: 15px; }
+.gesto-icone { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border: 2px solid var(--borda-3d); border-radius: 50%; color: var(--texto-1); }
+
+/* ---------- Primeiro documento: as três portas ---------- */
+.primeiro-documento { display: grid; gap: 12px; }
+.portas-do-documento { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.portas-do-documento .porta { width: 100%; min-height: 64px; justify-content: flex-start; gap: 14px; padding: 12px 16px; border: 2px solid var(--borda-3d); border-radius: var(--r-16); text-align: left; font-weight: 500; white-space: normal; }
+.portas-do-documento .porta:hover:not(:disabled) { border-color: var(--borda-3d-hover); background: var(--bg-hover); }
+.portas-do-documento .porta > svg:last-child { margin-left: auto; color: var(--texto-3); }
+.porta-texto { display: grid; gap: 2px; min-width: 0; }
+.porta-titulo { font-size: 15px; font-weight: 600; color: var(--texto-1); }
+.porta-detalhe { font-size: 13px; color: var(--texto-2); }
+.situacao-do-exemplo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; min-height: 32px; color: var(--texto-2); font-size: 14px; }
+.situacao-do-exemplo.aviso { margin: 0; }
+
+/* ---------- Dica ancorada ---------- */
+.contorno-da-dica { position: fixed; z-index: 139; pointer-events: none; border: 2px solid var(--accent); border-radius: var(--r-12); box-shadow: 0 0 0 4px var(--accent-suave); transition: left .2s, top .2s, width .2s, height .2s; }
+.dica-ancorada { position: fixed; z-index: 140; width: min(360px, calc(100vw - 24px)); padding: 16px 20px 18px; border: 2px solid var(--borda-3d); border-radius: var(--r-16); background: var(--surface-1); box-shadow: 0 12px 40px #0003; color: var(--text-primary); font: 14px/1.5 var(--sans); }
+.dica-ancorada header { display: flex; align-items: center; justify-content: space-between; margin: -6px -10px 2px 0; }
+.dica-ancorada header .eyebrow { margin: 0; }
+.dica-ancorada h2 { font-size: 17px; line-height: 1.3; margin-bottom: 6px; }
+.dica-texto p { margin: 0; color: var(--texto-2); font-size: 14px; line-height: 1.55; }
+.dica-texto strong { color: var(--texto-1); font-weight: 600; }
+.dica-texto svg { vertical-align: -2px; }
+.dica-extra { margin: 10px 0 0 -12px; }
+.dica-ancorada footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.dica-ancorada footer .button-row { margin-left: auto; gap: 8px; }
+.seta-da-dica { position: absolute; width: 14px; height: 14px; margin-left: -7px; background: var(--surface-1); border: 2px solid var(--borda-3d); transform: rotate(45deg); }
+.dica-ancorada[data-lado=abaixo] .seta-da-dica { top: -9px; border-right: 0; border-bottom: 0; }
+.dica-ancorada[data-lado=acima] .seta-da-dica { bottom: -9px; border-left: 0; border-top: 0; }
+.dica-ancorada[data-lado=folha] { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); width: auto; }
+@media (prefers-reduced-motion: reduce) { .contorno-da-dica, .pontos-das-telas > span { transition: none; } }
+
+/* ---------- Página Primeiros passos ---------- */
+.primeiros-passos { display: grid; gap: 32px; max-width: 760px; margin: 0 auto; }
+.primeiros-passos-cabeca { display: grid; gap: 8px; }
+.primeiros-passos-cabeca .page-title { margin: 0; }
+.primeiros-passos-cabeca .secundario { margin: 0; color: var(--texto-2); font-size: 14px; }
+.primeiros-passos-cabeca .progress-track { max-width: 320px; }
+.etapas-do-onboarding { padding-block: 8px; }
+.etapas-do-onboarding .session-list > li > .ui-button { flex-shrink: 0; }
+.secao-primeiros-passos { display: grid; gap: 16px; }
+.secao-primeiros-passos h2 { font-size: 20px; }
+.recomecar { margin: 0; }
+
+.levar-consigo { display: grid; gap: 12px; }
+.cartao-levar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 18px 20px; border: 2px solid var(--borda-3d); border-radius: var(--r-16); background: var(--surface-1); }
+.levar-icone { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--painel); color: var(--texto-1); }
+.levar-corpo h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 16px; }
+.levar-corpo p, .levar-corpo ol { margin: 4px 0 0; color: var(--texto-2); font-size: 14px; }
+.levar-corpo ol { padding-left: 20px; display: grid; gap: 4px; }
+.levar-corpo strong { color: var(--texto-1); font-weight: 600; }
+.levar-corpo svg { vertical-align: -3px; }
+.levar-acao { align-self: center; }
+.levar-fim { justify-content: flex-end; }
+
+.ajuda { display: grid; gap: 16px; max-width: 760px; margin: 0 auto; }
+.ajuda .page-title { margin: 0; }
+.ajuda-corpo { display: grid; gap: 12px; font-size: 15px; color: var(--texto-2); }
+.ajuda-corpo h2 { font-size: 18px; margin-top: 8px; }
+.ajuda-corpo p, .ajuda-corpo ol { margin: 0; }
+.ajuda-corpo ol { padding-left: 22px; display: grid; gap: 4px; }
+.ajuda-corpo strong { color: var(--texto-1); font-weight: 600; }
+.ajuda-corpo svg { vertical-align: -3px; }
+
+/* ---------- Biblioteca vazia ---------- */
+.biblioteca-vazia.conduzir { min-height: auto; gap: 20px; padding: 48px 16px; }
+.biblioteca-vazia.conduzir > .conduzir-texto { display: grid; gap: 6px; max-width: 46ch; }
+.biblioteca-vazia.conduzir h2 { font-size: 22px; }
+.biblioteca-vazia.conduzir p { margin: 0; }
+.biblioteca-vazia.conduzir .primeiro-documento { width: min(520px, 100%); text-align: left; }
+.biblioteca-vazia.conduzir .link-primeiros-passos { font-size: 14px; font-weight: 600; }
+
+@media (max-width: 799px) {
+  .card.boas-vindas { padding: 20px; gap: 14px; border-radius: var(--r-16); max-height: calc(100dvh - 32px); }
+  .veu-boas-vindas { padding: 16px 12px; align-items: end; }
+  .boas-vindas h2 { font-size: 22px; }
+  .amostra-do-leitor { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+  .amostra-texto { font-size: 18px; }
+  .boas-vindas-rodape { flex-wrap: wrap; }
+  .cartao-levar { grid-template-columns: auto minmax(0, 1fr); }
+  .levar-acao { grid-column: 2; justify-self: start; }
+  .primeiros-passos { gap: 24px; }
+}
+.topbar-acoes { display: inline-flex; align-items: center; gap: 4px; }

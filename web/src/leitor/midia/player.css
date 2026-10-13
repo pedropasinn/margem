@@ -1,0 +1,151 @@
+/*
+ * Player do Margem (J71). Composição do player "The Rest Is History" do books (trilha com botão,
+ * tempos nas pontas, −10 · tocar · +10, velocidade, capítulos ao lado do vídeo, pílula "Voltar ao
+ * trecho atual") nos tokens e na família visual do Margem: cartão da superfície com borda fina,
+ * botão de tocar na cor do botão primário, Figtree na interface e a serifa só no texto.
+ */
+
+/* ------------------------------------------------------------------ karaokê sobre o texto
+   A faixa da frase e o bloco da palavra são do serviço de karaokê (`../karaoke/karaoke.css`). */
+/* O fim do texto não fica escondido atrás do transporte; a frase ativa sobe até 40% da área. */
+html.com-player .leitor { padding-bottom: 45vh; }
+
+/* ------------------------------------------------------------------ transporte */
+/* A faixa de baixo, como a barra do player do books: o texto some num degradê atrás do cartão. */
+.player-midia::before {
+  content: ''; position: fixed; z-index: 89; left: 0; right: var(--largura-guiada, 0px); bottom: 0; height: 132px;
+  background: linear-gradient(to top, var(--fundo) 55%, color-mix(in srgb, var(--fundo) 0%, transparent));
+  pointer-events: none; transition: height .25s;
+}
+.player-midia[data-recolhido]::before { height: 64px; }
+.transporte {
+  position: fixed; z-index: 90;
+  left: calc((100vw - var(--largura-guiada, 0px)) / 2); bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(820px, calc(100vw - var(--largura-guiada, 0px) - 32px)); box-sizing: border-box;
+  padding: 10px 16px 10px;
+  background: var(--surface-1); color: var(--texto-1);
+  border: 1px solid var(--borda); border-radius: var(--r-16);
+  box-shadow: 0 8px 28px #0000001f;
+  font: 13px/1.3 var(--sans);
+  transition: padding .25s, opacity .25s;
+}
+.player-midia[data-recolhido] .transporte { opacity: .72; padding-block: 6px; }
+.player-midia[data-recolhido] .controles-da-midia { max-height: 0; opacity: 0; margin-top: 0; pointer-events: none; }
+
+.linha-do-tempo { display: flex; align-items: center; gap: 12px; }
+.transporte .tempo { min-width: 44px; font-size: 12px; color: var(--texto-2); font-variant-numeric: tabular-nums; }
+.transporte .tempo.restante { text-align: right; }
+.trilha { position: relative; flex: 1; height: 18px; cursor: pointer; touch-action: none; border-radius: 999px; }
+.trilha:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.trilha::before { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 4px; transform: translateY(-50%); border-radius: 999px; background: var(--borda); }
+.trilha-preenchida { position: absolute; left: 0; top: 50%; height: 4px; width: calc(var(--progresso, 0) * 100%); transform: translateY(-50%); border-radius: 999px; background: var(--accent); }
+.trilha-botao { position: absolute; right: -6px; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--texto-1); transform: translateY(-50%); opacity: 0; transition: opacity .15s; box-shadow: 0 1px 4px #0005; }
+.trilha:hover .trilha-botao, .trilha:focus-visible .trilha-botao, .trilha:active .trilha-botao { opacity: 1; }
+.marca-de-capitulo { position: absolute; z-index: 1; top: 50%; width: 2px; height: 4px; transform: translate(-1px, -50%); background: var(--surface-1); pointer-events: none; }
+
+.controles-da-midia { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 6px; max-height: 80px; transition: max-height .3s, opacity .25s, margin .25s; }
+.agora { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.agora strong { overflow: hidden; font-size: 13px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.agora span { overflow: hidden; font-size: 11px; color: var(--texto-3); white-space: nowrap; text-overflow: ellipsis; }
+.ouvir-de-novo { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--accent-texto); font: 600 12px var(--sans); cursor: pointer; }
+.centro { display: flex; align-items: center; gap: 6px; }
+.direita { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+.transporte .ui-icon { color: var(--texto-2); }
+.transporte .ui-icon:hover, .transporte .ui-icon[aria-expanded=true], .transporte .ui-icon[aria-pressed=true] { color: var(--texto-1); }
+.transporte .salto { position: relative; }
+.numero-do-salto { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); font: 700 8px/1 var(--sans); }
+.tocar { display: grid; place-items: center; width: 48px; height: 48px; margin-inline: 4px; padding: 0; border: 0; border-radius: 50%; background: var(--botao-fundo); color: var(--botao-texto); cursor: pointer; transition: transform .12s, background .15s; }
+.tocar:hover { background: var(--botao-hover); transform: scale(1.05); }
+.tocar:active { transform: scale(.96); }
+.tocar:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.tocar svg { margin-left: 1px; }
+.transporte .velocidade { min-width: 56px; min-height: 36px; padding: 4px 10px; border: 1px solid var(--borda); border-radius: 10px; color: var(--texto-2); font: 600 13px var(--sans); font-variant-numeric: tabular-nums; }
+.transporte .velocidade:hover, .transporte .velocidade[aria-expanded=true] { border-color: var(--borda-hover); color: var(--texto-1); }
+
+.ancora-do-popover { position: relative; }
+.popover-do-player {
+  position: absolute; z-index: 5; bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%);
+  display: grid; gap: 12px; width: 248px; box-sizing: border-box; padding: 16px;
+  background: var(--surface-1); color: var(--texto-1);
+  border: 2px solid var(--borda-3d); border-radius: var(--r-16); box-shadow: 0 12px 40px #0002;
+}
+.direita .popover-do-player { left: auto; right: -8px; transform: none; }
+.valor-da-velocidade { margin: 0; font: 700 22px/1.1 var(--sans); text-align: center; font-variant-numeric: tabular-nums; }
+.popover-do-player .ui-input[type=range] { min-height: 24px; }
+.atalhos-de-velocidade { display: flex; flex-wrap: wrap; gap: 6px; }
+.atalhos-de-velocidade button { flex: 1 0 28%; padding: 6px 0; border: 1px solid var(--borda); border-radius: 8px; background: none; color: var(--texto-2); font: 600 12px var(--sans); font-variant-numeric: tabular-nums; cursor: pointer; }
+.atalhos-de-velocidade button:hover { border-color: var(--borda-hover); color: var(--texto-1); }
+.atalhos-de-velocidade button[aria-pressed=true] { border-color: var(--botao-fundo); background: var(--botao-fundo); color: var(--botao-texto); }
+.popover-do-player .ui-segmented > .ui-button { min-height: 34px; padding-block: 4px; font-size: 12px; }
+.escolha-da-fonte { display: grid; gap: 6px; font-size: 12px; color: var(--texto-3); }
+.popover-de-capitulos { width: min(360px, calc(100vw - 24px)); max-height: 52vh; overflow-y: auto; padding: 8px; }
+
+/* ------------------------------------------------------------------ capítulos */
+.capitulos-da-midia { margin: 0; padding: 0; list-style: none; }
+.capitulos-da-midia button { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: none; color: var(--texto-2); font: 500 13px/1.35 var(--sans); text-align: left; cursor: pointer; transition: background .14s, color .14s; }
+.capitulos-da-midia button:hover { background: var(--bg-hover); color: var(--texto-1); }
+.capitulos-da-midia button[aria-current=true] { background: var(--surface-2); color: var(--texto-1); }
+.tempo-do-capitulo { flex: none; min-width: 42px; font-size: 11px; color: var(--texto-3); font-variant-numeric: tabular-nums; }
+.capitulos-da-midia [aria-current=true] .tempo-do-capitulo { color: var(--accent-texto); }
+
+/* ------------------------------------------------------------------ vídeo */
+.painel-video {
+  position: fixed; z-index: 75; top: var(--altura-casca-leitor, 0px); right: 0; bottom: 0;
+  display: flex; flex-direction: column; width: var(--largura-do-video, 480px); box-sizing: border-box;
+  background: var(--surface-1); box-shadow: -12px 0 32px #0000001a;
+}
+.painel-video[hidden] { display: none; }
+.quadro-do-video { flex: none; aspect-ratio: 16 / 9; background: #000; }
+.quadro-do-video video { display: block; width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
+.alca-do-video { position: absolute; z-index: 1; left: -5px; top: 0; bottom: 0; width: 10px; cursor: col-resize; touch-action: none; }
+.alca-do-video::after { content: ''; position: absolute; left: 3px; top: 50%; width: 4px; height: 40px; border-radius: 2px; background: var(--borda-hover); transform: translateY(-50%); opacity: 0; transition: opacity .15s; }
+.alca-do-video:hover::after, html.arrastando-guiada .alca-do-video::after { opacity: 1; }
+.capitulos-ao-lado { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 10px 132px; }
+.capitulos-ao-lado h3 { margin: 6px 10px 8px; font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); }
+
+/* ------------------------------------------------------------------ YouTube (J109)
+   O player oficial embutido ocupa o quadro inteiro e nada fica por cima dele (regra do YouTube):
+   a legenda dos grifos e os conceitos descem para logo abaixo, e o aviso de vídeo que não pode ser
+   incorporado também. A moldura nunca fica menor que 200×200 px. */
+.hospede-do-youtube, .moldura-do-youtube { display: block; width: 100%; height: 100%; border: 0; }
+.painel-video[data-controle=youtube] .quadro-do-video { min-height: 200px; }
+/* A alça de largura fica toda fora da moldura (a do vídeo local invade 5 px dele). */
+.painel-video[data-controle=youtube] .alca-do-video { left: -10px; }
+.sob-o-video { flex: none; display: grid; gap: 8px; padding: 10px 12px 0; }
+.sob-o-video .legenda-dos-grifos { position: static; transform: none; width: auto; max-width: none; }
+.sob-o-video .conceitos-no-video { position: static; inset: auto; justify-content: flex-start; }
+.aviso-do-video { flex: none; display: grid; gap: 10px; padding: 14px 16px; color: var(--texto-2); font: 13px/1.45 var(--sans); }
+.aviso-do-video p { margin: 0; }
+.acoes-do-aviso { display: flex; flex-wrap: wrap; gap: 8px; }
+.player-midia[data-video=so] .aviso-do-video { color: #fff; }
+
+/* ------------------------------------------------------------------ só o vídeo
+   O vídeo ocupa a área do leitor (o texto continua atrás, acompanhando); o transporte fica por cima,
+   e o quadro termina acima dele para a legenda dos grifos não ficar escondida. */
+.player-midia[data-video=so]::before { display: none; }
+.player-midia[data-video=so] .painel-video { z-index: 85; left: 0; width: auto; padding-bottom: 132px; border-left: 0; background: #000; }
+.player-midia[data-video=so] .quadro-do-video { flex: 1; min-height: 0; aspect-ratio: auto; }
+
+/* ------------------------------------------------------------------ voltar ao trecho
+   A pílula é a do karaokê (`VoltarAoTrecho`); aqui só a altura quando o transporte se recolhe. */
+
+/* ------------------------------------------------------------------ celular: vídeo acima do texto */
+@media (max-width: 899.98px) {
+  .player-midia::before { right: 0; height: 120px; }
+  .player-midia[data-video=topo] .painel-video { top: var(--topo-do-video, 0px); left: 0; right: 0; bottom: auto; z-index: 58; width: auto; border: 0; }
+  html.com-video-no-topo .leitor { padding-top: calc(var(--altura-do-video, 0px) + 16px); }
+  .transporte { left: 8px; right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); width: auto; transform: none; padding: 8px 10px; }
+  .agora { display: none; }
+  .controles-da-midia { display: flex; justify-content: space-between; gap: 4px; }
+  .centro { gap: 2px; }
+  .tocar { width: 46px; height: 46px; }
+  .popover-do-player { left: 0; transform: none; }
+  .direita .popover-do-player { right: 0; }
+  /* Capítulos no celular: a largura da tela, logo acima do transporte, sem sair pela esquerda. */
+  .direita .popover-de-capitulos { position: fixed; left: 8px; right: 8px; bottom: 96px; width: auto; max-height: 58dvh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transporte, .controles-da-midia, .tocar, .trilha-botao { transition: none; }
+}

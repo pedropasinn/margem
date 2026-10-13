@@ -1,0 +1,201 @@
+/* Resolução de exercícios (J34). */
+/* O menu `•••` embrulha as ações extras só para fechar quando uma delas abre outra janela; o embrulho não conta no layout. */
+.menu-extra { display: contents; }
+.camada-de-recorte { position: fixed; inset: 0; z-index: 95; cursor: crosshair; touch-action: none; background: color-mix(in srgb, var(--fundo) 12%, transparent); }
+.retangulo-de-recorte { position: fixed; border: 2px solid var(--accent, #2f6fed); border-radius: 4px; background: color-mix(in srgb, var(--accent, #2f6fed) 10%, transparent); pointer-events: none; }
+.aviso-de-recorte {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 1;
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border-radius: 999px;
+  background: var(--texto-1, #111); color: var(--fundo, #fff); font: 14px/1.3 var(--sans); cursor: default; white-space: nowrap;
+}
+.aviso-de-recorte .ui-button { color: inherit; min-height: 36px; padding: 6px 16px; }
+/* A pílula inverte o tema (texto sobre `--texto-1`): o hover e o foco do Cancelar usam a própria cor do texto, em transparência. */
+.aviso-de-recorte .ui-button:is(:hover, :focus-visible) { background: color-mix(in srgb, currentColor 14%, transparent); color: inherit; }
+.aviso-de-recorte .ui-button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.sessao-de-resolucao {
+  position: fixed; z-index: 92; top: var(--altura-casca-leitor, 0px); right: 0; bottom: 0; width: min(460px, 100vw); box-sizing: border-box;
+  display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); background: var(--fundo);
+  box-shadow: -12px 0 32px #0000001a; font-family: var(--sans);
+}
+@media (max-width: 899.98px) {
+  .sessao-de-resolucao { top: auto; left: 0; width: auto; height: 88vh; height: 88dvh; border-top: 1px solid var(--borda, #0002); border-radius: 16px 16px 0 0; box-shadow: 0 -8px 28px #0002; }
+}
+.cabeca-da-resolucao { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 8px 20px; }
+.controles-da-janela { display: flex; align-items: center; gap: 4px; }
+.forma-da-janela.ui-segmented { padding: 2px; }
+.forma-da-janela.ui-segmented > .ui-button { min-height: 32px; min-width: 36px; padding: 4px 8px; }
+@media (max-width: 899.98px) { .forma-da-janela.ui-segmented > .ui-button { min-width: 40px; } }
+.corpo-da-resolucao { overflow-y: auto; overscroll-behavior: contain; padding: 4px 20px 20px; display: grid; gap: 14px; align-content: start; }
+.imagem-do-recorte { width: 100%; max-height: 260px; object-fit: contain; object-position: left top; border: 1px solid var(--borda, #0002); border-radius: 8px; background: #fff; }
+.imagem-do-recorte.vazia { height: 80px; }
+.trecho-da-resolucao { margin: 0; padding: 10px 14px; border-radius: 8px; background: var(--bg-hover); font: 16px/1.5 var(--serif); }
+.estado-da-resolucao { margin: 0; color: var(--texto-2); font-size: 14px; }
+.enunciado-lido { font-size: 14px; color: var(--texto-2); }
+.enunciado-lido summary { cursor: pointer; }
+.enunciado-lido p { margin: 6px 0 0; font: 16px/1.5 var(--serif); color: var(--texto-1); white-space: pre-wrap; }
+.observacao-da-resolucao { color: var(--aviso-texto, #b26b00) !important; font-size: 14px !important; }
+.item-da-resolucao { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--borda, #0001); }
+.item-da-resolucao h3 { margin: 0; font: 600 16px/1.4 var(--serif); white-space: pre-wrap; }
+.rotulo-do-item { margin-right: 8px; font-family: var(--sans); color: var(--texto-3); }
+.estrategia, .verificacao-do-item { margin: 0; font: 16px/1.5 var(--serif); }
+.estrategia .eyebrow .eyebrow, .verificacao-do-item .eyebrow { display: block; margin-bottom: 2px; font-family: var(--sans); }
+.passos-da-resolucao { margin: 0; padding-left: 24px; display: grid; gap: 10px; }
+/* O número de cada passo em azul, para a divisão entre os passos ficar clara. */
+.passos-da-resolucao > li::marker { color: #5467ff; font-family: var(--sans); font-weight: 700; }
+.passo-da-resolucao p { margin: 0; font: 16px/1.5 var(--serif); }
+.passo-da-resolucao .calculo { display: grid; gap: 2px; justify-items: center; text-align: center; margin-top: 4px; padding: 6px 10px; border-radius: 6px; background: var(--painel); font: 17px/1.5 var(--serif); font-variant-numeric: tabular-nums; }
+/* O último passo é a resposta: o mesmo passo, com um contorno e o rótulo em cima. */
+.passo-final { padding: 8px 12px 10px; border-radius: 8px; border: 1.5px solid var(--texto-1); }
+.passo-final::before { content: 'Resposta'; display: block; margin-bottom: 2px; font: 600 11px/1.4 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); }
+.verificacao-do-item { color: var(--texto-2); }
+.perguntas-da-resolucao { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--borda, #0001); }
+.pergunta-do-leitor { justify-self: end; max-width: 85%; margin: 0; padding: 8px 12px; border-radius: 12px 12px 4px 12px; background: var(--painel); font-size: 15px; white-space: pre-wrap; }
+.resposta-do-professor p { margin: 0; font: 16px/1.5 var(--serif); white-space: pre-wrap; }
+.resposta-do-professor .passos-da-resolucao { margin-top: 8px; }
+.rodape-da-resolucao { display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--borda, #0001); background: var(--fundo); }
+/* Dois grupos de ícones como os das marcas, no centro: perguntar e ver tudo; anterior e próximo. Onde se está, na ponta direita. */
+.avanco-da-resolucao { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; min-width: 0; padding: 12px 16px; }
+.grupos-do-avanco { grid-column: 2; display: flex; align-items: center; gap: 12px; }
+.avanco-da-resolucao .onde-esta { grid-column: 3; justify-self: end; text-align: right; }
+.avanco-da-resolucao .grupo-de-icones > .ui-icon.aberto { background: var(--accent-suave); color: var(--texto-1); }
+.avanco-da-resolucao .grupo-de-icones > .ui-icon:disabled { opacity: .45; cursor: default; }
+.onde-esta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 13px/1.4 var(--sans); color: var(--texto-2); font-variant-numeric: tabular-nums; }
+.pergunta-sobre-a-resolucao { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; padding: 0 16px calc(12px + env(safe-area-inset-bottom, 0px)); animation: surgir-na-resolucao .2s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .pergunta-sobre-a-resolucao { animation: none; } }
+.pergunta-sobre-a-resolucao textarea { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1.5px solid var(--borda, #0002); border-radius: 10px; background: var(--fundo); color: var(--texto-1); font: 15px/1.4 var(--sans); resize: none; }
+.lista-de-resolucoes { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.lista-de-resolucoes li { display: flex; align-items: center; gap: 4px; }
+.lista-de-resolucoes .abrir-resolucao { display: grid; gap: 2px; flex: 1; min-width: 0; padding: 10px 12px; border: 0; border-radius: 8px; background: none; color: var(--texto-1); font: inherit; text-align: left; cursor: pointer; }
+.lista-de-resolucoes .abrir-resolucao:is(:hover, :focus-visible) { background: var(--bg-hover); }
+.remover-resolucao, .remover-falhas { flex-shrink: 0; padding: 6px 10px; border: 0; border-radius: 8px; background: none; color: var(--texto-2); font: 13px var(--sans); cursor: pointer; }
+.remover-resolucao { opacity: 0; }
+.lista-de-resolucoes li:is(:hover, :focus-within) .remover-resolucao, .remover-resolucao:focus-visible { opacity: 1; }
+.remover-resolucao:hover, .remover-falhas:hover { background: var(--bg-hover); color: var(--texto-1); }
+.remover-falhas { margin: 0 0 8px; }
+@media (hover: none) { .remover-resolucao { opacity: 1; } }
+.titulo-da-resolucao { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font: 15px/1.4 var(--serif); }
+.lista-vazia { color: var(--texto-2); }
+
+/* Fórmulas do KaTeX (prompt @2): o corpo da fórmula acompanha a serifa do texto; a destacada rola sozinha se for larga. */
+.corpo-da-resolucao .katex, .lista-de-resolucoes .katex { font-size: 1.06em; }
+.formula-destacada { display: block; max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.formula-destacada .katex-display { margin: 2px 0; text-align: left; }
+.formula-destacada .katex-display > .katex { text-align: left; }
+.passo-da-resolucao .calculo .linha-do-calculo { display: block; min-width: 0; max-width: 100%; }
+.passo-da-resolucao .calculo .formula-destacada .katex-display, .passo-da-resolucao .calculo .formula-destacada .katex-display > .katex { text-align: center; }
+
+/* Revelação progressiva: o que acaba de aparecer sobe de leve. */
+@keyframes surgir-na-resolucao { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.corpo-da-resolucao .surgiu { animation: surgir-na-resolucao .32s cubic-bezier(.2, .7, .2, 1) both; }
+@media (prefers-reduced-motion: reduce) { .corpo-da-resolucao .surgiu { animation: none; } }
+.proximo-item { margin: 0; color: var(--texto-3); font-size: 13px; }
+
+/* Janela flutuante: ao lado do exercício, arrastável pelo cabeçalho. */
+@media (min-width: 900px) {
+  .sessao-de-resolucao[data-janela="flutuante"] {
+    top: 88px; right: auto; bottom: auto; left: calc(100vw - 436px); width: 420px; height: min(640px, calc(100vh - 96px)); height: min(640px, calc(100dvh - 96px));
+    border: 1px solid var(--borda); border-radius: var(--r-16); box-shadow: 0 18px 48px #0000002e, 0 2px 8px #0000001a; overflow: hidden;
+  }
+  .sessao-de-resolucao[data-janela="flutuante"] .cabeca-da-resolucao { cursor: grab; touch-action: none; user-select: none; }
+  .sessao-de-resolucao[data-janela="flutuante"] .cabeca-da-resolucao:active { cursor: grabbing; }
+}
+/* Tela cheia: a resolução no lugar do texto, numa coluna de leitura. */
+.sessao-de-resolucao[data-janela="tela-cheia"] { top: 0; left: 0; right: 0; bottom: 0; width: auto; height: auto; z-index: 96; border: 0; border-radius: 0; box-shadow: none; }
+.sessao-de-resolucao[data-janela="tela-cheia"] > * { padding-inline: max(20px, calc((100% - 760px) / 2)); }
+.sessao-de-resolucao[data-janela="tela-cheia"] .imagem-do-recorte { max-height: 320px; }
+.sessao-de-resolucao[data-janela="tela-cheia"] :is(.estrategia, .verificacao-do-item, .passo-da-resolucao p, .enunciado-lido p) { font-size: 18px; }
+.sessao-de-resolucao[data-janela="tela-cheia"] .item-da-resolucao h3 { font-size: 18px; }
+.sem-quebra { white-space: nowrap; }
+
+/* Os exercícios recortados, marcados na página do PDF: o traço fino do Marcador, sem fundo sobre o texto. */
+.exercicios-da-pagina { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.caixas-dos-exercicios { position: absolute; inset: 0; overflow: visible; }
+.caixa-do-exercicio { opacity: .42; transition: opacity .18s ease; }
+.caixa-do-exercicio[data-aceso] { opacity: .95; }
+.caixa-do-exercicio:is([data-estado="resolvendo"], [data-estado="respondendo"]) { animation: pulso-do-exercicio 1.6s ease-in-out infinite; }
+@keyframes pulso-do-exercicio { 50% { opacity: .18; } }
+@media (prefers-reduced-motion: reduce) { .caixa-do-exercicio { transition: none; animation: none !important; } }
+
+/* A nota do exercício: como as notas da margem (número, rótulo), sem caixa; a prévia abre sob ela. */
+.nota-do-exercicio { position: absolute; z-index: 6; pointer-events: auto; font: 14px/1.45 var(--sans); }
+.nota-do-exercicio[data-lugar="margem"] { left: 0; width: 100%; }
+.nota-do-exercicio:is(:hover, :focus-within) { z-index: 8; }
+.abrir-exercicio { display: block; padding: 0; border: 0; background: none; color: var(--texto-1); font: inherit; text-align: left; cursor: pointer; }
+.abrir-exercicio .nota-rotulo { color: var(--texto-1); font-weight: 600; }
+.abrir-exercicio:is(:hover, :focus-visible) .nota-rotulo { text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: .18em; }
+.abrir-exercicio:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.numero-do-exercicio { border-color: #456dff; color: var(--accent-texto); font-size: 13px; }
+.nota-do-exercicio[data-estado="falhou"] .numero-do-exercicio { border-style: dashed; border-color: var(--texto-3); color: var(--texto-2); }
+.nota-do-exercicio:is([data-estado="resolvendo"], [data-estado="respondendo"]) .nota-rotulo { color: var(--texto-2); font-weight: 500; }
+.previa-do-exercicio {
+  display: none; position: absolute; z-index: 7; top: 28px; left: calc(22px + .5rem); right: 0; gap: 4px; padding: 10px 14px 12px; box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, #456dff 55%, transparent); border-radius: 8px; background: var(--fundo); color: var(--texto-1);
+}
+.nota-do-exercicio:is(:hover, :focus-within) .previa-do-exercicio { display: grid; }
+/* Uma ponte invisível entre a nota e a prévia: o mouse passa de uma para a outra sem a prévia sumir. */
+.nota-do-exercicio .previa-do-exercicio::before { content: ''; position: absolute; left: 0; right: 0; top: -10px; height: 10px; }
+.nota-do-exercicio[data-estado="falhou"] .previa-do-exercicio { border-color: var(--borda-hover); border-style: dashed; }
+.enunciado-da-previa { margin: 0; font: 15px/1.45 var(--serif); white-space: pre-wrap; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.linha-da-previa { margin: 0; color: var(--texto-2); font-size: 13px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.linha-da-previa .eyebrow { margin-right: 6px; }
+.acoes-do-exercicio { display: flex; gap: 2px; margin: 2px 0 0 calc(22px + .5rem - 8px); }
+.acoes-do-exercicio button { padding: 2px 8px; border: 0; border-radius: 999px; background: none; color: var(--texto-2); font: 600 13px var(--sans); cursor: pointer; }
+.acoes-do-exercicio button:is(:hover, :focus-visible) { background: var(--bg-hover); color: var(--texto-1); }
+.acoes-do-exercicio button:disabled { opacity: .45; cursor: default; }
+/* Sem margem à vista: só o número, encostado no canto de cima do retângulo, na folha branca; a prévia abre para a esquerda. */
+.nota-do-exercicio[data-lugar="pagina"] { transform: translate(10px, -4px); }
+.nota-do-exercicio[data-lugar="pagina"] .nota-rotulo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.nota-do-exercicio[data-lugar="pagina"] .numero-do-exercicio { margin: 0; background: #fff; border-color: #456dff; color: #2f4fd6; }
+.nota-do-exercicio[data-lugar="pagina"][data-estado="falhou"] .numero-do-exercicio { border-color: #0006; color: #000a; }
+.nota-do-exercicio[data-lugar="pagina"] .previa-do-exercicio { left: auto; right: 0; width: min(320px, 80vw); box-shadow: 0 8px 24px #0000002e; }
+/* Na folha, as ações de uma que falhou aparecem com o mouse, junto da prévia. */
+.nota-do-exercicio[data-lugar="pagina"] .acoes-do-exercicio { display: none; position: absolute; right: 30px; top: 0; margin: 0; padding: 2px; border-radius: 999px; background: #fff; box-shadow: 0 2px 8px #0002; }
+.nota-do-exercicio[data-lugar="pagina"]:is(:hover, :focus-within) .acoes-do-exercicio { display: inline-flex; }
+.nota-do-exercicio[data-lugar="pagina"] .acoes-do-exercicio button { color: #000b; }
+.nota-do-exercicio[data-lugar="pagina"] .acoes-do-exercicio button:is(:hover, :focus-visible) { background: #0000000f; color: #000; }
+@media (max-width: 560px) { .formula-destacada .katex-display > .katex { font-size: .92em; } }
+
+/* Ferramenta de área (Player v2, etapa 6): o retângulo fica com alças e a minibarra flutua junto dele. */
+.camada-da-area .area-fixada { pointer-events: none; }
+.camada-da-area .corpo-da-area { position: absolute; inset: 0; cursor: move; pointer-events: auto; }
+.alca-da-area { position: absolute; width: 10px; height: 10px; border: 2px solid var(--accent, #2f6fed); border-radius: 50%; background: var(--surface-1, #fff); pointer-events: auto; transform: translate(-50%, -50%); }
+.alca-nw { left: 0; top: 0; cursor: nwse-resize; } .alca-n { left: 50%; top: 0; cursor: ns-resize; } .alca-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.alca-e { left: 100%; top: 50%; cursor: ew-resize; } .alca-se { left: 100%; top: 100%; cursor: nwse-resize; } .alca-s { left: 50%; top: 100%; cursor: ns-resize; }
+.alca-sw { left: 0; top: 100%; cursor: nesw-resize; } .alca-w { left: 0; top: 50%; cursor: ew-resize; }
+.minibarra-da-area {
+  position: fixed; z-index: 96; display: flex; align-items: center; gap: 2px; padding: 4px;
+  border: 1px solid var(--borda); border-radius: var(--r-12); background: var(--surface-1, var(--bg)); box-shadow: 0 8px 24px #0000002b;
+  font: 500 13px var(--sans); color: var(--texto-2); cursor: default;
+}
+.minibarra-da-area button { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 4px 10px; border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.minibarra-da-area button:hover:not(:disabled) { background: var(--bg-hover); color: var(--texto-1); }
+.minibarra-da-area button:disabled { opacity: .4; cursor: default; }
+.traco-da-minibarra { width: 1px; height: 18px; margin-inline: 2px; background: var(--borda); }
+@media (max-width: 599.98px) { .minibarra-da-area button span { display: none; } .minibarra-da-area button { padding: 4px 8px; } }
+
+/* Texto da resolução justificado, com hifenização em português para não abrir rios nas colunas estreitas.
+   As fórmulas (KaTeX) não quebram por dentro: .sem-quebra e .contem-formula continuam inteiras. */
+.item-da-resolucao h3, .estrategia, .verificacao-do-item, .passo-da-resolucao p,
+.enunciado-lido p, .resposta-do-professor p, .pergunta-do-leitor {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+.item-da-resolucao .katex { hyphens: none; }
+
+.aviso-de-leitura { margin: 0; font: 13px/1.45 var(--sans); color: var(--texto-2); }
+
+/* Alças de tamanho: a borda esquerda da barra lateral e o canto de baixo da janela flutuante. */
+.alca-da-resolucao { position: absolute; z-index: 2; touch-action: none; }
+.alca-da-resolucao.lateral { top: 0; bottom: 0; left: -4px; width: 8px; cursor: ew-resize; }
+.alca-da-resolucao.lateral::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 2px; background: transparent; transition: background .15s; }
+.alca-da-resolucao.lateral:is(:hover, :focus-visible)::after, .puxando-a-resolucao .alca-da-resolucao.lateral::after { background: var(--accent); }
+.alca-da-resolucao.canto { right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--borda-hover) 50%, var(--borda-hover) 58%, transparent 58%, transparent 70%, var(--borda-hover) 70%, var(--borda-hover) 78%, transparent 78%); }
+.alca-da-resolucao:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.puxando-a-resolucao, .puxando-a-resolucao * { user-select: none !important; }
+.puxando-a-resolucao .sessao-de-resolucao iframe { pointer-events: none; }
+
+/* No topo da lista de resolvidos: o caminho para a página de exercícios do livro. */
+.link-dos-exercicios { display: block; margin: 0 0 12px; font-size: 13px; color: var(--texto-2); }

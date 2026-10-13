@@ -1,0 +1,31 @@
+{
+  "versao": 1,
+  "id": "01K0000000000000000000X001",
+  "versao_id": "01K0000000000000000000V001",
+  "secao_id": "01K0000000000000000000S001",
+  "tipo": "imagem",
+  "alvo": {
+    "tipo": "trecho",
+    "ancora": {
+      "versao_id": "01K0000000000000000000V001",
+      "bloco_id": "01K0000000000000000000B001",
+      "inicio_utf16": 4,
+      "fim_utf16": 13,
+      "citacao": "mar ao lé",
+      "prefixo": "Ó ",
+      "sufixo": "u"
+    }
+  },
+  "estado": "pronto",
+  "diagnosticos": [],
+  "criado_em": "2026-09-28T22:00:00.000Z",
+  "atualizado_em": "2026-09-28T22:00:00.000Z",
+  "artefato": {
+    "tipo": "png",
+    "sha256": "xyz",
+    "bytes": 1,
+    "largura": 1,
+    "altura": 1,
+    "descricao": "d"
+  }
+}

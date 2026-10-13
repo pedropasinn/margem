@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/flashcards-capitulo@2.schema.json",
+  "title": "Flashcards do capítulo, versão 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cartoes"],
+  "properties": {
+    "cartoes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["frente", "verso", "citacao"],
+        "properties": {
+          "frente": { "type": "string", "minLength": 1, "maxLength": 400 },
+          "verso": { "type": "string", "minLength": 1, "maxLength": 1200 },
+          "citacao": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["bloco", "texto"],
+            "properties": {
+              "bloco": { "type": "string", "pattern": "^B[0-9]{1,5}$" },
+              "texto": { "type": "string", "minLength": 1, "maxLength": 1000 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

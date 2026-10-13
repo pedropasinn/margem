@@ -1,0 +1,206 @@
+{
+  "descricao": "Prosa argumentativa (texto de teste escrito para o corpus), modo argumentativa, nível 2, com um bloco de contexto. Erros típicos: aspas retas no lugar das curvas, termo repetido sem prefixo, função do modo literário, saliência acima do nível alvo, marca no bloco de contexto, sobreposição e comentário TENSAO fora do modo. Um caso de palavra repetida resolvida pelo prefixo e pelo sufixo.",
+  "tipo": "leitura",
+  "modo": {
+    "id": "argumentativa",
+    "revisao": 1
+  },
+  "nivel": 2,
+  "versao_id": "01K5J17V000000000000000001",
+  "camada_id": "01K5J17C000000000000000002",
+  "blocos": [
+    {
+      "id": "01K5J17B000000000000000020",
+      "ordem": 20,
+      "tipo": "paragrafo",
+      "texto": "O capítulo anterior tratou da memória como arquivo e deixou em aberto o que acontece quando o arquivo é consultado."
+    },
+    {
+      "id": "01K5J17B000000000000000021",
+      "ordem": 21,
+      "tipo": "paragrafo",
+      "texto": "A leitura atenta não é um acúmulo de informações, mas uma reorganização do que já se sabe. Quem lê com atenção compara o que o texto diz com o que esperava que ele dissesse. Por isso, ler bem é, em primeiro lugar, notar a própria surpresa. A surpresa, porém, só é útil quando se pergunta o que ela revela."
+    },
+    {
+      "id": "01K5J17B000000000000000022",
+      "ordem": 22,
+      "tipo": "paragrafo",
+      "texto": "Chamo de “leitura lenta” a leitura que para diante da surpresa em vez de passar por ela. A leitura lenta não é necessariamente demorada: é a que registra onde o texto resistiu. Um leitor pode ser rápido e lento ao mesmo tempo, desde que anote a resistência."
+    }
+  ],
+  "responsaveis": [
+    "01K5J17B000000000000000021",
+    "01K5J17B000000000000000022"
+  ],
+  "saida": {
+    "marcas": [
+      {
+        "bloco_id": "01K5J17B000000000000000021",
+        "citacao": "ler bem é, em primeiro lugar, notar a própria surpresa",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "tese",
+        "saliencia": 1,
+        "sublinhar": [],
+        "comentario": {
+          "tipo": "AUTOR",
+          "rotulo": "AUTOR · TESE",
+          "texto": "Ler bem começa por perceber onde o texto contrariou o que se esperava."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000022",
+        "citacao": "Chamo de \"leitura lenta\" a leitura que para diante da surpresa em vez de passar por ela",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "conceito",
+        "saliencia": 1,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000022",
+        "citacao": "leitura lenta",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "conceito",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000021",
+        "citacao": "surpresa",
+        "prefixo": "A ",
+        "sufixo": ", porém",
+        "funcao": "nenhuma",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": {
+          "tipo": "INVESTIGAR",
+          "rotulo": "? INVESTIGAR",
+          "texto": "Útil para quê? O parágrafo ainda não diz o que a surpresa revela."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000021",
+        "citacao": "A leitura atenta não é um acúmulo de informações",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "imagem",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000021",
+        "citacao": "Quem lê com atenção compara o que o texto diz com o que esperava que ele dissesse.",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "justificativa",
+        "saliencia": 3,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000020",
+        "citacao": "memória como arquivo",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "tese",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000022",
+        "citacao": "a leitura que para diante da surpresa em vez de passar por ela",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "conceito",
+        "saliencia": 1,
+        "sublinhar": [
+          "em vez de"
+        ],
+        "comentario": {
+          "tipo": "AUTOR",
+          "rotulo": "AUTOR · DEFINIÇÃO",
+          "texto": "Leitura lenta é a que se detém na surpresa."
+        }
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000022",
+        "citacao": "A leitura lenta não é necessariamente demorada",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "justificativa",
+        "saliencia": 2,
+        "sublinhar": [
+          "não é necessariamente",
+          "demorado"
+        ],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000021",
+        "citacao": "A leitura atenta não é um acúmulo de informações, mas uma reorganização do que já se sabe",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "tese",
+        "saliencia": 2,
+        "sublinhar": [
+          "não",
+          "mas"
+        ],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000021",
+        "citacao": "Por isso, ler bem é",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "justificativa",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": null
+      },
+      {
+        "bloco_id": "01K5J17B000000000000000022",
+        "citacao": "Um leitor pode ser rápido e lento ao mesmo tempo",
+        "prefixo": "",
+        "sufixo": "",
+        "funcao": "nenhuma",
+        "saliencia": 2,
+        "sublinhar": [],
+        "comentario": {
+          "tipo": "TENSAO",
+          "rotulo": "TENSÃO",
+          "texto": "Rápido e lento ao mesmo tempo parece contradizer a definição."
+        }
+      }
+    ],
+    "resumo_da_parte": "O texto sustenta que ler bem é notar a própria surpresa e define leitura lenta como a que se detém nela. Distingue lento de demorado. Ainda não disse o que a surpresa revela.",
+    "limites": [],
+    "leitura_integral": true
+  },
+  "esperado": {
+    "publicadas": 5,
+    "indices_publicados": [
+      0,
+      3,
+      7,
+      8,
+      9
+    ],
+    "diagnosticos": {
+      "citacao_ausente": 1,
+      "citacao_ambigua": 1,
+      "funcao_fora_do_modo": 1,
+      "saliencia_acima_do_alvo": 1,
+      "bloco_fora_da_parte": 1,
+      "sobreposicao_na_camada": 1,
+      "comentario_fora_do_modo": 1,
+      "sublinhar_nao_resolvido": 1
+    }
+  }
+}

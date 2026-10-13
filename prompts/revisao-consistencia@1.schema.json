@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/revisao-consistencia@1.schema.json",
+  "title": "Saída da revisão de consistência, versão 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "alteracoes",
+    "consistencia_das_cores",
+    "observacoes"
+  ],
+  "properties": {
+    "alteracoes": {
+      "type": "array",
+      "minItems": 0,
+      "description": "Operações de LoteRevisaoV1 sem `antes` e sem `ordem`: o serviço preenche os dois a partir do estado atual.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "marca_id",
+              "op",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "marca_id": {
+                "$ref": "#/$defs/id"
+              },
+              "op": {
+                "const": "mudar_funcao",
+                "type": "string"
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "funcao"
+                ],
+                "properties": {
+                  "funcao": {
+                    "$ref": "#/$defs/funcao"
+                  }
+                }
+              },
+              "motivo": {
+                "$ref": "#/$defs/motivo"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "marca_id",
+              "op",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "marca_id": {
+                "$ref": "#/$defs/id"
+              },
+              "op": {
+                "const": "reescrever_comentario",
+                "type": "string"
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "comentario"
+                ],
+                "properties": {
+                  "comentario": {
+                    "$ref": "#/$defs/comentario"
+                  }
+                }
+              },
+              "motivo": {
+                "$ref": "#/$defs/motivo"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "marca_id",
+              "op",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "marca_id": {
+                "$ref": "#/$defs/id"
+              },
+              "op": {
+                "const": "remover_comentario",
+                "type": "string"
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {}
+              },
+              "motivo": {
+                "$ref": "#/$defs/motivo"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "marca_id",
+              "op",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "marca_id": {
+                "$ref": "#/$defs/id"
+              },
+              "op": {
+                "const": "editar_subfaixas",
+                "type": "string"
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "sublinhar"
+                ],
+                "properties": {
+                  "sublinhar": {
+                    "type": "array",
+                    "minItems": 0,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "description": "Substrings literais da citação; o serviço resolve as faixas."
+                  }
+                }
+              },
+              "motivo": {
+                "$ref": "#/$defs/motivo"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "marca_id",
+              "op",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "marca_id": {
+                "$ref": "#/$defs/id"
+              },
+              "op": {
+                "const": "mudar_visibilidade",
+                "type": "string"
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "visivel"
+                ],
+                "properties": {
+                  "visivel": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "motivo": {
+                "$ref": "#/$defs/motivo"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "marca_id",
+              "op",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "marca_id": {
+                "$ref": "#/$defs/id"
+              },
+              "op": {
+                "const": "remover",
+                "type": "string"
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {}
+              },
+              "motivo": {
+                "$ref": "#/$defs/motivo"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "consistencia_das_cores": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000,
+      "description": "Duas a cinco frases: as três cores mantiveram o mesmo significado? Onde derraparam?"
+    },
+    "observacoes": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Padrões encontrados, sem repetir as alterações."
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "motivo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "funcao": {
+      "type": "string",
+      "enum": [
+        "tese",
+        "conceito",
+        "justificativa",
+        "nenhuma"
+      ]
+    },
+    "comentario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tipo",
+        "rotulo",
+        "texto"
+      ],
+      "properties": {
+        "tipo": {
+          "type": "string",
+          "enum": [
+            "AUTOR",
+            "LEITURA",
+            "INVESTIGAR",
+            "OBJECAO",
+            "CONEXAO"
+          ]
+        },
+        "rotulo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "texto": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

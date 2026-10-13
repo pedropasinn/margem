@@ -1,0 +1,776 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/sintetizar-capitulo@2.schema.json",
+  "title": "Saída da síntese do capítulo",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "movimento",
+    "unidades",
+    "operacoes"
+  ],
+  "properties": {
+    "movimento": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "texto",
+        "etapas"
+      ],
+      "properties": {
+        "texto": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "etapas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "unidades",
+              "descricao"
+            ],
+            "properties": {
+              "unidades": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^U[0-9]+$"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "descricao": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "unidades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ref",
+          "inicio",
+          "titulo",
+          "funcao_no_capitulo"
+        ],
+        "properties": {
+          "ref": {
+            "type": "string",
+            "pattern": "^U[0-9]+$"
+          },
+          "inicio": {
+            "type": "string",
+            "pattern": "^B[0-9]{3,}$"
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "funcao_no_capitulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "operacoes": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "para",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "promover"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^L[0-9]{2,}$"
+              },
+              "para": {
+                "type": "integer",
+                "enum": [
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "para",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "rebaixar"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^L[0-9]{2,}$"
+              },
+              "para": {
+                "type": "integer",
+                "enum": [
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "nucleo",
+              "papel",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "corrigir_papel"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^L[0-9]{2,}$"
+              },
+              "nucleo": {
+                "type": "string",
+                "enum": [
+                  "afirmacao",
+                  "conceito",
+                  "hipotese",
+                  "evidencia",
+                  "exemplo",
+                  "objecao",
+                  "passo",
+                  "elemento_textual"
+                ]
+              },
+              "papel": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+                    "maxLength": 40
+                  }
+                ]
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "enunciado",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "reescrever_enunciado"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^L[0-9]{2,}$"
+              },
+              "enunciado": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "tipo",
+              "texto",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "acrescentar_nota"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^L[0-9]{2,}$"
+              },
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "LEITURA",
+                  "INVESTIGAR",
+                  "OBJECAO",
+                  "TENSAO"
+                ]
+              },
+              "texto": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "absorvidos",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "fundir"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^L[0-9]{2,}$"
+              },
+              "absorvidos": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "remover_elemento"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^L[0-9]{2,}$"
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "ref",
+              "nucleo",
+              "papel",
+              "citacoes",
+              "enunciado",
+              "qualificadores",
+              "centralidade",
+              "notas",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "adicionar_elemento"
+              },
+              "ref": {
+                "type": "string",
+                "pattern": "^n[0-9]+$"
+              },
+              "nucleo": {
+                "type": "string",
+                "enum": [
+                  "afirmacao",
+                  "conceito",
+                  "hipotese",
+                  "evidencia",
+                  "exemplo",
+                  "objecao",
+                  "passo",
+                  "elemento_textual"
+                ]
+              },
+              "papel": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+                    "maxLength": 40
+                  }
+                ]
+              },
+              "citacoes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "bloco",
+                    "citacao",
+                    "prefixo",
+                    "sufixo"
+                  ],
+                  "properties": {
+                    "bloco": {
+                      "type": "string",
+                      "pattern": "^B[0-9]{3,}$"
+                    },
+                    "citacao": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "prefixo": {
+                      "type": "string"
+                    },
+                    "sufixo": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "minItems": 1,
+                "maxItems": 3
+              },
+              "enunciado": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "qualificadores": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              },
+              "centralidade": {
+                "type": "integer",
+                "enum": [
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "notas": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tipo",
+                    "texto"
+                  ],
+                  "properties": {
+                    "tipo": {
+                      "type": "string",
+                      "enum": [
+                        "LEITURA",
+                        "INVESTIGAR",
+                        "OBJECAO",
+                        "TENSAO"
+                      ]
+                    },
+                    "texto": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000
+                    }
+                  }
+                },
+                "minItems": 0
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "ref",
+              "origem",
+              "destino",
+              "tipo",
+              "explicacao",
+              "confianca",
+              "retrospectiva",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "criar_relacao"
+              },
+              "ref": {
+                "type": "string",
+                "pattern": "^n[0-9]+$"
+              },
+              "origem": {
+                "type": "string",
+                "pattern": "^(L[0-9]{2,}|n[0-9]+)$"
+              },
+              "destino": {
+                "type": "string",
+                "pattern": "^(L[0-9]{2,}|n[0-9]+)$"
+              },
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "suporta",
+                  "desenvolve",
+                  "pressupoe",
+                  "contrasta",
+                  "exemplifica",
+                  "retoma",
+                  "responde",
+                  "tensiona",
+                  "ecoa"
+                ]
+              },
+              "explicacao": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "confianca": {
+                "type": "string",
+                "enum": [
+                  "alta",
+                  "media",
+                  "baixa"
+                ]
+              },
+              "retrospectiva": {
+                "type": "boolean"
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "remover_relacao"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^R[0-9]{2,}$"
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "tipo",
+              "citacoes",
+              "descricao",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "adicionar_dificuldade"
+              },
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "premissa_implicita",
+                  "mudanca_de_notacao",
+                  "sintaxe_complexa",
+                  "conceito_sem_definicao",
+                  "salto_argumentativo",
+                  "referencia_externa",
+                  "ambiguidade"
+                ]
+              },
+              "citacoes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "bloco",
+                    "citacao",
+                    "prefixo",
+                    "sufixo"
+                  ],
+                  "properties": {
+                    "bloco": {
+                      "type": "string",
+                      "pattern": "^B[0-9]{3,}$"
+                    },
+                    "citacao": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "prefixo": {
+                      "type": "string"
+                    },
+                    "sufixo": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "minItems": 1,
+                "maxItems": 3
+              },
+              "descricao": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "op",
+              "alvo",
+              "motivo",
+              "evidencia"
+            ],
+            "properties": {
+              "op": {
+                "const": "remover_dificuldade"
+              },
+              "alvo": {
+                "type": "string",
+                "pattern": "^D[0-9]{2,}$"
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidencia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^L[0-9]{2,}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 0
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["marcas"],
+  "properties": {
+    "marcas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["funcao", "citacao"],
+        "properties": {
+          "funcao": { "type": "string", "enum": ["tese", "conceito", "justificativa", "nenhuma"] },
+          "citacao": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

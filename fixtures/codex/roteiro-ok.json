@@ -1,0 +1,15 @@
+{
+  "versao": 1,
+  "passos": [
+    {
+      "tipo": "ok",
+      "modelo": "executor-falso",
+      "conteudo": {
+        "marcas": [
+          { "funcao": "tese", "citacao": "A margem é onde a leitura se torna conversa." },
+          { "funcao": "conceito", "citacao": "âncora" }
+        ]
+      }
+    }
+  ]
+}

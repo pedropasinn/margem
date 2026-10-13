@@ -1,0 +1,16 @@
+{
+  "versao": 1,
+  "estado": "enviada",
+  "geral": {
+    "primeira_impressao": 4,
+    "usaria_de_novo": "Talvez",
+    "comentario": "Gostei das notas na margem."
+  },
+  "por_documento": {
+    "01KAAAAAAAAAAAAAAAAAAAAAAA": {
+      "clareza": 5
+    }
+  },
+  "atualizada_em": "2026-10-02T12:00:00.000Z",
+  "enviada_em": null
+}

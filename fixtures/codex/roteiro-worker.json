@@ -1,0 +1,10 @@
+{
+  "versao": 1,
+  "passos": [
+    {
+      "tipo": "ok",
+      "modelo": "executor-falso",
+      "conteudo": { "marcas": [{ "funcao": "tese", "citacao": "Publicar exige a concessão ainda válida." }] }
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+/*
+ * Sala de teste: composição dentro da linguagem existente (tokens.css, primitives.css,
+ * componentes.css). Nada de cor, raio ou sombra novos: `.card`, `.eyebrow`, `.badge`,
+ * `.session-list`, `.progress-track` e os botões das primitives são os do resto do app.
+ */
+
+/* ---------- Testador: páginas sem a casca da biblioteca ---------- */
+.sala-pagina { min-height: 100dvh; background: var(--bg); outline: none; }
+.sala-centro { display: grid; place-items: center; padding: 32px 16px; }
+.sala-cartao { width: min(460px, 100%); display: grid; gap: 12px; }
+.sala-cartao .eyebrow { margin: 0; }
+.sala-marca { margin: 0 0 12px; font-family: var(--serif); font-size: 24px; font-weight: 700; line-height: 1; color: var(--texto-1); }
+.sala-titulo-cartao { font-size: 26px; line-height: 1.2; }
+.sala-texto { margin: 0; color: var(--texto-2); font-size: 15px; line-height: 1.55; }
+.sala-entrada { margin-top: 12px; }
+.sala-entrada .ui-button[type=submit] { width: 100%; }
+.sala-rodape { margin: 8px 0 0; color: var(--texto-3); font-size: 13px; line-height: 1.5; }
+.secundario-inline { color: var(--texto-3); font-weight: 400; }
+.sala-aviso { margin: 0; }
+
+.sala-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; padding: 0 24px; border-bottom: 1px solid var(--borda); background: var(--bg); }
+.sala-topo .sala-marca { margin: 0; }
+.sala-quem { display: inline-flex; align-items: center; gap: 4px; color: var(--texto-2); font-size: 14px; font-weight: 500; }
+.sala-coluna { width: min(720px, 100%); margin: 0 auto; padding: 40px 24px 72px; display: grid; gap: 20px; align-content: start; }
+.sala-coluna > .eyebrow { margin: 0 0 -12px; }
+.sala-titulo { font-size: 30px; line-height: 1.15; }
+.sala-boas-vindas { margin: 0; color: var(--texto-2); font-size: 17px; line-height: 1.6; white-space: pre-wrap; }
+.sala-subtitulo { font-size: 20px; line-height: 1.3; }
+.sala-coluna > .sala-subtitulo { margin-top: 12px; }
+.sala-passos { display: grid; gap: 8px; margin: 0; padding: 18px 20px 18px 40px; border-radius: var(--r-16); background: var(--bg-2); color: var(--texto-2); font-size: 15px; line-height: 1.5; }
+.sala-passos strong { color: var(--texto-1); font-weight: 600; }
+.sala-documentos > li > .ui-button { flex-shrink: 0; }
+.sala-formulario-cartao { display: grid; gap: 14px; }
+.sala-formulario-rodape { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* Formulário */
+.sala-formulario { gap: 28px; }
+.campos-do-formulario { display: grid; gap: 28px; }
+.pergunta { display: grid; gap: 8px; min-width: 0; padding: 0; margin: 0; border: 0; font-weight: 400; }
+.pergunta-enunciado { font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--texto-1); }
+.pergunta-obrigatoria { color: var(--texto-3); font-weight: 500; }
+.pergunta-ajuda { margin-top: -4px; color: var(--texto-3); font-size: 14px; }
+.pergunta .ui-segmented { width: min(380px, 100%); }
+.escala-rotulos { display: flex; justify-content: space-between; width: min(380px, 100%); color: var(--texto-3); font-size: 12.5px; }
+.pergunta[data-falta] .pergunta-enunciado { color: var(--aviso-texto); }
+.pergunta[data-falta] .ui-segmented, .pergunta[data-falta] .ui-input { outline: 2px solid var(--aviso-texto); outline-offset: 2px; }
+.sala-por-documento { display: grid; gap: 24px; margin: 0; padding: 24px 0 0; border: 0; border-top: 1px solid var(--borda); }
+.sala-por-documento-titulo { display: grid; gap: 2px; margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; }
+.sala-por-documento-titulo .eyebrow { margin: 0; }
+.sala-enviar { padding-top: 8px; }
+.sala-enviado { margin: 0; background: var(--sucesso-bg); color: var(--sucesso-texto); }
+
+/* Leitor no modo sala */
+.sala-erro-leitor { min-height: 60dvh; align-content: center; }
+.sala-aviso-leitor { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 90; transform: translateX(-50%); margin: 0; padding: 10px 18px; border-radius: var(--r-pilula); background: var(--texto-1); color: var(--bg); box-shadow: 0 8px 28px #0002; font: 500 14px/1.3 var(--sans); white-space: nowrap; }
+
+@media (max-width: 600px) {
+  .sala-topo { padding: 0 16px; }
+  .sala-coluna { padding: 28px 16px 56px; }
+  .sala-titulo { font-size: 26px; }
+  .sala-passos { padding: 16px 16px 16px 34px; }
+  /* No celular o título já abre o texto: o botão sairia da linha. */
+  .sala-documentos > li > .ui-button { display: none; }
+}
+
+/* ---------- Dono: lista, editor e respostas (dentro da casca do app) ---------- */
+.salas-do-leitor { width: min(920px, 100%); margin: 0 auto; display: grid; gap: 20px; align-content: start; }
+.salas-do-leitor > .page-title, .salas-do-leitor .cabeca-salas .page-title { margin: 0; }
+.salas-do-leitor > .eyebrow { margin: 0 0 -16px; }
+.cabeca-salas { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.cabeca-salas .secundario { margin: 8px 0 0; max-width: 60ch; }
+.cabeca-salas .badge { margin-bottom: 10px; }
+.cabeca-salas > .ui-button, .cabeca-salas > .button-row { flex-shrink: 0; }
+.sala-vazia .empty h2 { font-size: 20px; }
+.lista-de-salas .linha-meta { align-items: center; }
+.lista-de-salas .linha-meta .badge { padding: 2px 8px; font-size: 11px; }
+.lista-de-salas > li > .button-row { flex-shrink: 0; gap: 4px; }
+.salas-do-leitor .card { display: grid; gap: 14px; }
+.salas-do-leitor .card > .secundario { margin: -6px 0 0; max-width: none; }
+.salas-do-leitor code { font-size: .92em; }
+.link-discreto { margin-top: 2px; }
+
+.editor-da-sala { gap: 20px; }
+.senha-modo { width: min(280px, 100%); }
+.escolha-de-documentos { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; max-height: 360px; overflow-y: auto; }
+.escolha-de-documentos .ui-checkbox { width: 100%; min-height: 52px; padding: 6px 8px; border-radius: var(--r-8); align-items: center; font-weight: 400; white-space: normal; }
+.escolha-de-documentos .ui-checkbox:hover:not(:disabled) { background: var(--bg-hover); }
+.documento-escolhido { display: grid; gap: 1px; min-width: 0; text-align: left; }
+.documento-escolhido-titulo { color: var(--texto-1); font-size: 15px; font-weight: 600; }
+.documento-escolhido-meta { color: var(--texto-3); font-size: 13px; }
+
+.editor-do-formulario { display: grid; gap: 12px; justify-items: start; }
+.perguntas-do-editor { display: grid; gap: 10px; width: 100%; margin: 0; padding: 0; list-style: none; }
+.pergunta-do-editor { display: grid; gap: 10px; padding: 14px; border: 2px solid var(--borda-3d); border-radius: var(--r-16); }
+.pergunta-do-editor-linha { display: grid; grid-template-columns: auto minmax(0, 1fr) 190px; gap: 10px; align-items: center; }
+.pergunta-do-editor-linha .session-dot { width: 30px; height: 30px; font-size: 13px; }
+.pergunta-do-editor-detalhes { display: grid; gap: 10px; padding-left: 40px; }
+.pergunta-do-editor-acoes { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pergunta-do-editor-mover { display: inline-flex; gap: 2px; color: var(--texto-3); }
+.dupla-compacta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opcoes-da-escolha { min-height: 84px; }
+.por-documento-interruptor { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--borda); }
+
+.convite { gap: 16px; }
+.campo-copiavel { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.campo-copiavel .eyebrow { width: 80px; margin: 0; }
+.valor-copiavel { flex: 1 1 260px; min-width: 0; padding: 10px 14px; border-radius: var(--r-8); background: var(--bg-2); color: var(--texto-1); font-size: 14px; overflow-wrap: anywhere; }
+.valor-copiavel.senha { font-size: 17px; letter-spacing: .04em; }
+.convite textarea { font-size: 14px; line-height: 1.5; }
+
+.numeros-da-sala { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.numeros-da-sala > div { display: grid; gap: 2px; padding: 18px 20px; border-radius: var(--r-16); background: var(--bg-2); }
+.numero-grande { font-size: 30px; font-weight: 700; line-height: 1.1; color: var(--texto-1); }
+.numeros-da-sala .secundario { font-size: 13px; }
+.resumo-das-perguntas { display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+.resumo-da-pergunta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: baseline; }
+.resumo-enunciado { color: var(--texto-1); font-size: 15px; font-weight: 500; }
+.resumo-valor { font-size: 18px; font-weight: 700; color: var(--texto-1); white-space: nowrap; }
+.resumo-valor .secundario { font-size: 13px; font-weight: 400; }
+.resumo-da-pergunta .progress-track { grid-column: 1 / -1; height: 4px; }
+.resumo-escolhas { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.resumo-da-pergunta > .secundario:last-child { grid-column: 1 / -1; font-size: 13px; }
+.lista-de-testadores { display: grid; }
+.testador { border-bottom: 1px solid var(--borda); }
+.testador:last-child { border-bottom: 0; }
+.testador summary { display: grid; gap: 4px; padding: 14px 0; cursor: pointer; list-style: none; }
+.testador summary::-webkit-details-marker { display: none; }
+.testador-nome { font-size: 16px; font-weight: 600; color: var(--texto-1); }
+.testador .linha-meta, .comentarios-da-sala .linha-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; color: var(--texto-2); font-size: 13px; }
+.testador .linha-meta .badge { padding: 2px 8px; font-size: 11px; }
+.respostas-do-testador { display: grid; gap: 14px; margin: 0 0 18px; padding: 16px 18px; border-radius: var(--r-16); background: var(--bg-2); }
+.respostas-do-testador dt { color: var(--texto-2); font-size: 13px; font-weight: 500; }
+.respostas-do-testador dt .eyebrow { margin: 0; font-size: 10px; }
+.respostas-do-testador dd { margin: 2px 0 0; color: var(--texto-1); font-size: 15px; white-space: pre-wrap; }
+.resposta-escala-numero { font-weight: 700; }
+.resposta-vazia { color: var(--texto-off); }
+.comentarios-da-sala { display: grid; margin: 0; padding: 0; list-style: none; }
+.comentarios-da-sala > li { display: grid; gap: 6px; padding: 16px 0; border-bottom: 1px solid var(--borda); }
+.comentarios-da-sala > li:last-child { border-bottom: 0; }
+.trecho-comentado { margin: 0; color: var(--texto-2); font: italic 400 16px/1.55 var(--serif); }
+.trecho-comentado::before { content: '“'; }
+.trecho-comentado::after { content: '”'; }
+.comentario-texto { margin: 0; color: var(--texto-1); font-size: 15px; white-space: pre-wrap; }
+
+@media (max-width: 700px) {
+  .cabeca-salas { flex-direction: column; gap: 12px; }
+  .lista-de-salas > li { flex-wrap: wrap; }
+  .lista-de-salas > li > .button-row { margin-left: 48px; }
+  .pergunta-do-editor-linha { grid-template-columns: auto minmax(0, 1fr); }
+  .pergunta-do-editor-linha .ui-select { grid-column: 2; }
+  .pergunta-do-editor-detalhes { padding-left: 0; }
+  .numeros-da-sala { grid-template-columns: 1fr; }
+  .numeros-da-sala > div { grid-template-columns: auto 1fr; align-items: baseline; gap: 10px; padding: 12px 16px; }
+  .campo-copiavel .eyebrow { width: 100%; }
+  .resumo-da-pergunta { grid-template-columns: 1fr; }
+  .resumo-escolhas { justify-content: flex-start; }
+}

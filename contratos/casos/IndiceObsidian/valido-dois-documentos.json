@@ -1,0 +1,25 @@
+{
+  "versao": 1,
+  "url_base": "http://127.0.0.1:8730",
+  "marcas": "todas",
+  "documentos": [
+    {
+      "documento_id": "01JAAAAAAAAAAAAAAAAAAAAAAA",
+      "versao_id": "01JBBBBBBBBBBBBBBBBBBBBBBB",
+      "titulo": "Mostly Harmless Econometrics",
+      "arquivo": "Mostly Harmless Econometrics.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "itens": 12,
+      "atualizado_em": "2026-09-30T12:00:00.000Z"
+    },
+    {
+      "documento_id": "01JCCCCCCCCCCCCCCCCCCCCCCC",
+      "versao_id": "01JDDDDDDDDDDDDDDDDDDDDDDD",
+      "titulo": "Poemas: seleção (1922)",
+      "arquivo": "Poemas - seleção (1922).md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "itens": 0,
+      "atualizado_em": "2026-09-30T12:00:00.000Z"
+    }
+  ]
+}

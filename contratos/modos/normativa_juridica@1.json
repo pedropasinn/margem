@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "normativa_juridica",
+  "revisao": 1,
+  "nome": "Lei e texto normativo jurídico",
+  "descricao": "Leitura estrutural de lei e código: reconstruir destinatário, hipótese de incidência, comando, exceção, efeito e vigência textual. A leitura do documento não certifica aplicabilidade atual, constitucionalidade ou solução de caso concreto; remissões externas exigem a fonte correspondente.",
+  "funcoes": [
+    {
+      "chave": "comando",
+      "rotulo": "Comando normativo",
+      "pergunta": "Quem deve, pode ou não pode fazer o quê?",
+      "descricao": "Obrigação, proibição, permissão ou competência enunciada; manter sujeito e modalidade normativa.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "incidencia",
+      "rotulo": "Hipótese de incidência",
+      "pergunta": "Quando e a quem se aplica este comando?",
+      "descricao": "Condições materiais, pessoais, territoriais ou procedimentais de aplicação descritas no texto.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "definicao",
+      "rotulo": "Definição normativa",
+      "pergunta": "Que termo tem sentido delimitado pela própria norma?",
+      "descricao": "Definição que altera alcance de comandos; não grifar todo substantivo jurídico.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "excecao",
+      "rotulo": "Exceção e ressalva",
+      "pergunta": "Em que situação o comando é afastado ou modificado?",
+      "descricao": "Exceção, exclusão, reserva ou regra especial explicitamente relacionada ao comando.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "efeito",
+      "rotulo": "Efeito e procedimento",
+      "pergunta": "Que consequência ou procedimento decorre da hipótese?",
+      "descricao": "Sanção, efeito jurídico, prazo ou sequência procedimental previstos, sem presumir aplicação ao leitor.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "vigencia",
+      "rotulo": "Vigência e alteração",
+      "pergunta": "Que passagem trata de início, transição, alteração ou revogação?",
+      "descricao": "Enunciado temporal ou modificativo literal; não certifica o estado vigente fora da versão recebida.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.07,
+      "2": 0.17,
+      "3": 0.32
+    }
+  }
+}

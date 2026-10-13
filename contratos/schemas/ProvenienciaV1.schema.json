@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ProvenienciaV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "sha256_original",
+    "hash_estrutural",
+    "extrator",
+    "observacoes",
+    "transformacoes"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "sha256_original": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "hash_estrutural": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "extrator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nome",
+        "versao"
+      ],
+      "properties": {
+        "nome": {
+          "const": "PyMuPDF"
+        },
+        "versao": {
+          "type": "string"
+        }
+      }
+    },
+    "observacoes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pagina",
+          "ordem",
+          "texto",
+          "bbox",
+          "spans"
+        ],
+        "properties": {
+          "pagina": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "ordem": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "texto": {
+            "type": "string"
+          },
+          "bbox": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "texto",
+                "bbox",
+                "fonte",
+                "tamanho",
+                "flags"
+              ],
+              "properties": {
+                "texto": {
+                  "type": "string"
+                },
+                "bbox": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                },
+                "fonte": {
+                  "type": "string"
+                },
+                "tamanho": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "flags": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "transformacoes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "regra",
+          "antes",
+          "depois"
+        ],
+        "properties": {
+          "regra": {
+            "enum": [
+              "ligaturas_tipograficas",
+              "hifen_remover",
+              "hifen_manter",
+              "numero_pagina",
+              "cabecalho_heuristica_legada"
+            ]
+          },
+          "antes": {
+            "type": "string"
+          },
+          "depois": {
+            "type": "string"
+          },
+          "pagina": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "bbox": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "bloco_id": {
+            "type": "string",
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/LeituraComentadaV1.schema.json",
+  "title": "Leitura comentada integral de um capítulo (J92)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "execucao_id",
+    "versao_id",
+    "secao_id",
+    "modelo_id",
+    "fontes_hash",
+    "capitulo",
+    "trechos",
+    "pausas",
+    "saltados",
+    "proxima_secao_id",
+    "diagnosticos",
+    "execucao",
+    "job_id",
+    "criado_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "execucao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "secao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "modelo_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "fontes_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "capitulo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "titulo",
+        "numero",
+        "total"
+      ],
+      "properties": {
+        "titulo": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "numero": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "trechos": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "bloco_id",
+          "inicio_utf16",
+          "fim_utf16",
+          "texto",
+          "falado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^t[0-9]{4,5}$"
+          },
+          "bloco_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "inicio_utf16": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "fim_utf16": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "texto": {
+            "type": "string",
+            "minLength": 1
+          },
+          "falado": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "pausas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "depois_de",
+          "fontes",
+          "foco",
+          "pontas",
+          "texto",
+          "falado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^p[0-9]{3,4}$"
+          },
+          "depois_de": {
+            "type": "string",
+            "pattern": "^t[0-9]{4,5}$"
+          },
+          "fontes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "tipo",
+                "id"
+              ],
+              "properties": {
+                "tipo": {
+                  "enum": [
+                    "grifo",
+                    "relacao"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+                }
+              }
+            }
+          },
+          "foco": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+            }
+          },
+          "pontas": {
+            "type": "array",
+            "items": {
+              "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+            }
+          },
+          "texto": {
+            "type": "string"
+          },
+          "falado": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "saltados": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "bloco_id",
+          "tipo"
+        ],
+        "properties": {
+          "bloco_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "tipo": {
+            "type": "string",
+            "pattern": "^[a-z_]+$"
+          }
+        }
+      }
+    },
+    "proxima_secao_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "diagnosticos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "codigo",
+          "mensagem"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "pattern": "^[a-z_]+$"
+          },
+          "mensagem": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      }
+    },
+    "execucao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelo",
+        "esforco",
+        "prompt"
+      ],
+      "properties": {
+        "modelo": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "esforco": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "prompt": {
+          "type": "string",
+          "pattern": "^[a-z-]+@[0-9]+$"
+        }
+      }
+    },
+    "job_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "criado_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

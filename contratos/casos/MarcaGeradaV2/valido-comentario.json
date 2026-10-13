@@ -1,0 +1,16 @@
+{
+  "bloco_id": "00000000000000000000000001",
+  "citacao": "café e ﬁ",
+  "prefixo": "Um 🧭, ",
+  "sufixo": ".",
+  "funcao": "som_e_ritmo",
+  "saliencia": 3,
+  "sublinhar": [
+    "ﬁ"
+  ],
+  "comentario": {
+    "tipo": "TENSAO",
+    "rotulo": "TENSÃO",
+    "texto": "A ligadura pesa contra o acento."
+  }
+}

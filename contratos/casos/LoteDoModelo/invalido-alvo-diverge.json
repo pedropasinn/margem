@@ -1,0 +1,182 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000601",
+  "execucao_id": "00000000000000000000000040",
+  "secao_id": "00000000000000000000000060",
+  "estagio": "sintese",
+  "job_ids": [
+    "00000000000000000000000092"
+  ],
+  "base_id": "00000000000000000000000502",
+  "resultado_id": "00000000000000000000000503",
+  "operacoes": [
+    {
+      "ordem": 0,
+      "op": "fundir",
+      "motivo": "motivo concreto",
+      "evidencia": [],
+      "alvo_id": "00000000000000000000000101",
+      "antes": {
+        "absorvidos": [
+          {
+            "id": "00000000000000000000000102",
+            "nucleo": "afirmacao",
+            "papel": "tese",
+            "ancoras": [
+              {
+                "versao_id": "00000000000000000000000020",
+                "bloco_id": "00000000000000000000000002",
+                "inicio_utf16": 0,
+                "fim_utf16": 19,
+                "citacao": "Logo, o produto cai",
+                "prefixo": "",
+                "sufixo": ""
+              }
+            ],
+            "enunciado": "O produto cai.",
+            "qualificadores": [],
+            "centralidade": 1,
+            "notas": [],
+            "origem": {
+              "estagio": "analise_local",
+              "job_id": "00000000000000000000000090"
+            }
+          }
+        ]
+      },
+      "depois": {
+        "ancoras": [
+          {
+            "versao_id": "00000000000000000000000020",
+            "bloco_id": "00000000000000000000000001",
+            "inicio_utf16": 0,
+            "fim_utf16": 36,
+            "citacao": "Admitamos inicialmente que os preços",
+            "prefixo": "",
+            "sufixo": "são rígidos."
+          },
+          {
+            "versao_id": "00000000000000000000000020",
+            "bloco_id": "00000000000000000000000002",
+            "inicio_utf16": 0,
+            "fim_utf16": 19,
+            "citacao": "Logo, o produto cai",
+            "prefixo": "",
+            "sufixo": ""
+          }
+        ]
+      }
+    },
+    {
+      "ordem": 1,
+      "op": "criar_relacao",
+      "motivo": "motivo concreto",
+      "evidencia": [],
+      "alvo_id": "00000000000000000000000777",
+      "antes": null,
+      "depois": {
+        "id": "00000000000000000000000201",
+        "tipo": "pressupoe",
+        "origem_id": "00000000000000000000000102",
+        "destino_id": "00000000000000000000000101",
+        "explicacao": "A conclusão usa a rigidez.",
+        "confianca": "alta",
+        "retrospectiva": true,
+        "origem": {
+          "estagio": "sintese",
+          "job_id": "00000000000000000000000091"
+        }
+      }
+    },
+    {
+      "ordem": 2,
+      "op": "definir_unidades",
+      "motivo": "motivo concreto",
+      "evidencia": [],
+      "antes": [],
+      "depois": [
+        {
+          "id": "00000000000000000000000401",
+          "bloco_inicio": "00000000000000000000000001",
+          "bloco_fim": "00000000000000000000000002",
+          "titulo": "A hipótese e a conclusão",
+          "funcao_no_capitulo": "Fixa a hipótese e tira a consequência."
+        }
+      ]
+    },
+    {
+      "ordem": 3,
+      "op": "definir_movimento",
+      "motivo": "motivo concreto",
+      "evidencia": [],
+      "antes": null,
+      "depois": {
+        "texto": "O capítulo fixa uma hipótese e deriva dela uma conclusão.",
+        "etapas": [
+          {
+            "unidade_ids": [
+              "00000000000000000000000401"
+            ],
+            "descricao": "Hipótese e conclusão."
+          }
+        ]
+      }
+    },
+    {
+      "ordem": 4,
+      "op": "remover_dificuldade",
+      "motivo": "motivo concreto",
+      "evidencia": [],
+      "alvo_id": "00000000000000000000000301",
+      "antes": {
+        "id": "00000000000000000000000301",
+        "tipo": "premissa_implicita",
+        "ancoras": [
+          {
+            "versao_id": "00000000000000000000000020",
+            "bloco_id": "00000000000000000000000002",
+            "inicio_utf16": 0,
+            "fim_utf16": 19,
+            "citacao": "Logo, o produto cai",
+            "prefixo": "",
+            "sufixo": ""
+          }
+        ],
+        "descricao": "A passagem do choque à queda do produto omite a hipótese de rigidez.",
+        "origem": {
+          "estagio": "analise_local",
+          "job_id": "00000000000000000000000090"
+        }
+      },
+      "depois": null
+    },
+    {
+      "ordem": 5,
+      "op": "acrescentar_nota",
+      "motivo": "motivo concreto",
+      "evidencia": [],
+      "alvo_id": "00000000000000000000000102",
+      "antes": null,
+      "depois": {
+        "tipo": "LEITURA",
+        "texto": "Decorre da hipótese."
+      }
+    },
+    {
+      "ordem": 6,
+      "op": "corrigir_papel",
+      "motivo": "motivo concreto",
+      "evidencia": [],
+      "alvo_id": "00000000000000000000000102",
+      "antes": {
+        "nucleo": "afirmacao",
+        "papel": "tese"
+      },
+      "depois": {
+        "nucleo": "afirmacao",
+        "papel": "justificativa"
+      }
+    }
+  ],
+  "criado_em": "2026-09-25T12:10:00Z"
+}

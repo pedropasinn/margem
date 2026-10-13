@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/agente@2.schema.json",
+  "title": "Resposta do agente da biblioteca, versão 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["resposta", "citacoes", "artefatos"],
+  "properties": {
+    "resposta": { "type": "string", "minLength": 1, "maxLength": 60000 },
+    "citacoes": {
+      "type": "array",
+      "maxItems": 60,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "versao_id", "bloco_id", "texto"],
+        "properties": {
+          "ref": { "type": "string", "pattern": "^c[0-9]{1,3}$" },
+          "versao_id": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "bloco_id": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+          "texto": { "type": "string", "minLength": 1, "maxLength": 1000 }
+        }
+      }
+    },
+    "artefatos": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tipo", "titulo", "versao_id", "secao_id", "markdown", "mermaid", "nos"],
+        "properties": {
+          "tipo": { "type": "string", "enum": ["mapa", "resumo", "quadro", "conceitos"] },
+          "titulo": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "versao_id": { "anyOf": [{ "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" }, { "type": "null" }] },
+          "secao_id": { "anyOf": [{ "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" }, { "type": "null" }] },
+          "markdown": { "type": "string", "maxLength": 40000 },
+          "mermaid": { "type": "string", "maxLength": 20000 },
+          "nos": {
+            "type": "array",
+            "maxItems": 80,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "rotulo", "ref"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$" },
+                "rotulo": { "type": "string", "minLength": 1, "maxLength": 200 },
+                "ref": { "anyOf": [{ "type": "string", "pattern": "^c[0-9]{1,3}$" }, { "type": "null" }] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "versao": 1,
+  "passos": [
+    {
+      "tipo": "ok",
+      "modelo": "executor-falso",
+      "conteudo": {
+        "marcas": [
+          {
+            "bloco_id": "000000000000000000000B0000",
+            "citacao": "A hipótese vale.",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "tese",
+            "sublinhar": [],
+            "comentario": null
+          },
+          {
+            "bloco_id": "000000000000000000000B0001",
+            "citacao": "Um trecho sobreposto começa aqui",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "tese",
+            "sublinhar": [],
+            "comentario": null
+          },
+          {
+            "bloco_id": "000000000000000000000B0001",
+            "citacao": "sobreposto começa aqui e termina ali.",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "conceito",
+            "sublinhar": [],
+            "comentario": null
+          },
+          {
+            "bloco_id": "000000000000000000000B0002",
+            "citacao": "Bloco fora da parte.",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "tese",
+            "sublinhar": [],
+            "comentario": null
+          },
+          {
+            "bloco_id": "000000000000000000000B0009",
+            "citacao": "Bloco que não existe.",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "tese",
+            "sublinhar": [],
+            "comentario": null
+          },
+          {
+            "bloco_id": "000000000000000000000B0001",
+            "citacao": "Um trecho sobreposto",
+            "prefixo": "",
+            "sufixo": "",
+            "funcao": "nenhuma",
+            "sublinhar": [
+              "inexistente"
+            ],
+            "comentario": {
+              "tipo": "INVESTIGAR",
+              "rotulo": "? INVESTIGAR",
+              "texto": "O sublinhado pedido não está na citação."
+            }
+          }
+        ],
+        "recuperacao": [],
+        "mapa_da_secao": [],
+        "resumo_da_parte": "Parte de teste com citação ambígua, sobreposição e blocos fora do escopo.",
+        "limites": [
+          "Bloco 3 chegou truncado."
+        ],
+        "leitura_integral": false
+      }
+    }
+  ]
+}

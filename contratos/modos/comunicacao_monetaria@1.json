@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "comunicacao_monetaria",
+  "revisao": 1,
+  "nome": "Comunicação de política monetária",
+  "descricao": "Leitura de comunicado e ata de banco central: distinguir decisão efetiva, diagnóstico, projeção condicional, balanço de riscos, indicação futura e posições deliberativas. Preservar horizonte, fonte de expectativas, reunião e versão; não inferir automaticamente uma classificação hawkish/dovish.",
+  "funcoes": [
+    {
+      "chave": "decisao",
+      "rotulo": "Decisão efetiva",
+      "pergunta": "O que o órgão decidiu nesta reunião?",
+      "descricao": "Ato anunciado, instrumento e parâmetros constantes do texto, separado de intenção futura.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "diagnostico",
+      "rotulo": "Diagnóstico",
+      "pergunta": "Como o documento descreve a conjuntura disponível?",
+      "descricao": "Avaliação da atividade, preços ou condições financeiras, com agente e data de referência.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "projecao",
+      "rotulo": "Projeção e hipótese",
+      "pergunta": "Que trajetória é projetada e sob quais premissas?",
+      "descricao": "Projeção, cenário ou expectativa atribuída à fonte correta; distinguir órgão, equipe, mercado e pesquisa. Preservar premissas do cenário: trajetórias de juros e câmbio.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "risco",
+      "rotulo": "Balanço de riscos",
+      "pergunta": "Que desvio do cenário preocupa e em qual direção?",
+      "descricao": "Risco de alta ou baixa e sua condição; risco não é previsão central.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "orientacao",
+      "rotulo": "Orientação condicional",
+      "pergunta": "O que o órgão indica sobre decisões futuras, e do que depende?",
+      "descricao": "Sinalização de política com horizonte, modalidade e condicionantes; não compromisso incondicional. Distinguir previsão délfica de compromisso odisseico, sem presumir compromisso.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "deliberacao",
+      "rotulo": "Deliberação e voto",
+      "pergunta": "Quem sustentou qual posição e o que foi votado?",
+      "descricao": "Registro explícito de discussão, dissenso, decisão ou votação; não converter quantificadores vagos em contagens.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.06,
+      "2": 0.15,
+      "3": 0.28
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000001",
+  "documento_id": "00000000000000000000000002",
+  "versao_id": "00000000000000000000000003",
+  "origem": {
+    "tipo": "recorte",
+    "pagina": 12,
+    "retangulo": {
+      "x": 0.1,
+      "y": 0.2,
+      "largura": 0.8,
+      "altura": 0.25
+    },
+    "imagem_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "texto_extraido": "3. Resolva a equação 2x + 3 = 11.",
+  "resolucao": null,
+  "execucao": null,
+  "mensagens": [],
+  "criada_em": "2026-09-27T10:00:00Z",
+  "extra": true
+}

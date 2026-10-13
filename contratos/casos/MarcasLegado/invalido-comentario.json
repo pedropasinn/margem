@@ -1,0 +1,30 @@
+{
+  "capitulo": "1 — Exemplo",
+  "leitura_integral": true,
+  "limites": [],
+  "marcas": [
+    {
+      "id": "m01",
+      "pagina_pdf": 1,
+      "funcao": "conceito",
+      "citacao": "Um 🧭",
+      "sublinhar": [
+        "🧭"
+      ],
+      "comentario": {
+        "tipo": "DESCONHECIDO",
+        "rotulo": "?",
+        "texto": "Texto"
+      }
+    }
+  ],
+  "recuperacao": [
+    {
+      "pagina_pdf": 1,
+      "secao": "Exemplo",
+      "perguntas": [
+        "Qual é a direção?"
+      ]
+    }
+  ]
+}

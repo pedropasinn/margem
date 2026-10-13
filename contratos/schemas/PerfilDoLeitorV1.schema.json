@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/PerfilDoLeitorV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "revisao",
+    "areas",
+    "preferencias",
+    "observacoes",
+    "atualizado_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "revisao": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000000
+    },
+    "areas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nome",
+          "nivel"
+        ],
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "nivel": {
+            "type": "string",
+            "enum": [
+              "basico",
+              "intermediario",
+              "avancado"
+            ]
+          }
+        }
+      },
+      "minItems": 0
+    },
+    "preferencias": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 300
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "observacoes": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "atualizado_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

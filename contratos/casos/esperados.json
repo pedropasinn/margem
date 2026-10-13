@@ -1,0 +1,171 @@
+[
+  {
+    "arquivo": "Canonico/valido-config.json",
+    "hash_estrutural": "6843dd8255aa674ae5a4c10ce50ed94394823c700aa04c54f8e974610de2b8b3",
+    "raw_text": "Um 🧭, café e ﬁ.",
+    "offsets": {
+      "00000000000000000000000001": {
+        "inicio_utf16": 0,
+        "fim_utf16": 17
+      }
+    },
+    "comprimentos_utf16": [
+      {
+        "id": "00000000000000000000000001",
+        "comprimento": 17
+      }
+    ],
+    "versos_utf16": []
+  },
+  {
+    "arquivo": "Canonico/valido-escapes.json",
+    "hash_estrutural": "0ce20562fb4e75ef35798efbd0e523d4b6a19f90561073eaa30f5cdf00058ee7",
+    "raw_text": "Aspas \" \\ \t \u0000\n\r\n   🧭 café ﬁ\n\n",
+    "offsets": {
+      "00000000000000000000000100": {
+        "inicio_utf16": 0,
+        "fim_utf16": 29
+      },
+      "00000000000000000000000101": {
+        "inicio_utf16": 31,
+        "fim_utf16": 31
+      }
+    },
+    "comprimentos_utf16": [
+      {
+        "id": "00000000000000000000000100",
+        "comprimento": 29
+      },
+      {
+        "id": "00000000000000000000000101",
+        "comprimento": 0
+      }
+    ],
+    "versos_utf16": []
+  },
+  {
+    "arquivo": "Canonico/valido-estrofe.json",
+    "hash_estrutural": "732d18ba8edf33f20588aca9509189f79d1c39776bd6e54191d4bfcf70c4be6f",
+    "raw_text": "Ó mar, que à tarde se desfaz em ouro,\n— dizia o velho, olhando o horizonte —\nnão guardes mais o que levaste um dia, porque a memória é longa e a noite, mais longa ainda, se estende sobre as casas adormecidas da cidade antiga,\ne o café esfria na mesa 🧭.\n\nVerso único — só.\n\nProsa depois do poema.",
+    "offsets": {
+      "00000000000000000000000100": {
+        "inicio_utf16": 0,
+        "fim_utf16": 254
+      },
+      "00000000000000000000000101": {
+        "inicio_utf16": 256,
+        "fim_utf16": 273
+      },
+      "00000000000000000000000102": {
+        "inicio_utf16": 275,
+        "fim_utf16": 297
+      }
+    },
+    "comprimentos_utf16": [
+      {
+        "id": "00000000000000000000000100",
+        "comprimento": 254
+      },
+      {
+        "id": "00000000000000000000000101",
+        "comprimento": 17
+      },
+      {
+        "id": "00000000000000000000000102",
+        "comprimento": 22
+      }
+    ],
+    "versos_utf16": [
+      {
+        "id": "00000000000000000000000100",
+        "faixas": [
+          {
+            "inicio_utf16": 0,
+            "fim_utf16": 37
+          },
+          {
+            "inicio_utf16": 38,
+            "fim_utf16": 76
+          },
+          {
+            "inicio_utf16": 77,
+            "fim_utf16": 225
+          },
+          {
+            "inicio_utf16": 226,
+            "fim_utf16": 254
+          }
+        ]
+      },
+      {
+        "id": "00000000000000000000000101",
+        "faixas": [
+          {
+            "inicio_utf16": 0,
+            "fim_utf16": 17
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "arquivo": "Canonico/valido-minimo.json",
+    "hash_estrutural": "6843dd8255aa674ae5a4c10ce50ed94394823c700aa04c54f8e974610de2b8b3",
+    "raw_text": "Um 🧭, café e ﬁ.",
+    "offsets": {
+      "00000000000000000000000001": {
+        "inicio_utf16": 0,
+        "fim_utf16": 17
+      }
+    },
+    "comprimentos_utf16": [
+      {
+        "id": "00000000000000000000000001",
+        "comprimento": 17
+      }
+    ],
+    "versos_utf16": []
+  },
+  {
+    "arquivo": "Canonico/valido-unicode.json",
+    "hash_estrutural": "d1d2c1d3d2b58c87ce76e83b9fe5e6f68f5c5219a98de203b3b6a62a522b6627",
+    "raw_text": "# Leitura e memória 📖\n\nO café aparece também como café; o emoji 🧭 ocupa duas unidades UTF-16.\n\nAs ligaturas ﬁ e ﬂ convivem com “aspas curvas” — sem mudar as palavras.\n\nÚltimo parágrafo: ação, coração e uma linha\nque continua no mesmo parágrafo.",
+    "offsets": {
+      "00000000000000000000000100": {
+        "inicio_utf16": 0,
+        "fim_utf16": 22
+      },
+      "00000000000000000000000101": {
+        "inicio_utf16": 24,
+        "fim_utf16": 96
+      },
+      "00000000000000000000000102": {
+        "inicio_utf16": 98,
+        "fim_utf16": 169
+      },
+      "00000000000000000000000103": {
+        "inicio_utf16": 171,
+        "fim_utf16": 247
+      }
+    },
+    "comprimentos_utf16": [
+      {
+        "id": "00000000000000000000000100",
+        "comprimento": 22
+      },
+      {
+        "id": "00000000000000000000000101",
+        "comprimento": 72
+      },
+      {
+        "id": "00000000000000000000000102",
+        "comprimento": 71
+      },
+      {
+        "id": "00000000000000000000000103",
+        "comprimento": 76
+      }
+    ],
+    "versos_utf16": []
+  }
+]

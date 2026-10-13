@@ -1,0 +1,16 @@
+/* Leitura comentada integral (J92): a barra e o véu são os da visita (visita.css) e da guiada. */
+/* O karaokê (faixa da frase, bloco da palavra, filete) é o serviço comum de `../karaoke/`. */
+
+.painel-comentada[data-em='comentario'] .comentario-em-curso { border-top-color: var(--accent); }
+.comentario-em-curso, .leitura-em-curso { display: grid; gap: 8px; padding-top: 8px; border-top: 1px solid var(--borda); }
+.tipo-comentario { color: var(--accent-texto); }
+.fontes-do-comentario { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.fontes-do-comentario span { font: 600 11px/1 var(--sans); padding: 4px 7px; border-radius: 999px; background: var(--superficie-2, rgba(0, 0, 0, .05)); color: var(--texto-2); }
+.fontes-do-comentario .fonte-relacao { color: #d4524a; }
+.fala-comentada { font-size: 17px; }
+.proximo-comentario { margin: 0; font: 13px/1.4 var(--sans); color: var(--texto-3); }
+.comentarios-da-leitura button { grid-template-columns: 22px 1fr auto; }
+.comentarios-da-leitura button > span:nth-child(2) { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.marca-do-comentario { background: var(--accent); opacity: .7; }
+.acoes-da-visita { align-items: center; flex-wrap: wrap; }
+

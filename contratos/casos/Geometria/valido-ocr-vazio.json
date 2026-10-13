@@ -1,0 +1,15 @@
+{
+  "versao": 1,
+  "versao_id": "00000000000000000000000000",
+  "fonte": "ocr",
+  "motor": "teste/1",
+  "paginas": [
+    {
+      "numero": 1,
+      "largura": 100,
+      "altura": 100,
+      "rotacao": 0
+    }
+  ],
+  "palavras": []
+}

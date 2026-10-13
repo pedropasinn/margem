@@ -1,0 +1,26 @@
+{
+  "id": "00000000000000000000000050",
+  "ancora": {
+    "versao_id": "00000000000000000000000020",
+    "bloco_id": "00000000000000000000000001",
+    "inicio_utf16": 3,
+    "fim_utf16": 5,
+    "citacao": "🧭",
+    "prefixo": "Um ",
+    "sufixo": ", café e ﬁ."
+  },
+  "funcao": "conceito",
+  "subfaixas": [
+    {
+      "inicio_utf16": 3,
+      "fim_utf16": 5
+    }
+  ],
+  "comentario": null,
+  "origem": "parte",
+  "validade": "orfa",
+  "visivel": false,
+  "avaliacao": "rejeitada",
+  "execucao_id": "00000000000000000000000040",
+  "criada_em": "2026-09-20T18:00:00Z"
+}

@@ -1,0 +1,24 @@
+import { afterEach, expect, test, vi } from 'vitest';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { Bloco } from '@margem/contratos';
+import { pastaDaVersao } from '../dados.js';
+import { formatacaoDaFonte } from './formatacao-da-fonte.js';
+let raiz = '';
+afterEach(async () => { vi.unstubAllEnvs(); if (raiz) await rm(raiz, { recursive: true, force: true }); });
+test('somente projeta formatação cuja citação coincide com o texto publicado', async () => {
+  raiz = await mkdtemp(join(tmpdir(), 'margem-formato-'));
+  vi.stubEnv('MARGEM_DADOS', raiz);
+  const id = '01M3JEKMCCHSE2TZQ8N203H20B';
+  const bloco: Bloco = { id, tipo: 'lista', texto: 'Há 264 combinações.', ordem: 0, inline: [], origens: [] };
+  expect(await formatacaoDaFonte(id, id, [bloco])).toEqual({});
+  const pasta = pastaDaVersao(id, id);
+  await mkdir(pasta, { recursive: true });
+  const dados = { versao_id: id, blocos: { [id]: { marcador: '5.', inline: [{ inicio: 4, fim: 6, estilo: 'sobrescrito', citacao: '64' }] } } };
+  await writeFile(join(pasta, 'formatacao.json'), JSON.stringify(dados));
+  expect((await formatacaoDaFonte(id, id, [bloco]))[id]).toMatchObject({ marcador: '5.', inline: [{ inicio: 4, fim: 6 }] });
+  dados.blocos[id].inline[0]!.citacao = '65';
+  await writeFile(join(pasta, 'formatacao.json'), JSON.stringify(dados));
+  await expect(formatacaoDaFonte(id, id, [bloco])).rejects.toThrow('Âncora');
+});

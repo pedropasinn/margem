@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    # servico/src/db/configuracao.ts só aceita 127.0.0.1:5435; o serviço expõe
+    # exatamente essa porta, então a regra vale no CI sem nenhuma exceção.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: margem
+          POSTGRES_PASSWORD: margem_ci
+          POSTGRES_DB: margem
+        ports:
+          - 127.0.0.1:5435:5432
+        options: >-
+          --health-cmd "pg_isready -U margem"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Credencial descartável do contêiner de CI; os testes criam e destroem
+      # bancos margem_test_* próprios (comBancoDeTeste).
+      DATABASE_URL: postgresql://margem:margem_ci@127.0.0.1:5435/margem
+      # Fora do CI, de propósito:
+      # - CLI real do Codex (codex.capacidades.test.ts exige MARGEM_TESTE_CLI=1; não definido);
+      # - Playwright/Chromium (web/tests/*.spec.ts e tests/e2e não entram no vitest);
+      # - corpus fora do repo (Mixtape, marcas legadas, sessão do Horarium): os testes
+      #   que dependem dele se declaram pulados (describe.skipIf / pytest.skip) e
+      #   aparecem como "skipped" no relatório.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: motor/requirements*.txt
+
+      - name: Ferramentas de mídia
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: npm ci
+        run: npm ci
+
+      # Vem antes do vitest: testes do serviço chamam motor/.venv/bin/python.
+      - name: motor/.venv
+        run: |
+          python -m venv motor/.venv
+          motor/.venv/bin/pip install -r motor/requirements-dev.txt
+
+      - name: typecheck
+        run: npm run typecheck
+
+      - name: lint
+        run: npm run lint
+
+      - name: build
+        run: npm run build --workspace @margem/web
+
+      - name: ferramentas
+        run: npm run test:ferramentas
+
+      - name: vitest
+        run: npm test -- --maxWorkers=2
+
+      - name: pytest
+        run: motor/.venv/bin/pytest motor/tests -rs

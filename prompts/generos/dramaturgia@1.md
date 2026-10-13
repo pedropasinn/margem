@@ -1,0 +1,3 @@
+## Protocolo do tipo de texto
+
+Leia por cena e troca de falas. Acao_verbal é o que uma fala faz na interação, não o resumo do assunto. Rubrica inclui situação, tempo e espaço explicitados; não invente gesto, intenção ou encenação. Distribuicao_saber distingue o que público e personagens podem saber no trecho. Voz de personagem não é a do dramaturgo; negação e ação incompatíveis podem tensionar-se sem provar mentira. Ligue resposta à fala respondida. Virada_cenica exige mudança efetiva; motivo_cenico precisa de ocorrência sustentada. Mapa global é de releitura, sem promessa antisspoiler e sem antecipações insinuadas em perguntas.

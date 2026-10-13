@@ -1,0 +1,81 @@
+/*
+ * Player central inferior (Player v2, etapa 5): a pílula do "Percorrer", da leitura comentada e da visita,
+ * na família do transporte do player de mídia (J71): cartão da superfície, borda fina, tocar no botão
+ * primário, Figtree. O comentário não mora aqui: vai para o `cartao-no-texto`, dentro do documento.
+ */
+.player-central {
+  position: fixed; z-index: 88; left: 50%; bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 24px)); box-sizing: border-box;
+  display: grid; gap: 6px; padding: 8px 12px;
+  background: var(--surface-1, var(--bg)); color: var(--texto-1);
+  border: 1px solid var(--borda); border-radius: var(--r-16);
+  box-shadow: 0 8px 28px #00000026;
+  font: 13px/1.3 var(--sans);
+}
+.player-central.percorrer { width: auto; min-width: min(420px, calc(100vw - 24px)); max-width: calc(100vw - 24px); }
+/* O fim do texto não fica escondido atrás do player. */
+html:has(.player-central) .leitor { padding-bottom: 40vh; }
+.linha-do-player { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.linha-do-player > .esquerda-do-player { min-width: 0; display: grid; gap: 1px; }
+.linha-do-player > .centro-do-player { display: flex; align-items: center; gap: 4px; }
+.linha-do-player > .direita-do-player { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+.titulo-do-player { overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.detalhe-do-player { overflow: hidden; color: var(--texto-3); font-size: 11.5px; white-space: nowrap; text-overflow: ellipsis; }
+.botao-do-player {
+  position: relative; display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  border: 0; border-radius: 50%; background: none; color: var(--texto-2); cursor: pointer;
+}
+.botao-do-player:hover:not(:disabled) { background: var(--bg-hover); color: var(--texto-1); }
+.botao-do-player:disabled { opacity: .35; cursor: default; }
+.botao-do-player[aria-pressed="true"] { color: var(--texto-1); background: var(--bg-hover); }
+.botao-do-player:focus-visible, .tocar-central:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tocar-central {
+  position: relative; display: grid; place-items: center; width: 40px; height: 40px; margin-inline: 2px; padding: 0;
+  border: 0; border-radius: 50%; background: var(--botao-fundo); color: var(--botao-texto); cursor: pointer;
+  transition: transform .12s, background .15s;
+}
+.tocar-central:hover { background: var(--botao-hover); transform: scale(1.05); }
+.velocidade-central { min-width: 44px; height: 30px; padding: 2px 8px; border: 1px solid var(--borda); border-radius: 9px; background: none; color: var(--texto-2); font: 600 12px var(--sans); font-variant-numeric: tabular-nums; cursor: pointer; }
+.velocidade-central:hover { border-color: var(--borda-hover); color: var(--texto-1); }
+.contagem-do-percorrer { min-width: 150px; padding-inline: 8px; text-align: center; font-variant-numeric: tabular-nums; }
+.contagem-do-percorrer strong { font-weight: 600; }
+.contagem-do-percorrer span { display: block; color: var(--texto-3); font-size: 11.5px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 260px; }
+
+.trilha-central { position: relative; height: 14px; cursor: pointer; touch-action: none; }
+.trilha-central::before { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 3px; transform: translateY(-50%); border-radius: 999px; background: var(--borda); }
+.trilha-central-cheia { position: absolute; left: 0; top: 50%; height: 3px; transform: translateY(-50%); border-radius: 999px; background: var(--accent); }
+.trilha-central .marca-da-parada { position: absolute; top: 50%; width: 3px; height: 9px; transform: translate(-1px, -50%); border-radius: 2px; background: var(--texto-3); opacity: .7; }
+.trilha-central:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.tempos-centrais { display: flex; justify-content: space-between; color: var(--texto-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+/* O comentário no documento: como uma nota da margem, em cartão, perto do trecho comentado. */
+.cartao-no-texto {
+  position: fixed; z-index: 60; box-sizing: border-box; max-height: min(52vh, 460px); overflow-y: auto;
+  padding: 14px 16px; border: 1px solid var(--borda); border-radius: var(--r-12);
+  background: var(--surface-1, var(--bg)); color: var(--texto-1); box-shadow: 0 6px 24px #0000001a;
+  font: 14px/1.5 var(--sans); transition: top .2s ease;
+}
+.cartao-no-texto .eyebrow { display: block; margin-bottom: 6px; color: var(--texto-3); font: 600 11.5px/1.3 var(--sans); letter-spacing: .03em; text-transform: uppercase; }
+.cartao-no-texto .fala-no-texto { margin: 0; font: 400 16px/1.55 var(--serif); }
+.cartao-no-texto .fala-no-texto .frase-dita { color: var(--texto-2); }
+.cartao-no-texto .fala-no-texto .frase-atual { color: var(--texto-1); }
+.cartao-no-texto .fala-no-texto .frase-por-vir { color: var(--texto-3); }
+.cartao-no-texto .ponta-no-texto { display: grid; gap: 2px; width: 100%; margin-top: 10px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--cor-relacao, var(--borda-hover)) 45%, transparent); border-radius: 8px; background: var(--bg-2); color: var(--texto-2); font: 13px/1.45 var(--sans); text-align: left; cursor: pointer; }
+.cartao-no-texto .ponta-no-texto:hover { color: var(--texto-1); }
+.cartao-no-texto .fontes-no-texto { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
+.cartao-no-texto .fontes-no-texto span { padding: 1px 8px; border-radius: 999px; background: var(--bg-2); color: var(--texto-2); font-size: 11.5px; }
+.cartao-no-texto .pergunta-no-texto { margin: 10px 0 0; color: var(--texto-2); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .cartao-no-texto { transition: none; } }
+@media (max-width: 599.98px) {
+  .player-central { padding: 6px 8px; bottom: max(8px, env(safe-area-inset-bottom)); }
+  .linha-do-player { grid-template-columns: minmax(0, 1fr) auto; }
+  .linha-do-player > .direita-do-player { grid-column: 1 / -1; justify-content: center; }
+  .contagem-do-percorrer { min-width: 0; }
+  .cartao-no-texto { font-size: 13px; }
+  .cartao-no-texto .fala-no-texto { font-size: 15px; }
+}
+.linha-do-percorrer { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.linha-do-percorrer .contagem-do-percorrer { margin: 0; flex: 1; }
+/* Com o player de mídia aberto (vídeo, narração), o player central sobe acima do transporte dele. */
+html:has(.player-midia .transporte) .player-central { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 124px); }

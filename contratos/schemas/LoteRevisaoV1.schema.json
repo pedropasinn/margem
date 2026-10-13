@@ -1,0 +1,567 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/LoteRevisaoV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "execucao_id",
+    "snapshot_base",
+    "autor",
+    "motivo_do_lote",
+    "operacoes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "execucao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "snapshot_base": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "autor": {
+      "type": "string",
+      "enum": [
+        "codex",
+        "claude",
+        "pedro"
+      ]
+    },
+    "motivo_do_lote": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operacoes": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ordem",
+              "marca_id",
+              "op",
+              "antes",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "ordem": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "marca_id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "op": {
+                "const": "mudar_funcao"
+              },
+              "antes": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "funcao"
+                ],
+                "properties": {
+                  "funcao": {
+                    "type": "string",
+                    "enum": [
+                      "tese",
+                      "conceito",
+                      "justificativa",
+                      "nenhuma"
+                    ]
+                  }
+                }
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "funcao"
+                ],
+                "properties": {
+                  "funcao": {
+                    "type": "string",
+                    "enum": [
+                      "tese",
+                      "conceito",
+                      "justificativa",
+                      "nenhuma"
+                    ]
+                  }
+                }
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ordem",
+              "marca_id",
+              "op",
+              "antes",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "ordem": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "marca_id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "op": {
+                "const": "reescrever_comentario"
+              },
+              "antes": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "comentario"
+                ],
+                "properties": {
+                  "comentario": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "tipo",
+                          "rotulo",
+                          "texto"
+                        ],
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "AUTOR",
+                              "LEITURA",
+                              "INVESTIGAR",
+                              "OBJECAO",
+                              "CONEXAO"
+                            ]
+                          },
+                          "rotulo": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "texto": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "comentario"
+                ],
+                "properties": {
+                  "comentario": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "tipo",
+                      "rotulo",
+                      "texto"
+                    ],
+                    "properties": {
+                      "tipo": {
+                        "type": "string",
+                        "enum": [
+                          "AUTOR",
+                          "LEITURA",
+                          "INVESTIGAR",
+                          "OBJECAO",
+                          "CONEXAO"
+                        ]
+                      },
+                      "rotulo": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "texto": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ordem",
+              "marca_id",
+              "op",
+              "antes",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "ordem": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "marca_id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "op": {
+                "const": "remover_comentario"
+              },
+              "antes": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "comentario"
+                ],
+                "properties": {
+                  "comentario": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "tipo",
+                          "rotulo",
+                          "texto"
+                        ],
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "AUTOR",
+                              "LEITURA",
+                              "INVESTIGAR",
+                              "OBJECAO",
+                              "CONEXAO"
+                            ]
+                          },
+                          "rotulo": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "texto": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "comentario"
+                ],
+                "properties": {
+                  "comentario": {
+                    "type": "null"
+                  }
+                }
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ordem",
+              "marca_id",
+              "op",
+              "antes",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "ordem": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "marca_id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "op": {
+                "const": "editar_subfaixas"
+              },
+              "antes": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "subfaixas"
+                ],
+                "properties": {
+                  "subfaixas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "inicio_utf16",
+                        "fim_utf16"
+                      ],
+                      "properties": {
+                        "inicio_utf16": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "fim_utf16": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      }
+                    },
+                    "minItems": 0
+                  }
+                }
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "subfaixas"
+                ],
+                "properties": {
+                  "subfaixas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "inicio_utf16",
+                        "fim_utf16"
+                      ],
+                      "properties": {
+                        "inicio_utf16": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "fim_utf16": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      }
+                    },
+                    "minItems": 0
+                  }
+                }
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ordem",
+              "marca_id",
+              "op",
+              "antes",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "ordem": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "marca_id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "op": {
+                "const": "mudar_visibilidade"
+              },
+              "antes": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "visivel"
+                ],
+                "properties": {
+                  "visivel": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "visivel"
+                ],
+                "properties": {
+                  "visivel": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ordem",
+              "marca_id",
+              "op",
+              "antes",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "ordem": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "marca_id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "op": {
+                "const": "avaliar"
+              },
+              "antes": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "avaliacao"
+                ],
+                "properties": {
+                  "avaliacao": {
+                    "type": "string",
+                    "enum": [
+                      "nao_avaliada",
+                      "confirmada",
+                      "rejeitada"
+                    ]
+                  }
+                }
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "avaliacao"
+                ],
+                "properties": {
+                  "avaliacao": {
+                    "type": "string",
+                    "enum": [
+                      "nao_avaliada",
+                      "confirmada",
+                      "rejeitada"
+                    ]
+                  }
+                }
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ordem",
+              "marca_id",
+              "op",
+              "antes",
+              "depois",
+              "motivo"
+            ],
+            "properties": {
+              "ordem": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "marca_id": {
+                "type": "string",
+                "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+              },
+              "op": {
+                "const": "remover"
+              },
+              "antes": {
+                "$ref": "https://margem.local/contratos/MarcaV1.schema.json"
+              },
+              "depois": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              },
+              "motivo": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 1
+    }
+  }
+}

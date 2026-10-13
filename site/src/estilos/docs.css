@@ -1,0 +1,101 @@
+/* Documentação (central de ajuda) e Novidades: navegação lateral, páginas curtas, coluna de leitura. */
+.docs-grade {
+  display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 64px; align-items: start;
+  padding-block: clamp(32px, 5vw, 64px) clamp(64px, 9vw, 112px);
+}
+
+/* Navegação lateral: só fundo nos itens; nenhuma faixa lateral. */
+.docs-nav-larga { position: sticky; top: 100px; display: grid; gap: 24px; max-height: calc(100vh - 120px); overflow-y: auto; padding-bottom: 16px; }
+.docs-nav a {
+  display: block; padding: 7px 12px; border-radius: var(--r-8);
+  font: 500 14.5px/1.35 var(--sans); color: var(--texto-2); text-decoration: none;
+}
+.docs-nav a:hover { color: var(--texto-1); background: var(--bg-hover); }
+.docs-nav a[aria-current="page"] { color: var(--texto-1); background: var(--painel); font-weight: 650; }
+.docs-nav-grupo p { padding: 0 12px 6px; font: 700 12px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--texto-3); }
+.docs-nav-grupo ul { display: grid; gap: 2px; }
+.docs-nav-estreita { display: none; }
+
+@media (max-width: 900px) {
+  .docs-grade { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .docs-nav-larga { display: none; }
+  .docs-nav-estreita { display: block; border: 2px solid var(--borda-3d); border-radius: var(--r-16); background: var(--bg-2); }
+  .docs-nav-estreita summary {
+    display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; list-style: none;
+    font: 650 15px/1.3 var(--sans);
+  }
+  .docs-nav-estreita summary::-webkit-details-marker { display: none; }
+  .docs-nav-estreita summary > span:nth-child(2) { flex: 1; min-width: 0; }
+  .docs-nav-rotulo { font: 700 11.5px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--texto-3); }
+  .docs-nav-estreita nav { display: grid; gap: 18px; padding: 4px 8px 16px; border-top: 1px solid var(--borda); padding-top: 14px; }
+}
+
+/* Artigo */
+.docs-artigo { min-width: 0; max-width: 760px; }
+.docs-artigo .sobretitulo { margin-bottom: 12px; }
+.docs-artigo h1, .novidades h1 { font-size: clamp(36px, 5vw, 56px); line-height: 1.05; letter-spacing: -.035em; }
+.docs-resumo { margin-top: 16px; font: 400 clamp(18px, 1.7vw, 21px)/1.5 var(--sans); color: var(--texto-2); }
+.docs-corpo { margin-top: 36px; }
+.docs-corpo > * + * { margin-top: 16px; }
+.docs-corpo h2 { margin-top: 48px; font-size: 26px; line-height: 1.2; letter-spacing: -.02em; scroll-margin-top: 96px; }
+.docs-corpo p, .docs-corpo li { font: 400 17px/1.65 var(--sans); color: var(--texto-2); }
+.docs-corpo strong { color: var(--texto-1); font-weight: 650; }
+.docs-corpo a { color: var(--accent-texto); overflow-wrap: anywhere; }
+.docs-corpo ul, .docs-corpo ol { display: grid; gap: 8px; padding-left: 22px; }
+.docs-corpo .comando { margin-top: 12px; }
+
+/* Passos numerados: número num círculo, sem faixa lateral. */
+.passos-doc { list-style: none; counter-reset: passo; padding-left: 0 !important; gap: 20px !important; }
+.passos-doc > li { counter-increment: passo; position: relative; padding-left: 44px; }
+.passos-doc > li::before {
+  content: counter(passo); position: absolute; left: 0; top: 0;
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--texto-1); color: var(--bg); font: 700 13.5px/1 var(--sans);
+}
+.passos-doc > li > * + * { margin-top: 10px; }
+
+/* Caixa de nota: fundo e borda completa. */
+.nota-doc { padding: 16px 20px; border: 1px solid var(--borda); border-radius: var(--r-16); background: var(--accent-suave); }
+.nota-doc[data-tipo="aviso"] { background: var(--aviso-bg); border-color: color-mix(in srgb, var(--aviso-texto) 30%, transparent); }
+.nota-doc-titulo { font: 700 15px/1.4 var(--sans) !important; color: var(--texto-1) !important; }
+.nota-doc[data-tipo="aviso"] .nota-doc-titulo { color: var(--aviso-texto) !important; }
+.nota-doc p + p, .nota-doc-titulo + p { margin-top: 6px; }
+.nota-doc p { font-size: 16px !important; }
+
+/* Fichas de atalho (Linux, macOS, Windows) */
+.fichas-doc { display: flex; flex-wrap: wrap; gap: 8px; }
+.fichas-doc a {
+  padding: 8px 16px; border: 2px solid var(--borda-3d); border-radius: var(--r-pilula); background: var(--bg);
+  font: 650 14.5px/1.2 var(--sans); color: var(--texto-1) !important; text-decoration: none;
+}
+.fichas-doc a:hover { border-color: var(--borda-3d-hover); }
+
+/* Índice da documentação */
+.docs-indice-grupo { margin-top: 48px; }
+.docs-indice-grupo h2 { font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: var(--texto-3); }
+.docs-cartoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.docs-cartao { display: flex; flex-direction: column; gap: 8px; height: 100%; padding: 22px; text-decoration: none; }
+.docs-cartao:hover { border-color: var(--borda-3d-hover); }
+.docs-cartao p { flex: 1; color: var(--texto-2); font-size: 15.5px; }
+@media (max-width: 640px) { .docs-cartoes { grid-template-columns: minmax(0, 1fr); } }
+
+/* Anterior / próxima */
+.docs-vizinhas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 64px; }
+.docs-vizinhas a { display: grid; gap: 4px; padding: 16px 20px; text-decoration: none; font: 650 16px/1.3 var(--sans); }
+.docs-vizinhas a:hover { border-color: var(--borda-3d-hover); }
+.docs-vizinhas span { font: 600 12.5px/1.2 var(--sans); color: var(--texto-3); }
+.docs-proxima { text-align: right; grid-column: 2; }
+@media (max-width: 520px) { .docs-vizinhas { grid-template-columns: minmax(0, 1fr); } .docs-proxima { grid-column: 1; } }
+
+/* Novidades */
+.novidades { max-width: 820px; padding-block: clamp(48px, 8vw, 104px); }
+.versao { margin-top: 48px; padding: clamp(24px, 4vw, 40px); }
+.versao-cabeca { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+.versao-cabeca h2 { font-size: clamp(30px, 4vw, 40px); line-height: 1; }
+.versao-cabeca time { font: 600 15px/1 var(--sans); color: var(--texto-3); }
+.versao-cabeca .selo { margin-left: auto; align-self: center; }
+.versao-resumo { margin-top: 18px; font: 400 19px/1.55 var(--serif); color: var(--texto-2); }
+.versao-grupo { margin-top: 32px; }
+.versao-grupo h3 { font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); }
+.versao-grupo ul { display: grid; gap: 8px; margin-top: 12px; padding-left: 22px; }
+.versao-grupo li { font-size: 16.5px; line-height: 1.55; color: var(--texto-2); }

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Margem · opções da extensão</title>
+  <link rel="stylesheet" href="../ui/tokens.css">
+  <link rel="stylesheet" href="../ui/extensao.css">
+</head>
+<body class="opcoes">
+  <main>
+    <header class="topo">
+      <img src="../icones/icone-48.png" alt="" width="28" height="28">
+      <h1>Margem · extensão</h1>
+    </header>
+    <form id="formulario">
+      <label for="servidor">Endereço do Margem</label>
+      <input id="servidor" class="ui-input" type="url" required placeholder="http://localhost:8730" autocomplete="off">
+      <p class="ajuda">Com o Margem instalado neste computador, o padrão é <code id="padrao">http://localhost:8730</code>.
+        Outro endereço: a extensão pede permissão só para ele ao salvar.</p>
+
+      <label for="token">Token (opcional)</label>
+      <input id="token" class="ui-input" type="password" autocomplete="off" placeholder="deixe vazio enquanto o Margem não usar tokens">
+      <p class="ajuda">Vai no cabeçalho <code>X-Margem</code> e em <code>Authorization: Bearer</code>. Fica só neste navegador.</p>
+
+      <div class="acoes">
+        <button class="ui-button primary" type="submit">Salvar</button>
+        <button id="testar" class="ui-button" type="button">Testar conexão</button>
+      </div>
+      <p id="aviso" class="aviso" role="status" hidden></p>
+    </form>
+
+    <section class="origem">
+      <h2>Origem desta extensão</h2>
+      <p>O Margem só aceita a extensão se esta origem estiver em <code>MARGEM_EXTENSOES</code>, na
+        configuração do Margem (depois de mudar, reinicie o Margem):</p>
+      <p><code id="origem"></code></p>
+      <p class="ajuda">No Chrome, Edge e Brave a extensão carregada sem compactação tem sempre a mesma origem, já
+        autorizada pela instalação padrão. No Firefox ela muda a cada instalação: copie a nova depois de reinstalar.</p>
+    </section>
+  </main>
+  <script src="opcoes.js"></script>
+</body>
+</html>

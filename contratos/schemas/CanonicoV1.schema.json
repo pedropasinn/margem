@@ -1,0 +1,425 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/CanonicoV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "documento",
+    "canonizacao",
+    "hash_estrutural",
+    "secoes",
+    "blocos",
+    "assets",
+    "limites"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "documento": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "titulo",
+        "idioma",
+        "formato",
+        "sha256_original"
+      ],
+      "properties": {
+        "titulo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "autor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "idioma": {
+          "type": "string",
+          "format": "bcp47"
+        },
+        "formato": {
+          "type": "string",
+          "enum": [
+            "pdf",
+            "pdf_foto",
+            "epub",
+            "md",
+            "txt",
+            "colado"
+          ]
+        },
+        "sha256_original": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "canonizacao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "motor",
+        "gerado_em"
+      ],
+      "properties": {
+        "motor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^.*$": {
+              "$ref": "#/$defs/json"
+            }
+          }
+        },
+        "gerado_em": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "hash_estrutural": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "secoes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "nivel",
+          "titulo",
+          "ordem",
+          "bloco_inicio",
+          "bloco_fim"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "nivel": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ordem": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "bloco_inicio": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "bloco_fim": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      },
+      "minItems": 0
+    },
+    "blocos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "ordem",
+          "tipo",
+          "texto",
+          "inline",
+          "origens"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "ordem": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "capitulo",
+              "secao",
+              "paragrafo",
+              "lista",
+              "citacao",
+              "codigo",
+              "equacao",
+              "figura",
+              "tabela",
+              "nota_rodape",
+              "epigrafe",
+              "legenda",
+              "estrofe"
+            ]
+          },
+          "texto": {
+            "type": "string"
+          },
+          "inline": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "inicio",
+                "fim",
+                "estilo"
+              ],
+              "properties": {
+                "inicio": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "fim": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "estilo": {
+                  "type": "string",
+                  "enum": [
+                    "italico",
+                    "negrito",
+                    "codigo",
+                    "nota_ref"
+                  ]
+                },
+                "ref": {
+                  "type": "string",
+                  "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+                }
+              }
+            },
+            "minItems": 0
+          },
+          "origens": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tipo",
+                    "pagina",
+                    "bbox"
+                  ],
+                  "properties": {
+                    "tipo": {
+                      "const": "pdf"
+                    },
+                    "pagina": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "impressa": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "bbox": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 4,
+                      "maxItems": 4
+                    },
+                    "inicio": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fim": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "dependentRequired": {
+                    "inicio": [
+                      "fim"
+                    ],
+                    "fim": [
+                      "inicio"
+                    ]
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tipo",
+                    "arquivo",
+                    "xpath"
+                  ],
+                  "properties": {
+                    "tipo": {
+                      "const": "epub"
+                    },
+                    "arquivo": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "xpath": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tipo",
+                    "linha_inicio",
+                    "linha_fim"
+                  ],
+                  "properties": {
+                    "tipo": {
+                      "const": "texto"
+                    },
+                    "linha_inicio": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "linha_fim": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    }
+                  }
+                }
+              ]
+            },
+            "minItems": 1
+          },
+          "asset_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "tipo",
+          "caminho",
+          "sha256"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "imagem",
+              "pagina"
+            ]
+          },
+          "caminho": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "bloco_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          }
+        }
+      },
+      "minItems": 0
+    },
+    "limites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    }
+  },
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/json"
+          },
+          "minItems": 0
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^.*$": {
+              "$ref": "#/$defs/json"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

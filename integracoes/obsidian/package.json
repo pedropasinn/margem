@@ -1,0 +1,22 @@
+{
+  "name": "margem-obsidian",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Plugin do Obsidian que traz as marcas, notas e perguntas do Margem para o cofre.",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "build": "node esbuild.config.mjs producao",
+    "dev": "node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "instalar": "node instalar.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "esbuild": "0.28.2",
+    "obsidian": "1.13.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

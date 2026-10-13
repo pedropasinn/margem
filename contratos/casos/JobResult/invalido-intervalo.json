@@ -1,0 +1,13 @@
+{
+  "job_id": "00000000000000000000000070",
+  "attempt": 1,
+  "lease_token": "00000000000000000000000071",
+  "estado": "ok",
+  "artefato": {
+    "caminho": "artefatos/saida.json",
+    "sha256": "14028bfa96c735689929184d0463c91a3e79585a5576f6d033c69a9722ff9d4b"
+  },
+  "diagnosticos": [],
+  "modelo": "executor-falso",
+  "duracao_ms": -1
+}

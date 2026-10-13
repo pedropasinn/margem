@@ -1,0 +1,28 @@
+{
+  "texto": "A frase gira em torno da bússola.",
+  "pontos": [
+    {
+      "tipo": "explicacao",
+      "texto": "A bússola é a imagem central.",
+      "apoios": [
+        {
+          "bloco_id": "00000000000000000000000001",
+          "citacao": "🧭"
+        }
+      ]
+    },
+    {
+      "tipo": "pergunta",
+      "texto": "O que muda se a bússola sair?",
+      "apoios": []
+    }
+  ],
+  "sugestoes_de_conexao": [
+    {
+      "destino_bloco_id": "00000000000000000000000002",
+      "citacao": "o norte",
+      "relacao": "desenvolve",
+      "justificativa": "Retoma a orientação."
+    }
+  ]
+}

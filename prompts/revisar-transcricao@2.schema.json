@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/revisar-transcricao@2.schema.json",
+  "title": "Revisão de deslizes de uma transcrição, versão 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["correcoes", "duvidas"],
+  "properties": {
+    "correcoes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["paragrafo", "trecho_original", "correcao", "tipo", "motivo", "confianca"],
+        "properties": {
+          "paragrafo": { "type": "integer" },
+          "trecho_original": { "type": "string" },
+          "correcao": { "type": "string" },
+          "tipo": { "type": "string", "enum": ["termo", "nome_proprio", "palavra_perdida", "alucinacao", "pontuacao"] },
+          "motivo": { "type": "string" },
+          "confianca": { "type": "string", "enum": ["alta", "media", "baixa"] }
+        }
+      }
+    },
+    "duvidas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["paragrafo", "trecho_original", "sugestao", "motivo"],
+        "properties": {
+          "paragrafo": { "type": "integer" },
+          "trecho_original": { "type": "string" },
+          "sugestao": { "type": "string" },
+          "motivo": { "type": "string" }
+        }
+      }
+    }
+  }
+}

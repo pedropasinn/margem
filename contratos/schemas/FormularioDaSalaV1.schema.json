@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/FormularioDaSalaV1.schema.json",
+  "title": "Formulário de feedback de uma sala de teste: perguntas gerais e perguntas repetidas por documento",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["versao", "geral", "por_documento"],
+  "properties": {
+    "versao": { "const": 1 },
+    "geral": { "type": "array", "minItems": 1, "maxItems": 30, "items": { "$ref": "#/$defs/pergunta" } },
+    "por_documento": { "type": "array", "minItems": 0, "maxItems": 15, "items": { "$ref": "#/$defs/pergunta" } }
+  },
+  "$defs": {
+    "linha": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^(?=[^\\r\\n]*\\S)[^\\r\\n\\u2028\\u2029]+$"
+    },
+    "pergunta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "tipo", "enunciado", "obrigatoria"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,39}$" },
+        "tipo": { "enum": ["escala", "escolha", "texto_curto", "texto_longo"] },
+        "enunciado": { "$ref": "#/$defs/linha" },
+        "ajuda": { "type": "string", "maxLength": 500 },
+        "obrigatoria": { "type": "boolean" },
+        "opcoes": { "type": "array", "minItems": 2, "maxItems": 10, "items": { "$ref": "#/$defs/linha" } },
+        "rotulos": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimo", "maximo"],
+          "properties": {
+            "minimo": { "$ref": "#/$defs/linha" },
+            "maximo": { "$ref": "#/$defs/linha" }
+          }
+        }
+      }
+    }
+  }
+}

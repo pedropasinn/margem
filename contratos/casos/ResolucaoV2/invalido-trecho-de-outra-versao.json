@@ -1,0 +1,23 @@
+{
+  "versao": 2,
+  "id": "00000000000000000000000001",
+  "documento_id": "00000000000000000000000002",
+  "versao_id": "00000000000000000000000003",
+  "origem": {
+    "tipo": "trecho",
+    "ancora": {
+      "versao_id": "00000000000000000000000009",
+      "bloco_id": "00000000000000000000000004",
+      "inicio_utf16": 0,
+      "fim_utf16": 11,
+      "citacao": "2x + 3 = 11",
+      "prefixo": "",
+      "sufixo": ""
+    }
+  },
+  "texto_extraido": "3. Resolva a equação 2x + 3 = 11.",
+  "resolucao": null,
+  "execucao": null,
+  "mensagens": [],
+  "criada_em": "2026-09-27T10:00:00Z"
+}

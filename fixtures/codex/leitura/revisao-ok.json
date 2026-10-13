@@ -1,0 +1,47 @@
+{
+  "versao": 1,
+  "passos": [
+    {
+      "tipo": "ok",
+      "modelo": "executor-falso",
+      "conteudo": {
+        "alteracoes": [
+          {
+            "marca_id": "000000000000000000000M0003",
+            "op": "mudar_funcao",
+            "depois": {
+              "funcao": "conceito"
+            },
+            "motivo": "O trecho define o objeto antes de afirmar qualquer coisa sobre ele."
+          },
+          {
+            "marca_id": "000000000000000000000M0004",
+            "op": "remover_comentario",
+            "depois": {},
+            "motivo": "O comentário apenas repete a condição já explícita na citação."
+          },
+          {
+            "marca_id": "000000000000000000000M0005",
+            "op": "editar_subfaixas",
+            "depois": {
+              "sublinhar": [
+                "decisiva"
+              ]
+            },
+            "motivo": "A força da evidência está no qualificador."
+          },
+          {
+            "marca_id": "000000000000000000000M0099",
+            "op": "remover",
+            "depois": {},
+            "motivo": "Marca inexistente, para provar que o serviço a ignora."
+          }
+        ],
+        "consistencia_das_cores": "As três cores mantêm o significado do método. O único desvio é uma definição marcada como tese na abertura.",
+        "observacoes": [
+          "A densidade é uniforme entre as seções."
+        ]
+      }
+    }
+  ]
+}

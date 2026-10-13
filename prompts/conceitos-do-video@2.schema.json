@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/conceitos-do-video@2.schema.json",
+  "title": "Conceitos programados de um vídeo, versão 2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "conceitos"
+  ],
+  "properties": {
+    "conceitos": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "paragrafo",
+          "citacao",
+          "titulo",
+          "curto",
+          "explicacao"
+        ],
+        "properties": {
+          "paragrafo": {
+            "type": "string",
+            "pattern": "^P[0-9]+$"
+          },
+          "citacao": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "curto": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          },
+          "explicacao": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          }
+        }
+      }
+    }
+  }
+}

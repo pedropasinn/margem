@@ -1,0 +1,94 @@
+/* Visuais ancorados (J70). Na margem, sem caixa: a nota é rótulo, miniatura e ações, como as outras.
+   No topo do capítulo, cartões da família das superfícies do Margem, na largura do texto. */
+.nota-do-visual { display: grid; gap: 8px; }
+.nota-do-visual .eyebrow, .cartao-do-visual .eyebrow { margin: 0; font-size: 12px; color: var(--texto-1); }
+.pedido-do-visual { margin: 0; color: var(--texto-2); font-size: 13px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.titulo-do-visual { margin: 0; font-size: 13px; color: var(--texto-2); }
+.estado-do-visual { display: flex; align-items: center; gap: 8px; margin: 0; font: 13px/1.4 var(--sans); color: var(--texto-2); }
+.estado-do-visual .pulso { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulso-do-visual 1.4s ease-in-out infinite; flex: none; }
+@keyframes pulso-do-visual { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .estado-do-visual .pulso { animation: none; opacity: .7; } }
+.erro-do-visual { margin: 0; color: var(--error-texto); font: 13px/1.45 var(--sans); }
+
+.miniatura-do-visual { display: block; width: 100%; padding: 0; border: 1px solid var(--borda); border-radius: var(--radius-sm, 6px); background: var(--bg-2); cursor: zoom-in; overflow: hidden; }
+.miniatura-do-visual:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.miniatura-do-visual img { display: block; width: 100%; height: auto; max-height: 320px; object-fit: contain; }
+.miniatura-do-diagrama { max-height: 260px; padding: 8px; background: var(--bg); position: relative; }
+.miniatura-do-diagrama::after { content: ''; position: absolute; inset: auto 0 0; height: 36px; background: linear-gradient(transparent, var(--bg)); pointer-events: none; }
+.miniatura-do-diagrama .svg-do-diagrama svg { display: block; width: 100%; height: auto; max-width: 100%; pointer-events: none; }
+.miniatura-do-diagrama .estado-do-visual { padding: 8px; }
+
+.visuais-do-capitulo {
+  position: relative;
+  width: var(--medida-texto, min(850px, calc(100% - 48px)));
+  left: calc((var(--largura-util, 100vw) - 100%) / 2);
+  margin: 28px auto 0;
+  display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  font: 14px/1.5 var(--sans);
+}
+.cartao-do-visual { display: grid; gap: 8px; align-content: start; padding: 14px; border: 1px solid var(--borda); border-radius: var(--radius-md, 10px); background: var(--bg); }
+.cartao-do-visual[data-tipo='imagem'][data-estado='pronto'] { grid-column: span 1; }
+
+.painel-do-visual .citacao-do-visual { margin: 0; }
+.painel-do-visual .alvo-do-visual { margin: 0; font: 15px/1.5 var(--sans); color: var(--texto-2); }
+.painel-do-visual .opcional, .refazer-visual .opcional { color: var(--texto-3); font-weight: 400; }
+.nota-do-pedido { margin: 0; font-size: 13px; color: var(--texto-3); }
+
+/* Visualização grande: a imagem ocupa a tela; o fluxograma rola, com zoom. */
+.visual-ampliado-veu { z-index: 120; }
+.visual-ampliado {
+  position: fixed; inset: 16px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  border-radius: var(--radius-lg, 16px); background: var(--bg); border: 1px solid var(--borda); box-shadow: 0 24px 60px #0004;
+  font: 14px/1.5 var(--sans); color: var(--texto-1); outline: none; overflow: hidden;
+}
+.cabeca-do-ampliado { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; padding: 14px 16px 10px 20px; border-bottom: 1px solid var(--borda); }
+.titulo-do-ampliado { display: grid; gap: 4px; min-width: 0; }
+.titulo-do-ampliado .eyebrow { margin: 0; }
+.titulo-do-ampliado h2 { margin: 0; font-size: 17px; font-weight: 650; }
+.citacao-curta { all: unset; cursor: pointer; font-family: var(--serif); font-size: 15px; color: var(--texto-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70ch; }
+.citacao-curta:hover { color: var(--texto-1); text-decoration: underline; text-decoration-color: var(--borda-hover); }
+.citacao-curta:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.acoes-do-ampliado { display: flex; gap: 10px; align-items: center; flex: none; }
+.zoom-do-ampliado { display: flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; color: var(--texto-2); }
+.zoom-do-ampliado span { min-width: 44px; text-align: center; font-size: 13px; }
+.corpo-do-ampliado { min-height: 0; position: relative; overflow: auto; background: var(--bg-2); }
+.corpo-do-ampliado > .estado-do-visual, .corpo-do-ampliado > .erro-do-visual { padding: 24px; }
+/* A imagem cabe inteira na área: largura e altura da caixa, proporção pelo object-fit. */
+.imagem-ampliada { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; padding: 12px; box-sizing: border-box; }
+.rolagem-do-diagrama { width: 100%; height: 100%; overflow: auto; }
+.escala-do-diagrama { width: max-content; min-width: 100%; margin: 0 auto; padding: 24px; box-sizing: border-box; }
+.escala-do-diagrama .svg-do-diagrama { display: flex; justify-content: center; }
+.escala-do-diagrama svg { display: block; max-width: none; height: auto; }
+.diagrama-mermaid .no-com-trecho { cursor: pointer; }
+.diagrama-mermaid .no-com-trecho :is(rect, polygon, circle, path) { stroke: var(--accent) !important; stroke-width: 1.5px !important; }
+.diagrama-mermaid .no-com-trecho:is(:hover, :focus-visible) :is(rect, polygon, circle, path) { stroke-width: 2.5px !important; }
+.diagrama-mermaid .no-com-trecho:focus { outline: none; }
+.rodape-do-ampliado { display: grid; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid var(--borda); }
+.rodape-do-ampliado p { margin: 0; }
+.descricao-do-visual { color: var(--texto-2); }
+.diagnosticos-do-visual { font-size: 13px; color: var(--texto-2); }
+.diagnosticos-do-visual summary { cursor: pointer; }
+.diagnosticos-do-visual ul { margin: 6px 0 0; padding-left: 18px; }
+.refazer-visual { display: grid; gap: 8px; max-width: 640px; }
+
+@media (max-width: 700px) {
+  .visual-ampliado { inset: 0; border-radius: 0; }
+  .cabeca-do-ampliado { flex-wrap: wrap; padding: 12px 12px 8px 16px; }
+  .citacao-curta { max-width: calc(100vw - 32px); }
+  .visuais-do-capitulo { grid-template-columns: 1fr; margin-top: 16px; }
+}
+
+/* O quadro do poema dentro do texto, entre a abertura e o primeiro verso: na largura da coluna, sem
+   a moldura de cartão; a imagem centrada, sem passar da altura de meia tela. */
+.capitulo .visuais-do-capitulo { width: auto; left: auto; margin: 4px 0 32px; grid-template-columns: 1fr; }
+.capitulo .cartao-do-visual { padding: 0; border: 0; background: none; justify-items: center; text-align: center; }
+.capitulo .cartao-do-visual .miniatura-do-visual img { max-height: min(460px, 55vh); width: auto; max-width: 100%; margin-inline: auto; border-radius: var(--radius-md, 10px); }
+.capitulo .cartao-do-visual .miniatura-do-visual { width: auto; max-width: 100%; border: 0; background: none; border-radius: var(--radius-md, 10px); }
+/* Vários quadros (cada pedido novo é mais um): uma faixa que rola para o lado, um quadro por vez à vista
+   e a ponta do próximo aparecendo; cada um centrado no encaixe. */
+.capitulo .visuais-do-capitulo:has(> .cartao-do-visual + .cartao-do-visual) {
+  grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(240px, 78%);
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding-bottom: 8px; scrollbar-width: thin;
+}
+.capitulo .visuais-do-capitulo:has(> .cartao-do-visual + .cartao-do-visual) > .cartao-do-visual { scroll-snap-align: center; align-content: end; }
+.capitulo .visuais-do-capitulo:has(> .cartao-do-visual + .cartao-do-visual) .miniatura-do-visual img { max-height: min(360px, 45vh); }

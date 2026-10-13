@@ -1,0 +1,16 @@
+{
+  "name": "@margem/contratos",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./regras": "./src/regras.ts",
+    "./texto": "./src/texto.ts",
+    "./sala": "./src/sala.ts"
+  },
+  "types": "./src/index.ts"
+}

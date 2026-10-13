@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/AnaliseDaObraGeradaV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "regioes",
+    "afirmacoes",
+    "estudo",
+    "limites"
+  ],
+  "properties": {
+    "regioes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rotulo",
+          "forma"
+        ],
+        "properties": {
+          "rotulo": {
+            "type": "string",
+            "minLength": 1
+          },
+          "forma": {
+            "$ref": "#/$defs/forma"
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "afirmacoes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "texto",
+          "tipo",
+          "confianca",
+          "evidencia",
+          "fontes",
+          "regioes",
+          "apoios"
+        ],
+        "properties": {
+          "texto": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "observacao",
+              "fato",
+              "interpretacao_documentada",
+              "inferencia_ia",
+              "intencao_desconhecida"
+            ]
+          },
+          "confianca": {
+            "type": "string",
+            "enum": [
+              "alta",
+              "media",
+              "baixa",
+              "nao_aplicavel"
+            ]
+          },
+          "evidencia": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fontes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 0
+          },
+          "regioes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 0
+          },
+          "apoios": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 0
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "estudo": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tema",
+          "afirmacoes"
+        ],
+        "properties": {
+          "tema": {
+            "type": "string",
+            "enum": [
+              "composicao",
+              "iconografia",
+              "tecnica",
+              "historia",
+              "artista",
+              "contexto",
+              "interpretacoes",
+              "obras_relacionadas"
+            ]
+          },
+          "afirmacoes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minItems": 0
+          }
+        }
+      },
+      "minItems": 0
+    },
+    "limites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    }
+  },
+  "$defs": {
+    "forma": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "x",
+            "y",
+            "largura",
+            "altura"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "bbox"
+            },
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "largura": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            "altura": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "x",
+            "y"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "ponto"
+            },
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "pontos"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "poligono"
+            },
+            "pontos": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "minItems": 3
+            }
+          }
+        }
+      ]
+    }
+  }
+}

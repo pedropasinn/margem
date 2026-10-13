@@ -1,0 +1,56 @@
+[
+  {
+    "citacao": "Cada qual tem o ar que Deus lhe deu.",
+    "funcao": "tese",
+    "comentario": {
+      "tipo": "LEITURA",
+      "rotulo": "A tese da linha",
+      "texto": "A linha responde à agulha com a ideia que o conto vai pôr à prova: cada um vale pelo que é."
+    }
+  },
+  {
+    "citacao": "Agulha não tem cabeça.",
+    "funcao": "conceito",
+    "comentario": {
+      "tipo": "LEITURA",
+      "rotulo": "Cabeça, nos dois sentidos",
+      "texto": "O trocadilho separa a agulha do alfinete e, de passagem, nega a ela o juízo."
+    }
+  },
+  {
+    "citacao": "eu é que coso, prendo um pedaço ao outro, dou feição aos babados",
+    "funcao": "justificativa",
+    "comentario": {
+      "tipo": "AUTOR",
+      "rotulo": "O argumento da linha",
+      "texto": "A linha funda o orgulho no resultado: é ela que fica no vestido."
+    }
+  },
+  {
+    "citacao": "Eu é que furo o pano, vou adiante, puxando por você",
+    "funcao": "justificativa",
+    "comentario": {
+      "tipo": "AUTOR",
+      "rotulo": "O argumento da agulha",
+      "texto": "A agulha funda o orgulho na precedência: quem abre caminho manda."
+    }
+  },
+  {
+    "citacao": "Faze como eu, que não abro caminho para ninguém. Onde me espetam, fico.",
+    "funcao": "tese",
+    "comentario": {
+      "tipo": "LEITURA",
+      "rotulo": "A moral do alfinete",
+      "texto": "A lição cínica do conto: quem abre caminho para os outros trabalha para eles."
+    }
+  },
+  {
+    "citacao": "Também eu tenho servido de agulha a muita linha ordinária!",
+    "funcao": "nenhuma",
+    "comentario": {
+      "tipo": "LEITURA",
+      "rotulo": "O fecho",
+      "texto": "O narrador leva a fábula para a vida: o professor se reconhece na agulha."
+    }
+  }
+]

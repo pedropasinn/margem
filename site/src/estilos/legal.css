@@ -1,0 +1,14 @@
+/* Privacidade e termos: uma coluna de leitura, com o aviso de rascunho bem visível no topo. */
+.legal { padding-block: clamp(40px, 7vw, 88px); }
+.legal-coluna { max-width: 720px; }
+.rascunho {
+  margin-bottom: 36px; padding: 16px 20px;
+  border: 2px solid color-mix(in srgb, var(--aviso-texto) 40%, transparent); border-radius: var(--r-16);
+  background: var(--aviso-bg); color: var(--aviso-texto); font: 400 15px/1.5 var(--sans);
+}
+.rascunho strong { display: block; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 13.5px; }
+.legal h1 { font-size: clamp(32px, 4.4vw, 48px); line-height: 1.1; }
+.legal-data { margin-top: 10px; color: var(--texto-3); font-size: 14px; }
+.legal section { margin-top: 40px; }
+.legal h2 { font-size: 22px; letter-spacing: -.015em; }
+.legal section p { margin-top: 12px; font: 400 18px/1.65 var(--serif); color: var(--texto-2); }

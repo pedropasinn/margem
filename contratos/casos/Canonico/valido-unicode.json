@@ -1,0 +1,75 @@
+{
+  "versao": 1,
+  "documento": {
+    "titulo": "Fixture Unicode",
+    "idioma": "pt-BR",
+    "formato": "md",
+    "sha256_original": "833b4ef8fb2724e4ccb56f95d091b4ce7cb11040315e824d0a8a9d0388955ac2"
+  },
+  "canonizacao": {
+    "motor": "fixture-paragrafos-v1",
+    "gerado_em": "2026-09-20T18:00:00Z"
+  },
+  "hash_estrutural": "d1d2c1d3d2b58c87ce76e83b9fe5e6f68f5c5219a98de203b3b6a62a522b6627",
+  "secoes": [],
+  "blocos": [
+    {
+      "id": "00000000000000000000000100",
+      "ordem": 0,
+      "tipo": "paragrafo",
+      "texto": "# Leitura e memória 📖",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 9
+        }
+      ]
+    },
+    {
+      "id": "00000000000000000000000101",
+      "ordem": 1,
+      "tipo": "paragrafo",
+      "texto": "O café aparece também como café; o emoji 🧭 ocupa duas unidades UTF-16.",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 9
+        }
+      ]
+    },
+    {
+      "id": "00000000000000000000000102",
+      "ordem": 2,
+      "tipo": "paragrafo",
+      "texto": "As ligaturas ﬁ e ﬂ convivem com “aspas curvas” — sem mudar as palavras.",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 9
+        }
+      ]
+    },
+    {
+      "id": "00000000000000000000000103",
+      "ordem": 3,
+      "tipo": "paragrafo",
+      "texto": "Último parágrafo: ação, coração e uma linha\nque continua no mesmo parágrafo.",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 9
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "limites": []
+}

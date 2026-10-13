@@ -1,0 +1,374 @@
+{
+  "assets": [],
+  "blocos": [
+    {
+      "id": "45V6S9M6FXSDGB4FFM9TATW97G",
+      "inline": [],
+      "ordem": 0,
+      "origens": [
+        {
+          "linha_fim": 1,
+          "linha_inicio": 1,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "Um apólogo",
+      "tipo": "capitulo"
+    },
+    {
+      "id": "02MC4EN66NJKW07H8DPCFQNKA7",
+      "inline": [],
+      "ordem": 1,
+      "origens": [
+        {
+          "linha_fim": 3,
+          "linha_inicio": 3,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "Era uma vez uma agulha, que disse a um novelo de linha:",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "6YV4J9DYQ0SNRB5BGX3BRE7CKX",
+      "inline": [],
+      "ordem": 2,
+      "origens": [
+        {
+          "linha_fim": 5,
+          "linha_inicio": 5,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Por que está você com esse ar, toda cheia de si, toda enrolada, para fingir que vale alguma coisa neste mundo?",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "62YDH3F39X9SPY4N8FS56TBQM8",
+      "inline": [],
+      "ordem": 3,
+      "origens": [
+        {
+          "linha_fim": 7,
+          "linha_inicio": 7,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Deixe-me, senhora.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "7QPMXFJ8P80Y90RPK4FBW2VC19",
+      "inline": [],
+      "ordem": 4,
+      "origens": [
+        {
+          "linha_fim": 9,
+          "linha_inicio": 9,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Que a deixe? Que a deixe, por quê? Porque lhe digo que está com um ar insuportável? Repito que sim, e falarei sempre que me der na cabeça.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "577JG0QK2244W275R3443RZSH1",
+      "inline": [],
+      "ordem": 5,
+      "origens": [
+        {
+          "linha_fim": 11,
+          "linha_inicio": 11,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Que cabeça, senhora? A senhora não é alfinete, é agulha. Agulha não tem cabeça. Que lhe importa o meu ar? Cada qual tem o ar que Deus lhe deu. Importe-se com a sua vida e deixe a dos outros.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "7Q8M04B8BV3SEGE6T07YMZF5E7",
+      "inline": [],
+      "ordem": 6,
+      "origens": [
+        {
+          "linha_fim": 13,
+          "linha_inicio": 13,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Mas você é orgulhosa.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "60D0XT0Y71MY1PWZ566VWFXGPJ",
+      "inline": [],
+      "ordem": 7,
+      "origens": [
+        {
+          "linha_fim": 15,
+          "linha_inicio": 15,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Decerto que sou.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "7FHT6J0T0H44XPTAW9CPRZW972",
+      "inline": [],
+      "ordem": 8,
+      "origens": [
+        {
+          "linha_fim": 17,
+          "linha_inicio": 17,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Mas por quê?",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "2VQGHNACHXXRH247A31VFAH33N",
+      "inline": [],
+      "ordem": 9,
+      "origens": [
+        {
+          "linha_fim": 19,
+          "linha_inicio": 19,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— É boa! Porque coso. Então os vestidos e enfeites de nossa ama, quem é que os cose, senão eu?",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "2MXS4KK37ANXG92Y959GY4JQXQ",
+      "inline": [],
+      "ordem": 10,
+      "origens": [
+        {
+          "linha_fim": 21,
+          "linha_inicio": 21,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Você? Esta agora é melhor. Você é que os cose? Você ignora que quem os cose sou eu, e muito eu?",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "2A58Y3P9YN0KXCW2BVE2NF2ZMV",
+      "inline": [],
+      "ordem": 11,
+      "origens": [
+        {
+          "linha_fim": 23,
+          "linha_inicio": 23,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Você fura o pano, nada mais; eu é que coso, prendo um pedaço ao outro, dou feição aos babados...",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "0VAHSM8GY6XF1BZZW8X8TFYRTG",
+      "inline": [],
+      "ordem": 12,
+      "origens": [
+        {
+          "linha_fim": 25,
+          "linha_inicio": 25,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Sim, mas que vale isso? Eu é que furo o pano, vou adiante, puxando por você, que vem atrás, obedecendo ao que eu faço e mando...",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "7GVDEX8N76AT0C5J328BYN0HDQ",
+      "inline": [],
+      "ordem": 13,
+      "origens": [
+        {
+          "linha_fim": 27,
+          "linha_inicio": 27,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Também os batedores vão adiante do imperador.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "5A5FX7VH991CT9V802KR4NNCYJ",
+      "inline": [],
+      "ordem": 14,
+      "origens": [
+        {
+          "linha_fim": 29,
+          "linha_inicio": 29,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Você é imperador?",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "5YNN02YGHQBZFWZS8RET1S5G1G",
+      "inline": [],
+      "ordem": 15,
+      "origens": [
+        {
+          "linha_fim": 31,
+          "linha_inicio": 31,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Não digo isso. Mas a verdade é que você faz um papel subalterno, indo adiante; vai só mostrando o caminho, vai fazendo o trabalho obscuro e ínfimo. Eu é que prendo, ligo, ajunto...",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "50B43YDC56DVQMD6P0VGET4YVF",
+      "inline": [],
+      "ordem": 16,
+      "origens": [
+        {
+          "linha_fim": 33,
+          "linha_inicio": 33,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "Estavam nisto, quando a costureira chegou à casa da baronesa. Não sei se disse que isto se passava em casa de uma baronesa, que tinha a modista ao pé de si, para não andar atrás dela. Chegou a costureira, pegou do pano, pegou da agulha, pegou da linha, enfiou a linha na agulha, e entrou a coser. Uma e outra iam andando orgulhosas, pelo pano adiante, que era a melhor das sedas, entre os dedos da costureira, ágeis como os galgos de Diana — para dar a isto uma cor poética. E dizia a agulha:",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "03MEA2K2QDTHBBZ2WZQAG6AX3F",
+      "inline": [],
+      "ordem": 17,
+      "origens": [
+        {
+          "linha_fim": 35,
+          "linha_inicio": 35,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Então, senhora linha, ainda teima no que dizia há pouco? Não repara que esta distinta costureira só se importa comigo; eu é que vou aqui entre os dedos dela, unidinha a eles, furando abaixo e acima.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "684E21NP6TXES379M1FB5HXSBK",
+      "inline": [],
+      "ordem": 18,
+      "origens": [
+        {
+          "linha_fim": 37,
+          "linha_inicio": 37,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "A linha não respondia nada; ia andando. Buraco aberto pela agulha era logo enchido por ela, silenciosa e ativa como quem sabe o que faz, e não está para ouvir palavras loucas. A agulha vendo que ela não lhe dava resposta, calou-se também, e foi andando. E era tudo silêncio na saleta de costura; não se ouvia mais que o plic-plic plic-plic da agulha no pano. Caindo o sol, a costureira dobrou a costura, para o dia seguinte; continuou ainda nesse e no outro, até que no quarto acabou a obra, e ficou esperando o baile.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "28GKKBWZV87RTS1VZ4GY7BZE4R",
+      "inline": [],
+      "ordem": 19,
+      "origens": [
+        {
+          "linha_fim": 39,
+          "linha_inicio": 39,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "Veio a noite do baile, e a baronesa vestiu-se. A costureira, que a ajudou a vestir-se, levava a agulha espetada no corpinho, para dar algum ponto necessário. E quando compunha o vestido da bela dama, e puxava a um lado ou outro, arregaçava daqui ou dali, alisando, abotoando, acolchetando, a linha, para mofar da agulha, perguntou-lhe:",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "339DAQJB6S253SJ6ZFPMZ0CJ8B",
+      "inline": [],
+      "ordem": 20,
+      "origens": [
+        {
+          "linha_fim": 41,
+          "linha_inicio": 41,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Ora agora, diga-me quem é que vai ao baile, no corpo da baronesa, fazendo parte do vestido e da elegância? Quem é que vai dançar com ministros e diplomatas, enquanto você volta para a caixinha da costureira, antes de ir para o balaio das mucamas? Vamos, diga lá.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "3F6JVD1K5814EFNXN6AYGHM8RQ",
+      "inline": [],
+      "ordem": 21,
+      "origens": [
+        {
+          "linha_fim": 43,
+          "linha_inicio": 43,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "Parece que a agulha não disse nada; mas um alfinete, de cabeça grande e não menor experiência, murmurou à pobre agulha:",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "6S67KWX9X80XEFVNJXZAP7NM8N",
+      "inline": [],
+      "ordem": 22,
+      "origens": [
+        {
+          "linha_fim": 45,
+          "linha_inicio": 45,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "— Anda, aprende, tola. Cansas-te em abrir caminho para ela e ela é que vai gozar da vida, enquanto aí ficas na caixinha de costura. Faze como eu, que não abro caminho para ninguém. Onde me espetam, fico.",
+      "tipo": "paragrafo"
+    },
+    {
+      "id": "6WEY05NTKAQGZXBA626JRJ2ASJ",
+      "inline": [],
+      "ordem": 23,
+      "origens": [
+        {
+          "linha_fim": 47,
+          "linha_inicio": 47,
+          "tipo": "texto"
+        }
+      ],
+      "texto": "Contei esta história a um professor de melancolia, que me disse, abanando a cabeça: — Também eu tenho servido de agulha a muita linha ordinária!",
+      "tipo": "paragrafo"
+    }
+  ],
+  "canonizacao": {
+    "config": {
+      "autor": "Machado de Assis",
+      "dpi": 110,
+      "formato": "md",
+      "idioma": "pt",
+      "paginas": null,
+      "politica_gerado_em": "sentinela_fixa_para_determinismo",
+      "titulo": "Um apólogo"
+    },
+    "gerado_em": "1970-01-01T00:00:00Z",
+    "motor": "margem-ingest/2; fonte-sha256/182d58b98052bb36e48a9f6f8b189162b5ab2f63837376a53bf926dd5abf919b; PyMuPDF/1.28.2"
+  },
+  "documento": {
+    "autor": "Machado de Assis",
+    "formato": "md",
+    "idioma": "pt",
+    "sha256_original": "7edbd547532d776276a61436d73c2a9e0920322646f767389b1e08493be87144",
+    "titulo": "Um apólogo"
+  },
+  "hash_estrutural": "30c291d016b514c3c618d56b2c55ebcffc20e1cafd66f2e2797c0a4b4cf2f3bf",
+  "limites": [],
+  "secoes": [
+    {
+      "bloco_fim": "6WEY05NTKAQGZXBA626JRJ2ASJ",
+      "bloco_inicio": "45V6S9M6FXSDGB4FFM9TATW97G",
+      "id": "66QX63D1XFH064EN2R68KR8278",
+      "nivel": 1,
+      "ordem": 0,
+      "titulo": "Um apólogo"
+    }
+  ],
+  "versao": 1
+}

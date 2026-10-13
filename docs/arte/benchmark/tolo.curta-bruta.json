@@ -1,0 +1,167 @@
+{
+  "versao": 1,
+  "obra_id": "01M3SQA5QN93TVE2N4B0TXFW84",
+  "revisao_modelo": 1,
+  "imagem_sha256": "0ab5611795003aab332726e7e553748e877f5923f0ddb635bfd9d9710c366d8b",
+  "tese": "Uma inferência da IA conecta as duas mãos: uma encobre parte do rosto; a outra mantém os óculos afastados dos olhos.",
+  "afirmacoes_da_tese": [
+    "01M3SQA5QNJQ7T6R6J5BVG7R8G",
+    "01M3SQA5QN3W6KR9J61NZRYXM9",
+    "01M3SQA5QN1B68VGKPZ5BF7XC3"
+  ],
+  "tempo": "estimado",
+  "batidas": [
+    {
+      "inicio_s": 0,
+      "fim_s": 7,
+      "narracao": "Uma mão encobre parte do rosto; a outra segura os óculos longe dos olhos.",
+      "legenda": "Uma mão encobre parte do rosto; a outra segura os óculos longe dos olhos.",
+      "papel": "abertura",
+      "afirmacoes": [
+        "01M3SQA5QNJQ7T6R6J5BVG7R8G",
+        "01M3SQA5QN3W6KR9J61NZRYXM9"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 7,
+      "fim_s": 15,
+      "narracao": "No rosto, o sorriso mostra os dentes, enquanto os dedos atravessam a testa e a região de um olho.",
+      "legenda": "No rosto, o sorriso mostra os dentes, enquanto os dedos atravessam a testa e a região de um olho.",
+      "papel": "evidencia_visual",
+      "afirmacoes": [
+        "01M3SQA5QNJQ7T6R6J5BVG7R8G"
+      ],
+      "regiao_id": "01M3SQA5QMFHXT7CSR713K212T",
+      "camera": {
+        "de": {
+          "x": 0.23,
+          "y": 0.12,
+          "largura": 0.56,
+          "altura": 0.5
+        },
+        "para": {
+          "x": 0.28,
+          "y": 0.16,
+          "largura": 0.46,
+          "altura": 0.42
+        }
+      }
+    },
+    {
+      "inicio_s": 15,
+      "fim_s": 21,
+      "narracao": "Abaixo, os grandes aros da armação aparecem diante do tronco, junto aos dedos.",
+      "legenda": "Abaixo, os grandes aros da armação aparecem diante do tronco, junto aos dedos.",
+      "papel": "evidencia_visual",
+      "afirmacoes": [
+        "01M3SQA5QN3W6KR9J61NZRYXM9"
+      ],
+      "regiao_id": "01M3SQA5QNXYDP97NJECTAN2KA",
+      "camera": {
+        "de": {
+          "x": 0.02,
+          "y": 0.66,
+          "largura": 0.58,
+          "altura": 0.34
+        },
+        "para": {
+          "x": 0.03,
+          "y": 0.7,
+          "largura": 0.51,
+          "altura": 0.29
+        }
+      }
+    },
+    {
+      "inicio_s": 21,
+      "fim_s": 33,
+      "narracao": "O Fastnachtsmuseum interpreta os óculos como atributo da simplicidade do tolo. Não é possível determinar se o pintor pretendeu comunicar simplicidade por meio deles.",
+      "legenda": "O Fastnachtsmuseum interpreta os óculos como atributo da simplicidade do tolo. Não é possível determinar se o pintor pretendeu comunicar simplicidade por meio deles.",
+      "papel": "interpretacao",
+      "afirmacoes": [
+        "01M3SQA5QN59Z1J6E94VGB3AGB",
+        "01M3SQA5QN208ZY4TSRAPJRYBY"
+      ],
+      "regiao_id": "01M3SQA5QNXYDP97NJECTAN2KA",
+      "camera": {
+        "de": {
+          "x": 0.03,
+          "y": 0.7,
+          "largura": 0.51,
+          "altura": 0.29
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 33,
+      "fim_s": 44,
+      "narracao": "A leitura proposta pela IA conecta o gesto diante dos olhos aos óculos mantidos abaixo do rosto: uma associação possível pela disposição das mãos.",
+      "legenda": "A leitura proposta pela IA conecta o gesto diante dos olhos aos óculos mantidos abaixo do rosto: uma associação possível pela disposição das mãos.",
+      "papel": "interpretacao",
+      "afirmacoes": [
+        "01M3SQA5QN1B68VGKPZ5BF7XC3"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 44,
+      "fim_s": 52,
+      "narracao": "Volte ao conjunto e acompanhe essa relação possível entre a mão diante do rosto e os óculos na outra.",
+      "legenda": "Volte ao conjunto e acompanhe essa relação possível entre a mão diante do rosto e os óculos na outra.",
+      "papel": "fechamento",
+      "afirmacoes": [
+        "01M3SQA5QN1B68VGKPZ5BF7XC3"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+ "versao": 1,
+ "id": "000000000000000000000M0001",
+ "documento_id": "000000000000000000000D0001",
+ "versao_id": "000000000000000000000V0001",
+ "tipo": "video",
+ "titulo": "Amostra",
+ "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "mime": "video/mp4",
+ "bytes": 1000,
+ "duracao_s": 4.0,
+ "fonte": {
+  "url": "https://www.youtube.com/watch?v=abc",
+  "canal": "Canal",
+  "publicado_em": "2026-09-27"
+ },
+ "transcricao": {
+  "motor": "faster-whisper large-v3 + whisperx",
+  "idioma": "pt",
+  "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ },
+ "capitulos": [
+  {
+   "inicio_s": 0,
+   "titulo": "Abertura"
+  },
+  {
+   "inicio_s": 2.5,
+   "titulo": "Tema"
+  }
+ ],
+ "palavras": [
+  {
+   "bloco_id": "000000000000000000000B0001",
+   "inicio_utf16": 0,
+   "fim_utf16": 3,
+   "inicio_s": 0.1,
+   "fim_s": 0.4
+  },
+  {
+   "bloco_id": "000000000000000000000B0001",
+   "inicio_utf16": 4,
+   "fim_utf16": 6,
+   "inicio_s": 0.5,
+   "fim_s": 0.9
+  },
+  {
+   "bloco_id": "000000000000000000000B0002",
+   "inicio_utf16": 0,
+   "fim_utf16": 2,
+   "inicio_s": 3.0,
+   "fim_s": 4.3
+  }
+ ],
+ "frases": [
+  {
+   "bloco_id": "000000000000000000000B0001",
+   "inicio_utf16": 0,
+   "fim_utf16": 7,
+   "inicio_s": 0.1,
+   "fim_s": 0.9
+  },
+  {
+   "bloco_id": "000000000000000000000B0002",
+   "inicio_utf16": 0,
+   "fim_utf16": 2,
+   "inicio_s": 3.0,
+   "fim_s": 4.3
+  }
+ ],
+ "largura": 1280,
+ "altura": 720
+}

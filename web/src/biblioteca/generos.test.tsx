@@ -1,0 +1,23 @@
+import { afterEach, expect, test, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import economica1 from '../../../contratos/modos/economica@1.json';
+import economica2 from '../../../contratos/modos/economica@2.json';
+import ficcao from '../../../contratos/modos/ficcao_narrativa@1.json';
+import argumentativa from '../../../contratos/modos/argumentativa@1.json';
+import { escolherOpcao } from '../../tests/apoio-react';
+import { PrepararLeitura } from './Operacoes';
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+test('família filtra modos atuais e a escolha chega à compreensão com revisão correta', async () => {
+  vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify({ modos: [economica1, economica2, ficcao, argumentativa] }), { status: 200 }))));
+  const compreender = vi.fn(() => Promise.resolve());
+  render(<PrepararLeitura preparar={() => Promise.resolve()} compreender={compreender} aoFechar={() => {}} />);
+  await screen.findByText(argumentativa.descricao);
+  escolherOpcao('Família do texto', 'Ciência e economia');
+  expect(screen.getByRole('combobox', { name: 'Modo de leitura' }).textContent).toBe(economica2.nome);
+  expect(screen.getByText(economica2.descricao)).toBeDefined();
+  fireEvent.click(screen.getByRole('button', { name: 'Compreender capítulo a capítulo' }));
+  await waitFor(() => expect(compreender).toHaveBeenCalledWith({ id: 'economica', revisao: 2 }));
+  escolherOpcao('Família do texto', 'Literatura');
+  expect(screen.getByText(/pode antecipar acontecimentos/u)).toBeDefined();
+  expect(screen.getByRole('combobox', { name: 'Modo de leitura' }).textContent).toBe(ficcao.nome);
+});

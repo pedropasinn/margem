@@ -1,0 +1,81 @@
+/* Carcaça do e-ink (Xteink X4 Pro, 480 × 800). Preto no branco, sem cinza, sem animação: a tinta
+   eletrônica redesenha a tela inteira a cada mudança, e o que não é preto vira pontilhado. */
+.eink-mesa {
+  --eink-largura: 480px;
+  --eink-altura: 800px;
+  min-height: 100vh; display: grid; place-items: center; background: #2b2b2b; padding: 24px 0;
+}
+.eink-mesa *, .eink-mesa *::before, .eink-mesa *::after { transition: none !important; animation: none !important; }
+/* A moldura do aparelho, só numa tela larga: no próprio X4, a tela é a página inteira. */
+.eink-carcaca {
+  position: relative; padding: 28px 22px 64px; border-radius: 26px; background: #e9e7e1;
+  box-shadow: inset 0 0 0 1px #0002, 0 18px 50px #0008;
+}
+.eink-botao { position: absolute; right: -5px; width: 5px; height: 54px; border-radius: 0 3px 3px 0; background: #cfccc4; }
+.eink-botao-cima { top: 150px; }
+.eink-botao-baixo { top: 216px; }
+.eink-tela {
+  position: relative; width: var(--eink-largura); height: var(--eink-altura); overflow: hidden;
+  background: #fff; color: #000; box-shadow: inset 0 0 0 1px #0003;
+}
+@media (max-width: 560px), (max-height: 700px) and (max-width: 900px) {
+  .eink-mesa { padding: 0; background: #fff; }
+  .eink-carcaca { padding: 0; border-radius: 0; box-shadow: none; background: #fff; }
+  .eink-botao { display: none; }
+  .eink-tela { width: 100vw; height: 100vh; height: 100dvh; box-shadow: none; }
+}
+
+.eink-leitura { position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr; font-family: var(--sans); }
+.eink-cabeca {
+  display: flex; justify-content: space-between; gap: 12px; padding: 12px 22px 8px; border-bottom: 1px solid #000;
+  font-size: 12px; letter-spacing: .02em; white-space: nowrap; overflow: hidden;
+}
+.eink-cabeca > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.eink-folha { position: relative; min-height: 0; overflow: hidden; margin: 18px 24px 22px; z-index: 2; pointer-events: none; }
+.eink-colunas { height: 100%; }
+.eink-aviso { margin: 40px 24px; font: 16px/1.5 var(--sans); }
+
+.eink-texto, .eink-explicacao { font-family: var(--serif); font-size: var(--eink-tamanho, 18px); line-height: 1.5; }
+.eink-texto p { margin: 0 0 .7em; text-align: left; hyphens: auto; -webkit-hyphens: auto; }
+.eink-texto h2 { margin: 0 0 .6em; font-size: 1.15em; line-height: 1.3; break-after: avoid; }
+.eink-grifo { white-space: normal; }
+.eink-numero {
+  display: inline-grid; place-items: center; min-width: 1.35em; height: 1.35em; margin-left: .15em; padding: 0 .2em; box-sizing: border-box;
+  border: 1.5px solid #000; border-radius: 1em; font: 700 .6em/1 var(--sans); vertical-align: .5em;
+}
+.eink-numero.periferico { border-style: dashed; }
+sup.eink-numero { line-height: 1; }
+
+.eink-explicacao p { margin: 0 0 .8em; }
+.eink-observar { font-style: italic; }
+.eink-explicacao h3 { margin: 1em 0 .4em; font: 700 12px/1.3 var(--sans); letter-spacing: .08em; text-transform: uppercase; break-after: avoid; }
+.eink-itens, .eink-ligacoes { margin: 0 0 .6em; padding: 0; list-style: none; display: grid; gap: .55em; }
+.eink-itens li { display: grid; grid-template-columns: 1.9em 1fr; align-items: start; break-inside: avoid; }
+.eink-itens .eink-numero { justify-self: start; margin: .3em 0 0; vertical-align: 0; font-size: .62em; }
+.eink-ligacoes li { break-inside: avoid; }
+.eink-ir {
+  pointer-events: auto; margin-left: .4em; padding: 0 .4em; border: 1.5px solid #000; border-radius: 4px; background: #fff; color: #000;
+  font: 700 12px/1.6 var(--sans); cursor: pointer;
+}
+.eink-parada { margin-top: 1em; padding-top: .6em; border-top: 1px solid #000; }
+
+/* Zonas de toque: invisíveis, por baixo do texto (que deixa o toque passar). */
+.eink-zona { position: absolute; z-index: 1; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.eink-zona:focus-visible { outline: 2px solid #000; outline-offset: -4px; }
+.eink-zona-indice { top: 0; left: 0; right: 0; height: 64px; z-index: 3; }
+.eink-zona-voltar { top: 64px; bottom: 0; left: 0; width: 33%; }
+.eink-zona-avancar { top: 64px; bottom: 0; right: 0; width: 67%; }
+
+.eink-indice {
+  position: absolute; inset: 0; z-index: 5; display: grid; grid-template-rows: auto 1fr auto; background: #fff; color: #000; font: 15px/1.4 var(--sans);
+}
+.eink-indice-cabeca, .eink-indice-pe { display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-bottom: 1px solid #000; }
+.eink-indice-cabeca { justify-content: space-between; }
+.eink-indice-pe { border-top: 1px solid #000; border-bottom: 0; }
+.eink-indice-pe a { margin-left: auto; color: #000; font-weight: 700; }
+.eink-indice ol { margin: 0; padding: 8px 0; list-style: none; overflow: auto; }
+.eink-indice button { border: 1.5px solid #000; border-radius: 6px; background: #fff; color: #000; font: inherit; padding: 4px 10px; cursor: pointer; }
+.eink-indice button[aria-pressed='true'] { background: #000; color: #fff; }
+.eink-indice ol button { display: grid; grid-template-columns: 28px 1fr; gap: 8px; width: 100%; padding: 12px 22px; border: 0; border-radius: 0; text-align: left; font-family: var(--serif); font-size: 16px; }
+.eink-indice ol button[aria-current='step'] { background: #000; color: #fff; }
+.eink-indice ol button > span { font: 700 13px/1.6 var(--sans); }

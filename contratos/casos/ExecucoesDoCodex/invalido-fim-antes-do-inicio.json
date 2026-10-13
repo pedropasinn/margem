@@ -1,0 +1,72 @@
+{
+  "versao": 1,
+  "gerado_em": "2026-10-01T12:00:10.000Z",
+  "omitidas": 12,
+  "execucoes": [
+    {
+      "id": "01K0000000000000000000J001",
+      "tipo": "ler_parte",
+      "rotulo": "Lendo o capítulo 3 de Mixtape",
+      "estado": "rodando",
+      "inicio": "2026-10-01T12:00:00.000Z",
+      "fim": null,
+      "documento": {
+        "id": "01K0000000000000000000D001",
+        "titulo": "Mixtape"
+      },
+      "secao": {
+        "id": "01K0000000000000000000S003",
+        "titulo": "Capítulo 3",
+        "numero": 3
+      },
+      "rota": "/ler/01K0000000000000000000D001/01K0000000000000000000S003",
+      "mensagem": null
+    },
+    {
+      "id": "01K0000000000000000000J002",
+      "tipo": "responder",
+      "rotulo": "Respondendo à sua pergunta",
+      "estado": "na_fila",
+      "inicio": "2026-10-01T11:59:00.000Z",
+      "fim": null,
+      "documento": null,
+      "secao": null,
+      "rota": null,
+      "mensagem": "Esperando a cota do Codex voltar."
+    },
+    {
+      "id": "01K0000000000000000000J003",
+      "tipo": "gerar_esquema",
+      "rotulo": "Montando o mapa do capítulo 3 de Mixtape",
+      "estado": "concluida",
+      "inicio": "2026-10-01T11:58:00.000Z",
+      "fim": "2026-10-01T11:59:30.000Z",
+      "documento": {
+        "id": "01K0000000000000000000D001",
+        "titulo": "Mixtape"
+      },
+      "secao": {
+        "id": "01K0000000000000000000S003",
+        "titulo": "Capítulo 3",
+        "numero": null
+      },
+      "rota": "/ler/01K0000000000000000000D001/01K0000000000000000000S003",
+      "mensagem": null
+    },
+    {
+      "id": "01K0000000000000000000J004",
+      "tipo": "revisar_anotacao",
+      "rotulo": "Revisando sua nota",
+      "estado": "falhou",
+      "inicio": "2026-10-01T11:58:00.000Z",
+      "fim": "2026-10-01T11:00:00.000Z",
+      "documento": {
+        "id": "01K0000000000000000000D001",
+        "titulo": "Mixtape"
+      },
+      "secao": null,
+      "rota": "/documentos/01K0000000000000000000D001",
+      "mensagem": "O Codex parou antes de terminar."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "versao": 1,
+  "documento": {
+    "titulo": "Fixture estrofe",
+    "idioma": "pt-BR",
+    "formato": "md",
+    "sha256_original": "833b4ef8fb2724e4ccb56f95d091b4ce7cb11040315e824d0a8a9d0388955ac2"
+  },
+  "canonizacao": {
+    "motor": "fixture-paragrafos-v1",
+    "gerado_em": "2026-09-20T18:00:00Z"
+  },
+  "hash_estrutural": "732d18ba8edf33f20588aca9509189f79d1c39776bd6e54191d4bfcf70c4be6f",
+  "secoes": [],
+  "blocos": [
+    {
+      "id": "00000000000000000000000100",
+      "ordem": 0,
+      "tipo": "estrofe",
+      "texto": "Ó mar, que à tarde se desfaz em ouro,\n— dizia o velho, olhando o horizonte —\nnão guardes mais o que levaste um dia, porque a memória é longa e a noite, mais longa ainda, se estende sobre as casas adormecidas da cidade antiga,\ne o café esfria na mesa 🧭.",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 9
+        }
+      ]
+    },
+    {
+      "id": "00000000000000000000000101",
+      "ordem": 1,
+      "tipo": "estrofe",
+      "texto": "Verso único — só.",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 9
+        }
+      ]
+    },
+    {
+      "id": "00000000000000000000000102",
+      "ordem": 2,
+      "tipo": "paragrafo",
+      "texto": "Prosa depois do poema.",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 9
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "limites": []
+}

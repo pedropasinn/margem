@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ImportacaoWebV1.schema.json",
+  "title": "Página web capturada pela extensão do navegador: corpo em Markdown e metadados de origem",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "markdown",
+    "titulo",
+    "url_origem"
+  ],
+  "properties": {
+    "markdown": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8000000
+    },
+    "titulo": {
+      "$ref": "#/$defs/linha"
+    },
+    "autor": {
+      "$ref": "#/$defs/linha"
+    },
+    "site": {
+      "$ref": "#/$defs/linha"
+    },
+    "url_origem": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://[^\\s]+$",
+      "maxLength": 4096
+    },
+    "publicado_em": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "string",
+          "format": "date"
+        }
+      ]
+    },
+    "capturado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trecho": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "linha": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^(?=[^\\r\\n]*\\S)[^\\r\\n\\u2028\\u2029]+$"
+    }
+  }
+}

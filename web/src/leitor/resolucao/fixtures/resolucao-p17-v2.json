@@ -1,0 +1,79 @@
+{
+  "enunciado": "1. Usando indução, prove:\n(a) $1+2+\\cdots+n=n(n+1)/2$.\n(b) $1+3+5+\\cdots+2n-1=n^2$.",
+  "legibilidade": "boa",
+  "itens": [
+    {
+      "rotulo": "a",
+      "enunciado": "Usando indução, prove: $1+2+\\cdots+n=n(n+1)/2$.",
+      "estrategia": "Vamos verificar a fórmula para $n=1$. Depois, supondo que ela vale para um natural $k\\ge 1$, acrescentaremos o próximo termo para provar que também vale para $k+1$.",
+      "passos": [
+        {
+          "texto": "Caso inicial: para $n=1$, a soma tem apenas o termo $1$, e a fórmula dá esse mesmo valor.",
+          "calculo": "$$\\frac{1(1+1)}{2}=1$$"
+        },
+        {
+          "texto": "Hipótese de indução: suponha que a igualdade seja verdadeira para um natural $k\\ge 1$.",
+          "calculo": "$$1+2+\\cdots+k=\\frac{k(k+1)}{2}$$"
+        },
+        {
+          "texto": "A soma até $k+1$ é a soma até $k$ acrescida de $k+1$. Substituímos a soma até $k$ pela expressão da hipótese de indução.",
+          "calculo": "$$1+2+\\cdots+k+(k+1)=\\frac{k(k+1)}{2}+(k+1)$$"
+        },
+        {
+          "texto": "Escrevemos as duas parcelas com denominador $2$ e colocamos o fator comum $k+1$ em evidência.",
+          "calculo": "$$\\frac{k(k+1)}{2}+(k+1)=\\frac{k(k+1)+2(k+1)}{2}$$\n$$\\frac{k(k+1)+2(k+1)}{2}=\\frac{(k+1)(k+2)}{2}$$"
+        },
+        {
+          "texto": "O resultado é exatamente a fórmula com $n=k+1$. Como verificamos o caso inicial e a passagem de $k$ para $k+1$, o princípio da indução garante a igualdade para todo natural $n\\ge 1$.",
+          "calculo": "$$\\frac{(k+1)(k+2)}{2}=\\frac{(k+1)((k+1)+1)}{2}$$"
+        }
+      ],
+      "resposta": "Por indução, $1+2+\\cdots+n=\\frac{n(n+1)}{2}$ para todo natural $n\\ge 1$.",
+      "verificacao": "Para $n=4$, a soma é $1+2+3+4=10$, e a fórmula dá $\\frac{4\\cdot5}{2}=10$."
+    },
+    {
+      "rotulo": "b",
+      "enunciado": "Usando indução, prove: $1+3+5+\\cdots+2n-1=n^2$.",
+      "estrategia": "Vamos verificar o primeiro caso e supor a fórmula válida para os primeiros $k$ números ímpares. Acrescentando o próximo ímpar, $2(k+1)-1$, obteremos o quadrado de $k+1$.",
+      "passos": [
+        {
+          "texto": "Caso inicial: para $n=1$, o único termo da soma é $1$, que coincide com o quadrado de $1$.",
+          "calculo": "$$2\\cdot1-1=1$$\n$$1=1^2$$"
+        },
+        {
+          "texto": "Hipótese de indução: suponha que a soma dos primeiros $k$ ímpares seja $k^2$, para um natural $k\\ge 1$.",
+          "calculo": "$$1+3+5+\\cdots+(2k-1)=k^2$$"
+        },
+        {
+          "texto": "O próximo termo é o ímpar de posição $k+1$.",
+          "calculo": "$$2(k+1)-1=2k+1$$"
+        },
+        {
+          "texto": "Acrescentamos esse termo à soma da hipótese de indução. Assim, temos a soma dos primeiros $k+1$ ímpares.",
+          "calculo": "$$1+3+5+\\cdots+(2k-1)+(2k+1)=k^2+(2k+1)$$"
+        },
+        {
+          "texto": "A expressão obtida é um quadrado perfeito: o quadrado do primeiro termo, mais duas vezes o produto dos termos, mais o quadrado do segundo.",
+          "calculo": "$$k^2+(2k+1)=k^2+2\\cdot k\\cdot1+1^2=(k+1)^2$$"
+        },
+        {
+          "texto": "Isso prova a fórmula para $k+1$. Como o caso inicial vale e a validade para $k$ implica a validade para $k+1$, a igualdade vale para todo natural $n\\ge 1$ por indução.",
+          "calculo": null
+        }
+      ],
+      "resposta": "Por indução, $1+3+5+\\cdots+(2n-1)=n^2$ para todo natural $n\\ge 1$.",
+      "verificacao": "Para $n=4$, o último ímpar é $2\\cdot4-1=7$, e $1+3+5+7=16=4^2$."
+    }
+  ],
+  "conceitos": [
+    "Princípio da indução matemática",
+    "Caso inicial",
+    "Hipótese de indução",
+    "Passo indutivo",
+    "Soma de números naturais",
+    "Números ímpares",
+    "Fatoração",
+    "Quadrado da soma"
+  ],
+  "observacao": null
+}

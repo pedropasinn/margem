@@ -1,0 +1,11 @@
+{
+  "texto": "A frase gira em torno da bússola.",
+  "pontos": [
+    {
+      "tipo": "objecao",
+      "texto": "Falta apoio.",
+      "apoios": []
+    }
+  ],
+  "sugestoes_de_conexao": []
+}

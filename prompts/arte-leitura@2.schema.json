@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/arte-leitura@2.schema.json",
+  "title": "Leitura visual de uma obra, algoritmo v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["descricao", "composicao", "luz_e_cor", "objetos", "relacoes", "incertezas"],
+  "properties": {
+    "descricao": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "composicao": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "luz_e_cor": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "objetos": {
+      "type": "array", "minItems": 1, "maxItems": 30,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["rotulo", "descricao", "x", "y", "largura", "altura", "saliencia"],
+        "properties": {
+          "rotulo": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "descricao": { "type": "string", "minLength": 1, "maxLength": 400 },
+          "x": { "type": "number", "minimum": 0, "maximum": 1 },
+          "y": { "type": "number", "minimum": 0, "maximum": 1 },
+          "largura": { "type": "number", "minimum": 0, "maximum": 1 },
+          "altura": { "type": "number", "minimum": 0, "maximum": 1 },
+          "saliencia": { "type": "string", "enum": ["alta", "media", "baixa"] }
+        }
+      }
+    },
+    "relacoes": {
+      "type": "array", "maxItems": 12,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["objetos", "relacao"],
+        "properties": {
+          "objetos": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "type": "integer", "minimum": 0 } },
+          "relacao": { "type": "string", "minLength": 1, "maxLength": 400 }
+        }
+      }
+    },
+    "incertezas": { "type": "array", "maxItems": 10, "items": { "type": "string", "minLength": 1, "maxLength": 400 } }
+  }
+}

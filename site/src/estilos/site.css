@@ -1,0 +1,164 @@
+/* Página inicial e moldura comum: cabeçalho, herói, seções de uma ideia, download e rodapé. */
+
+/* Cabeçalho */
+.cabecalho {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--borda);
+}
+.cabecalho-linha { display: flex; align-items: center; gap: 16px; min-height: 68px; }
+.logotipo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 700 19px/1 var(--sans); letter-spacing: -.01em; flex-shrink: 0; }
+.logotipo img { width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 0 0 1px var(--borda); }
+.cabecalho-nav { display: flex; gap: 4px; margin-left: auto; min-width: 0; }
+.cabecalho-nav a {
+  padding: 8px 12px; border-radius: var(--r-pilula); white-space: nowrap;
+  font: 500 14.5px/1 var(--sans); color: var(--texto-2); text-decoration: none;
+}
+.cabecalho-nav a:hover { color: var(--texto-1); background: var(--bg-hover); }
+.cabecalho-nav a[aria-current="page"] { color: var(--texto-1); background: var(--painel); }
+@media (max-width: 860px) { .cabecalho-nav .so-largo { display: none; } }
+
+/* Tipografia comum */
+.sobretitulo {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 700 12.5px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--accent-texto);
+}
+.ponto-azul { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+h1, h2 { font-family: var(--sans); font-weight: 700; letter-spacing: -.03em; text-wrap: balance; }
+h3 { font: 700 18px/1.3 var(--sans); letter-spacing: -.01em; }
+code, kbd {
+  padding: 1px 6px; border-radius: 6px; background: var(--painel);
+  font: 500 .88em/1.4 ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; overflow-wrap: anywhere;
+}
+kbd { border: 1px solid var(--borda); }
+
+.link-seta {
+  display: inline-flex; align-items: center; gap: 6px; width: fit-content;
+  font: 650 15px/1.3 var(--sans); color: var(--accent-texto); text-decoration: none;
+}
+.link-seta:hover { text-decoration: underline; }
+.link-seta svg { transition: transform .15s; }
+.link-seta:hover svg { transform: translateX(3px); }
+.link-discreto { font: 600 15px/1.3 var(--sans); color: var(--texto-2); text-underline-offset: 4px; }
+.link-discreto:hover { color: var(--texto-1); }
+
+/* Cartões da família do app: borda de 2 px e base 3D. */
+.cartao {
+  border: 2px solid var(--borda-3d); border-radius: var(--r-24);
+  background: var(--bg); box-shadow: 0 var(--base-3d) 0 var(--borda-3d);
+}
+.selo {
+  padding: 5px 10px; border-radius: var(--r-pilula); background: var(--painel);
+  font: 700 12px/1.2 var(--sans); color: var(--texto-2); white-space: nowrap;
+}
+.selo[data-disponivel="true"] { background: var(--sucesso-bg); color: var(--sucesso-texto); }
+.recurso-icone {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0;
+  border: 2px solid var(--borda-3d); border-radius: var(--r-12); background: var(--bg); color: var(--accent-texto);
+}
+
+/* Herói: frase curta, botão de download e a captura grande do app. */
+.heroi { padding-top: clamp(64px, 11vw, 152px); overflow: hidden; }
+.heroi-texto { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.heroi h1 { font-size: clamp(48px, 9vw, 112px); line-height: .98; letter-spacing: -.045em; }
+.heroi-sub {
+  max-width: 640px; margin-top: 28px;
+  font: 400 clamp(19px, 1.9vw, 23px)/1.5 var(--sans); color: var(--texto-2); text-wrap: pretty;
+}
+.baixar-botoes { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px 28px; margin-top: 40px; }
+.botao.grande { min-height: 56px; padding: 14px 32px; font-size: 17px; }
+.heroi-captura { margin-top: clamp(56px, 8vw, 96px); max-width: 1280px; }
+
+/* Capturas do app numa moldura de janela. */
+.captura { margin: 0; }
+.captura img {
+  width: 100%; height: auto; border-radius: var(--r-16);
+  border: 1px solid var(--borda); box-shadow: var(--sombra-folha); background: var(--folha);
+}
+.captura-grande img { border-radius: clamp(10px, 1.6vw, 20px); }
+.captura-media { margin-top: clamp(40px, 6vw, 64px); max-width: 1080px; }
+
+/* Seções de uma ideia: sobretítulo, título grande, um parágrafo curto e no máximo uma peça visual. */
+.ideia { padding-block: clamp(88px, 13vw, 168px); }
+.secao-painel { background: var(--bg-2); border-block: 1px solid var(--borda); }
+.ideia h2 { max-width: 900px; margin-top: 16px; font-size: clamp(34px, 5.4vw, 68px); line-height: 1.03; }
+.ideia-texto {
+  max-width: 660px; margin-top: 28px;
+  font: 400 clamp(18px, 1.7vw, 21px)/1.55 var(--sans); color: var(--texto-2); text-wrap: pretty;
+}
+.ideia-texto + .link-seta, .ideia-acoes { margin-top: 28px; }
+.ideia-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; }
+.ideia-demo { margin-top: clamp(40px, 6vw, 72px); max-width: 1080px; }
+
+.fatos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: clamp(48px, 6vw, 72px); }
+.fatos li { display: grid; gap: 8px; color: var(--accent-texto); }
+.fatos strong { margin-top: 8px; font: 700 20px/1.25 var(--sans); color: var(--texto-1); }
+.fatos span { color: var(--texto-2); }
+@media (max-width: 760px) { .fatos { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+
+/* Integrações */
+.integracoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: clamp(40px, 6vw, 64px); }
+.integracao { display: flex; flex-direction: column; gap: 10px; padding: 28px; }
+.integracao h3 { margin-top: 10px; }
+.integracao p { color: var(--texto-2); flex: 1; }
+@media (max-width: 900px) { .integracoes { grid-template-columns: minmax(0, 1fr); max-width: 560px; } }
+
+/* Download */
+.aviso-provisorio {
+  max-width: 760px; margin-top: 28px; padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--aviso-texto) 35%, transparent); border-radius: var(--r-16);
+  background: var(--aviso-bg); color: var(--aviso-texto); font: 400 15px/1.5 var(--sans);
+}
+.plataformas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: clamp(40px, 6vw, 56px); }
+.plataforma { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 24px; scroll-margin-top: 96px; }
+.plataforma[data-detectado="true"] { border-color: var(--accent); box-shadow: 0 var(--base-3d) 0 color-mix(in srgb, var(--accent) 55%, var(--borda-3d)); }
+.plataforma-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.plataforma h3 { font-size: 22px; }
+.plataforma > p { color: var(--texto-2); }
+.plataforma .comando { flex: 1; }
+.baixar-requisitos { max-width: 760px; margin-top: 32px; color: var(--texto-3); font-size: 15px; }
+.baixar-requisitos a { color: var(--texto-2); }
+@media (max-width: 1000px) { .plataformas { grid-template-columns: minmax(0, 1fr); max-width: 640px; } }
+
+/* Bloco de comando de terminal */
+.comando { min-width: 0; border: 1px solid var(--borda); border-radius: var(--r-12); background: var(--bg-2); overflow: hidden; }
+.secao-painel .comando, .plataforma .comando { background: var(--painel); }
+.comando-topo {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 6px 6px 14px;
+  border-bottom: 1px solid var(--borda); font: 600 12.5px/1 var(--sans); color: var(--texto-3);
+}
+.comando-copiar {
+  padding: 6px 12px; border: 1px solid var(--borda); border-radius: var(--r-pilula); background: var(--bg);
+  font: 600 12.5px/1 var(--sans); color: var(--texto-2); cursor: pointer;
+}
+.comando-copiar:hover { color: var(--texto-1); border-color: var(--borda-hover); }
+.comando pre { margin: 0; padding: 14px; overflow-x: auto; }
+.comando code {
+  padding: 0; background: none; font-size: 13.5px; line-height: 1.6;
+  white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;
+}
+
+/* Rodapé */
+.rodape { padding: 64px 0 40px; border-top: 1px solid var(--borda); }
+.rodape-linha { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: 40px 32px; align-items: start; }
+.rodape-marca p { margin-top: 12px; color: var(--texto-3); font: 400 17px/1.4 var(--serif); max-width: 280px; }
+.rodape-coluna p { font: 700 13px/1.2 var(--sans); color: var(--texto-1); }
+.rodape-coluna ul { display: grid; gap: 10px; margin-top: 14px; }
+.rodape-coluna a { font: 500 14.5px/1.4 var(--sans); color: var(--texto-2); text-decoration: none; }
+.rodape-coluna a:hover { color: var(--texto-1); text-decoration: underline; }
+.rodape-nota { grid-column: 1 / -1; padding-top: 24px; border-top: 1px solid var(--borda); font: 400 13px/1.4 var(--sans); color: var(--texto-3); }
+@media (max-width: 800px) {
+  .rodape-linha { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rodape-marca { grid-column: 1 / -1; }
+}
+
+/* Detalhes recolhíveis (docs no celular) usam o mesmo sinal de mais/menos. */
+.faq-sinal { position: relative; width: 16px; height: 16px; flex-shrink: 0; }
+.faq-sinal::before, .faq-sinal::after {
+  content: ''; position: absolute; left: 0; top: 7px; width: 16px; height: 2px; border-radius: 2px;
+  background: currentColor; transition: transform .2s;
+}
+.faq-sinal::after { transform: rotate(90deg); }
+details[open] > summary .faq-sinal::after { transform: rotate(0deg); }

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ApresentacaoDoPlanoV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "plano_id",
+    "dispositivo",
+    "telas"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "plano_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "dispositivo": {
+      "type": "string",
+      "enum": [
+        "desktop",
+        "eink",
+        "audio"
+      ]
+    },
+    "telas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "passo",
+          "tipo",
+          "blocos",
+          "texto"
+        ],
+        "properties": {
+          "passo": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "texto",
+              "explicacao",
+              "narracao",
+              "comentario"
+            ]
+          },
+          "blocos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            },
+            "minItems": 0
+          },
+          "texto": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8000
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 1
+    }
+  }
+}

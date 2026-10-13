@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/AnaliseCurtaDaObraV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "obra_id",
+    "revisao_modelo",
+    "imagem_sha256",
+    "tese",
+    "afirmacoes_da_tese",
+    "tempo",
+    "batidas"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "obra_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revisao_modelo": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "imagem_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "tese": {
+      "type": "string",
+      "minLength": 1
+    },
+    "afirmacoes_da_tese": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "tempo": {
+      "const": "estimado"
+    },
+    "batidas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "inicio_s",
+          "fim_s",
+          "narracao",
+          "legenda",
+          "papel",
+          "afirmacoes",
+          "regiao_id",
+          "camera"
+        ],
+        "properties": {
+          "inicio_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "fim_s": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "narracao": {
+            "type": "string",
+            "minLength": 1
+          },
+          "legenda": {
+            "type": "string",
+            "minLength": 1
+          },
+          "papel": {
+            "type": "string",
+            "enum": [
+              "abertura",
+              "evidencia_visual",
+              "contexto",
+              "interpretacao",
+              "fechamento"
+            ]
+          },
+          "afirmacoes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "regiao_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "camera": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "de",
+              "para"
+            ],
+            "properties": {
+              "de": {
+                "$ref": "#/$defs/retangulo"
+              },
+              "para": {
+                "$ref": "#/$defs/retangulo"
+              }
+            }
+          }
+        }
+      },
+      "minItems": 3
+    }
+  },
+  "$defs": {
+    "retangulo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "largura",
+        "altura"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "largura": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "altura": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

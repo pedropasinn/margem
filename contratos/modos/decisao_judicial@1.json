@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "decisao_judicial",
+  "revisao": 1,
+  "nome": "Decisão judicial e acórdão",
+  "descricao": "Leitura de decisão: separar relato processual, alegações, questão decidida, fundamento, resultado e alcance. Distinguir órgão julgador, voto, parte, precedente citado e divergência; uma frase de ementa ou fundamentação não recebe automaticamente autoridade vinculante.",
+  "funcoes": [
+    {
+      "chave": "questao",
+      "rotulo": "Questão decidida",
+      "pergunta": "Qual problema o órgão precisa resolver neste processo?",
+      "descricao": "Questão jurídica ou processual delimitada; separar o pedido das partes do objeto efetivamente decidido.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "fato_processual",
+      "rotulo": "Fato e percurso processual",
+      "pergunta": "Que fato ou etapa o órgão registra como relevante?",
+      "descricao": "Fato considerado, pedido, alegação ou etapa processual com sua voz/estatuto explicitados no comentário.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "fundamento",
+      "rotulo": "Fundamento determinante",
+      "pergunta": "Que razão sustenta o resultado no texto?",
+      "descricao": "Premissa normativa, interpretação ou aplicação usada para decidir; não certificar ratio vinculante automaticamente.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "dispositivo",
+      "rotulo": "Resultado e alcance",
+      "pergunta": "O que foi efetivamente determinado ou decidido?",
+      "descricao": "Resultado, destinatário, extensão, providência e limites expressos, distintos de comentários laterais. Conservar o alcance subjetivo, temporal e material declarado.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "precedente",
+      "rotulo": "Precedente e distinção",
+      "pergunta": "Como outra decisão é usada, distinguida ou superada?",
+      "descricao": "Uso argumentativo explícito de precedente; não qualquer citação ornamental nem efeito externo presumido.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "divergencia",
+      "rotulo": "Divergência e posição",
+      "pergunta": "Quem diverge, em quê, e com qual consequência?",
+      "descricao": "Voto ou posição discrepante identificável; separar resultado majoritário de fundamento comum não demonstrado.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.06,
+      "2": 0.16,
+      "3": 0.3
+    }
+  }
+}

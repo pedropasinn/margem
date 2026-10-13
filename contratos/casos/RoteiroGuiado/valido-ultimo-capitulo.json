@@ -1,0 +1,71 @@
+{
+  "versao": 1,
+  "id": "01K0000000000000000000R001",
+  "execucao_id": "01K0000000000000000000E001",
+  "versao_id": "01K0000000000000000000V001",
+  "secao_id": "01K0000000000000000000S001",
+  "modelo_id": "01K0000000000000000000M001",
+  "perfil_hash": "perfil-plano@2:abc",
+  "capitulo": {
+    "titulo": "1 Introdução",
+    "numero": 1,
+    "total": 10
+  },
+  "paradas": [
+    {
+      "ordem": 1,
+      "tipo": "tese",
+      "titulo": "O que é engenharia de software",
+      "bloco_inicio": "01K0000000000000000000B001",
+      "bloco_fim": "01K0000000000000000000B002",
+      "foco": {
+        "versao_id": "01K0000000000000000000V001",
+        "bloco_id": "01K0000000000000000000B001",
+        "inicio_utf16": 0,
+        "fim_utf16": 19,
+        "citacao": "software é abstrato",
+        "prefixo": "",
+        "sufixo": ""
+      },
+      "ponta": null,
+      "elementos": [
+        "01K0000000000000000000E901"
+      ],
+      "relacoes": [],
+      "dificuldades": [],
+      "anotacoes": [],
+      "visuais": [],
+      "pergunta": null
+    }
+  ],
+  "falas": [
+    {
+      "id": "f001",
+      "papel": "abertura",
+      "parada": null,
+      "texto": "Começamos o livro pela pergunta mais simples."
+    },
+    {
+      "id": "f002",
+      "papel": "parada",
+      "parada": 1,
+      "texto": "Repare na tese."
+    },
+    {
+      "id": "f003",
+      "papel": "fechamento",
+      "parada": null,
+      "texto": "Fim."
+    }
+  ],
+  "perguntas_finais": [],
+  "proxima_secao_id": null,
+  "diagnosticos": [],
+  "execucao": {
+    "modelo": "conta",
+    "esforco": "medium",
+    "prompt": "roteirizar-visita@1"
+  },
+  "job_id": "01K0000000000000000000J001",
+  "criado_em": "2026-09-29T23:00:00.000Z"
+}

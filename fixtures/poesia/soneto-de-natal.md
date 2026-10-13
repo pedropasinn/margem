@@ -1,0 +1,28 @@
+# Soneto de Natal
+
+---
+poesia: true
+autor: Machado de Assis
+obra: Ocidentais
+edicao: Poesias completas, Rio de Janeiro, H. Garnier, 1901
+ortografia: atualizada
+transcricao: colacionada em 24/09/2026 com o Wikisource (Poesias completas, Garnier, 1901, p. 330), em ortografia atualizada, aspas « » como “ ”
+---
+
+Um homem, — era aquela noite amiga,
+Noite cristã, berço do Nazareno, —
+Ao relembrar os dias de pequeno,
+E a viva dança, e a lépida cantiga,
+
+Quis transportar ao verso doce e ameno
+As sensações da sua idade antiga,
+Naquela mesma velha noite amiga,
+Noite cristã, berço do Nazareno.
+
+Escolheu o soneto... A folha branca
+Pede-lhe a inspiração; mas, frouxa e manca,
+A pena não acode ao gesto seu.
+
+E, em vão lutando contra o metro adverso,
+Só lhe saiu este pequeno verso:
+“Mudaria o Natal ou mudei eu?”

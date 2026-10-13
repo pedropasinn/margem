@@ -1,0 +1,67 @@
+{
+  "descricao": "Pergunta cuja resposta não está no texto: a resposta diz que o texto não diz, devolve uma pergunta e não sugere conexões.",
+  "tipo": "resposta",
+  "modo": {
+    "id": "literaria",
+    "revisao": 1
+  },
+  "versao_id": "01K5J17V000000000000000001",
+  "conversa_id": "01K5J17K000000000000000002",
+  "blocos": [
+    {
+      "id": "01K5J17B000000000000000010",
+      "ordem": 10,
+      "tipo": "secao",
+      "texto": "Círculo vicioso"
+    },
+    {
+      "id": "01K5J17B000000000000000011",
+      "ordem": 11,
+      "tipo": "estrofe",
+      "texto": "Bailando no ar, gemia inquieto vaga-lume:\n— “Quem me dera que fosse aquela loira estrela,\nQue arde no eterno azul, como uma eterna vela!”\nMas a estrela, fitando a lua, com ciúme:"
+    },
+    {
+      "id": "01K5J17B000000000000000012",
+      "ordem": 12,
+      "tipo": "estrofe",
+      "texto": "— “Pudesse eu copiar o transparente lume,\nQue, da grega coluna à gótica janela,\nContemplou, suspirosa, a fronte amada e bela!”\nMas a lua, fitando o sol, com azedume:"
+    },
+    {
+      "id": "01K5J17B000000000000000013",
+      "ordem": 13,
+      "tipo": "estrofe",
+      "texto": "— “Mísera! tivesse eu aquela enorme, aquela\nClaridade imortal, que toda a luz resume!”\nMas o sol, inclinando a rútila capela:"
+    },
+    {
+      "id": "01K5J17B000000000000000014",
+      "ordem": 14,
+      "tipo": "estrofe",
+      "texto": "— “Pesa-me esta brilhante auréola de nume...\nEnfara-me esta azul e desmedida umbela...\nPor que não nasci eu um simples vaga-lume?”"
+    }
+  ],
+  "nucleo": [
+    "01K5J17B000000000000000013",
+    "01K5J17B000000000000000014"
+  ],
+  "ancora": {
+    "bloco_id": "01K5J17B000000000000000014",
+    "citacao": "simples vaga-lume"
+  },
+  "pergunta": "Em que ano Machado escreveu este soneto?",
+  "resposta": {
+    "texto": "O texto não diz. O que recebi é só o poema, sem data nem indicação do livro em que saiu.",
+    "pontos": [
+      {
+        "tipo": "pergunta",
+        "texto": "Quer que a leitura siga pelo que o poema mostra, a cadeia de desejos, sem depender da data?",
+        "apoios": []
+      }
+    ],
+    "sugestoes_de_conexao": []
+  },
+  "esperado": {
+    "citacoes": 0,
+    "sugestoes": 0,
+    "diagnosticos": {}
+  }
+}

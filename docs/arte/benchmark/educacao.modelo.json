@@ -1,0 +1,331 @@
+{
+  "versao": 1,
+  "id": "01M3SQ4ZA4QPTC7KRA5PW36B7C",
+  "revisao": 1,
+  "identidade": {
+    "titulo": "Educação Obrigatória",
+    "titulo_original": "Compulsory Education",
+    "artista": "Briton Rivière",
+    "data": "1887",
+    "tecnica": "Óleo sobre tela",
+    "afirmacoes": [
+      "01M3SPS2BJM657P3SXAQCZJYGP"
+    ]
+  },
+  "imagem": {
+    "url": "/arte/educacao.jpg",
+    "sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c",
+    "largura": 2826,
+    "altura": 3992,
+    "credito": "Reprodução em domínio público via Wikimedia Commons; original preservado.",
+    "fonte_id": "01M3SPS2BH8EETQ86A9M3PGSZK"
+  },
+  "localizacao": {
+    "instituicao_proprietaria": "Art Gallery of New South Wales — aquisição registrada em 2020–21",
+    "localizacao_conhecida": null,
+    "atualmente_exposto": null,
+    "sala": null,
+    "verificado_em": "2026-09-30",
+    "fontes": [
+      "01M3SPS2BG87V4YP5785TJZXGV"
+    ]
+  },
+  "fontes": [
+    {
+      "id": "01M3SPS2BG87V4YP5785TJZXGV",
+      "titulo": "Art Gallery of NSW — relatório anual 2020–21, p. 25",
+      "url": "https://data.nsw.gov.au/data/dataset/43c8ca68-42ac-4375-ba74-58b6a647c938/resource/87340171-38d6-4c1a-97a8-9cea625f7c92/download/agnsw_annual_report_20_21_211026_final_online_19789.pdf",
+      "categoria": "instituicao_proprietaria",
+      "consultado_em": "2026-09-30"
+    },
+    {
+      "id": "01M3SPS2BH3YZCYQKPEBTVZ6EW",
+      "titulo": "UK Parliament — frequência escolar e lei de 1880",
+      "url": "https://hansard.parliament.uk/Commons/1881-07-08/debates/20cb03fe-8687-4b1a-a33c-9dd2af5c4110/ElementaryEducationAct1880%E2%80%94TheStandardOfExemption%E2%80%94Bye-LawsForSchoolAttendance",
+      "categoria": "arquivo",
+      "consultado_em": "2026-09-30"
+    },
+    {
+      "id": "01M3SPS2BH8EETQ86A9M3PGSZK",
+      "titulo": "Wikimedia Commons — reprodução, domínio público",
+      "url": "https://commons.wikimedia.org/wiki/File:Briton_Rivi%C3%A8re_Compulsory_Education.jpg",
+      "categoria": "secundaria",
+      "consultado_em": "2026-09-30"
+    }
+  ],
+  "regioes": [
+    {
+      "rotulo": "Cabeça e olhar da criança",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.575,
+        "y": 0.123,
+        "largura": 0.291,
+        "altura": 0.171
+      },
+      "id": "01M3SQ4ZA2E1R30Y5CC7RB9WPD",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c"
+    },
+    {
+      "rotulo": "Livro aberto",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.295,
+        "y": 0.298,
+        "largura": 0.291,
+        "altura": 0.134
+      },
+      "id": "01M3SQ4ZA3QETRWGS40PRB3S63",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c"
+    },
+    {
+      "rotulo": "Cão em primeiro plano",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.086,
+        "y": 0.28,
+        "largura": 0.625,
+        "altura": 0.651
+      },
+      "id": "01M3SQ4ZA3QDM8X178NFH827AX",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c"
+    },
+    {
+      "rotulo": "Vestido e braços da criança",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0.395,
+        "y": 0.267,
+        "largura": 0.507,
+        "altura": 0.514
+      },
+      "id": "01M3SQ4ZA47NS4YJTKV2CPDA37",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c"
+    },
+    {
+      "rotulo": "Móvel escuro à esquerda",
+      "forma": {
+        "tipo": "bbox",
+        "x": 0,
+        "y": 0,
+        "largura": 0.43,
+        "altura": 0.739
+      },
+      "id": "01M3SQ4ZA46JC1Q1NQ09C8TXAD",
+      "imagem_sha256": "cde30ce1cceb4984d85d9d0833a1473af4ed7fa6d8c25c1e7fab71eeac1d033c"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "id": "01M3SPS2BJM657P3SXAQCZJYGP",
+      "texto": "Compulsory Education é uma pintura de Briton Rivière, de 1887, em óleo sobre tela.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "O relatório anual lista artista, título, data e técnica na relação de aquisições.",
+      "fontes": [
+        "01M3SPS2BG87V4YP5785TJZXGV"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "proveniencia": {
+        "autor": "curadoria",
+        "metodo": "curadoria-visual-e-fontes/1"
+      }
+    },
+    {
+      "texto": "A criança inclina a cabeça e dirige o olhar para baixo, na direção do livro aberto.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "O rosto aparece de perfil inclinado; o livro está aberto abaixo dele, à esquerda.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQ4ZA2E1R30Y5CC7RB9WPD",
+        "01M3SQ4ZA3QETRWGS40PRB3S63"
+      ],
+      "apoios": [],
+      "id": "01M3SQ4ZA4CH8T46RTEFQN2MNP",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "O cão ocupa o primeiro plano, com a cabeça junto ao livro e o corpo parcialmente envolvido pelos braços da criança.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "A cabeça do cão se sobrepõe à área do livro; os braços passam junto ao pescoço e ao peito do animal, cujas patas alcançam a parte inferior da imagem.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQ4ZA3QETRWGS40PRB3S63",
+        "01M3SQ4ZA3QDM8X178NFH827AX",
+        "01M3SQ4ZA47NS4YJTKV2CPDA37"
+      ],
+      "apoios": [],
+      "id": "01M3SQ4ZA4M0HFG6Y020HBZ7C5",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "O vestido branco e a faixa azul destacam a criança contra o mobiliário escuro; a capa avermelhada do livro marca o encontro entre criança e cão.",
+      "tipo": "observacao",
+      "confianca": "alta",
+      "evidencia": "Há forte diferença de luminosidade entre o vestido e o móvel à esquerda, enquanto a capa vermelha se situa diante do peito do cão e das mãos da criança.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQ4ZA3QETRWGS40PRB3S63",
+        "01M3SQ4ZA3QDM8X178NFH827AX",
+        "01M3SQ4ZA47NS4YJTKV2CPDA37",
+        "01M3SQ4ZA46JC1Q1NQ09C8TXAD"
+      ],
+      "apoios": [],
+      "id": "01M3SQ4ZA46AW9XTR5T8KE6PRF",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "Compulsory Education é uma pintura de Briton Rivière, datada de 1887, em óleo sobre tela.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "Segundo o dossiê, a relação de aquisições do relatório anual 2020–21 registra artista, título, data e técnica.",
+      "fontes": [
+        "01M3SPS2BG87V4YP5785TJZXGV"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "id": "01M3SQ4ZA4ERGDX8VCW8ZJ2YPR",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "A obra consta na relação de doações das aquisições do relatório 2020–21 da Art Gallery of New South Wales.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "O dossiê identifica o registro na página 25, sem informação sobre exposição ou sala atuais.",
+      "fontes": [
+        "01M3SPS2BG87V4YP5785TJZXGV"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "id": "01M3SQ4ZA4HVQN3H5HN63DF26V",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "A lei de 1880 exigiu regras locais de frequência escolar em todos os distritos da Inglaterra e do País de Gales.",
+      "tipo": "fato",
+      "confianca": "alta",
+      "evidencia": "Conforme o dossiê, a resposta de Mundella de 8 de julho de 1881 explicita o território, os distritos abrangidos e o prazo de implementação.",
+      "fontes": [
+        "01M3SPS2BH3YZCYQKPEBTVZ6EW"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "id": "01M3SQ4ZA42RWMH21CDMTYWQ4M",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "O título e a proximidade do cão com o livro permitem uma leitura bem-humorada da cena como uma lição em que o animal participa como aluno.",
+      "tipo": "inferencia_ia",
+      "confianca": "media",
+      "evidencia": "A leitura combina o título documentado com o olhar da criança para o livro e a posição do cão entre seus braços; a imagem não demonstra que o animal esteja sendo ensinado.",
+      "fontes": [],
+      "regioes": [
+        "01M3SQ4ZA2E1R30Y5CC7RB9WPD",
+        "01M3SQ4ZA3QETRWGS40PRB3S63",
+        "01M3SQ4ZA3QDM8X178NFH827AX",
+        "01M3SQ4ZA47NS4YJTKV2CPDA37"
+      ],
+      "apoios": [
+        "01M3SQ4ZA4CH8T46RTEFQN2MNP",
+        "01M3SQ4ZA4M0HFG6Y020HBZ7C5",
+        "01M3SQ4ZA4ERGDX8VCW8ZJ2YPR"
+      ],
+      "id": "01M3SQ4ZA4J2KRRFEGA7NGK0JK",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    },
+    {
+      "texto": "Não é possível estabelecer se Rivière pretendeu comentar especificamente a lei de educação de 1880.",
+      "tipo": "intencao_desconhecida",
+      "confianca": "nao_aplicavel",
+      "evidencia": "O dossiê documenta a lei e a identificação da pintura, mas não apresenta declaração do artista ou interpretação documentada que vincule sua intenção à legislação.",
+      "fontes": [
+        "01M3SPS2BG87V4YP5785TJZXGV",
+        "01M3SPS2BH3YZCYQKPEBTVZ6EW"
+      ],
+      "regioes": [],
+      "apoios": [],
+      "id": "01M3SQ4ZA49Z16E4GHYTRBNSDZ",
+      "proveniencia": {
+        "autor": "ia",
+        "metodo": "arte-modelo/1"
+      }
+    }
+  ],
+  "estudo": [
+    {
+      "tema": "composicao",
+      "afirmacoes": [
+        "01M3SQ4ZA4CH8T46RTEFQN2MNP",
+        "01M3SQ4ZA4M0HFG6Y020HBZ7C5",
+        "01M3SQ4ZA46AW9XTR5T8KE6PRF"
+      ]
+    },
+    {
+      "tema": "iconografia",
+      "afirmacoes": [
+        "01M3SQ4ZA4CH8T46RTEFQN2MNP",
+        "01M3SQ4ZA4M0HFG6Y020HBZ7C5",
+        "01M3SQ4ZA4J2KRRFEGA7NGK0JK"
+      ]
+    },
+    {
+      "tema": "tecnica",
+      "afirmacoes": [
+        "01M3SQ4ZA4ERGDX8VCW8ZJ2YPR"
+      ]
+    },
+    {
+      "tema": "historia",
+      "afirmacoes": [
+        "01M3SQ4ZA4ERGDX8VCW8ZJ2YPR",
+        "01M3SQ4ZA4HVQN3H5HN63DF26V"
+      ]
+    },
+    {
+      "tema": "contexto",
+      "afirmacoes": [
+        "01M3SQ4ZA42RWMH21CDMTYWQ4M",
+        "01M3SQ4ZA49Z16E4GHYTRBNSDZ"
+      ]
+    },
+    {
+      "tema": "interpretacoes",
+      "afirmacoes": [
+        "01M3SQ4ZA4J2KRRFEGA7NGK0JK",
+        "01M3SQ4ZA49Z16E4GHYTRBNSDZ"
+      ]
+    }
+  ],
+  "limites": [
+    "A identificação da obra depende do dossiê; a reprodução isolada não confirma autoria, data ou técnica material.",
+    "A imagem não permite identificar a criança, ler com segurança o conteúdo do livro ou avaliar a superfície física e o estado de conservação da tela.",
+    "A pesquisa ficou restrita à imagem e aos dados fornecidos, sem consulta independente aos documentos citados.",
+    "O registro de aquisição não estabelece exposição, localização em sala ou disponibilidade atuais.",
+    "O dossiê não fornece interpretação documentada nem evidência da intenção do artista sobre a lei de 1880.",
+    "Saída automática candidata; não publicada no catálogo curado."
+  ]
+}

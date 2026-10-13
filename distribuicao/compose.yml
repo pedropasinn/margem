@@ -1,0 +1,90 @@
+# Instalação local: banco, API e worker. O instalador (instalar.sh / instalar.ps1) copia este arquivo
+# para a pasta da instalação e gera ao lado dele o `.env` (projeto, imagem, senha do banco, porta),
+# que o `docker compose` lê sozinho. Dentro daquela pasta, os comandos comuns funcionam direto:
+#
+#   docker compose ps | logs | stop | up -d
+#   docker compose exec worker codex login --device-auth
+#
+# Não confundir com ops/postgres/compose.yml, que é só o Postgres do servidor de desenvolvimento.
+# O nome do projeto vem de COMPOSE_PROJECT_NAME no .env (prefixo dos containers e volumes).
+
+x-app: &app
+  image: ${PRODUTO_IMAGEM:?defina PRODUTO_IMAGEM no .env (o instalador gera)}
+  restart: unless-stopped
+  environment: &ambiente
+    MARGEM_MODO: instalado
+    DATABASE_URL: postgres://app:${BANCO_SENHA:?rode o instalador para gerar .env}@postgres:5432/app
+    # A mesma porta dentro e fora do container: Host e Origin chegam com ela.
+    MARGEM_PORTA: ${PORTA:-8730}
+    MARGEM_DADOS: /dados
+    # Acervo de quadros dentro do volume de dados (sobrevive a atualizações e entra no backup).
+    # `<projeto> arte instalar` grava aqui.
+    MARGEM_ARTE_DIR: /dados/arte/obras
+    # Nome do comando da instalação, para as instruções da interface (ex.: "<comando> arte instalar").
+    MARGEM_COMANDO: ${COMPOSE_PROJECT_NAME:-}
+    CODEX_HOME: /home/app/.codex
+    MARGEM_MODELO: ${MODELO:-conta}
+    MARGEM_SLOTS: ${SLOTS:-2}
+    # Origens da extensão do navegador autorizadas a enviar páginas (vírgulas). O padrão é a
+    # extensão para Chrome/Edge/Brave; no Firefox, acrescente a origem moz-extension://<uuid>.
+    MARGEM_EXTENSOES: ${MARGEM_EXTENSOES:-chrome-extension://gbgnmhhgfmdgchhfhabdaneaehcamcma}
+    # Recursos avançados desligados por padrão (servico/src/recursos.ts); vazio é o normal.
+    MARGEM_RECURSOS: ${MARGEM_RECURSOS:-}
+    # Executor falso só para testes da distribuição; vazio = Codex real.
+    MARGEM_EXECUTOR: ${EXECUTOR:-}
+    MARGEM_ROTEIRO: ${ROTEIRO:-}
+  volumes:
+    - dados:/dados
+    - codex:/home/app/.codex
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${BANCO_SENHA:?rode o instalador para gerar .env}
+      POSTGRES_DB: app
+    volumes:
+      - banco:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Sem porta publicada: só a API e o worker falam com o banco, pela rede interna do compose.
+
+  app:
+    <<: *app
+    command: ["node", "--import", "tsx", "servico/src/api.ts"]
+    ports:
+      # Só no loopback do computador. Publicar em outra interface expõe a biblioteca sem login.
+      - "127.0.0.1:${PORTA:-8730}:${PORTA:-8730}"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+process.env.MARGEM_PORTA+'/api/saude').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+      retries: 30
+
+  worker:
+    <<: *app
+    command: ["node", "--import", "tsx", "servico/src/worker/main.ts"]
+    depends_on:
+      app:
+        condition: service_healthy
+    # O `codex exec` roda dentro de um bwrap (namespaces de usuário), e o sandbox do próprio Codex
+    # dentro dele. Com o perfil padrão do Docker o bwrap não cria namespaces (seccomp e AppArmor) nem
+    # monta /proc (systempaths); as três exceções valem só para o worker, que segue sem root.
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+      - systempaths=unconfined
+
+volumes:
+  banco:
+  dados:
+  codex:

@@ -1,0 +1,28 @@
+{
+  "id": "00000000000000000000000050",
+  "ancora": {
+    "versao_id": "00000000000000000000000020",
+    "bloco_id": "00000000000000000000000001",
+    "inicio_utf16": 3,
+    "fim_utf16": 5,
+    "citacao": "🧭",
+    "prefixo": "Um ",
+    "sufixo": ", café e ﬁ."
+  },
+  "subfaixas": [
+    {
+      "inicio_utf16": 3,
+      "fim_utf16": 5
+    }
+  ],
+  "origem": "parte",
+  "validade": "resolvida",
+  "visivel": true,
+  "avaliacao": "nao_avaliada",
+  "execucao_id": "00000000000000000000000040",
+  "criada_em": "2026-09-20T18:00:00Z",
+  "funcao": "conceito",
+  "saliencia": 2,
+  "comentario": null,
+  "camada_id": "00000000000000000000000040"
+}

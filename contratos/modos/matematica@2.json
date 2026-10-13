@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "matematica",
+  "revisao": 2,
+  "nome": "Matemática e demonstrações",
+  "descricao": "Reconstruir definições, hipóteses e passos decisivos, preservando quantificadores, condições e o estatuto de conjectura, exercício ou prova omitida.",
+  "funcoes": [
+    {
+      "chave": "definicao",
+      "rotulo": "Definição",
+      "pergunta": "Onde o texto apresenta definição?",
+      "descricao": "Objeto, notação, domínio ou modelo de custo.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "hipotese",
+      "rotulo": "Hipótese",
+      "pergunta": "Onde o texto apresenta hipótese?",
+      "descricao": "Condição, hipótese aberta ou premissa necessária ao enunciado.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "enunciado",
+      "rotulo": "Enunciado",
+      "pergunta": "Onde o texto apresenta enunciado?",
+      "descricao": "Teorema, conjectura ou exercício; o comentário explicita qual é.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "passo",
+      "rotulo": "Passo",
+      "pergunta": "Onde o texto apresenta passo?",
+      "descricao": "Inferência não trivial, redução, invariante ou módulo da prova.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "exemplo",
+      "rotulo": "Exemplo",
+      "pergunta": "Onde o texto apresenta exemplo?",
+      "descricao": "Exemplo, não exemplo, contraexemplo ou caso-limite que testa a estrutura.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "tecnica",
+      "rotulo": "Técnica",
+      "pergunta": "Onde o texto apresenta técnica?",
+      "descricao": "Estratégia reutilizável, distinta do enunciado particular.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "PREREQUISITO",
+    "TENSAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.06,
+      "2": 0.15,
+      "3": 0.3
+    }
+  }
+}

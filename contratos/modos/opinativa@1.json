@@ -1,0 +1,85 @@
+{
+  "versao": 1,
+  "id": "opinativa",
+  "revisao": 1,
+  "nome": "Opinião e ensaio de ideias",
+  "descricao": "Leitura de artigo de opinião, editorial e ensaio de ideias orientado à defesa de uma posição. Distinguir tese, razões, valores, objeções consideradas e proposta. Identificar voz individual ou institucional sem inferir concordância do leitor.",
+  "funcoes": [
+    {
+      "chave": "tese",
+      "rotulo": "Posição defendida",
+      "pergunta": "Que posição o enunciador procura tornar aceitável?",
+      "descricao": "Tese normativa ou avaliativa, com autoria individual ou institucional preservada.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "razao",
+      "rotulo": "Razão ou apoio",
+      "pergunta": "Por que o texto pede adesão à posição?",
+      "descricao": "Premissa, dado atribuído ou inferência oferecida como suporte; exemplo não se torna prova por receber esta função.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "criterio",
+      "rotulo": "Critério de julgamento",
+      "pergunta": "Que valor, distinção ou medida orienta a avaliação?",
+      "descricao": "Padrão explícito de justiça, eficiência, liberdade, relevância ou outra medida de julgamento.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "objecao",
+      "rotulo": "Objeção considerada",
+      "pergunta": "Que oposição o próprio texto apresenta?",
+      "descricao": "Dificuldade ou posição rival efetivamente tratada; não a confundir com objeção criada pelo assistente.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "resposta",
+      "rotulo": "Resposta à objeção",
+      "pergunta": "Como o enunciador enfrenta a oposição?",
+      "descricao": "Refutação, concessão ou delimitação que altera o alcance da tese.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "proposta",
+      "rotulo": "Proposta ou consequência",
+      "pergunta": "O que o texto recomenda fazer ou aceitar?",
+      "descricao": "Ação defendida ou consequência explicitamente extraída, com agente e condições quando presentes.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.12,
+      "3": 0.24
+    }
+  }
+}

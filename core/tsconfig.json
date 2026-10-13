@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "paths": {
+      "@margem/contratos": ["../contratos/src/index.ts"],
+      "@margem/contratos/texto": ["../contratos/src/texto.ts"],
+      "@margem/contratos/regras": ["../contratos/src/regras.ts"]
+    }
+  },
+  "include": ["**/*.ts", "../contratos/src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "../contratos/src/**/*.test.ts"]
+}

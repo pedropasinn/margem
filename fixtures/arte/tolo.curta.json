@@ -1,0 +1,170 @@
+{
+  "versao": 1,
+  "obra_id": "01M3SPS2BM3XTDP9854M0MH4CK",
+  "revisao_modelo": 1,
+  "imagem_sha256": "0ab5611795003aab332726e7e553748e877f5923f0ddb635bfd9d9710c366d8b",
+  "tese": "Dois gestos relacionados ao olhar convidam a rever o sorriso.",
+  "afirmacoes_da_tese": [
+    "01M3SPS2BK8KJARCE57RKBA1R7",
+    "01M3SPS2BM78PK1TB17ARX74CD",
+    "01M3SPS2BMDASJYBA88600DCVA"
+  ],
+  "tempo": "estimado",
+  "batidas": [
+    {
+      "inicio_s": 0,
+      "fim_s": 4.75,
+      "narracao": "Antes de procurar uma mensagem no sorriso, acompanhe as duas mãos.",
+      "legenda": "Antes de procurar uma mensagem no sorriso, acompanhe as duas mãos.",
+      "papel": "abertura",
+      "afirmacoes": [
+        "01M3SPS2BK8KJARCE57RKBA1R7",
+        "01M3SPS2BM78PK1TB17ARX74CD"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 4.75,
+      "fim_s": 10.7,
+      "narracao": "Uma delas esconde parte do rosto. Ainda assim, o olho aparece entre os dedos.",
+      "legenda": "Uma delas esconde parte do rosto. Ainda assim, o olho aparece entre os dedos.",
+      "papel": "evidencia_visual",
+      "afirmacoes": [
+        "01M3SPS2BK8KJARCE57RKBA1R7"
+      ],
+      "regiao_id": "01M3SPS2BKF5YBR618TYZ2WH63",
+      "camera": {
+        "de": {
+          "x": 0.16999999999999998,
+          "y": 0.07,
+          "largura": 0.69,
+          "altura": 0.5700000000000001
+        },
+        "para": {
+          "x": 0.16999999999999998,
+          "y": 0.07,
+          "largura": 0.69,
+          "altura": 0.5700000000000001
+        }
+      }
+    },
+    {
+      "inicio_s": 10.7,
+      "fim_s": 16.65,
+      "narracao": "A outra segura óculos, longe dos olhos. Ver e esconder se aproximam nesta leitura.",
+      "legenda": "A outra segura óculos, longe dos olhos. Ver e esconder se aproximam nesta leitura.",
+      "papel": "evidencia_visual",
+      "afirmacoes": [
+        "01M3SPS2BM78PK1TB17ARX74CD",
+        "01M3SPS2BMDASJYBA88600DCVA"
+      ],
+      "regiao_id": "01M3SPS2BKPTR4AEY52QYQA1PY",
+      "camera": {
+        "de": {
+          "x": 0.16999999999999998,
+          "y": 0.61,
+          "largura": 0.49,
+          "altura": 0.39
+        },
+        "para": {
+          "x": 0.16999999999999998,
+          "y": 0.61,
+          "largura": 0.49,
+          "altura": 0.39
+        }
+      }
+    },
+    {
+      "inicio_s": 16.65,
+      "fim_s": 22.6,
+      "narracao": "O museu de Fastnacht interpreta os óculos como um atributo da simplicidade do tolo.",
+      "legenda": "O museu de Fastnacht interpreta os óculos como um atributo da simplicidade do tolo.",
+      "papel": "contexto",
+      "afirmacoes": [
+        "01M3SPS2BM2KD75WX3NV7696Z5"
+      ],
+      "regiao_id": "01M3SPS2BKPTR4AEY52QYQA1PY",
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 22.6,
+      "fim_s": 28.15,
+      "narracao": "Essa interpretação ajuda a olhar, mas não comprova o que o artista pretendia.",
+      "legenda": "Essa interpretação ajuda a olhar, mas não comprova o que o artista pretendia.",
+      "papel": "interpretacao",
+      "afirmacoes": [
+        "01M3SPS2BM2KD75WX3NV7696Z5",
+        "01M3SPS2BMHC62DWYGSS5NGXNT"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    },
+    {
+      "inicio_s": 28.15,
+      "fim_s": 33.3,
+      "narracao": "Observe o sorriso outra vez. Agora, as mãos também participam da pergunta.",
+      "legenda": "Observe o sorriso outra vez. Agora, as mãos também participam da pergunta.",
+      "papel": "fechamento",
+      "afirmacoes": [
+        "01M3SPS2BK8KJARCE57RKBA1R7",
+        "01M3SPS2BM78PK1TB17ARX74CD",
+        "01M3SPS2BMDASJYBA88600DCVA"
+      ],
+      "regiao_id": null,
+      "camera": {
+        "de": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        },
+        "para": {
+          "x": 0,
+          "y": 0,
+          "largura": 1,
+          "altura": 1
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "versao": 1,
+  "id": "01K0000000000000000000C001",
+  "execucao_id": "01K0000000000000000000E001",
+  "versao_id": "01K0000000000000000000V001",
+  "secao_id": "01K0000000000000000000S001",
+  "modelo_id": "01K0000000000000000000M001",
+  "fontes_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "capitulo": {
+    "titulo": "Capítulo um",
+    "numero": 2,
+    "total": 2
+  },
+  "trechos": [
+    {
+      "id": "t0001",
+      "bloco_id": "01K0000000000000000000B001",
+      "inicio_utf16": 0,
+      "fim_utf16": 49,
+      "texto": "Admitamos inicialmente que os preços são rígidos.",
+      "falado": "Admitamos inicialmente que os preços são rígidos."
+    },
+    {
+      "id": "t0002",
+      "bloco_id": "01K0000000000000000000B002",
+      "inicio_utf16": 0,
+      "fim_utf16": 25,
+      "texto": "O choque reduz o produto.",
+      "falado": "O choque reduz o produto."
+    },
+    {
+      "id": "t0003",
+      "bloco_id": "01K0000000000000000000B002",
+      "inicio_utf16": 26,
+      "fim_utf16": 78,
+      "texto": "Somente com preços rígidos o choque reduz o produto.",
+      "falado": "Somente com preços rígidos o choque reduz o produto."
+    }
+  ],
+  "pausas": [],
+  "saltados": [],
+  "proxima_secao_id": null,
+  "diagnosticos": [
+    {
+      "codigo": "pausa_sem_fala",
+      "mensagem": "exemplo"
+    }
+  ],
+  "execucao": {
+    "modelo": "gpt-6-astra",
+    "esforco": "medium",
+    "prompt": "comentar-leitura@1"
+  },
+  "job_id": "01K0000000000000000000J001",
+  "criado_em": "2026-09-29T23:00:00.000Z"
+}

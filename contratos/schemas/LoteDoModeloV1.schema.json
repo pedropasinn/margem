@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/LoteDoModeloV1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "execucao_id",
+    "secao_id",
+    "estagio",
+    "job_ids",
+    "base_id",
+    "resultado_id",
+    "operacoes",
+    "criado_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "execucao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "secao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "estagio": {
+      "type": "string",
+      "enum": [
+        "sintese",
+        "revisao"
+      ]
+    },
+    "job_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "base_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "resultado_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "operacoes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ordem",
+          "op",
+          "antes",
+          "depois",
+          "motivo",
+          "evidencia"
+        ],
+        "properties": {
+          "ordem": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              "promover",
+              "rebaixar",
+              "corrigir_papel",
+              "reescrever_enunciado",
+              "acrescentar_nota",
+              "fundir",
+              "adicionar_elemento",
+              "remover_elemento",
+              "criar_relacao",
+              "remover_relacao",
+              "adicionar_dificuldade",
+              "remover_dificuldade",
+              "definir_unidades",
+              "definir_movimento"
+            ]
+          },
+          "alvo_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "antes": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "centralidade"
+                ],
+                "properties": {
+                  "centralidade": {
+                    "type": "integer",
+                    "enum": [
+                      1,
+                      2,
+                      3
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "nucleo",
+                  "papel"
+                ],
+                "properties": {
+                  "nucleo": {
+                    "type": "string",
+                    "enum": [
+                      "afirmacao",
+                      "conceito",
+                      "hipotese",
+                      "evidencia",
+                      "exemplo",
+                      "objecao",
+                      "passo",
+                      "elemento_textual"
+                    ]
+                  },
+                  "papel": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+                        "maxLength": 40
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "enunciado"
+                ],
+                "properties": {
+                  "enunciado": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                }
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/nota"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "absorvidos"
+                ],
+                "properties": {
+                  "absorvidos": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/elemento"
+                    },
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "ancoras"
+                ],
+                "properties": {
+                  "ancoras": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+                    },
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/elemento"
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/relacao"
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/dificuldade"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/unidade"
+                },
+                "minItems": 0
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/movimento"
+              }
+            ]
+          },
+          "depois": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "centralidade"
+                ],
+                "properties": {
+                  "centralidade": {
+                    "type": "integer",
+                    "enum": [
+                      1,
+                      2,
+                      3
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "nucleo",
+                  "papel"
+                ],
+                "properties": {
+                  "nucleo": {
+                    "type": "string",
+                    "enum": [
+                      "afirmacao",
+                      "conceito",
+                      "hipotese",
+                      "evidencia",
+                      "exemplo",
+                      "objecao",
+                      "passo",
+                      "elemento_textual"
+                    ]
+                  },
+                  "papel": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+                        "maxLength": 40
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "enunciado"
+                ],
+                "properties": {
+                  "enunciado": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                }
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/nota"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "absorvidos"
+                ],
+                "properties": {
+                  "absorvidos": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/elemento"
+                    },
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "ancoras"
+                ],
+                "properties": {
+                  "ancoras": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+                    },
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/elemento"
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/relacao"
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/dificuldade"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/unidade"
+                },
+                "minItems": 0
+              },
+              {
+                "$ref": "https://margem.local/contratos/ModeloDoCapituloV1.schema.json#/$defs/movimento"
+              }
+            ]
+          },
+          "motivo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "evidencia": {
+            "type": "array",
+            "items": {
+              "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+            },
+            "minItems": 0
+          }
+        }
+      },
+      "minItems": 0
+    },
+    "criado_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,3 @@
+## Verso e repetição
+
+Quando os blocos forem estrofes ou o texto trouxer versos, preserve as quebras de linha literalmente; nunca una blocos na mesma citação. Sintaxe e verso podem ter fronteiras diferentes. A virada exige mudança verificável entre antes e depois; não a fixe entre quartetos e tercetos e não a invente para completar um soneto. Anáfora, paralelismo e refrão dizem respeito ao ritmo/recorrência, não automaticamente à forma fixa. Use a função disponível neste modo. Refrão, fórmula e motivo recorrentes não são redundância: compare ocorrências e localize cada uma com seu contexto, ligando por retoma quando houver relação. Não afirme metro, rima, topologia visual ou interpretação musical sem evidência disponível.

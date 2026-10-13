@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Margem</title>
+  <link rel="stylesheet" href="../ui/tokens.css">
+  <link rel="stylesheet" href="../ui/extensao.css">
+</head>
+<body class="popup">
+  <main>
+    <header class="topo">
+      <img src="../icones/icone-32.png" alt="" width="20" height="20">
+      <span>Enviar para o Margem</span>
+    </header>
+    <section id="carregando" class="estado">Lendo a página…</section>
+    <section id="captura" hidden>
+      <h1 id="titulo"></h1>
+      <p id="meta" class="meta"></p>
+      <p id="previa" class="previa"></p>
+      <div class="acoes">
+        <button id="enviar" class="ui-button primary" type="button">Enviar para o Margem</button>
+        <button id="enviar-abrir" class="ui-button" type="button">Enviar e abrir</button>
+      </div>
+    </section>
+    <p id="aviso" class="aviso" role="status" hidden></p>
+    <footer class="rodape">
+      <a id="opcoes" href="#">Opções</a>
+      <span class="atalho">Alt+Shift+M</span>
+    </footer>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

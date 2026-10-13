@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/transcrever-pagina@1.schema.json",
+  "title": "Transcrição por visão de uma página escaneada",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pagina_impressa",
+    "incerto",
+    "observacao",
+    "blocos"
+  ],
+  "properties": {
+    "pagina_impressa": {
+      "type": "string"
+    },
+    "incerto": {
+      "type": "boolean"
+    },
+    "observacao": {
+      "type": "string"
+    },
+    "blocos": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tipo",
+          "texto",
+          "continua_da_anterior",
+          "continua_na_proxima"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "capitulo",
+              "secao",
+              "subsecao",
+              "paragrafo",
+              "lista",
+              "epigrafe",
+              "citacao",
+              "legenda",
+              "nota_rodape",
+              "cabecalho",
+              "rodape",
+              "codigo"
+            ]
+          },
+          "texto": {
+            "type": "string",
+            "minLength": 1
+          },
+          "continua_da_anterior": {
+            "type": "boolean"
+          },
+          "continua_na_proxima": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

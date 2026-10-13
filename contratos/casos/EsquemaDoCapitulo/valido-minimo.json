@@ -1,0 +1,42 @@
+{
+  "versao": 1,
+  "id": "01K0000000000000000000E001",
+  "versao_id": "01K0000000000000000000V001",
+  "secao_id": "01K0000000000000000000S001",
+  "compreensao_id": "01K0000000000000000000C001",
+  "modelo_id": "01K0000000000000000000M001",
+  "titulo": "Como o capítulo chega à tese",
+  "grupos": [
+    {
+      "id": "G1",
+      "titulo": "Tudo"
+    }
+  ],
+  "nos": [
+    {
+      "id": "A",
+      "rotulo": "Questão",
+      "tipo": "questao",
+      "grupo_id": "G1"
+    },
+    {
+      "id": "B",
+      "rotulo": "Resposta",
+      "tipo": "conclusao",
+      "grupo_id": "G1"
+    }
+  ],
+  "ligacoes": [],
+  "diagnosticos": [
+    {
+      "codigo": "citacao_ambigua",
+      "mensagem": "Nó A: a citação aparece 2 vezes; ficou sem trecho."
+    }
+  ],
+  "execucao": {
+    "modelo": "gpt-6-astra",
+    "esforco": "medium",
+    "prompt_versao": "esquema-capitulo@1"
+  },
+  "criado_em": "2026-09-30T12:00:00.000Z"
+}

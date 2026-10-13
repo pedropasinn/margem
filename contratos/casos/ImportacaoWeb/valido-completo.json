@@ -1,0 +1,10 @@
+{
+  "markdown": "## Seção\n\nTexto com *ênfase* e **negrito**.\n\n> Uma citação.\n\n- item um\n- item dois",
+  "titulo": "Um artigo: com dois-pontos e “aspas”",
+  "autor": "Fulana de Tal",
+  "site": "Agência Exemplo",
+  "url_origem": "https://exemplo.com.br/2026/10/01/artigo?utm=x#topo",
+  "publicado_em": "2026-09-30T14:05:00-03:00",
+  "capturado_em": "2026-10-01T12:00:00.000Z",
+  "trecho": false
+}

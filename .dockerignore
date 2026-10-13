@@ -1,0 +1,24 @@
+# Contexto do build da imagem (Dockerfile na raiz). Só entra o que a imagem usa.
+**/node_modules
+motor/.venv
+**/dist
+**/__pycache__
+**/.pytest_cache
+**/*.tsbuildinfo
+.git
+.env*
+**/.env
+docs
+site
+extensao
+avaliacao
+colab
+integracoes
+ops
+distribuicao
+tests
+web/tests
+web/benchmark
+motor/tests
+fixtures/**/saida
+/*.md

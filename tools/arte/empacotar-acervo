@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Gera o pacote distribuível do acervo de quadros (J110). Repassa os argumentos:
+#   tools/arte/empacotar-acervo [--origem <pasta>] [--saida <pasta>] [--versao AAAA.MM.DD] [--sem-audio] [slug…]
+# Ver servico/src/ferramentas/empacotar-acervo.ts.
+set -euo pipefail
+raiz="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$raiz"
+exec node --import tsx servico/src/ferramentas/empacotar-acervo.ts "$@"

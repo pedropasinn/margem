@@ -1,0 +1,84 @@
+{
+  "versao": 1,
+  "id": "dramaturgia",
+  "revisao": 1,
+  "nome": "Dramaturgia",
+  "descricao": "Ler o texto dramático como ações verbais e cênicas, distribuição de saber e possibilidades de realização. Preservar falantes, rubricas, entradas, saídas, pausas e sobreposições disponíveis. Distinguir indicação escrita de decisão de encenação e fala de personagem de posição autoral. Não impor curva dramática única.",
+  "funcoes": [
+    {
+      "chave": "acao_verbal",
+      "rotulo": "Ação verbal",
+      "pergunta": "O que esta fala procura fazer ao interlocutor nesta situação?",
+      "descricao": "Pedido, recusa, ameaça, promessa, desvio ou outro ato sustentado pelo diálogo. Intenção oculta permanece hipótese. Ex.: “Deixe a chave aqui.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "rubrica",
+      "rotulo": "Rubrica operante",
+      "pergunta": "Que indicação altera ação, presença, escuta ou possibilidade de encenação?",
+      "descricao": "Indicação explícita de ação, pausa, objeto, luz, som, tempo ou espaço cênico. Não inventar execução, gesto ou encenação ausentes do texto. Ex.: “Silêncio. Ao fundo, a porta se fecha.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "distribuicao_saber",
+      "rotulo": "Distribuição de saber",
+      "pergunta": "Quem pode saber, ver ou ouvir o quê neste momento?",
+      "descricao": "Assimetria ou transferência de informação demonstrável, distinguindo personagens e público/leitor. Ex.: “[Rui não vê o gesto.]”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "virada_cenica",
+      "rotulo": "Virada cênica",
+      "pergunta": "Onde uma ação muda as alternativas ou a relação em cena?",
+      "descricao": "Entrada, revelação, recusa, decisão ou mudança de situação sustentada pelo texto. Ex.: “[Rui abre a gaveta.]”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "voz",
+      "rotulo": "Voz e registro",
+      "pergunta": "Que maneira de falar distingue ou transforma uma posição em cena?",
+      "descricao": "Registro, repetição, tratamento, silêncio verbalizado ou alternância de destinatário. Ex.: “Senhor — não, pai — escute.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "motivo_cenico",
+      "rotulo": "Motivo cênico",
+      "pergunta": "Que objeto, gesto ou fala retorna com função diferente?",
+      "descricao": "Recorrência encenável ou verbal apoiada em ocorrências localizáveis. Ex.: a chave antes entregue e depois recusada.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO",
+    "TENSAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.12,
+      "3": 0.25
+    }
+  }
+}

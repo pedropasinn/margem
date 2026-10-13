@@ -1,0 +1,132 @@
+{
+  "versao": 1,
+  "id": "01K0000000000000000000R001",
+  "execucao_id": "01K0000000000000000000E001",
+  "versao_id": "01K0000000000000000000V001",
+  "secao_id": "01K0000000000000000000S001",
+  "modelo_id": "01K0000000000000000000M001",
+  "perfil_hash": "perfil-plano@2:abc",
+  "capitulo": {
+    "titulo": "1 Introdução",
+    "numero": 1,
+    "total": 10
+  },
+  "paradas": [
+    {
+      "ordem": 1,
+      "tipo": "tese",
+      "titulo": "O que é engenharia de software",
+      "bloco_inicio": "01K0000000000000000000B001",
+      "bloco_fim": "01K0000000000000000000B002",
+      "foco": {
+        "versao_id": "01K0000000000000000000V001",
+        "bloco_id": "01K0000000000000000000B001",
+        "inicio_utf16": 0,
+        "fim_utf16": 19,
+        "citacao": "software é abstrato",
+        "prefixo": "",
+        "sufixo": ""
+      },
+      "ponta": null,
+      "elementos": [
+        "01K0000000000000000000E901"
+      ],
+      "relacoes": [],
+      "dificuldades": [],
+      "anotacoes": [],
+      "visuais": [],
+      "pergunta": null
+    },
+    {
+      "ordem": 3,
+      "tipo": "retorno",
+      "titulo": "A definição volta",
+      "bloco_inicio": "01K0000000000000000000B003",
+      "bloco_fim": "01K0000000000000000000B003",
+      "foco": {
+        "versao_id": "01K0000000000000000000V001",
+        "bloco_id": "01K0000000000000000000B003",
+        "inicio_utf16": 0,
+        "fim_utf16": 10,
+        "citacao": "como vimos",
+        "prefixo": "",
+        "sufixo": ""
+      },
+      "ponta": {
+        "versao_id": "01K0000000000000000000V001",
+        "bloco_id": "01K0000000000000000000B001",
+        "inicio_utf16": 0,
+        "fim_utf16": 19,
+        "citacao": "software é abstrato",
+        "prefixo": "",
+        "sufixo": ""
+      },
+      "elementos": [
+        "01K0000000000000000000E902"
+      ],
+      "relacoes": [
+        "01K0000000000000000000R101"
+      ],
+      "dificuldades": [],
+      "anotacoes": [],
+      "visuais": [],
+      "pergunta": "Por que a definição importa aqui?"
+    }
+  ],
+  "falas": [
+    {
+      "id": "f001",
+      "papel": "abertura",
+      "parada": null,
+      "texto": "Começamos o livro pela pergunta mais simples."
+    },
+    {
+      "id": "f002",
+      "papel": "parada",
+      "parada": 1,
+      "texto": "Repare na tese."
+    },
+    {
+      "id": "f003",
+      "papel": "transicao",
+      "parada": 1,
+      "texto": "Agora, adiante."
+    },
+    {
+      "id": "f004",
+      "papel": "parada",
+      "parada": 2,
+      "texto": "A definição do começo volta aqui."
+    },
+    {
+      "id": "f005",
+      "papel": "pergunta",
+      "parada": 2,
+      "texto": "Por que a definição importa aqui?"
+    },
+    {
+      "id": "f006",
+      "papel": "fechamento",
+      "parada": null,
+      "texto": "Ficou a ideia central."
+    },
+    {
+      "id": "f007",
+      "papel": "ponte",
+      "parada": null,
+      "texto": "No próximo capítulo, os processos."
+    }
+  ],
+  "perguntas_finais": [
+    "O que torna o software diferente de uma ponte?"
+  ],
+  "proxima_secao_id": "01K0000000000000000000S002",
+  "diagnosticos": [],
+  "execucao": {
+    "modelo": "conta",
+    "esforco": "medium",
+    "prompt": "roteirizar-visita@1"
+  },
+  "job_id": "01K0000000000000000000J001",
+  "criado_em": "2026-09-29T23:00:00.000Z"
+}

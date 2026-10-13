@@ -1,0 +1,74 @@
+.bloco-estrofe { white-space: pre-wrap; text-align: left; margin-block: 0 1.8rem; tab-size: 4; }
+.verso { display: block; padding-inline-start: 1.25em; text-indent: -1.25em; }
+.epigrafe { white-space: pre-line; }
+.estudo-capitulo { position: relative; min-width: 0; }
+.aviso-estudo, .precedencia-camadas { margin: 12px clamp(16px, 4vw, 48px); font: 13px/1.5 var(--sans); color: var(--texto-2); }
+.metodo-estudo summary { cursor: pointer; }
+.metodo-estudo p { max-width: 65ch; }
+/* Superfície invertida: contraste herdado dos três temas. */
+.barra-selecao { position: fixed; z-index: 80; display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; box-sizing: border-box; height: 40px; width: max-content; max-width: calc(100vw - 24px); padding: 3px; border: 0; border-radius: var(--r-pilula); background: var(--texto-1); color: var(--bg); box-shadow: 0 8px 28px #0002; font: 13px var(--sans); }
+.barra-selecao > .ui-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 0 0 auto; min-height: 34px; height: 34px; padding: 0 9px; border: 0; border-radius: var(--r-pilula); background: transparent; color: inherit; box-shadow: none; transform: none; white-space: nowrap; font: inherit; }
+.barra-selecao > .ui-button:hover:not(:disabled) { background: color-mix(in srgb, var(--bg) 14%, transparent); }
+.barra-selecao > .ui-button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.barra-selecao > .ui-icon { width: 34px; padding: 0; }
+.barra-selecao svg { flex-shrink: 0; }
+.barra-selecao kbd { font: 11px var(--sans); color: inherit; opacity: .6; }
+.separador-selecao { width: 1px; height: 18px; flex: 0 0 1px; background: currentColor; opacity: .2; }
+.barra-selecao .aviso-selecao { position: absolute; top: calc(100% + 8px); left: 0; margin: 0; padding: 6px 10px; border-radius: var(--r-8); background: var(--painel); color: var(--texto-2); font: 12px/1.4 var(--sans); }
+@media (max-width: 799.98px) {
+  .barra-selecao { inset: auto 16px calc(16px + env(safe-area-inset-bottom)) !important; width: auto; max-width: none; height: 60px; gap: 0; padding: 4px; justify-content: space-between; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  /* Com Imagem e Fluxograma (J70) as ações não cabem em 380 px: cada uma guarda o rótulo inteiro e a pílula rola. */
+  .barra-selecao > .ui-button { flex: 1 0 auto; min-width: 58px; height: 52px; padding: 4px 2px; flex-direction: column; gap: 4px; font-size: 11px; }
+  .barra-selecao > .ui-icon { flex: 0 0 36px; }
+  .barra-selecao kbd, .barra-selecao .separador-selecao { display: none; }
+  /* A pílula rola, então o aviso sai do fluxo dela para não ser cortado; o fechar fica sempre à mão. */
+  .barra-selecao .aviso-selecao { position: fixed; top: auto; left: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .barra-selecao > .ui-icon { position: sticky; right: 0; background: var(--texto-1); }
+}
+.cabeca-estudo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cabeca-estudo h2 { font-size: 18px; }
+.formulario-estudo { gap: 12px; }
+.formulario-estudo textarea { min-height: 100px; font-size: 14px; }
+.nota-pessoal { max-width: none; font: 14px/1.5 var(--sans); color: var(--texto-2); overflow-wrap: anywhere; }
+.texto-pessoal, .mensagem p { white-space: pre-wrap; margin: 5px 0 10px; }
+.nota-pessoal .eyebrow { font-size: 12px; color: var(--texto-1); }
+.acoes-pessoais { display: flex; gap: 6px; flex-wrap: wrap; }
+.fonte-pessoal { font-size: 12px; }
+.reabrir-conversa { text-align: left; width: 100%; }
+.reabrir-conversa span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--texto-2); }
+.pessoais-moveis { display: grid; gap: 22px; margin-bottom: 24px; }
+.pessoais-moveis .nota-pessoal { position: static; }
+.mensagem { border-bottom: 1px solid var(--borda); padding: 14px 0; }
+.mensagem .eyebrow { margin-bottom: 4px; }
+.citacao-link { display: block; text-align: left; color: var(--accent-texto) !important; margin-block: 10px; white-space: pre-wrap; }
+.fio-conversa form { margin-top: 20px; }
+.conexoes-do-trecho > div { border-bottom: 1px solid var(--borda); padding-block: 10px; }
+.conexoes-do-trecho p { margin: 4px 0; }
+.indicadores-estudo button { position: absolute; width: 40px; height: 40px; padding: 0; z-index: 2; }
+.escolha-destino { position: sticky; top: 0; z-index: 90; padding: 10px 16px; border-bottom: 1px solid var(--borda); background: var(--painel); font: 14px/1.4 var(--sans); }
+@media (max-width: 899.98px) {
+  .estudo-capitulo .capitulo-na-barra { display: none; }
+
+}
+.metodo-estudo { font: 13px/1.5 var(--sans); color: var(--texto-2); }
+.indicadores-estudo .ui-button { min-height: 40px; width: 40px; transform: translateX(-4px); }
+
+
+/* Dificuldade textual (nível 3): o círculo das notas, tracejado e na cor de aviso do sublinhado no texto. */
+.nota-numero.nota-numero-dificuldade { border-style: dashed; border-color: var(--aviso-texto); color: var(--aviso-texto); }
+.nota-dificuldade .nota-texto { color: var(--texto-2); }
+
+/* Notas do grifo (J37): a do Codex e as suas, cada uma editável pelo outro. */
+.notas-do-grifo { display: flex; flex-direction: column; gap: 14px; }
+.nota-do-grifo { padding: 12px 0; border-top: 1px solid var(--borda); }
+.nota-do-grifo:first-child { border-top: 0; padding-top: 0; }
+.nota-do-grifo .eyebrow { margin: 0; font-size: 12px; color: var(--texto-2); }
+.nota-editada { color: var(--texto-3); }
+.nota-anterior { margin: 4px 0 10px; color: var(--texto-2); font-size: 14px; }
+.nota-anterior summary { cursor: pointer; }
+.nota-anterior p { margin: 6px 0; white-space: pre-wrap; }
+.nota-anterior-texto span { color: var(--texto-3); }
+.nota-pendente { margin: 0 0 8px; color: var(--texto-2); font-size: 14px; }
+.nota-nova .eyebrow { font-size: 12px; color: var(--texto-2); }
+
+/* A narração acompanha a página: painel sem véu modal e sem deslocar o texto. */

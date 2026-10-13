@@ -1,0 +1,84 @@
+{
+  "versao": 1,
+  "id": "economica",
+  "revisao": 1,
+  "nome": "Econômica",
+  "descricao": "Leitura de economia, estatística e inferência causal: distinguir hipótese, mecanismo, evidência, estratégia de identificação, resultado e limitação. Não converter hipótese em fato nem associação em causalidade.",
+  "funcoes": [
+    {
+      "chave": "hipotese",
+      "rotulo": "Hipótese",
+      "pergunta": "O que se supõe para que o argumento funcione?",
+      "descricao": "Pressuposto do modelo, hipótese testada ou condição de validade.",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "mecanismo",
+      "rotulo": "Mecanismo",
+      "pergunta": "Por que canal a causa produziria o efeito?",
+      "descricao": "Relação teórica ou comportamental que explica o resultado.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "evidencia",
+      "rotulo": "Evidência",
+      "pergunta": "Que dado ou estimativa sustenta a afirmação?",
+      "descricao": "Dado, estimativa, tabela ou fato empírico usado como apoio.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    },
+    {
+      "chave": "identificacao",
+      "rotulo": "Identificação",
+      "pergunta": "O que garante que o efeito estimado é o efeito procurado?",
+      "descricao": "Estratégia de identificação, variação exógena, instrumento ou desenho.",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "resultado",
+      "rotulo": "Resultado",
+      "pergunta": "Qual é a conclusão principal?",
+      "descricao": "Resultado estimado ou conclusão que o autor tira.",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "limitacao",
+      "rotulo": "Limitação",
+      "pergunta": "Onde o resultado deixa de valer?",
+      "descricao": "Restrição de população, validade externa, viés possível ou ressalva do autor.",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.05,
+      "2": 0.12,
+      "3": 0.25
+    }
+  }
+}

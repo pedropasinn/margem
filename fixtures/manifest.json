@@ -1,0 +1,292 @@
+{
+  "versao": 1,
+  "materiais": [
+    {
+      "caminho": "/opt/margem-amostras/fontes-causal/mixtape-limpo.pdf",
+      "presente": false,
+      "sha256": "2a4acf2fb3937df371c7eff11e19eaac6cfbcc16451e8d2d51eecdae6db6254e",
+      "tamanho_bytes": 4305221,
+      "papel": "corpus_principal"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/01-introduction.json",
+      "presente": false,
+      "sha256": "d9bc5d270305d4f8109600e5c0ada44208d2af2114d35744a455f691b7823d3a",
+      "tamanho_bytes": 15497,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/02-probability-and-regression-review.json",
+      "presente": false,
+      "sha256": "d18609de7056edcf127391c2dd00c779fd4eb7ea0f4929d917cc844b30708566",
+      "tamanho_bytes": 40863,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/03-directed-acyclic-graphs.json",
+      "presente": false,
+      "sha256": "8fecdaacc2b78bf11dec1f2d454136c8f99445fc5f007f666a12f4a1c6f30b90",
+      "tamanho_bytes": 23357,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/04-potential-outcomes-causal-model.json",
+      "presente": false,
+      "sha256": "9294b7592cd78c0c6969f98b6e1418072bd627c7a7c977622893c455d1b2aad2",
+      "tamanho_bytes": 37314,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/05-matching-and-subclassification.json",
+      "presente": false,
+      "sha256": "daf4a2fe280cd6a161cb5fa19f2ff34afbb8bc580a5b4487747b9eb6ce26dae9",
+      "tamanho_bytes": 36295,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/06-regression-discontinuity.json",
+      "presente": false,
+      "sha256": "951fee4b1e012c0c2362d01be9dc1559a1bb69e834195fe33fc4b4f0c339b803",
+      "tamanho_bytes": 39241,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/07-instrumental-variables.json",
+      "presente": false,
+      "sha256": "f4d432527cab103ab50dd12d2b3d0c32a06b96d1bc19a82ca62ccd10e76ef70b",
+      "tamanho_bytes": 45696,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/08-panel-data.json",
+      "presente": false,
+      "sha256": "bfc8408a64fa05ff923b6ea39877e52913ce954ce387d671a26224a9d943fe58",
+      "tamanho_bytes": 20269,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/09-difference-in-differences.json",
+      "presente": false,
+      "sha256": "c786914b15dc67bad3cf11226eb76566684f6b6b83f8954468142f840fb1c01d",
+      "tamanho_bytes": 44122,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/10-synthetic-control.json",
+      "presente": false,
+      "sha256": "4aa0df153f84db3c7086b5b873edec670c3b45047b1cdb68898cd14bccc65308",
+      "tamanho_bytes": 23717,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/marcas-revisadas/11-conclusion.json",
+      "presente": false,
+      "sha256": "0421e596d98dbaeafba4742859826a0047ab8d20c8e29adb6b7766419b3e61b6",
+      "tamanho_bytes": 3811,
+      "papel": "marcas_legadas"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/01-introduction.json",
+      "presente": false,
+      "sha256": "0db41fb3ebc0e3a274fdc98d833b33daf0b9015fb96d435911777d7e080656b6",
+      "tamanho_bytes": 38857,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/02-probability-and-regression-review.json",
+      "presente": false,
+      "sha256": "da08c449ec3e7659effcaeeda41ee419bb818ffdf4f4be4022a678c98cfc4825",
+      "tamanho_bytes": 218724,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/03-directed-acyclic-graphs.json",
+      "presente": false,
+      "sha256": "7aa20251a6949efb0570aec08b7000fe4c47f3df5108a0eae90e3aedd8eadd3a",
+      "tamanho_bytes": 51645,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/04-potential-outcomes-causal-model.json",
+      "presente": false,
+      "sha256": "87d73721a02c1dc81e0f709b5565fecdc1fa3c28ef63da01c0a1350beab62b82",
+      "tamanho_bytes": 135299,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/05-matching-and-subclassification.json",
+      "presente": false,
+      "sha256": "e5406b5a045353c9cba8ab7fc4bae2f7ddd5a723468a596fa3dedcb0a7727e11",
+      "tamanho_bytes": 161648,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/06-regression-discontinuity.json",
+      "presente": false,
+      "sha256": "15ed0796b7632231f6cfbc07e93437abe91cbf1ba315ec45bee266d4353b78b0",
+      "tamanho_bytes": 174900,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/07-instrumental-variables.json",
+      "presente": false,
+      "sha256": "327cf13d89743b9630278ceed8d52daad601ca6f958dea568a047b8c2273f4ed",
+      "tamanho_bytes": 186635,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/08-panel-data.json",
+      "presente": false,
+      "sha256": "1623026d3804a23eb8ef9e02540b76f414b8e3d4e3c347c16c4a84e72a288e75",
+      "tamanho_bytes": 58781,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/09-difference-in-differences.json",
+      "presente": false,
+      "sha256": "88fd15e3d9faaf5b23423341281ca0720a3704d1f6f13a8fce1de2dd80edfbb0",
+      "tamanho_bytes": 257653,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/10-synthetic-control.json",
+      "presente": false,
+      "sha256": "fc8dcad53b69830438ad1c6473ddb457def7fdc8b53757c99a1cc793d3cd8cb7",
+      "tamanho_bytes": 60413,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/11-conclusion.json",
+      "presente": false,
+      "sha256": "b60607e5062ad2c100e23153bb2ba97c5411949820876f3c46d6b17336d2c61d",
+      "tamanho_bytes": 2416,
+      "papel": "extracao_legada"
+    },
+    {
+      "caminho": "/opt/margem-amostras/capitulos/indice.json",
+      "presente": false,
+      "sha256": "3ee0a5db259ab54f730922e116a542e02a91e18fd8a2a388ef5681d862e04afb",
+      "tamanho_bytes": 788,
+      "papel": "indice_legado"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap01-introduction_sessao.json",
+      "presente": false,
+      "sha256": "490ed95edfead0d7dd9ff039a630f85f8c5dfb4d1133e4b10defe5cc19065e41",
+      "tamanho_bytes": 53687,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap02-probability-and-regression-review_sessao.json",
+      "presente": false,
+      "sha256": "4f44f9ce0ae4538c488b79d54b48d61e138bc2985b8977913a4eac6ce9bf84df",
+      "tamanho_bytes": 180052,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap03-directed-acyclic-graphs_sessao.json",
+      "presente": false,
+      "sha256": "5f8e3f32aaf71a41ab167b9dfb1317820b9651afa56b24ac8b3d1af45c8548bd",
+      "tamanho_bytes": 75421,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap04-potential-outcomes-causal-model_sessao.json",
+      "presente": false,
+      "sha256": "b5a57ff139b57aba525d34f21148d26a9075fea35e7c221ec9a1e42eaf099b44",
+      "tamanho_bytes": 151598,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap05-matching-and-subclassification_sessao.json",
+      "presente": false,
+      "sha256": "9e340133fe93d544a91be0f0af79a03635550c3ef241008fdfcd2befe41bbcc7",
+      "tamanho_bytes": 166242,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap06-regression-discontinuity_sessao.json",
+      "presente": false,
+      "sha256": "ae7fdf380d69980a3be69cd507b1aa648ed2afb4aa3556227ddadc776ab5176f",
+      "tamanho_bytes": 178378,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap07-instrumental-variables_sessao.json",
+      "presente": false,
+      "sha256": "ebe66d3ba95788fce31e1b0054852f9bfc2b794e62a81aa4fd1ef614ab3a60a0",
+      "tamanho_bytes": 204106,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap08-panel-data_sessao.json",
+      "presente": false,
+      "sha256": "b94bb44af10580c16406581ceb7383d4d90c8295a8c13817136a563fe202eca7",
+      "tamanho_bytes": 66889,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap09-difference-in-differences_sessao.json",
+      "presente": false,
+      "sha256": "5f56d5198207081bbbf42f9f29742ee5b89ce4fd6aa8ad120266ffb7a3a2f774",
+      "tamanho_bytes": 249973,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap10-synthetic-control_sessao.json",
+      "presente": false,
+      "sha256": "0e578c33a04004e15cbf6cdbbb05eff3bb4763d0106f2bc4b6340d9b816a1686",
+      "tamanho_bytes": 79035,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/saida/mixtape-cap11-conclusion_sessao.json",
+      "presente": false,
+      "sha256": "895e18195c6c3332bd3c8633217a76e5b0d47c692e7c62641dce3c4d06bf8bcc",
+      "tamanho_bytes": 5133,
+      "papel": "sessao_horarium"
+    },
+    {
+      "caminho": "/opt/margem-amostras/revisao/alteracoes.json",
+      "presente": false,
+      "sha256": "1738717b62fe601b79a97436b00441b63144080b81acacbce9fdebc96bc335a0",
+      "tamanho_bytes": 24316,
+      "papel": "revisao_legada"
+    },
+    {
+      "caminho": "fixtures/unicode-dificil.md",
+      "presente": true,
+      "sha256": "833b4ef8fb2724e4ccb56f95d091b4ce7cb11040315e824d0a8a9d0388955ac2",
+      "tamanho_bytes": 277,
+      "papel": "unicode_dificil"
+    },
+    {
+      "caminho": "fixtures/colado.txt",
+      "presente": true,
+      "sha256": "a216258fc9f363d6121ea254d96cb9401b36d3436a0519afc72e68e78bd515b8",
+      "tamanho_bytes": 197,
+      "papel": "texto_colado"
+    },
+    {
+      "caminho": "fixtures/poesia/circulo-vicioso.md",
+      "presente": true,
+      "sha256": "c7d328141441f606c84bd7aba9df54e2827d372af177a1d04eb92c0c599593f8",
+      "tamanho_bytes": 975,
+      "papel": "poesia_dominio_publico"
+    },
+    {
+      "caminho": "fixtures/poesia/a-carolina.md",
+      "presente": true,
+      "sha256": "f44d211b95a547093c36a8cedb4d759fffcc9f2bd6e7bdff84b0183a7776c300",
+      "tamanho_bytes": 862,
+      "papel": "poesia_dominio_publico"
+    },
+    {
+      "caminho": "fixtures/poesia/soneto-de-natal.md",
+      "presente": true,
+      "sha256": "4ccaec00fca90738d1361f22242084c5f0682f353ca3946aea77671484cabde4",
+      "tamanho_bytes": 835,
+      "papel": "poesia_dominio_publico"
+    }
+  ]
+}

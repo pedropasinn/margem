@@ -1,0 +1,22 @@
+{
+  "versao": 1,
+  "plano_id": "00000000000000000000000701",
+  "dispositivo": "eink",
+  "telas": [
+    {
+      "passo": 0,
+      "tipo": "texto",
+      "blocos": [
+        "00000000000000000000000001"
+      ],
+      "texto": null
+    },
+    {
+      "passo": 0,
+      "tipo": "explicacao",
+      "blocos": [],
+      "texto": "A hipótese é provisória."
+    }
+  ],
+  "extra": 1
+}

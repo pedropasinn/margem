@@ -1,0 +1,16 @@
+{
+  "documento_id": "00000000000000000000000080",
+  "versao_id": "00000000000000000000000020",
+  "ancora": {
+    "versao_id": "00000000000000000000000020",
+    "bloco_id": "00000000000000000000000001",
+    "inicio_utf16": 3,
+    "fim_utf16": 5,
+    "citacao": "🧭",
+    "prefixo": "Um ",
+    "sufixo": ", café e ﬁ."
+  },
+  "revisao_esperada": 0,
+  "capitulos_concluidos": [],
+  "atualizado_em": "2026-09-20T18:00:00Z"
+}

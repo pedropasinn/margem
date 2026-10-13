@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "documento": {
+    "titulo": "Unicode",
+    "idioma": "pt-BR",
+    "formato": "md",
+    "sha256_original": "dac8da7f1d2425390aea6b904b7e81caa2843915e2b3f9cf48160914b79f03fa"
+  },
+  "canonizacao": {
+    "motor": "fixture-v1",
+    "gerado_em": "2026-09-20T18:00:00Z",
+    "config": {
+      "ocr": false,
+      "paginas": [
+        1,
+        2
+      ],
+      "opcoes": {
+        "idioma": "pt"
+      },
+      "extra": null
+    }
+  },
+  "hash_estrutural": "6843dd8255aa674ae5a4c10ce50ed94394823c700aa04c54f8e974610de2b8b3",
+  "secoes": [],
+  "blocos": [
+    {
+      "id": "00000000000000000000000001",
+      "ordem": 0,
+      "tipo": "paragrafo",
+      "texto": "Um 🧭, café e ﬁ.",
+      "inline": [],
+      "origens": [
+        {
+          "tipo": "texto",
+          "linha_inicio": 1,
+          "linha_fim": 1
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "limites": []
+}

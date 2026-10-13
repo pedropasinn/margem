@@ -1,0 +1,62 @@
+{
+  "versao": 1,
+  "id": "01KHHHHHHHHHHHHHHHHHHHHHHH",
+  "slug": "k7m2q9xw4t",
+  "titulo": "Beta · primeira rodada",
+  "boas_vindas": "Obrigado por testar!\nLeia com calma.",
+  "documentos": [
+    "01KAAAAAAAAAAAAAAAAAAAAAAA",
+    "01KAAAAAAAAAAAAAAAAAAAAAAA"
+  ],
+  "ativa": true,
+  "expira_em": "2026-10-30T23:59:00.000Z",
+  "formulario": {
+    "versao": 1,
+    "geral": [
+      {
+        "id": "primeira_impressao",
+        "tipo": "escala",
+        "enunciado": "Qual foi a sua primeira impressão?",
+        "obrigatoria": true,
+        "rotulos": {
+          "minimo": "Ruim",
+          "maximo": "Ótima"
+        }
+      },
+      {
+        "id": "usaria_de_novo",
+        "tipo": "escolha",
+        "enunciado": "Usaria de novo?",
+        "obrigatoria": true,
+        "opcoes": [
+          "Sim",
+          "Talvez",
+          "Não"
+        ]
+      },
+      {
+        "id": "comentario",
+        "tipo": "texto_longo",
+        "enunciado": "Algo mais?",
+        "obrigatoria": false,
+        "ajuda": "Pode ser curto."
+      }
+    ],
+    "por_documento": [
+      {
+        "id": "clareza",
+        "tipo": "escala",
+        "enunciado": "As notas foram claras?",
+        "obrigatoria": false
+      },
+      {
+        "id": "nota_util",
+        "tipo": "texto_curto",
+        "enunciado": "Qual nota foi a mais útil?",
+        "obrigatoria": false
+      }
+    ]
+  },
+  "criada_em": "2026-10-02T12:00:00.000Z",
+  "atualizada_em": "2026-10-02T12:00:00.000Z"
+}
