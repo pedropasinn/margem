@@ -161,7 +161,7 @@ try {
     await faixa.getByRole('status', { name: 'Aviso da instalação' }).waitFor();
     await captura(faixa, prefixo, '05-faixa-sem-login');
     await faixa.goto(`${base}/documentos/${DOC}`);
-    await faixa.getByRole('button', { name: /Preparar leitura/ }).first().click();
+    await faixa.getByRole('button', { name: /Analisar/ }).first().click();
     await faixa.locator('.aviso-do-codex-curto').waitFor();
     await captura(faixa, prefixo, '06-preparar-leitura-sem-login');
     await faixa.close();

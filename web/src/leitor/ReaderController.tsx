@@ -1,30 +1,33 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { ProgressoNoLivro } from './ProgressoNoLivro';
-import { PainelDoLeitor, type ConversasDoPainel, type ItemExtraDoCaderno } from './PainelDoLeitor';
+import { PainelDoLeitor, type ConversasDoPainel, type FiltroDoCaderno, type ItemExtraDoCaderno } from './PainelDoLeitor';
 import { Icon } from '../ui/Icon';
-import { AtencaoNaBarra, BotaoDaBarra, OuvirNaBarra, PosicaoNaBarra, Separador, type AcaoDeOuvir, type PosicaoNaLeitura } from './BarraDoLeitor';
+import { BotaoDaBarra, MarcasNaBarra, OuvirNaBarra, PosicaoNaBarra, Separador, type AcaoDeOuvir, type PosicaoNaLeitura } from './BarraDoLeitor';
 import { PainelEsquerdo, type VistaDoPainelEsquerdo } from './PainelEsquerdo';
 import './painel.css';
 import './barra.css';
 import { PercorrerDestaques, type DestaqueNavegavel, type NavegacaoDeDestaques } from './NavegadorDeDestaques';
-import { Button, Popover, SegmentedControl } from '../ui/Primitives';
-import { usarFuncoes } from './ContextoDosModos';
-import { desenhaMarca, dicaDoNivel, grifoNoTexto, filtrarSaliencia, NOMES_DOS_NIVEIS } from './f2';
+import { Button, Popover } from '../ui/Primitives';
+import { chaveDaFuncaoDaMarca, modoDaMarca, usarFuncoes } from './ContextoDosModos';
+import type { SinalDeDificuldade } from './dificuldades';
+import { desenhaMarca, grifoNoTexto, marcasVisiveis } from './f2';
 import { NotasPessoais, type NotaPessoal } from './NotasPessoais';
 import type { MarcaDoLeitor } from './f2';
 import {
   lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState,
-  type CSSProperties, type MutableRefObject, type RefObject, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode,
+  type MutableRefObject, type RefObject, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode,
 } from 'react';
-import type { AncoraV1, Id } from '@margem/contratos';
+import type { AncoraV1, Id, ReferenciaModo } from '@margem/contratos';
 import { Aparencia, PilulaDeLeitura } from './Aparencia';
 import { proximoZoom } from './zoom';
-import { usarAparencia } from './ContextoDeAparencia';
+import { usarAparencia, usarMarcasVisiveis } from './ContextoDeAparencia';
 import { ProgressoDaRolagem } from './ProgressoDaRolagem';
 import { MarginNotes, type AcoesDaNota } from './MarginNotes';
 import { NumerosNaLateral, type ItemDaLateral } from './NumerosNaLateral';
 import { NoteSheet } from './NoteSheet';
 import { BalaoDaMarca, type FuncaoDoBalao } from './BalaoDaMarca';
+import { ConfirmarApagar } from '../apagar/ConfirmarApagar';
+import { apagarGrifoDeQualquerUm } from '../apagar/api';
 import { ContextoDeDesfazer, usePilhaDeDesfazer } from './desfazer';
 import { ancoraDoBloco, faixaDaAncora } from './compreensao/geometria';
 import { atalhoDeUmaTeclaDesligado, blocosNavegaveis, digitando, vizinho, type Comando } from './teclado/comandos';
@@ -55,13 +58,21 @@ export type AtualizarMarca = (id: Id, mudanca: MudancaDeMarca) => Promise<MarcaD
 
 /** Os grifos do leitor e a troca de função (J37); sem elas, o leitor só avalia as marcas da IA. */
 export interface EdicaoDoLeitor {
-  criarGrifo: (ancora: AncoraV1, funcao: string) => Promise<MarcaDoLeitor>;
+  /** O modo dono da função (sem ele, o do método); o grifo nasce nele e só troca para funções dele. */
+  criarGrifo: (ancora: AncoraV1, funcao: string, modo?: ReferenciaModo) => Promise<MarcaDoLeitor>;
   apagarGrifo: (id: Id) => Promise<void>;
-  trocarFuncao: (id: Id, funcao: string) => Promise<MarcaDoLeitor>;
+  /** Com `modo` (outro olhar), a função é de outro modo: o grifo do leitor passa para ele. */
+  trocarFuncao: (id: Id, funcao: string, modo?: ReferenciaModo) => Promise<MarcaDoLeitor>;
   /** Refaz as etiquetas de um grifo recriado pelo desfazer. */
   etiquetar?: (marcaId: Id, nome: string) => Promise<void>;
+  /** Refaz a nota de um grifo recriado pelo desfazer (J138: a nota sai com o grifo). */
+  restaurarNota?: (marcaId: Id, texto: string) => Promise<void>;
+  /** Apaga de vez um grifo do leitor ou do Codex (V-T8); sem ela, a rota `DELETE /api/marcas/:id`. */
+  apagarDeVez?: (id: Id) => Promise<unknown>;
 }
 
+/** O que o grifar recebe: a nota abre as notas do grifo; a função já sai escolhida; a âncora (área do PDF) troca a seleção. */
+export interface OpcoesDoGrifo { nota?: boolean; funcao?: string; modo?: ReferenciaModo | undefined; ancora?: AncoraV1; olhares?: boolean }
 export interface PropsDoControlador {
   relacoesParaNavegar?: readonly DestaqueNavegavel[];
   aoNavegarDestaques?: (estado: NavegacaoDeDestaques) => void;
@@ -83,13 +94,20 @@ export interface PropsDoControlador {
   atrasoDoProgressoMs?: number | undefined;
   aparenciaAberta?: boolean;
   navegacao?: ReactNode;
-  /** Ações do balão da marca que dependem do estudo (anotar, perguntar, conectar); sem elas o balão só remove e etiqueta. */
+  /** Ações do balão do grifo que dependem do estudo (perguntar, conectar, flashcard, conexões); sem elas o balão só troca a função, anota e remove. */
   acoesDoBalao?: {
-    anotar: (ancora: AncoraV1, marcaId: Id) => void;
     perguntar: (ancora: AncoraV1) => void;
     conectar: (ancora: AncoraV1) => void;
     flashcard?: (ancora: AncoraV1) => void;
+    /** As conexões do trecho (no painel do trecho). */
+    conexoes?: (ancora: AncoraV1) => void;
   } | undefined;
+  /** J138: os sinais de dificuldade que cruzam um trecho (para o balão do grifo). */
+  dificuldadesDoTrecho?: ((ancora: AncoraV1) => SinalDeDificuldade[]) | undefined;
+  /** J138: quantas conexões passam por um trecho (para o balão do grifo). */
+  conexoesDoTrecho?: ((ancora: AncoraV1) => number) | undefined;
+  /** J138: recebe a função que abre o balão de um grifo (a margem abre o grifo pela nota dele). */
+  abrirBalaoRef?: MutableRefObject<((marcaId: Id, opcoes?: { nota?: boolean }) => void) | null> | undefined;
   /** Abaixo do título, no texto único (autor e tempo de leitura). */
   abertura?: ReactNode;
   /** Chips a mais no topo do Caderno (a camada, quando há mais de uma). */
@@ -98,8 +116,10 @@ export interface PropsDoControlador {
   extrasDoCaderno?: readonly ItemExtraDoCaderno[];
   /** Abaixo dos metadados do Info ("Primeiro eu", "Um caminho para a sua leitura"). */
   infoDoPainel?: ReactNode;
-  /** A grade da aba Estudo do painel. */
+  /** A lista da aba Estudo do painel (agrupada por `grupo`). */
   estudoDoPainel?: readonly AcaoDeOuvir[];
+  /** O que abre a aba Estudo, antes da lista (a síntese do capítulo). */
+  estudoTopoDoPainel?: ReactNode;
   /** Avisa quem envolve o leitor quando o painel do documento abre (os exercícios só são listados então). */
   aoMudarPainel?: (aberto: boolean) => void;
   /** O que entra no fim do popover da aparência (braquetes ou bolinhas, quando há relações). */
@@ -122,7 +142,12 @@ export interface PropsDoControlador {
   /** A ferramenta de área (⬚, Shift Ctrl S), onde houver página para recortar. */
   aoSelecionarArea?: (() => void) | undefined;
   avisoExtra?: ReactNode;
+  /** O painel do trecho (nota, perguntar, conexões, flashcard), no mesmo trilho do painel do documento. */
   painel?: ReactNode;
+  /** Fecha o painel do trecho: o botão do painel do documento troca um pelo outro. */
+  aoFecharPainel?: (() => void) | undefined;
+  /** Recebe a função que abre o painel do documento (o "← Documento" do trecho). */
+  painelDocumentoRef?: MutableRefObject<(() => void) | null> | undefined;
   tituloDocumento?: string;
   /** Ícone e nome do tipo (livro, texto, PDF, vídeo), para o Info do painel. */
   tipoDoDocumento?: { icone: string; rotulo: string };
@@ -134,15 +159,13 @@ export interface PropsDoControlador {
   pessoais?: readonly NotaPessoal[];
   edicao?: EdicaoDoLeitor | undefined;
   /** Recebe a função de grifar (o que o H faz), para um botão de fora usar o mesmo caminho. */
-  grifarRef?: MutableRefObject<((anotar: boolean) => void) | null> | undefined;
+  grifarRef?: MutableRefObject<((opcoes?: OpcoesDoGrifo) => void) | null> | undefined;
   /** A âncora da seleção atual, se houver: `H` grifa a seleção antes do parágrafo em foco. */
   selecaoAtual?: (() => AncoraV1 | null) | undefined;
   /** Depois de grifar, apagar ou trocar a função: o chamador recarrega o capítulo. */
   aoMudarMarcas?: (() => void) | undefined;
   /** Comandos de quem envolve o leitor (estudo, biblioteca), somados aos do leitor na paleta. */
   comandos?: readonly Comando[] | undefined;
-  /** Dificuldades textuais do capítulo, que o nível 3 acrescenta: entram na dica dos pontos de atenção. */
-  dificuldadesNoNivel3?: number;
   conexaoDaNota?: (ancora: AncoraV1) => ReactNode;
   /** Sem margem, outros círculos que vão para a lateral direita junto dos números das notas (as dificuldades). */
   extrasDaLateral?: readonly ItemDaLateral[];
@@ -196,12 +219,13 @@ function alvoDaInteracao(alvo: EventTarget | null, x?: number, y?: number): Alvo
  */
 export function ReaderController({
   relacoesParaNavegar = SEM_RELACOES, aoNavegarDestaques, navegacaoSuspensa = false, aoMudarMargem, leitorRef, snapshot, documento_id, estrategia = 'scroll', progresso: fontes, atualizarMarca,
-  perguntas, aoMudarCapitulos, limiarDaMargem, atrasoDoCorredorMs, atrasoDoProgressoMs, aparenciaAberta = false, navegacao, abertura, acoesDoBalao, filtrosDoCaderno, extrasDoCaderno, infoDoPainel, estudoDoPainel, aoMudarPainel, acoesDaBarra, aparenciaExtra, menuExtra, voltar, sumario, posicao: posicaoDoTexto, irParaPagina, paginaDestino = null, ouvir = SEM_OUVIR, aoSelecionarArea, avisoExtra, painel, pessoais, conexaoDaNota, dificuldadesNoNivel3 = 0, extrasDaLateral = SEM_EXTRAS,
+  perguntas, aoMudarCapitulos, limiarDaMargem, atrasoDoCorredorMs, atrasoDoProgressoMs, aparenciaAberta = false, navegacao, abertura, acoesDoBalao, filtrosDoCaderno, extrasDoCaderno, infoDoPainel, estudoDoPainel, estudoTopoDoPainel, aoMudarPainel, acoesDaBarra, aparenciaExtra, menuExtra, voltar, sumario, posicao: posicaoDoTexto, irParaPagina, paginaDestino = null, ouvir = SEM_OUVIR, aoSelecionarArea, avisoExtra, painel, aoFecharPainel, painelDocumentoRef, pessoais, conexaoDaNota, extrasDaLateral = SEM_EXTRAS,
   tituloDocumento, tipoDoDocumento, autor, conversasDoPainel, pessoaisDoCaderno, estudoAberto = false,
   edicao, grifarRef, selecaoAtual, aoMudarMarcas, comandos: comandosDeFora = SEM_COMANDOS, somenteLeitura = false,
+  dificuldadesDoTrecho, conexoesDoTrecho, abrirBalaoRef,
 }: PropsDoControlador): ReactNode {
   const { preferencias, alterar } = usarAparencia();
-  const { funcoes, daMarca } = usarFuncoes();
+  const { daMarca, rotulo, rotuloDaMarca, nomeDoModo } = usarFuncoes();
   const [navegadorAberto, abrirNavegador] = useState(false);
   const [destaqueId, selecionarDestaque] = useState<string | null>(null);
   const [inicioDoPercorrer, definirInicioDoPercorrer] = useState<string | null>(null);
@@ -218,10 +242,16 @@ export function ReaderController({
   const fecharPainelDocumento = useCallback(() => {
     gravarPainel(false); definirPainelDocumento(false); botaoPainel.current?.focus({ preventScroll: true });
   }, []);
+  // Com o painel do trecho aberto no mesmo trilho, o botão (e o "← Documento" do trecho) troca para o do documento.
   const alternarPainelDocumento = useCallback(() => {
+    if (painel && aoFecharPainel) { aoFecharPainel(); abrirNavegador(false); gravarPainel(true); definirPainelDocumento(true); return; }
     if (painelDisponivel) { abrirNavegador(false); gravarPainel(!painelDocumento); definirPainelDocumento(!painelDocumento); }
-  }, [painelDisponivel, painelDocumento]);
-  useEffect(() => { if (!painelDisponivel) { definirPainelDocumento(false); gravarPainel(false); } }, [painelDisponivel]);
+  }, [painelDisponivel, painelDocumento, painel, aoFecharPainel]);
+  useEffect(() => {
+    if (!painelDocumentoRef) return;
+    painelDocumentoRef.current = () => { if (aoFecharPainel) aoFecharPainel(); abrirNavegador(false); gravarPainel(true); definirPainelDocumento(true); };
+    return () => { painelDocumentoRef.current = null; };
+  }, [painelDocumentoRef, aoFecharPainel]);
   useEffect(() => { aoMudarPainel?.(painelDocumento && painelDisponivel); }, [aoMudarPainel, painelDocumento, painelDisponivel]);
 
   useEffect(() => {
@@ -243,9 +273,14 @@ export function ReaderController({
   const [marcas, definirMarcas] = useState<readonly MarcaDoLeitor[]>(snapshot.marcas);
   const [filtro, definirFiltro] = useState<FiltroDeMarcas>(FILTRO_PADRAO);
   const [avisoDaMarca, definirAvisoDaMarca] = useState<string | null>(null);
-  // O balão sobre o grifo tocado (o recém-criado abre já na função); a pilha de desfazer (J37).
-  const [balao, definirBalao] = useState<{ id: Id; etiquetas: boolean } | null>(null);
-  const abrirBalao = useCallback((id: Id | null, etiquetas = false) => { definirBalao(id === null ? null : { id, etiquetas }); }, []);
+  // O balão sobre o grifo tocado (o recém-criado pelo H abre com as cores); a pilha de desfazer (J37).
+  const [balao, definirBalao] = useState<{ id: Id; nota?: boolean; olhares?: boolean } | null>(null);
+  const abrirBalao = useCallback((id: Id | null, opcoes: { nota?: boolean; olhares?: boolean } = {}) => { definirBalao(id === null ? null : { id, ...opcoes }); }, []);
+  useEffect(() => {
+    if (!abrirBalaoRef) return;
+    abrirBalaoRef.current = (id, opcoes) => { abrirBalao(id, opcoes); };
+    return () => { abrirBalaoRef.current = null; };
+  }, [abrirBalaoRef, abrirBalao]);
   const pilha = usePilhaDeDesfazer();
   // O grifo apagado e recriado pelo desfazer ganha outro id: as ações anteriores seguem o novo.
   const apelidos = useRef(new Map<Id, Id>());
@@ -284,24 +319,22 @@ export function ReaderController({
   const concluidos = progresso.capitulos_concluidos;
   useEffect(() => { aoMudarCapitulos?.(concluidos); }, [aoMudarCapitulos, concluidos]);
 
-  const visiveis = useMemo(() => filtrarSaliencia(marcasFiltradas(marcas, filtro), preferencias.nivelDeAtencao).filter((m) => !tiposOcultos.includes(m.funcao)), [filtro, marcas, preferencias.nivelDeAtencao, tiposOcultos]);
+  // V-T3: todas as marcas, ou nenhuma (o botão "Marcas"); a saliência não filtra mais.
+  const [marcasAVista, mostrarMarcas] = usarMarcasVisiveis(documento_id);
+  const visiveis = useMemo(() => marcasVisiveis(marcasFiltradas(marcas, filtro), marcasAVista).filter((m) => !tiposOcultos.includes(chaveDaFuncaoDaMarca(m))), [filtro, marcas, marcasAVista, tiposOcultos]);
   // Marca oculta sai do texto, mas a nota fica na margem só com o número, para poder ser reaberta.
-  const ocultasComNota = useMemo(() => filtro.recorte === 'ocultas' ? [] : filtrarSaliencia(marcasFiltradas(marcas, { ...filtro, recorte: 'ocultas' }), preferencias.nivelDeAtencao)
-    .filter((m) => m.validade === 'resolvida' && m.comentario !== null && !tiposOcultos.includes(m.funcao)), [filtro, marcas, preferencias.nivelDeAtencao, tiposOcultos]);
-  // Quantas marcas cada nível mostraria, com os mesmos recortes de origem e tipo: vai para a dica dos pontos.
-  const marcasPorNivel = useMemo(() => {
-    const base = marcasFiltradas(marcas, filtro).filter((m) => m.funcao !== 'nenhuma' && !tiposOcultos.includes(m.funcao));
-    return ([0, 1, 2, 3] as const).map((nivel) => filtrarSaliencia(base, nivel).length);
-  }, [marcas, filtro, tiposOcultos]);
+  const ocultasComNota = useMemo(() => filtro.recorte === 'ocultas' ? [] : marcasVisiveis(marcasFiltradas(marcas, { ...filtro, recorte: 'ocultas' }), marcasAVista)
+    .filter((m) => m.validade === 'resolvida' && m.comentario !== null && !tiposOcultos.includes(chaveDaFuncaoDaMarca(m))), [filtro, marcas, marcasAVista, tiposOcultos]);
   const notas = useMemo(() => notasDoCapitulo(snapshot.blocos, [...visiveis, ...ocultasComNota]), [snapshot.blocos, visiveis, ocultasComNota]);
   const destaques = useMemo<DestaqueNavegavel[]>(() => {
     const ordem = new Map(snapshot.blocos.map((bloco, indice) => [bloco.id, indice]));
     return [...marcas.filter((marca) => marca.visivel && marca.validade === 'resolvida' && marca.avaliacao !== 'rejeitada' && desenhaMarca(marca)).map((marca): DestaqueNavegavel => ({
       id: marca.id, tipo: 'grifo', ancora: marca.ancora,
-      titulo: marca.comentario?.rotulo ?? funcoes.find((f) => f.chave === marca.funcao)?.rotulo ?? 'Grifo',
+      titulo: marca.comentario?.rotulo ?? rotuloDaMarca(marca),
       texto: marca.comentario?.texto ?? '', cor: daMarca(marca),
     })), ...relacoesParaNavegar].sort((a, b) => (ordem.get(a.ancora.bloco_id) ?? Infinity) - (ordem.get(b.ancora.bloco_id) ?? Infinity) || a.ancora.inicio_utf16 - b.ancora.inicio_utf16);
-  }, [snapshot.blocos, marcas, funcoes, daMarca, relacoesParaNavegar]);
+  // rótulo e cor mudam com os modos e o tema, que mudam as marcas
+  }, [snapshot.blocos, marcas, relacoesParaNavegar]);
   const destaque = destaques.find((item) => item.id === destaqueId) ?? null;
   const navegando = navegadorAberto && !navegacaoSuspensa;
   const grifoNavegado = navegando && destaque?.tipo === 'grifo' ? destaque.id : null;
@@ -309,10 +342,6 @@ export function ReaderController({
   const abrirPercorrer = useCallback((inicio: string | null = null) => { definirPainelDocumento(false); controlador.fechar(false); abrirBalao(null); definirInicioDoPercorrer(inicio); abrirNavegador(true); }, [controlador.fechar, abrirBalao]);
   useEffect(() => { abrirNavegador(false); selecionarDestaque(null); }, [snapshot.secao.id, snapshot.camada, navegacaoSuspensa]);
   const relacaoNavegada = navegando && destaque?.tipo === 'braquete' ? destaque.id : null;
-  // O Percorrer também fica no Estudo (além do botão no topo do Caderno): é o primeiro da grade.
-  const percorrerNoEstudo = useMemo<AcaoDeOuvir[]>(() => navegacaoSuspensa || destaques.length === 0 ? []
-    : [{ id: 'percorrer', icone: 'percorrer', rotulo: 'Percorrer grifos e relações', ativa: navegando, executar: () => { if (navegando) fecharNavegador(); else abrirPercorrer(); } }],
-  [navegacaoSuspensa, destaques.length, navegando, fecharNavegador, abrirPercorrer]);
   useEffect(() => { aoNavegarDestaques?.({ aberta: navegando, relacaoId: relacaoNavegada, cartao: true }); }, [navegando, relacaoNavegada, aoNavegarDestaques]);
   const ancoraNavegada = destaque?.ancora;
   useEffect(() => {
@@ -320,7 +349,7 @@ export function ReaderController({
     // Vindo de uma relação que recolheu o texto entre as pontas, a dobra se desfaz depois deste efeito
     // (o braquete só sabe da navegação no render seguinte) e, ao se desfazer, mexe na rolagem. Então
     // espera não haver mais texto recolhido e mede um quadro depois, com a página inteira de volta; o
-    // quadro extra também deixa o leitor redesenhar um grifo fora do nível de atenção atual.
+    // quadro extra também deixa o leitor redesenhar um grifo que estava oculto.
     let quadro = 0;
     let tentativas = 0;
     const pousar = () => {
@@ -336,33 +365,41 @@ export function ReaderController({
     return () => { cancelAnimationFrame(quadro); };
   }, [grifoNavegado, ancoraNavegada, leitor]);
   const ativa = navegando ? grifoNavegado : controlador.ativa;
+  // A nota do leitor de cada grifo (J138): dentro da nota do grifo na margem, como uma linha ✎.
+  const notasDoLeitor = useMemo(() => new Map((snapshot.anotacoes ?? []).flatMap((anotacao) => anotacao.marca_id ? [[anotacao.marca_id, anotacao.texto] as const] : [])), [snapshot.anotacoes]);
   const numerosDasNotas = useMemo(() => new Map(notas.map((nota) => [nota.marca.id, nota.numero])), [notas]);
   const comMarcasDoRecorte = useMemo<SnapshotCapitulo>(
     () => ({ ...snapshot, marcas: [...visiveis, ...marcas.filter((m) => m.id === grifoNavegado && !visiveis.some((v) => v.id === m.id))] }), [snapshot, visiveis, marcas, grifoNavegado],
   );
   const origens = useMemo(() => origensPresentes(marcas), [marcas]);
-  // Chips do Caderno: as funções (a legenda das cores, sem a interna "nenhuma"), IA · Minhas, e o recorte.
-  const funcoesPresentes = useMemo(() => [...new Set(marcas.filter((m) => m.funcao !== 'nenhuma' && desenhaMarca(m)).map((m) => m.funcao))]
-    .map((chave) => ({ chave, rotulo: funcoes.find((f) => f.chave === chave)?.rotulo ?? chave, cor: daMarca(marcas.find((m) => m.funcao === chave)!),
-      total: marcas.filter((m) => m.funcao === chave && grifoNoTexto(m)).length })), [marcas, funcoes, daMarca]);
+  // Chips do Caderno: as funções que de fato aparecem nos grifos do capítulo (a legenda das cores, sem a
+  // interna "nenhuma"), cada uma no modo do seu grifo (J138: grifos de vários modos convivem). Rótulos
+  // iguais em modos diferentes ganham o nome do modo.
+  const funcoesPresentes = useMemo(() => {
+    const lista = [...new Map(marcas.filter((m) => m.funcao !== 'nenhuma' && desenhaMarca(m)).map((m) => [chaveDaFuncaoDaMarca(m), m] as const)).entries()]
+      .map(([chave, marca]) => ({ chave, rotulo: rotuloDaMarca(marca), modo: modoDaMarca(marca), cor: daMarca(marca),
+        total: marcas.filter((m) => chaveDaFuncaoDaMarca(m) === chave && grifoNoTexto(m)).length }));
+    return lista.map((f) => (lista.some((outra) => outra !== f && outra.rotulo === f.rotulo) ? { ...f, rotulo: `${f.rotulo} · ${nomeDoModo(f.modo)}` } : f));
+  // rótulo, cor e nome do modo derivam dos modos, estáveis no capítulo
+  }, [marcas]);
   const temIa = origens.some((origem) => origem !== 'manual');
   const temMinhas = origens.includes('manual');
   const ocultas = marcas.filter((m) => !m.visivel).length;
-  const filtrosDoPainel = <div className="filtros-do-caderno">
-    {funcoesPresentes.length > 0 && <div className="chips" role="group" aria-label="Funções">{funcoesPresentes.map((f) => (
-      <button key={f.chave} type="button" className="chip chip-funcao" aria-pressed={!tiposOcultos.includes(f.chave)} style={{ '--cor-chip': f.cor } as CSSProperties}
-        onClick={() => ocultarTipos((atuais) => atuais.includes(f.chave) ? atuais.filter((t) => t !== f.chave) : [...atuais, f.chave])}>
-        <span className="chip-ponto" aria-hidden="true" />{f.rotulo}<span className="chip-conta">{f.total}</span>
-      </button>))}
-    </div>}
-    <div className="chips" role="group" aria-label="Origem e recorte">
-      {temIa && temMinhas && ([['todas', 'Todas'], ['ia', 'IA'], ['manual', 'Minhas']] as const).map(([valor, rotulo]) => (
-        <button key={valor} type="button" className="chip" aria-pressed={filtro.origem === valor} onClick={() => definirFiltro((atual) => ({ ...atual, origem: valor }))}>{rotulo}</button>))}
-      <button type="button" className="chip" aria-pressed={filtro.recorte === 'confirmadas'} onClick={() => definirFiltro((atual) => ({ ...atual, recorte: atual.recorte === 'confirmadas' ? 'todas' : 'confirmadas' }))}>Confirmadas</button>
-      {ocultas > 0 && <button type="button" className="chip" aria-pressed={filtro.recorte === 'ocultas'} onClick={() => definirFiltro((atual) => ({ ...atual, recorte: atual.recorte === 'ocultas' ? 'todas' : 'ocultas' }))}>Ocultas<span className="chip-conta">{ocultas}</span></button>}
-    </div>
-    {filtrosDoCaderno}
-  </div>;
+  // Uma linha de filtro no Caderno (J132): um seletor só, que também vale para o texto (funções, origem, recorte).
+  const [filtroDoCaderno, definirFiltroDoCaderno] = useState('tudo');
+  const escolherFiltroDoCaderno = useCallback((valor: string) => {
+    definirFiltroDoCaderno(valor);
+    const tipo = valor.slice(0, valor.indexOf(':') < 0 ? valor.length : valor.indexOf(':'));
+    const chave = valor.indexOf(':') < 0 ? undefined : valor.slice(valor.indexOf(':') + 1);
+    ocultarTipos(tipo === 'f' ? [...new Set(marcas.map(chaveDaFuncaoDaMarca))].filter((f) => f !== chave) : []);
+    definirFiltro({ ...FILTRO_PADRAO, ...(tipo === 'o' ? { origem: chave as FiltroDeMarcas['origem'] } : {}), ...(tipo === 'r' ? { recorte: chave as FiltroDeMarcas['recorte'] } : {}) });
+  }, [marcas]);
+  const filtrosDoPainel: FiltroDoCaderno = { valor: filtroDoCaderno, aoMudar: escolherFiltroDoCaderno, opcoes: [
+    ...funcoesPresentes.map((f) => ({ valor: `f:${f.chave}`, rotulo: `${f.rotulo} (${String(f.total)})` })),
+    ...(temIa && temMinhas ? [{ valor: 'o:ia', rotulo: 'Só os da IA' }, { valor: 'o:manual', rotulo: 'Só os meus grifos' }] : []),
+    { valor: 'r:confirmadas', rotulo: 'Confirmadas' },
+    ...(ocultas > 0 ? [{ valor: 'r:ocultas', rotulo: `Ocultas (${String(ocultas)})` }] : []),
+  ] };
   const grifosDoCaderno = useMemo(() => (filtro.recorte === 'ocultas' ? marcasFiltradas(marcas, filtro) : visiveis)
     .filter((m) => m.avaliacao !== 'rejeitada' && (filtro.recorte === 'ocultas' || (m.visivel && m.validade === 'resolvida')) && (desenhaMarca(m) || m.comentario !== null)), [filtro, marcas, visiveis]);
 
@@ -453,13 +490,16 @@ export function ReaderController({
     abrirBalao(null); controlador.fechar(true);
     if (marca.origem === 'manual' && edicao) {
       const etiquetas = (snapshot.etiquetas ?? []).filter((etiqueta) => etiqueta.alvo.tipo === 'marca' && etiqueta.alvo.id === marca.id).map((etiqueta) => etiqueta.nome);
+      // A nota sai com o grifo (o balão pede confirmação); desfazer devolve as duas coisas.
+      const nota = (snapshot.anotacoes ?? []).find((anotacao) => anotacao.marca_id === marca.id)?.texto;
       definirMarcas((atuais) => atuais.filter((item) => item.id !== marca.id));
       edicao.apagarGrifo(marca.id).then(() => {
-        pilha.registrar({ rotulo: 'Grifo apagado', desfazer: async () => {
-          const nova = await edicao.criarGrifo(marca.ancora, marca.funcao);
+        pilha.registrar({ rotulo: nota ? 'Grifo e anotação removidos' : 'Grifo apagado', desfazer: async () => {
+          const nova = await edicao.criarGrifo(marca.ancora, marca.funcao, 'modo' in marca ? marca.modo : undefined);
           apelidos.current.set(marca.id, nova.id);
           inserir(nova);
           if (edicao.etiquetar) for (const nome of etiquetas) await edicao.etiquetar(nova.id, nome);
+          if (nota && edicao.restaurarNota) await edicao.restaurarNota(nova.id, nota);
           aoMudarMarcas?.();
         } });
         aoMudarMarcas?.();
@@ -469,7 +509,18 @@ export function ReaderController({
     const antes = marca.avaliacao;
     aplicarMudanca(marca.id, { avaliacao: 'rejeitada' });
     pilha.registrar({ rotulo: 'Marca removida', desfazer: () => { aplicarMudanca(idAtual(marca.id), { avaliacao: antes === 'rejeitada' ? 'nao_avaliada' : antes }); } });
-  }, [abrirBalao, controlador, edicao, snapshot.etiquetas, pilha, inserir, aoMudarMarcas, falhou, aplicarMudanca, idAtual]);
+  }, [abrirBalao, controlador, edicao, snapshot.etiquetas, snapshot.anotacoes, pilha, inserir, aoMudarMarcas, falhou, aplicarMudanca, idAtual]);
+
+  // "Remover grifo" no balão (V-T8): exclusão real, do leitor ou do Codex, com a nota e os sinais do grifo.
+  // Não há desfazer, então pede confirmação; depois, quem chama recarrega o capítulo.
+  const [apagando, definirApagando] = useState<MarcaDoLeitor | null>(null);
+  const pedirApagar = useCallback((marca: MarcaDoLeitor) => { abrirBalao(null); definirApagando(marca); }, [abrirBalao]);
+  const apagarDeVez = useCallback(async (marca: MarcaDoLeitor) => {
+    await (edicao?.apagarDeVez ?? apagarGrifoDeQualquerUm)(marca.id);
+    controlador.fechar(true);
+    definirMarcas((atuais) => atuais.filter((item) => item.id !== marca.id));
+    aoMudarMarcas?.();
+  }, [edicao, controlador, aoMudarMarcas]);
 
   const funcaoDaIa = useCallback((marca: MarcaDoLeitor): string | undefined => {
     if (marca.origem === 'manual') return undefined;
@@ -478,22 +529,36 @@ export function ReaderController({
     return snapshot.edicoes?.[marca.id]?.funcao_da_ia;
   }, [funcoesDaIa, snapshot.edicoes]);
 
-  const trocarFuncao = useCallback(async (marca: MarcaDoLeitor, funcao: string, registrar = true) => {
+  const trocarFuncao = useCallback(async (marca: MarcaDoLeitor, funcao: string, registrar = true, modo?: ReferenciaModo) => {
     if (!edicao) return;
+    // Outro olhar sobre a marca da IA: ela fica no modo da execução dela (com o comentário do Codex); o
+    // leitor ganha um grifo seu no mesmo trecho, com aquele olhar.
+    if (modo !== undefined && marca.origem !== 'manual') {
+      const nova = await edicao.criarGrifo(marca.ancora, funcao, modo);
+      inserir(nova);
+      pilha.registrar({ rotulo: `Grifo: ${rotulo(funcao, modo).toLocaleLowerCase('pt-BR')}`, desfazer: async () => {
+        const id = idAtual(nova.id); await edicao.apagarGrifo(id); definirMarcas((atuais) => atuais.filter((item) => item.id !== id)); aoMudarMarcas?.();
+      } });
+      abrirBalao(nova.id);
+      aoMudarMarcas?.();
+      return;
+    }
     const antes = marca.funcao;
-    const nova = await edicao.trocarFuncao(idAtual(marca.id), funcao);
+    const modoAntes = modoDaMarca(marca);
+    const nova = await edicao.trocarFuncao(idAtual(marca.id), funcao, modo);
     substituir(nova);
     if (marca.origem !== 'manual') {
       const original = funcaoDaIa(marca) ?? antes;
       definirFuncoesDaIa((atuais) => ({ ...atuais, [marca.id]: funcao === original ? null : original }));
     }
-    if (registrar) pilha.registrar({ rotulo: `Função: ${funcao === 'nenhuma' ? 'nenhuma' : funcoes.find((f) => f.chave === funcao)?.rotulo.toLocaleLowerCase('pt-BR') ?? funcao}`,
-      desfazer: () => trocarFuncao(nova, antes, false) });
+    if (registrar) pilha.registrar({ rotulo: `Função: ${funcao === 'nenhuma' ? 'nenhuma' : rotulo(funcao, modo ?? modoAntes).toLocaleLowerCase('pt-BR')}`,
+      desfazer: () => trocarFuncao(nova, antes, false, modo !== undefined ? modoAntes : undefined) });
     aoMudarMarcas?.();
-  }, [edicao, idAtual, substituir, funcaoDaIa, pilha, funcoes, aoMudarMarcas]);
+  // `rotulo` deriva dos modos, estáveis no capítulo
+  }, [edicao, idAtual, substituir, funcaoDaIa, pilha, aoMudarMarcas, inserir, abrirBalao]);
 
   const funcaoDoBalao = useMemo<FuncaoDoBalao | undefined>(() => (edicao && marcaDoBalao ? {
-    trocar: (funcao) => trocarFuncao(marcaDoBalao, funcao), daIa: funcaoDaIa(marcaDoBalao),
+    trocar: (funcao, modo) => trocarFuncao(marcaDoBalao, funcao, true, modo), daIa: funcaoDaIa(marcaDoBalao),
   } : undefined), [edicao, marcaDoBalao, trocarFuncao, funcaoDaIa]);
 
   // ------------------------------------------------------------ leitura pelo teclado (J37)
@@ -529,20 +594,21 @@ export function ReaderController({
     if (destino && (destino.topo < TOPO_UTIL + 8 || destino.base > altura - 24)) window.scrollBy({ top: destino.topo - altura * 0.3 });
   }, [abrirBalao, foco, faixaDoBloco, navegaveis]);
 
-  const grifar = useCallback(async (anotar: boolean) => {
+  const grifar = useCallback(async ({ nota: anotar = false, ancora: dada, funcao, modo, olhares = false }: OpcoesDoGrifo = {}) => {
     if (!edicao) return;
-    const selecionada = selecaoAtual?.() ?? null;
+    const selecionada = dada ?? selecaoAtual?.() ?? null;
     const ancora = selecionada ?? ancoraDoFoco;
     if (!ancora) { pilha.avisar('Escolha um parágrafo com ↑ ↓ ou selecione um trecho.'); return; }
     const mesmo = marcasRef.current.find((marca) => marca.origem === 'manual' && marca.ancora.bloco_id === ancora.bloco_id
       && marca.ancora.inicio_utf16 === ancora.inicio_utf16 && marca.ancora.fim_utf16 === ancora.fim_utf16);
     if (mesmo) {
-      // De novo sobre o mesmo trecho: H apaga o grifo; N abre as notas dele.
-      if (anotar) acoesDoBalao?.anotar(mesmo.ancora, mesmo.id); else removerMarca(mesmo);
+      // De novo sobre o mesmo trecho: H apaga o grifo (o com nota abre o balão, onde remover pede confirmação); N abre a nota.
+      const comNota = (snapshot.anotacoes ?? []).some((anotacao) => anotacao.marca_id === mesmo.id);
+      if (anotar || comNota || olhares) abrirBalao(mesmo.id, { nota: anotar, olhares }); else removerMarca(mesmo);
       return;
     }
     try {
-      const marca = await edicao.criarGrifo(ancora, 'nenhuma');
+      const marca = await edicao.criarGrifo(ancora, funcao ?? 'nenhuma', modo);
       window.getSelection()?.removeAllRanges();
       inserir(marca);
       pilha.registrar({ rotulo: 'Grifo criado', desfazer: async () => {
@@ -551,21 +617,21 @@ export function ReaderController({
         definirMarcas((atuais) => atuais.filter((item) => item.id !== id));
         aoMudarMarcas?.();
       } });
-      if (anotar && acoesDoBalao) acoesDoBalao.anotar(marca.ancora, marca.id);
-      else abrirBalao(marca.id, true);
+      // O balão do grifo abre ao grifar (J138): as funções, a nota (com o cursor nela pelo N) e o resto do trecho.
+      abrirBalao(marca.id, { nota: anotar, olhares });
       aoMudarMarcas?.();
     } catch (falha) {
       // Sobreposto a um grifo dele: abre o balão daquele, em vez de um segundo grifo.
       const vizinha = marcasRef.current.find((marca) => marca.origem === 'manual' && marca.ancora.bloco_id === ancora.bloco_id
         && marca.ancora.inicio_utf16 < ancora.fim_utf16 && ancora.inicio_utf16 < marca.ancora.fim_utf16);
-      if (vizinha) { if (anotar && acoesDoBalao) acoesDoBalao.anotar(vizinha.ancora, vizinha.id); else abrirBalao(vizinha.id); return; }
+      if (vizinha) { abrirBalao(vizinha.id, { nota: anotar, olhares }); return; }
       falhou(falha, 'Não foi possível grifar.');
     }
-  }, [edicao, selecaoAtual, ancoraDoFoco, pilha, acoesDoBalao, removerMarca, inserir, idAtual, aoMudarMarcas, abrirBalao, falhou]);
+  }, [edicao, selecaoAtual, ancoraDoFoco, pilha, removerMarca, inserir, idAtual, aoMudarMarcas, abrirBalao, falhou, snapshot.anotacoes]);
 
   useEffect(() => {
     if (!grifarRef) return;
-    grifarRef.current = (anotar) => { void grifar(anotar); };
+    grifarRef.current = (opcoes) => { void grifar(opcoes); };
     return () => { grifarRef.current = null; };
   }, [grifarRef, grifar]);
 
@@ -663,8 +729,8 @@ export function ReaderController({
     { id: 'proximo', grupo: 'Leitura', rotulo: 'Próximo parágrafo', atalho: '↓', executar: () => mover(1) },
     { id: 'anterior', grupo: 'Leitura', rotulo: 'Parágrafo anterior', atalho: '↑', executar: () => mover(-1) },
     ...(edicao ? [
-      { id: 'grifar', grupo: 'Marcas', rotulo: 'Grifar o parágrafo (ou a seleção)', atalho: 'H', palavras: 'highlight destacar', executar: () => { void grifar(false); } },
-      { id: 'grifar-anotar', grupo: 'Marcas', rotulo: 'Grifar e anotar', atalho: 'N', palavras: 'nota', executar: () => { void grifar(true); } },
+      { id: 'grifar', grupo: 'Marcas', rotulo: 'Grifar o parágrafo (ou a seleção)', atalho: 'H', palavras: 'highlight destacar', executar: () => { void grifar(); } },
+      { id: 'grifar-anotar', grupo: 'Marcas', rotulo: 'Grifar com nota', atalho: 'N', palavras: 'nota anotar escrever', executar: () => { void grifar({ nota: true }); } },
     ] : []),
     { id: 'desfazer', grupo: 'Marcas', rotulo: 'Desfazer', atalho: 'Z', executar: desfazer },
     ...(temPainelEsquerdo ? [{ id: 'painel-esquerdo', grupo: 'Leitura focada', rotulo: painelEsquerdoAberto ? 'Recolher o sumário' : 'Sumário', atalho: '[', palavras: 'capítulos índice lateral esquerda', executar: alternarPainelEsquerdo }] : []),
@@ -679,15 +745,14 @@ export function ReaderController({
       { id: 'zoom-menos', grupo: 'Visual', rotulo: 'Diminuir o zoom do PDF', atalho: 'Ctrl −', palavras: 'reduzir menor', executar: () => zoom(-1) },
       { id: 'zoom-largura', grupo: 'Visual', rotulo: 'Ajustar o PDF à largura', atalho: 'Ctrl 0', palavras: 'zoom', executar: () => zoom(0) },
     ] : []),
-    ...([0, 1, 2, 3] as const).map((nivel) => ({ id: `atencao-${String(nivel)}`, grupo: 'Visual', rotulo: `Atenção: ${NOMES_DOS_NIVEIS[nivel]}`, palavras: 'nível marcas',
-      executar: () => alterar({ tipo: 'alterar', valores: { nivelDeAtencao: nivel } }) })),
+    { id: 'marcas', grupo: 'Visual', rotulo: marcasAVista ? 'Ocultar as marcas' : 'Mostrar as marcas', palavras: 'grifos marcas texto limpo esconder', executar: () => mostrarMarcas(!marcasAVista) },
     ...([['grifo', 'Grifo'], ['marca_texto', 'Marca-texto'], ['sublinhado', 'Sublinhado']] as const).map(([estilo, rotulo]) => ({ id: `estilo-${estilo}`, grupo: 'Visual', rotulo: `Estilo das marcas: ${rotulo}`,
       executar: () => alterar({ tipo: 'alterar', valores: { estilo } }) })),
     ...([['claro', 'Claro'], ['escuro', 'Escuro'], ['sepia', 'Sépia'], ['sistema', 'Do sistema']] as const).map(([tema, rotulo]) => ({ id: `tema-${tema}`, grupo: 'Visual', rotulo: `Tema: ${rotulo}`, palavras: 'aparência cor',
       executar: () => alterar({ tipo: 'alterar', valores: { tema } }) })),
     ...comandosDeFora,
     { id: 'atalhos', grupo: 'Ajuda', rotulo: 'Atalhos do teclado', atalho: '?', executar: () => abrirAtalhos(true) },
-  ], [navegacaoSuspensa, navegando, fecharNavegador, abrirPercorrer, mover, edicao, grifar, desfazer, esquerdaOculta, preferencias.margem, alternarMargem, alternarPainelDocumento, alterar, comandosDeFora, pdf, zoom, temPainelEsquerdo, painelEsquerdoAberto, alternarPainelEsquerdo, posicaoDaBarra]);
+  ], [navegacaoSuspensa, navegando, fecharNavegador, abrirPercorrer, mover, edicao, grifar, desfazer, esquerdaOculta, preferencias.margem, alternarMargem, alternarPainelDocumento, alterar, comandosDeFora, pdf, zoom, temPainelEsquerdo, painelEsquerdoAberto, alternarPainelEsquerdo, posicaoDaBarra, marcasAVista, mostrarMarcas]);
 
   useEffect(() => {
     const teclar = (evento: globalThis.KeyboardEvent) => {
@@ -720,7 +785,7 @@ export function ReaderController({
       else if (tecla === 'Escape' && balao === null && foco !== null) focar(null);
       // Com o balão aberto, N anota pela própria marca (o balão cuida); H fica para o texto.
       else if (edicao && balao === null && (tecla === 'h' || tecla === 'H' || tecla === 'n' || tecla === 'N')) {
-        evento.preventDefault(); void grifar(tecla.toLowerCase() === 'n');
+        evento.preventDefault(); void grifar({ nota: tecla.toLowerCase() === 'n' });
       }
     };
     window.addEventListener('keydown', teclar);
@@ -738,7 +803,7 @@ export function ReaderController({
   const itensDaLateral = useMemo<ItemDaLateral[]>(() => [
     ...notas.map((nota) => ({
       id: nota.marca.id, ancora: nota.marca.ancora, rotulo: String(nota.numero), cor: daMarca(nota.marca),
-      tracejado: 'saliencia' in nota.marca && nota.marca.saliencia === 3, descricao: `Nota ${String(nota.numero)}: ${nota.comentario.rotulo}`,
+      descricao: `Nota ${String(nota.numero)}: ${nota.comentario.rotulo}`,
       aoAbrir: () => { controlador.fixar(nota.marca.id); },
     })),
     ...extrasDaLateral,
@@ -775,10 +840,10 @@ export function ReaderController({
           {acoesDaBarra && <div className="acoes-da-barra">{acoesDaBarra}</div>}
           <Aparencia abertaInicialmente={aparenciaAberta} extra={aparenciaExtra} />
           {aoSelecionarArea && <BotaoDaBarra rotulo="Selecionar área" atalho="Shift Ctrl S" icone="area" onClick={aoSelecionarArea} />}
-          <AtencaoNaBarra nivel={preferencias.nivelDeAtencao}><Atencao marcasPorNivel={marcasPorNivel} dificuldades={dificuldadesNoNivel3} /></AtencaoNaBarra>
+          <MarcasNaBarra visiveis={marcasAVista} aoMudar={mostrarMarcas} />
           {ouvir.length > 0 && <OuvirNaBarra acoes={ouvir} />}
           <Separador />
-          <BotaoDaBarra ref={botaoPainel} rotulo="Painel do documento" atalho="]" icone="painel-direito" aria-expanded={painelAberto} disabled={!painelDisponivel} onClick={alternarPainelDocumento} />
+          <BotaoDaBarra ref={botaoPainel} rotulo="Painel do documento" atalho="]" icone="painel-direito" aria-expanded={painelAberto} disabled={!painelDisponivel && !aoFecharPainel} onClick={alternarPainelDocumento} />
           <BotaoDaBarra ref={botaoMenu} rotulo="Mais opções" aria-label="Mais opções do leitor" icone="reticencias" aria-expanded={menu} onClick={() => abrirMenu(!menu)} />
         </div>
         {menu && <Popover ancora={botaoMenu} aoFechar={() => abrirMenu(false)} rotulo="Mais opções" largura={260} className="menu-da-barra">
@@ -790,7 +855,8 @@ export function ReaderController({
           </ul>
         </Popover>}
       </nav>
-      <ProgressoNoLivro snapshot={snapshot} leitor={leitor} concluido={concluidos.includes(snapshot.secao.id)} />
+      <ProgressoNoLivro snapshot={snapshot} leitor={leitor} concluido={concluidos.includes(snapshot.secao.id)}
+        ultimaParte={pdf ? totalDePaginas !== null && (snapshot.paginas?.fim ?? 0) >= totalDePaginas : !snapshot.proxima} />
       <PilulaDeLeitura pdf={pdf} escala={escalaPdf} aoProximaPagina={pdf ? posicaoDaBarra?.proximo : undefined} />
       {painelEsquerdoAberto && <PainelEsquerdo aoFechar={alternarPainelEsquerdo} vista={vistaEsquerda} aoMudarVista={mudarVistaEsquerda} sumario={sumario}
         miniaturas={pdf ? <Suspense fallback={<p className="painel-leitor-vazio" role="status">Abrindo as páginas…</p>}><MiniaturasDoPdf documento={documentoPdf} atual={paginaAtual} aoIr={irParaPaginaDoPdf} /></Suspense> : undefined} />}
@@ -808,9 +874,10 @@ export function ReaderController({
         snapshot={comMarcasDoRecorte}
         estrategia={estrategia}
         ativa={ativa}
-        margem={estreita || painelAberto ? null : (
+        margem={estreita || painelAberto || painel ? null : (
           <MarginNotes
             conexaoDaNota={conexaoDaNota}
+            notasDoLeitor={notasDoLeitor}
             pessoais={pessoais}
             notas={notas}
             artigo={raiz}
@@ -846,8 +913,8 @@ export function ReaderController({
 
       {navegando && <PercorrerDestaques key={snapshot.secao.id} itens={destaques} inicial={inicioDoPercorrer} aoSelecionar={selecionarDestaque} aoFechar={fecharNavegador} />}
       {painelAberto && <PainelDoLeitor snapshot={{ ...snapshot, marcas: [...marcas] }} tituloDocumento={tituloDocumento} tipo={tipoDoDocumento} autor={autor}
-        grifos={grifosDoCaderno} numeros={numerosDasNotas} filtros={filtrosDoPainel} {...(extrasDoCaderno ? { extras: extrasDoCaderno } : {})}
-        infoExtra={infoDoPainel} {...(estudoDoPainel || percorrerNoEstudo.length > 0 ? { estudo: [...percorrerNoEstudo, ...(estudoDoPainel ?? [])] } : {})}
+        grifos={grifosDoCaderno} numeros={numerosDasNotas} filtro={filtrosDoPainel} filtros={filtrosDoCaderno} {...(extrasDoCaderno ? { extras: extrasDoCaderno } : {})}
+        infoExtra={infoDoPainel} estudoTopo={estudoTopoDoPainel} {...(estudoDoPainel ? { estudo: estudoDoPainel } : {})}
         aoPercorrer={navegacaoSuspensa ? undefined : () => abrirPercorrer()}
         pessoais={pessoaisDoCaderno ?? pessoais ?? []} conversas={conversasDoPainel} fixada={fixada}
         aoFechar={fecharPainelDocumento} aoIr={(id, ancora) => {
@@ -862,15 +929,28 @@ export function ReaderController({
       {ancoraDoFoco && <FocoDoParagrafo leitor={leitor} ancora={ancoraDoFoco} />}
       {paleta && <PaletaDeComandos comandos={comandos} aoFechar={() => abrirPaleta(false)} />}
       {atalhos && <ListaDeAtalhos aoFechar={() => abrirAtalhos(false)} />}
-      {marcaDoBalao && <BalaoDaMarca key={marcaDoBalao.id} marca={marcaDoBalao} versaoId={snapshot.versao_id} aoFechar={fecharBalao} funcao={funcaoDoBalao}
-        painelInicial={balao?.etiquetas ? 'etiquetas' : null} acoes={{
-        remover: () => { removerMarca(marcaDoBalao); },
-        anotar: acoesDoBalao ? () => { abrirBalao(null); acoesDoBalao.anotar(marcaDoBalao.ancora, marcaDoBalao.id); } : undefined,
+      {marcaDoBalao && <BalaoDaMarca key={marcaDoBalao.id} marca={marcaDoBalao} aoFechar={fecharBalao} funcao={funcaoDoBalao}
+        nota={(snapshot.anotacoes ?? []).find((anotacao) => anotacao.marca_id === marcaDoBalao.id) ?? null}
+        dificuldades={dificuldadesDoTrecho?.(marcaDoBalao.ancora) ?? []} conexoes={conexoesDoTrecho?.(marcaDoBalao.ancora) ?? 0}
+        focarNota={balao?.nota === true} olharesAbertos={balao?.olhares === true} aoMudar={aoMudarMarcas}
+        acoes={{
+        remover: () => { pedirApagar(marcaDoBalao); },
         perguntar: acoesDoBalao ? () => { abrirBalao(null); acoesDoBalao.perguntar(marcaDoBalao.ancora); } : undefined,
         conectar: acoesDoBalao ? () => { abrirBalao(null); acoesDoBalao.conectar(marcaDoBalao.ancora); } : undefined,
         flashcard: acoesDoBalao?.flashcard ? () => { abrirBalao(null); acoesDoBalao.flashcard?.(marcaDoBalao.ancora); } : undefined,
-        verNota: marcaDoBalao.funcao === 'nenhuma' && !marcaDoBalao.comentario ? undefined : () => { abrirBalao(null); controlador.fixar(marcaDoBalao.id); },
+        conexoes: acoesDoBalao?.conexoes ? () => { abrirBalao(null); acoesDoBalao.conexoes?.(marcaDoBalao.ancora); } : undefined,
       }} />}
+      {apagando && (() => {
+        const nota = (snapshot.anotacoes ?? []).some((anotacao) => anotacao.marca_id === apagando.id);
+        const sinais = (snapshot.dificuldades ?? []).filter((d) => d.marca_id === apagando.id).length;
+        const comentado = apagando.origem !== 'manual' && apagando.comentario !== null;
+        return <ConfirmarApagar titulo="Remover este grifo?"
+          texto={apagando.origem === 'manual' ? undefined : 'O grifo é do Codex: ele sai da análise deste capítulo.'}
+          itens={[`“${apagando.ancora.citacao.length > 80 ? `${apagando.ancora.citacao.slice(0, 80)}…` : apagando.ancora.citacao}”`,
+            ...(comentado ? ['o comentário do Codex'] : []), ...(nota ? ['a sua nota'] : []),
+            ...(sinais > 0 ? [sinais === 1 ? '1 sinal de dificuldade' : `${String(sinais)} sinais de dificuldade`] : [])]}
+          rotuloDoBotao="Remover" aoConfirmar={() => apagarDeVez(apagando)} aoFechar={() => definirApagando(null)} />;
+      })()}
       {estreita && !painelAberto && <NumerosNaLateral itens={itensDaLateral} leitor={leitor} coluna={colunaDoTexto} />}
       {estreita && !navegando && !painelAberto && marcaFixada !== null && (
         <NoteSheet
@@ -883,17 +963,4 @@ export function ReaderController({
     </div>
     </ContextoDeDesfazer.Provider>
   );
-}
-
-export function Atencao({ marcasPorNivel, dificuldades = 0 }: { marcasPorNivel?: readonly number[]; dificuldades?: number } = {}): ReactNode {
-  const { preferencias, alterar } = usarAparencia();
-  const atual = preferencias.nivelDeAtencao;
-  const opcoes = ([0, 1, 2, 3] as const).map((n) => ({
-    valor: String(n),
-    rotulo: <span className="ponto-atencao" aria-hidden="true" data-preenchido={n <= atual} />,
-    nome: `${String(n)} · ${NOMES_DOS_NIVEIS[n]}`,
-    ...(marcasPorNivel ? { dica: dicaDoNivel(n, marcasPorNivel[n] ?? 0, dificuldades) } : { dica: NOMES_DOS_NIVEIS[n] }),
-  }));
-  return <div className="controle-atencao"><span>Atenção</span><SegmentedControl rotulo="Nível de atenção" className="pontos-atencao" valor={String(atual)} opcoes={opcoes}
-    aoMudar={(n) => alterar({ tipo: 'alterar', valores: { nivelDeAtencao: Number(n) as 0 | 1 | 2 | 3 } })} /><span className="valor-atencao">{NOMES_DOS_NIVEIS[atual]}</span></div>;
 }

@@ -300,11 +300,31 @@ A nota em si (`GET /api/documentos/:id/obsidian.md`) é Markdown, não JSON: o f
 descrito em `servico/src/obsidian/exportar.ts` e em `integracoes/obsidian/README.md`. A
 exportação é determinística: a mesma entrada produz os mesmos bytes (e o mesmo `sha256`).
 
+**IndiceObsidianV2** (v0.1, formato 2: uma nota por item, numa pasta por documento). Resposta de
+`GET /api/obsidian/v2/indice` e conteúdo de `.margem/manifesto.json` no ZIP V2: `versao: 2`,
+`url_base`, `marcas`, `incluir` (os tipos de nota exportados: `documento`, `grifo`, `anotacao`,
+`pergunta`, `relacao`, `flashcard`, `exercicio`) e `notas`, cada uma com `id` (o `margem_id` da nota),
+`tipo`, `documento_id`, `caminho` (relativo à pasta da exportação: `<Documento>/<Documento>.md` ou
+`<Documento>/<Subpasta>/<nota>.md`, subpastas em `PASTAS_DO_OBSIDIAN`), `sha256` e `atualizado_em`.
+`regrasIndiceObsidianV2` exige ids e caminhos únicos (sem distinguir maiúsculas), exatamente uma
+nota-índice por documento (com o id do documento, na raiz da pasta dele) e cada item na subpasta do
+seu tipo, na pasta do seu documento. Casos em `casos/IndiceObsidianV2/`. O formato das notas está em
+`servico/src/obsidian/FORMATO.md`; as rotas da V1 continuam respondendo.
+
+Desde o modelo D (§ 25) o índice não muda de forma, mas a nota do leitor ligada a um grifo deixa de
+ter nota própria (`tipo: anotacao`): o texto vai para a nota do grifo, seção `## Sua nota`, e o
+bloco `^margem-<id da anotação>` continua na nota-índice. Só as notas antigas soltas (e as de um
+grifo que não foi exportado) aparecem no índice como `anotacao`. As dificuldades saem dos sinais
+`DificuldadeV1` não descartados (seção na nota-índice e na nota do grifo, tag
+`margem/dificuldade/<categoria>`); etiquetas de dificuldade antigas não viram mais tag.
+
 ## 21. ExecucoesDoCodexV1
 
 Projeção de leitura da fila para os avisos da interface (`GET /api/execucoes/ativas` e o SSE `GET /api/execucoes/eventos`, evento `execucoes`). Montada só pelo serviço (`servico/src/execucoes/ativas.ts`) a partir de `job`, `evento_job`, `documento` e `secao`; o leitor só a mostra. Casos em [contratos/casos/ExecucoesDoCodex](../contratos/casos/ExecucoesDoCodex/).
 
 `{ versao: 1, gerado_em, execucoes: [...] (até 50), omitidas }`. Cada execução: `id` (do job), `tipo` (slug), `rotulo` (português, até 160), `estado` (`na_fila` | `rodando` | `concluida` | `falhou`), `inicio`, `fim`, `documento` `{id, titulo}` ou `null`, `secao` `{id, titulo, numero}` ou `null` (`numero` só para seção de nível 1), `rota` (caminho do leitor começando por uma `/` só, ou `null`) e `mensagem` (curta, ou `null`). Invariantes: `fim` é `null` exatamente nos estados ativos e nunca antes de `inicio`; `mensagem` só em `falhou` ou `na_fila` (espera da cota); ids únicos. Ficam de fora a canonização (não é o Codex) e os cancelados; terminadas permanecem cinco minutos.
+
+**ExecucoesDoCodexV2** (é a que as duas rotas respondem desde a v0.1): a V1 com `versao: 2` e, em cada execução, `avisos: { codigo, mensagem }[]` (até 5; `codigo` em snake_case, `mensagem` até 200, para quem lê). Os avisos vêm dos diagnósticos `aviso`/`erro` da tentativa vencedora do job (`job.diagnosticos`), resumidos por `servico/src/execucoes/avisos.ts` (os `info` ficam de fora; marcas que não ancoraram viram uma frase só). Invariantes além das da V1: `avisos` só não é vazio em `concluida`; `mensagem` pode vir em `concluida` só quando há aviso (resume os avisos). A interface mostra "pronto, com avisos" e não dispensa o aviso sozinha. Casos em [contratos/casos/ExecucoesDoCodexV2](../contratos/casos/ExecucoesDoCodexV2/). A V1 continua registrada e válida (a web converte uma V1 recebida em V2 com `avisos` vazios).
 
 ## 22. Sala de teste: FormularioDaSalaV1, RespostaDaSalaV1, ComentarioDaSalaV1 e SalaDeTesteV1
 
@@ -329,3 +349,33 @@ Validadores: `validarConversaV2`, `validarConexaoV2`, `validarResolucaoV2`, `val
 Banco: a migração `0025_leitor.sql` troca `pedro` por `leitor` em `mensagem.autor`, `conexao.autor`, `lote_revisao.autor`, `camada.tipo` (a camada dos grifos; índice `camada_do_leitor`) e `agente_mensagem.autor`, refaz as CHECK com o valor novo e converte as sessões `ResolucaoV1` de `resolucao.dados` para V2. O serviço só emite V2; o repositório de resoluções ainda lê como V2 uma V1 que apareça. `MensagemDoAgenteV1.autor` (tipo só de API, sem schema) passou a `leitor | agente`.
 
 Casos: `casos/ConversaV2`, `ConexaoV2`, `ResolucaoV2` e `LoteRevisaoV2` são os da V1 com `leitor`, mais `invalido-autor-pedro` em cada um; o `invalido-versao` das V2 traz `versao: 1`.
+
+## 24. ConexaoV3: a relação com o tipo semântico sem perda (v0.1)
+
+Vocabulário único de relação em duas camadas (`contratos/src/relacoes.ts`, sem dependência de Node): a **família** (`RelacaoConexao`, 6: `semelhanca`, `contraste`, `tensao`, `prerequisito`, `desenvolve`, `exemplo`), que é o que o leitor escolhe e vê, e o **tipo fino** (`TipoRelacaoSemantica`, 9: `suporta`, `desenvolve`, `pressupoe`, `contrasta`, `exemplifica`, `retoma`, `responde`, `tensiona`, `ecoa`), que a compreensão do capítulo propõe. `FAMILIA_DA_RELACAO_SEMANTICA` é o mapa canônico tipo → família (`responde` e `tensiona` → `tensao`; `retoma` e `ecoa` → `semelhanca`; `suporta` e `desenvolve` → `desenvolve`…); `ROTULOS_DA_RELACAO` e `ROTULOS_DA_RELACAO_SEMANTICA` dão os rótulos em português.
+
+**ConexaoV3** é a V2 com `versao: 3` e dois campos opcionais: `relacao_semantica` (um dos 9) e `origem_compreensao` `{ modelo_id, relacao_id }` (a relação semântica e o modelo do capítulo de onde a conexão foi adotada). Regras (`regrasConexaoV3`): as da V2; `relacao_semantica`, quando presente, é da família de `relacao`; `origem_compreensao` só com `relacao_semantica`. `lerConexaoV3` aceita V1, V2 ou V3 e devolve a V3 (as antigas sem o tipo fino); `conexaoV2ParaV3` converte; `decidirConexao` devolve a mesma versão. Casos em `casos/ConexaoV3` (os da V2 com `versao: 3`, mais a adoção de `responde`, a família errada, a origem sem tipo e o tipo fora do enum).
+
+Banco: a migração `0030_conexao_semantica.sql` só acrescenta `conexao.relacao_semantica` (CHECK com os 9), `relacao_origem_id` e `relacao_modelo_id` (nuláveis; a origem exige o tipo) e as preenche a partir de `relacao_adotada.tipo_original` onde a família gravada é a do tipo. Adotar uma relação da compreensão (`POST /api/compreensoes/:id/capitulos/:secao/relacoes/:relacao/adotar`) grava uma V3. O repositório lê em V3 por `obterV3`/`listarV3NosBlocos` (a exportação para o Obsidian usa essas); as outras leituras continuam respondendo V2.
+
+## 25. Modelo D dos grifos: NotaDoGrifoV1 e DificuldadeV1 (J138)
+
+"O trecho no centro, um dono por pergunta" (`contratos/src/grifo.ts`, também `@margem/contratos/grifo` para a web). O **grifo** é a marca (`MarcaV2`) com a cor e o rótulo de uma função do modo **dele** (`MarcaV2.modo`; grifos de modos diferentes convivem no documento; `nenhuma` é o grifo sem função, cinza).
+
+- **NotaDoGrifoV1** `{ versao: 1, id, marca_id, versao_id, texto, revisao?, criada_em, atualizada_em, revisao_edicao }`: a nota do leitor, uma por grifo, texto simples **sem tipo**. Guardada em `anotacao` com `marca_id` (o mesmo id da anotação: links e Obsidian não mudam); `notaDoGrifoDaAnotacao` lê a anotação como nota do grifo. Índice único `anotacao_uma_por_grifo` (fora as fundidas). Anotação sem `marca_id` que sobrar (banco antigo, API) é **nota antiga**, só leitura.
+- **DificuldadeV1** `{ versao: 1, id, versao_id, ancora, origem: codex|leitor, estado: sugerida|confirmada|descartada, tipo?, descricao?, marca_id?, codex?: { modelo_id, dificuldade_id }, criada_em, atualizada_em }`: sinal à parte, não é cor, função nem etiqueta. `tipo` é uma das 7 categorias (`TIPOS_DE_DIFICULDADE`). Regras (`regrasDificuldade`): âncora da versão; `codex` existe exatamente na origem `codex`; `sugerida` só do Codex (a do leitor nasce confirmada). Tabela `dificuldade`; a sugestão do Codex sem decisão não tem linha (vem do modelo do capítulo).
+- O **comentário do Codex** continua em `MarcaV2.comentario`, voz distinta da nota do leitor.
+
+Banco: a migração `0032_modelo_d_grifos.sql` só acrescenta. Junta as várias anotações de um grifo na mais antiga (as outras ficam com `fundida_em`, e todo repositório as filtra), dá um grifo `nenhuma` às anotações soltas (ou as junta ao grifo do leitor que cruzam), cria `dificuldade` e converte as etiquetas de dificuldade em sinais do leitor (as linhas de `etiqueta` ficam). Etiquetas pessoais não têm mais tela; as livres gravadas continuam saindo no Obsidian.
+
+Consumidores: a exportação para o Obsidian (§ 20, `servico/src/obsidian/FORMATO.md`) e a página Notas (`GET /api/notas`, `servico/src/notas/listar.ts`): um item por grifo do leitor (não rejeitado) ou marca do Codex que o leitor anotou, com o trecho, `funcao`/`modo`/`rotulo`/`cor` do modo do próprio grifo ("Grifo" sem função), `nota` e `nota_id` (a do leitor), `comentario_codex` e `autoria`; as notas antigas soltas são itens `nota_antiga` ("Nota antiga"); as fundidas não aparecem. Filtros: `mostrar=com_nota|grifos` (grifos = só os sem nota), `funcao` e `modo`, `texto`, `documento`. A exportação JSON passou a `versao: 2`; o CSV troca `tipo` por `funcao` e `modo` e acrescenta `comentario_codex`.
+
+## 26. Central de Notas (J145)
+
+A página Notas passou a ler `GET /api/notas/central` (`servico/src/notas/central.ts`): tudo o que foi produzido em todos os documentos, numa lista paginada e agregada no banco. `GET /api/notas` e as exportações CSV/JSON (§ 25) continuam iguais (grifos e notas).
+
+Tipos de item (`tipo`): `grifo` (do leitor; do Codex só da camada de execução mais recente de cada modo na versão atual, e as importadas), `nota_antiga`, `relacao` (conexões não rejeitadas e as relações da leitura do Codex — modelo do capítulo, revisão ≥ 2, do modelo mais recente por versão, capítulo e modo — que não viraram conexão; `estado: "da_leitura"`), `dificuldade` (sinais não descartados e as do modelo sem decisão, `estado: "sugerida"`), `resolucao`, `flashcard`, `conversa` (perguntas presas a trechos) e `visual` (o mais novo de cada série, não apagado). Cada item traz `autoria` (`leitor` | `codex`), `rotulo`, `estado`, `citacao` (até 600 caracteres), `nota`, `comentario` (Codex no grifo; verso; última resposta; resposta da resolução), `texto` (explicação, descrição, frente, pergunta, ideia, pedido), `destino` (relação: a outra ponta e como abri-la), documento, capítulo, página, `link` e `abrir` (`documento_id`, `secao_id`, `bloco_id`, `faixa`, `painel`: `balao|nota|conexao|relacao|conversa|resolucao|visual|flashcards|trecho`, `alvo_id`). As relações da leitura e as dificuldades sugeridas trazem `analise` (`execucao_id`, `secao_id`), onde apagá-las (`DELETE /api/compreensoes/:id/capitulos/:secao/itens/:item`, V-T8); nos outros itens, `null`. O que a pessoa apagou da análise (`elemento_apagado`: o item, ou um elemento de uma das pontas da relação) não aparece.
+
+Filtros: `documento`, `tipo` (os tipos acima menos `nota_antiga`, mais `nota` — com nota do leitor — e `comentario` — grifo com comentário do Codex), `autoria` (`leitor` inclui o que tem nota do leitor), `funcao` e `modo`, `texto` (no trecho, nas notas, comentários, textos, na outra ponta e no título), `desde`/`ate` (data de criação), `ordem` (`recentes` | `antigos` | `documento`: título, versão, bloco, posição), `limite` (até 200, padrão 50) e `deslocamento`; `facetas=1` traz as contagens por tipo, autoria, documento e função, cada uma com os outros filtros aplicados.
+
+Banco: a migração `0035_central_de_notas.sql` só acrescenta. `item_do_modelo` guarda as relações (com a âncora principal e o elemento de cada ponta) e as dificuldades de cada revisão ≥ 2 do modelo do capítulo; um gatilho a preenche a cada revisão publicada (as revisões são imutáveis) e a migração indexa as que já existiam; apagar a análise do capítulo (V-T8) apaga as linhas dele. Mais os índices `bloco_pagina_do_pdf` (o primeiro bloco de uma página, para pôr o exercício recortado na ordem do texto) e `camada_da_versao`.

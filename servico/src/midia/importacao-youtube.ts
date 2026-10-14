@@ -153,6 +153,9 @@ export function manipuladorImportarYoutube(opcoes: OpcoesDaImportacaoYoutube): M
         meta = { id: videoId, titulo: null, canal: null, publicado_em: null, duracao_s: null, idioma: null, descricao: null, capitulos: [], legendas: [], automaticas: [] };
       }
 
+      // 1b. A miniatura do vídeo, para a capa na biblioteca (J133); sem rede, a capa fica com o título.
+      if (!semYtDlp) await fonte.miniatura?.(documento.id, videoId, tarefa.sinal).catch(() => null);
+
       // 2. Texto com tempo: legendas do próprio vídeo.
       let transcricao: ResultadoDaImportacao['transcricao'] = null;
       const escolha = escolherLegenda(meta);

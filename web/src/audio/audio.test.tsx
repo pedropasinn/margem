@@ -3,7 +3,7 @@
  * para a tela), "Gerar narração" (estimativa, confirmação, progresso e erro) e o acompanhamento.
  */
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
 import type { AncoraV1 } from '@margem/contratos';
 import { rotaDoCaminho, caminhoDaRota } from '../biblioteca/rotas';
@@ -47,6 +47,31 @@ describe('rota', () => {
   test('/configuracoes', () => {
     expect(rotaDoCaminho('/configuracoes')).toEqual({ nome: 'configuracoes' });
     expect(caminhoDaRota({ nome: 'configuracoes' })).toBe('/configuracoes');
+  });
+});
+
+describe('Configurações → Primeiros passos (V-T1)', () => {
+  test('uma seção das Configurações, com o endereço próprio; o endereço antigo leva até ela', () => {
+    expect(rotaDoCaminho('/configuracoes/primeiros-passos')).toEqual({ nome: 'configuracoes', secao: 'primeiros-passos' });
+    expect(rotaDoCaminho('/primeiros-passos')).toEqual({ nome: 'configuracoes', secao: 'primeiros-passos' });
+    expect(caminhoDaRota({ nome: 'configuracoes', secao: 'primeiros-passos' })).toBe('/configuracoes/primeiros-passos');
+  });
+
+  test('as abas trocam a seção: Geral tem o áudio; Primeiros passos tem as etapas', async () => {
+    falsificar((p) => p.url === '/api/configuracoes/audio' ? { corpo: config() } : undefined);
+    const ir = vi.fn();
+    const { rerender } = render(<Configuracoes ir={ir} />);
+    const secoes = screen.getByRole('navigation', { name: 'Seções das configurações' });
+    expect(within(secoes).getByRole('link', { name: 'Geral' }).getAttribute('aria-current')).toBe('page');
+    await screen.findByLabelText('Chave da API da ElevenLabs');
+    fireEvent.click(within(secoes).getByRole('link', { name: 'Primeiros passos' }));
+    expect(ir).toHaveBeenCalledWith({ nome: 'configuracoes', secao: 'primeiros-passos' });
+    rerender(<Configuracoes ir={ir} secao="primeiros-passos" />);
+    expect(within(secoes).getByRole('link', { name: 'Primeiros passos' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('heading', { name: 'Primeiros passos' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Etapas' })).toBeDefined();
+    expect(screen.queryByLabelText('Chave da API da ElevenLabs')).toBeNull();
+    expect(document.title).toBe('Primeiros passos · Configurações · Margem');
   });
 });
 

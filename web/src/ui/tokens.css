@@ -69,12 +69,17 @@
   --r-pilula: 999px;
   --base-3d: 4px;
   --container: 1200px;
+  /* Assinatura do Margem (docs/identidade/README.md). */
+  --marca-palavra: #2B2B2B;
+  --marca-lema: #6E6E73;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]):not([data-tema="sepia"]) {
     --mistura-marca: screen;
     color-scheme: dark;
+    --marca-palavra: #FFFFFF;
+    --marca-lema: #A1A1AA;
 
     --bg: #141414;
     --bg-2: #1e1e1e;
@@ -114,6 +119,8 @@
 :root[data-tema="escuro"] {
   color-scheme: dark;
   --mistura-marca: screen;
+  --marca-palavra: #FFFFFF;
+  --marca-lema: #A1A1AA;
     --bg: #141414;
     --bg-2: #1e1e1e;
     --painel: #262626;
@@ -150,6 +157,8 @@
 
 :root[data-tema="sepia"] {
   color-scheme: light;
+  --marca-palavra: #392f23;
+  --marca-lema: #6f614b;
   --bg: #f5efdf; --bg-2: #efe6d2; --painel: #e9dfc8; --bg-hover: #644b2410;
   --texto-1: #392f23; --texto-2: #675943; --texto-3: #6f614b; --texto-off: #a49985;
   --mistura-do-numero: 35%;
@@ -166,4 +175,15 @@
   --text-primary: var(--texto-1); --text-secondary: var(--texto-2); --text-tertiary: var(--texto-3);
   --radius-sm: var(--r-8); --radius-md: var(--r-12); --radius-lg: var(--r-24);
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-7: 48px;
+  /*
+   * Largura das páginas (V-U4): todas ocupam a área de conteúdo inteira, como a Biblioteca, com a
+   * mesma margem lateral. Só o leitor e a coluna da conversa têm largura de leitura própria.
+   */
+  --pagina-margem: 32px;
+  --largura-conversa: 768px;
+  /* Barras de rolagem (V-U2): o polegar em alfas do texto, discreto, mais forte no hover. */
+  --rolagem: color-mix(in srgb, var(--texto-1) 16%, transparent);
+  --rolagem-hover: color-mix(in srgb, var(--texto-1) 30%, transparent);
+  --rolagem-ativa: color-mix(in srgb, var(--texto-1) 46%, transparent);
 }
+@media (max-width: 799px) { :root { --pagina-margem: 16px; } }

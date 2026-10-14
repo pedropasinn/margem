@@ -8,6 +8,7 @@
 .veu-boas-vindas { display: grid; place-items: center; padding: 24px 16px; overflow-y: auto; z-index: 130; background: color-mix(in srgb, var(--bg) 78%, transparent); }
 .card.boas-vindas { position: relative; width: min(600px, 100%); max-height: calc(100dvh - 48px); overflow-y: auto; display: grid; gap: 16px; padding: 28px 32px; box-shadow: 0 12px 40px #0002; outline: none; }
 .boas-vindas h2 { font-size: 26px; outline: none; }
+.boas-vindas-assinatura { height: 72px; margin: 4px 0 -4px; }
 .boas-vindas-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -4px -8px -4px 0; }
 .boas-vindas-topo .eyebrow { margin: 0; }
 .boas-vindas-lead { margin: 0; color: var(--texto-2); font-size: 16px; line-height: 1.55; }
@@ -31,6 +32,12 @@
 .gestos li { display: flex; gap: 14px; align-items: flex-start; }
 .gestos h3 { font-size: 16px; line-height: 1.35; }
 .gestos p { margin: 2px 0 0; color: var(--texto-2); font-size: 15px; }
+/* Três jeitos de estudar: três colunas iguais, a mesma tipografia dos gestos. */
+.tres-jeitos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 4px 0 0; padding: 0; list-style: none; }
+.tres-jeitos li { display: grid; gap: 8px; align-content: start; padding: 16px; border: 2px solid var(--borda-3d); border-radius: var(--r-16); }
+.tres-jeitos h3 { font-size: 16px; line-height: 1.35; }
+.tres-jeitos p { margin: 0; color: var(--texto-2); font-size: 14px; line-height: 1.5; }
+@media (max-width: 600px) { .tres-jeitos { grid-template-columns: minmax(0, 1fr); } .tres-jeitos li { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; } .tres-jeitos li p { grid-column: 1 / -1; } .tres-jeitos li h3 { align-self: center; } }
 .gesto-icone { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border: 2px solid var(--borda-3d); border-radius: 50%; color: var(--texto-1); }
 
 /* ---------- Primeiro documento: as três portas ---------- */
@@ -64,9 +71,9 @@
 @media (prefers-reduced-motion: reduce) { .contorno-da-dica, .pontos-das-telas > span { transition: none; } }
 
 /* ---------- Página Primeiros passos ---------- */
-.primeiros-passos { display: grid; gap: 32px; max-width: 760px; margin: 0 auto; }
+.primeiros-passos { display: grid; gap: 32px; }
 .primeiros-passos-cabeca { display: grid; gap: 8px; }
-.primeiros-passos-cabeca .page-title { margin: 0; }
+.primeiros-passos-cabeca .titulo-primeiros-passos { margin: 0; font-size: 22px; }
 .primeiros-passos-cabeca .secundario { margin: 0; color: var(--texto-2); font-size: 14px; }
 .primeiros-passos-cabeca .progress-track { max-width: 320px; }
 .etapas-do-onboarding { padding-block: 8px; }
@@ -86,7 +93,7 @@
 .levar-acao { align-self: center; }
 .levar-fim { justify-content: flex-end; }
 
-.ajuda { display: grid; gap: 16px; max-width: 760px; margin: 0 auto; }
+.ajuda { display: grid; gap: 16px; }
 .ajuda .page-title { margin: 0; }
 .ajuda-corpo { display: grid; gap: 12px; font-size: 15px; color: var(--texto-2); }
 .ajuda-corpo h2 { font-size: 18px; margin-top: 8px; }

@@ -19,11 +19,20 @@ export function cameraNoInstante(curta: AnaliseCurtaDaObraV1, segundo: number): 
   const de = b.camera.de, para = b.camera.para;
   return { x: de.x + (para.x - de.x) * u, y: de.y + (para.y - de.y) * u, largura: de.largura + (para.largura - de.largura) * u, altura: de.altura + (para.altura - de.altura) * u };
 }
+/**
+ * Obra não identificada (V-W5): analisada só pela imagem, sem afirmação de identidade e com a imagem
+ * enviada como única fonte. A interface a mostra como "Obra não identificada", com o palpite à parte.
+ */
+export function obraNaoIdentificada(m: Pick<ModeloDaObraV1, 'identidade' | 'fontes'>): boolean {
+  return m.identidade.afirmacoes.length === 0 && m.fontes.length > 0 && m.fontes.every(f => f.categoria === 'imagem_enviada');
+}
 /** Regras contextuais: chamar depois da validação estrutural do contrato. */
 export function conferirModeloDaObra(m: ModeloDaObraV1): string[] {
   const erros: string[] = [];
   const af = new Map(m.afirmacoes.map(a => [a.id, a]));
   const fontes = new Set(m.fontes.map(f => f.id)), regioes = new Set(m.regioes.map(r => r.id));
+  // V-W5: a imagem enviada é fonte só do que se vê; nunca documenta fato nem interpretação.
+  const daImagem = new Set(m.fontes.filter(f => f.categoria === 'imagem_enviada').map(f => f.id));
   const ids = [m.id, ...af.keys(), ...fontes, ...regioes];
   if (new Set(ids).size !== 1 + m.afirmacoes.length + m.fontes.length + m.regioes.length) erros.push('ids_duplicados');
   if (!fontes.has(m.imagem.fonte_id)) erros.push('fonte_imagem_ausente');
@@ -49,13 +58,15 @@ export function conferirModeloDaObra(m: ModeloDaObraV1): string[] {
   }
   for (const a of m.afirmacoes) {
     if (a.fontes.some(f => !fontes.has(f)) || a.regioes.some(r => !regioes.has(r)) || a.apoios.some(id => !af.has(id))) erros.push('referencia_ausente');
-    if (['fato', 'interpretacao_documentada'].includes(a.tipo) && !a.fontes.length) erros.push('afirmacao_documentada_sem_fonte');
+    if (['fato', 'interpretacao_documentada'].includes(a.tipo) && !a.fontes.some(f => !daImagem.has(f))) erros.push('afirmacao_documentada_sem_fonte');
     if (a.tipo === 'observacao' && !a.regioes.length) erros.push('observacao_sem_regiao');
     if (a.tipo === 'inferencia_ia' && (!a.apoios.length || a.proveniencia.autor !== 'ia')) erros.push('inferencia_sem_apoio_ou_autor');
     if (a.tipo === 'intencao_desconhecida' && a.confianca !== 'nao_aplicavel') erros.push('intencao_com_certeza');
     visitar(a.id);
   }
   if (m.identidade.afirmacoes.some(id => af.get(id)?.tipo !== 'fato')) erros.push('identidade_sem_fato');
+  // Identidade sem afirmação só numa obra não identificada (V-W5): a única fonte é a imagem enviada.
+  if (!m.identidade.afirmacoes.length && m.fontes.some(f => !daImagem.has(f.id))) erros.push('identidade_sem_fato');
   for (const e of m.estudo) if (e.afirmacoes.some(id => !af.has(id))) erros.push('estudo_sem_apoio');
   return [...new Set(erros)];
 }

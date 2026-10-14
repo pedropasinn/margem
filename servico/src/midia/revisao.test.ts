@@ -8,9 +8,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type pg from 'pg';
-import { expect, test } from 'vitest';
+import { beforeAll, expect, test } from 'vitest';
 import { conferirAncora, type Id, type MidiaV1 } from '@margem/contratos';
-import { comBanco } from '../../testes/apoio';
+import { comBanco, exigirMotorPython } from '../../testes/apoio';
 import { raizDoRepositorio } from '../dados';
 import { criarApi } from '../http/app';
 import { CABECALHO_MARGEM } from '../http/ambiente';
@@ -20,6 +20,9 @@ import { Worker } from '../worker/worker';
 import { ancoraNoBloco, caminhoDaRevisao, manipuladorCanonizarRevisao, textoDaTranscricao, TIPO_CANONIZAR_REVISAO } from './revisao';
 
 const executar = promisify(execFile);
+
+// Canoniza com o motor Python de verdade: sem o venv, a causa aparece aqui, não num 409 adiante.
+beforeAll(exigirMotorPython, 30_000);
 const ESCRITA = { [CABECALHO_MARGEM]: '1' };
 const JSON_ESCRITA = { ...ESCRITA, 'Content-Type': 'application/json' };
 

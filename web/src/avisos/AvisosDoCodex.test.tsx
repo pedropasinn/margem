@@ -61,3 +61,21 @@ describe('pilha de avisos do Codex', () => {
     expect(anuncio.textContent).toMatch(/^(Pronto|Falhou|O Codex começou)/);
   });
 });
+
+describe('conclusão com avisos', () => {
+  test('mostra "pronto, com avisos", as ressalvas e o Abrir; não some sozinha', () => {
+    const lista = listaDeExemplo(T0);
+    const AVISO = 'O Codex leu só parte deste trecho; pode faltar alguma marca.';
+    lista.execucoes = [{ ...lista.execucoes[1]!, mensagem: AVISO, avisos: [{ codigo: 'leitura_parcial', mensagem: AVISO },
+      { codigo: 'marcas_recusadas', mensagem: '2 marcas ficaram de fora porque não deu para ancorá-las no texto.' }] }];
+    let estado = reduzirAvisos(ESTADO_INICIAL, { tipo: 'lista', lista, recebidaEm: T0 });
+    estado = reduzirAvisos(estado, { tipo: 'expirar', agora: T0 + 60_000 });
+    render(<PilhaDeAvisos pilha={organizarPilha(estado)} agora={T0} desvioMs={0} aoDispensar={() => undefined} aoAbrir={() => undefined} />);
+    const aviso = screen.getByRole('listitem', { name: 'Montando o mapa do capítulo 3 de Mixtape: pronto, com avisos' });
+    expect(aviso.hasAttribute('data-avisos')).toBe(true);
+    expect(screen.getByText(AVISO)).toBeTruthy();
+    expect(screen.getByText('2 marcas ficaram de fora porque não deu para ancorá-las no texto.')).toBeTruthy();
+    expect(screen.getByText('Codex · pronto com avisos em 46 s')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Abrir' })).toBeTruthy();
+  });
+});

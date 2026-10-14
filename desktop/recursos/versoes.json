@@ -1,0 +1,79 @@
+{
+  "$comentario": "Binários que o app de desktop leva, por plataforma (J114). Versões e sha256 FIXADOS: o preparar.mjs baixa da fonte oficial e recusa qualquer byte diferente. Para atualizar, troque url, sha256 e tamanho juntos (o sha256 conferido contra o publicado pela fonte: digest do GitHub, .sha256 do Maven Central) e registre em TERCEIROS.md.",
+  "versao": 1,
+  "plataformas": ["win32-x64", "darwin-arm64", "darwin-x64", "linux-x64"],
+  "componentes": {
+    "postgres": {
+      "versao": "18.6",
+      "licenca": "PostgreSQL License",
+      "nota": "macOS e Linux: binários portáteis do projeto zonky embedded-postgres-binaries (Maven Central, assinados), só initdb/pg_ctl/postgres + lib + share. Windows: zip oficial da EDB (o instalador do postgresql.org), do qual entram só bin/, lib/ e share/.",
+      "arquivos": {
+        "linux-x64": [{ "nome": "embedded-postgres-binaries-linux-amd64-18.6.0.jar", "formato": "zonky", "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/18.6.0/embedded-postgres-binaries-linux-amd64-18.6.0.jar", "sha256": "008ee189eaa7ca2b58bd01dd950291e638b998392cf982297acd4779ec898ac1", "tamanho": 15119738 }],
+        "darwin-x64": [{ "nome": "embedded-postgres-binaries-darwin-amd64-18.6.0.jar", "formato": "zonky", "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-darwin-amd64/18.6.0/embedded-postgres-binaries-darwin-amd64-18.6.0.jar", "sha256": "690941008aac9ee360820fde9bb7870a4f3dcac5e9e2f9e45e42333a436ad0f9", "tamanho": 71185174 }],
+        "darwin-arm64": [{ "nome": "embedded-postgres-binaries-darwin-arm64v8-18.6.0.jar", "formato": "zonky", "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-darwin-arm64v8/18.6.0/embedded-postgres-binaries-darwin-arm64v8-18.6.0.jar", "sha256": "8f6ed6f38195b50a40712ada8b2a12060b6193c1a6977a6eb5cff053bb5a1b89", "tamanho": 71185174 }],
+        "win32-x64": [{ "nome": "postgresql-18.6-1-windows-x64-binaries.zip", "formato": "edb", "url": "https://get.enterprisedb.com/postgresql/postgresql-18.6-1-windows-x64-binaries.zip", "sha256": "fbe23da234ee31547bf8a36d29dfd81e82b849df2d2b78d2eecb43d360252f8c", "tamanho": 343808005 }],
+        "*": [{ "nome": "postgres-COPYRIGHT", "formato": "licenca", "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_6/COPYRIGHT", "sha256": "3d6af92ff8a4c2cdf69afb1cf44edea727922f5cd0cf8b5f72b11cdecac8fdfd", "tamanho": 1198 }]
+      }
+    },
+    "codex": {
+      "versao": "0.162.1",
+      "licenca": "Apache-2.0",
+      "nota": "Pacote oficial codex-package-<alvo> do release rust-v0.162.1 (a mesma versão do Dockerfile): bin/codex, codex-path/rg e codex-resources/ (bwrap no Linux; command-runner e sandbox-setup no Windows). A voz (codex-resources/voice) fica de fora.",
+      "arquivos": {
+        "linux-x64": [{ "nome": "codex-package-x86_64-unknown-linux-musl.tar.gz", "formato": "codex", "url": "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-package-x86_64-unknown-linux-musl.tar.gz", "sha256": "a676f5722aae0d86cbe3764332f08eab1fdd89dc0a300b3ad4ffbf48611fa3e3", "tamanho": 162905879 }],
+        "darwin-x64": [{ "nome": "codex-package-x86_64-apple-darwin.tar.gz", "formato": "codex", "url": "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-package-x86_64-apple-darwin.tar.gz", "sha256": "894ac20afe819d4fa2a4be8cd27c54fd606338b86036e8ed9b6c9978c2dc7aed", "tamanho": 143687717 }],
+        "darwin-arm64": [{ "nome": "codex-package-aarch64-apple-darwin.tar.gz", "formato": "codex", "url": "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-package-aarch64-apple-darwin.tar.gz", "sha256": "88e37ccddf5a0f4ea9dc1be13c66a2a94f9c2d1a04f3ace9053d71b3939e885d", "tamanho": 132224844 }],
+        "win32-x64": [{ "nome": "codex-package-x86_64-pc-windows-msvc.tar.gz", "formato": "codex", "url": "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-package-x86_64-pc-windows-msvc.tar.gz", "sha256": "3e993a82ff393f4530558dcaadb36bb4f0fd1ea7243e621348e40b469f900f6a", "tamanho": 159746536 }],
+        "*": [{ "nome": "codex-LICENSE", "formato": "licenca", "url": "https://raw.githubusercontent.com/openai/codex/rust-v0.162.1/LICENSE", "sha256": "d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc", "tamanho": 10926 }]
+      }
+    },
+    "yt-dlp": {
+      "versao": "2026.08.19",
+      "licenca": "Unlicense (o executável inclui CPython e dependências, cada uma com a sua licença)",
+      "nota": "Executáveis oficiais standalone (a mesma versão de tools/midia/yt-dlp.txt).",
+      "arquivos": {
+        "linux-x64": [{ "nome": "yt-dlp_linux", "formato": "executavel", "destino": "bin/yt-dlp", "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_linux", "sha256": "58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a", "tamanho": 40446224 }],
+        "darwin-x64": [{ "nome": "yt-dlp_macos", "formato": "executavel", "destino": "bin/yt-dlp", "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_macos", "sha256": "0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202", "tamanho": 37146048 }],
+        "darwin-arm64": [{ "nome": "yt-dlp_macos", "formato": "executavel", "destino": "bin/yt-dlp", "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_macos", "sha256": "0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202", "tamanho": 37146048 }],
+        "win32-x64": [{ "nome": "yt-dlp.exe", "formato": "executavel", "destino": "bin/yt-dlp.exe", "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe", "sha256": "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a", "tamanho": 17840399 }],
+        "*": [{ "nome": "yt-dlp-LICENSE", "formato": "licenca", "url": "https://raw.githubusercontent.com/yt-dlp/yt-dlp/2026.08.19/LICENSE", "sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c", "tamanho": 1211 }]
+      }
+    },
+    "ffmpeg": {
+      "versao": "Linux 8.1.3 (BtbN); Windows 6.1.1 (gyan.dev); macOS x64 6.1.1 (evermeet.cx); macOS arm64 6.x (osxexperts.net)",
+      "licenca": "GPL-3.0-or-later (builds estáticos com --enable-gpl: libx264, libx265 etc.)",
+      "nota": "Linux: build GPL do BtbN/FFmpeg-Builds na variante shared (J116: ffmpeg e ffprobe dividem as bibliotecas libav* em lib/, achadas pelo RPATH $ORIGIN/../lib; 213 MB em vez de 344 MB dos dois estáticos), ramo n8.1, do autobuild de fim de mês 2026-09-30 (os de fim de mês ficam publicados por anos). O build Linux do ffmpeg-static (johnvansickle 7.0.2) foi descartado: sem libharfbuzz, o FFmpeg 7+ não tem o filtro drawtext, que a arte usa. Windows e macOS: release b6.1.1 do projeto ffmpeg-static (eugeneware), que republica (download-binaries/index.sh da tag) gyan.dev 6.1.1 essentials, evermeet.cx 6.1.1 e osxexperts.net (série 6); os três têm libfreetype e libmp3lame, e no FFmpeg 6 o drawtext só precisa do freetype. LICENSE e README vão para licencas/.",
+      "arquivos": {
+        "linux-x64": [
+          { "nome": "ffmpeg-n8.1.3-9-g29e619e767-linux64-gpl-shared-8.1.tar.xz", "formato": "btbn", "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n8.1.3-9-g29e619e767-linux64-gpl-shared-8.1.tar.xz", "sha256": "76649c19a7a4615b367251ba4a8adc643f65831278a00e7a0c38398f7f06484b", "tamanho": 71911604 }
+        ],
+        "darwin-x64": [
+          { "nome": "ffmpeg-darwin-x64.gz", "formato": "gz", "destino": "bin/ffmpeg", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffmpeg-darwin-x64.gz", "sha256": "929b375c1182d956c51f7ac25e0b2b0411fb01f6f407aa15c9758efeb4242106", "tamanho": 25296431 },
+          { "nome": "ffprobe-darwin-x64.gz", "formato": "gz", "destino": "bin/ffprobe", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffprobe-darwin-x64.gz", "sha256": "d4da574d6e2e197bd259b47d69cf262df9e312af24ad960444f6d806d3d4c186", "tamanho": 25239438 },
+          { "nome": "darwin-x64.LICENSE", "formato": "licenca", "destino": "licencas/ffmpeg.LICENSE", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/darwin-x64.LICENSE", "sha256": "2e1d16c72fd74e12063776371da757322f8b77589386532f4fd8634bde7de1af", "tamanho": 4346 },
+          { "nome": "darwin-x64.README", "formato": "licenca", "destino": "licencas/ffmpeg.README", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/darwin-x64.README", "sha256": "e88a0325f8e5b75210355e37341824f074d3cd82def2125be54c914b62848a36", "tamanho": 6227 }
+        ],
+        "darwin-arm64": [
+          { "nome": "ffmpeg-darwin-arm64.gz", "formato": "gz", "destino": "bin/ffmpeg", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffmpeg-darwin-arm64.gz", "sha256": "8923876afa8db5585022d7860ec7e589af192f441c56793971276d450ed3bbfa", "tamanho": 19246198 },
+          { "nome": "ffprobe-darwin-arm64.gz", "formato": "gz", "destino": "bin/ffprobe", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffprobe-darwin-arm64.gz", "sha256": "d986a8ec7b030899fe66a8a288ed809a3543338705a3ce178cfb85869c5d80be", "tamanho": 19207077 },
+          { "nome": "darwin-arm64.LICENSE", "formato": "licenca", "destino": "licencas/ffmpeg.LICENSE", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/darwin-arm64.LICENSE", "sha256": "cb48bf09a11f5fb576cddb0431c8f5ed0a60157a9ec942adffc13907cbe083f2", "tamanho": 4376 },
+          { "nome": "darwin-arm64.README", "formato": "licenca", "destino": "licencas/ffmpeg.README", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/darwin-arm64.README", "sha256": "05ba4b92c96605434b1aaae3eedf5a2c280c9607bf78ffca9a5b536d9af2dc6a", "tamanho": 1810 }
+        ],
+        "win32-x64": [
+          { "nome": "ffmpeg-win32-x64.gz", "formato": "gz", "destino": "bin/ffmpeg.exe", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffmpeg-win32-x64.gz", "sha256": "8883a3dffbd0a16cf4ef95206ea05283f78908dbfb118f73c83f4951dcc06d77", "tamanho": 29581307 },
+          { "nome": "ffprobe-win32-x64.gz", "formato": "gz", "destino": "bin/ffprobe.exe", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffprobe-win32-x64.gz", "sha256": "f309e6223ad89d2fe54bccd420a7709b66fd27540674e92309578ed491a43c8d", "tamanho": 29521644 },
+          { "nome": "win32-x64.LICENSE", "formato": "licenca", "destino": "licencas/ffmpeg.LICENSE", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/win32-x64.LICENSE", "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903", "tamanho": 35147 },
+          { "nome": "win32-x64.README", "formato": "licenca", "destino": "licencas/ffmpeg.README", "url": "https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/win32-x64.README", "sha256": "a636a7183c58006351acbaf35303c0ed85c6e1320fd4e80de453ba6157de6311", "tamanho": 39494 }
+        ]
+      }
+    },
+    "fonte": {
+      "versao": "2.37",
+      "licenca": "Bitstream Vera / DejaVu (livre; ver LICENSE)",
+      "nota": "DejaVuSans.ttf dos rótulos da arte (servico/src/arte/v2/imagens.ts, MARGEM_FONTE).",
+      "arquivos": {
+        "*": [{ "nome": "dejavu-sans-ttf-2.37.zip", "formato": "dejavu", "url": "https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-sans-ttf-2.37.zip", "sha256": "5c6e497a2f36552cb5ffb112c413a6af39c0f3c47653662b90b4fa6499822fd7", "tamanho": 417746 }]
+      }
+    }
+  }
+}

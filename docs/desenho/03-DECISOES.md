@@ -1,6 +1,6 @@
 # Margem · decisões depois da revisão do GPT-6 Pro
 
-20 de setembro de 2026. Fecha a rodada de desenho: `DESENHO-APLICACAO-LEITOR.md` (v0.1) + `_entrada/Balcao/L01-entrega.md` (crítica) → este documento (o que fica valendo). O desenho v0.1 permanece como registro; onde este texto divergir dele, vale este.
+20 de setembro de 2026. Fecha a rodada de desenho: o desenho v0.1 + a crítica do GPT-6 Pro → este documento (o que fica valendo). O desenho v0.1 permanece como registro; onde este texto divergir dele, vale este.
 
 ## 1. Leitura da crítica
 
@@ -21,7 +21,7 @@ Aceito sem ressalva:
 - Testes de integração em Postgres real; sem SQLite.
 - Explicar com contexto em camadas (núcleo, dependências explícitas, busca no documento, orientação derivada identificada como IA, manifesto com `contexto_snapshot`), prompt e schema de pontos tipados com apoios. Fica para F2, mas o contrato já nasce assim.
 - Cobertura como auditoria seletiva orientada a risco (5 a 10% dos tokens), alimentada por um mapa compacto por seção produzido na primeira passagem. Fica para F4.
-- Repositório novo `~/repo/margem/` desde já; o pipeline de `estudos/leitura-marcada/` vira referência de comparação e fonte dos módulos trazidos com origem registrada.
+- Repositório novo `margem` desde já; o pipeline anterior de leitura marcada vira referência de comparação e fonte dos módulos trazidos com origem registrada.
 - Corrido em F1, inclusive no celular; colunas depois, sobre o mesmo renderizador.
 - Adaptador legado isolado para o formato atual (`m01`, página do PDF, sublinhados como texto) e para a sessão do Horarium; a exportação declara perdas.
 
@@ -32,7 +32,7 @@ Aceito sem ressalva:
 | Partes de 8 a 16 mil tokens | Padrão **capítulo inteiro até ~45 mil tokens** de texto-fonte; acima disso, cortar em fronteira de seção. Tamanho é parâmetro da `execucao_de_leitura`, para comparar. | No Mixtape, capítulos de 30 a 50 mil tokens foram lidos em 8 a 13 min com marcas bem localizadas e poucas funções trocadas; partes menores multiplicam chamadas (a cota da conta é o limite real) e as fronteiras, que são justamente onde a leitura perde contexto. A hipótese dele fica registrada para um teste A/B na mesma obra. |
 | Dois slots de concorrência, teto quatro | Padrão **quatro**, com limite global compartilhado entre projetos no mesmo computador. | Quatro filas rodaram sem incidente; o gargalo da máquina é a soma de jobs Codex de todos os projetos, então o limite tem de ser global, não da Margem. |
 | Sequencial dentro do capítulo | Aceito, com uma adição: quando o capítulo cabe numa parte só (o caso comum), não há sequência a manter; o registro de continuidade só entra quando há corte. | Evita gerar resumos para nada. |
-| "Servidor pessoal local" em vez de "local-first" | Aceito o termo. Acrescento: a aplicação precisa abrir o texto e as marcas já carregadas mesmo com o worker parado, e o navegador guarda a última posição localmente até conseguir gravar. | É o que o leitor vai sentir no celular via Tailscale com a rede ruim da guest. |
+| "Servidor pessoal local" em vez de "local-first" | Aceito o termo. Acrescento: a aplicação precisa abrir o texto e as marcas já carregadas mesmo com o worker parado, e o navegador guarda a última posição localmente até conseguir gravar. | É o que o leitor vai sentir no celular, por acesso remoto com rede ruim. |
 | Backup e restauração em F1 | Aceito, mas simples: `pg_dump` diário + rsync da pasta de arquivos, com um teste de restauração no J10. | Sem isso, o primeiro livro lido de verdade fica preso a uma instância. |
 | J10 exige celular real | Aceito, com o harness Playwright em 412×915 como gate automático e o celular real como conferência do leitor, não como bloqueio do job. | O Codex não tem o aparelho. |
 
@@ -62,9 +62,9 @@ Regras fixas: offsets em unidades UTF-16 relativos ao texto do bloco; SHA-256 do
 
 A lista J00–J10 do GPT-6 é adotada como está, com estas adaptações à nossa operação:
 
-- Repositório `~/repo/margem/` com `web/`, `servico/`, `motor/`, `contratos/`, `core/`, `fixtures/`, `docs/jobs/`. Worktrees em `~/repo/margem-wt/<job>`, removidas ao mesclar (máx. 6 vivas).
+- Repositório `margem` com `web/`, `servico/`, `motor/`, `contratos/`, `core/`, `fixtures/`, `docs/jobs/`. Uma worktree por job, removida ao mesclar (máx. 6 vivas).
 - Cada job tem `docs/jobs/Jnn-SPEC.md` e entrega `Jnn-RESULTADO.md`. Executor: Codex (`gpt-6-astra`, esforço alto), lançado por `systemd-run --user`, um `codex exec` por job, com o cão de guarda. Revisão cruzada do Claude em J01, J02, J05 e J06 (contratos, âncoras, executor, prompts), que são os pontos onde um erro contamina tudo.
-- Fixtures: o Mixtape (`estudos/fontes-causal/mixtape-limpo.pdf`, 584 páginas) e seus 11 JSONs de marcas revisadas como corpus legado; um Markdown curto com Unicode difícil (emoji, combinantes, ligaturas) e um TXT colado; um PDF pequeno sintético com figura, equação e parágrafo que atravessa página.
+- Fixtures: o Mixtape (PDF de 584 páginas) e seus 11 JSONs de marcas revisadas como corpus legado; um Markdown curto com Unicode difícil (emoji, combinantes, ligaturas) e um TXT colado; um PDF pequeno sintético com figura, equação e parágrafo que atravessa página.
 - Executor falso do Codex em todos os testes; a chamada real só no J10, numa parte pequena.
 - J00 e J01 rodam em série; J02, J03, J04, J05 em paralelo (4 slots); depois J06 e J08; depois J07; depois J09; J10 fecha.
 

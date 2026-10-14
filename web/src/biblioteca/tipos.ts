@@ -4,7 +4,7 @@ import type { Bloco, Id, ProgressoV1, Secao } from '@margem/contratos';
 
 /** Espelho dos tipos que a API devolve (`servico/src/http/consultas.ts`). */
 export type EstadoDoDocumento =
-  | 'sem_texto' | 'canonizando' | 'transcrevendo' | 'pronto' | 'marcando' | 'revisando' | 'falhou';
+  | 'sem_texto' | 'canonizando' | 'transcrevendo' | 'pronto' | 'marcando' | 'revisando' | 'preparando' | 'falhou';
 
 /** Uma função contada: chave, rótulo do modo da marca e quantas o leitor mostra (J107). */
 export interface FuncaoContada {
@@ -43,6 +43,8 @@ export interface ItemDaBiblioteca {
   jobs_em_curso: number;
   /** Vídeo ou áudio com transcrição (J71); ausente nas APIs antigas e `null` nos textos. */
   midia?: { tipo: 'video' | 'audio'; duracao_s: number; fonte_url: string | null } | null;
+  /** Capítulos da última versão (V-D1); `null` sem versão e ausente nas APIs antigas, que pedem a árvore. */
+  capitulos_total?: number | null;
 }
 
 /** "Vídeo · 43 min" para quem tem mídia; o formato do arquivo para os textos. */
@@ -83,6 +85,8 @@ export interface VersaoResumida {
   secoes: number;
   assets: number;
   limites: string[];
+  /** Os limites resumidos (V-T4): avisos do que se perdeu primeiro, depois o esperado. Ausente em serviço antigo. */
+  resumo_dos_limites?: { nivel: 'info' | 'aviso'; codigo: string; mensagem: string; quantidade: number }[];
 }
 
 export interface JobResumido {
@@ -93,6 +97,10 @@ export interface JobResumido {
   not_before: string | null;
   error_code: string | null;
   atualizado_em: string;
+  /** Os da tentativa vencedora (ou da última). Ausente em serviços anteriores. */
+  diagnosticos?: { nivel: 'info' | 'aviso' | 'erro'; codigo: string; mensagem: string }[];
+  /** Concluído com ressalvas, já em frases para quem lê (vazio fora de `ok`). Ausente em serviços anteriores. */
+  avisos?: { codigo: string; mensagem: string }[];
 }
 
 export interface ExecucaoResumida {
@@ -186,16 +194,77 @@ export interface ResultadoDaBusca {
 }
 export interface RespostaDaBusca { consulta: string; total: number; resultados: ResultadoDaBusca[]; proximo: number | null }
 
-/** Uma anotação ou um grifo do leitor na tela "Notas" (`servico/src/notas/listar.ts`). */
-export interface ItemDeNota {
-  id: Id;
-  especie: 'anotacao' | 'grifo';
-  tipo: string;
+/**
+ * Central de Notas (J145, `servico/src/notas/central.ts`): um item de qualquer tipo, de qualquer documento, com o
+ * trecho, o lugar e o que abrir no leitor.
+ */
+export type TipoDaCentral = 'grifo' | 'nota_antiga' | 'relacao' | 'dificuldade' | 'resolucao' | 'flashcard' | 'conversa' | 'visual';
+export type FiltroDeTipoDaCentral = Exclude<TipoDaCentral, 'nota_antiga'> | 'nota' | 'comentario';
+export interface AberturaNoLeitor {
+  documento_id: Id;
+  secao_id: Id | null;
+  bloco_id: Id | null;
+  faixa: { inicio_utf16: number; fim_utf16: number } | null;
+  painel: 'balao' | 'nota' | 'conexao' | 'relacao' | 'conversa' | 'resolucao' | 'visual' | 'flashcards' | 'trecho';
+  alvo_id: string | null;
+}
+export interface ItemDaCentral {
+  chave: string;
+  tipo: TipoDaCentral;
+  id: string;
+  autoria: 'leitor' | 'codex';
   rotulo: string;
+  /** `sugerida`, `aceita`, `confirmada`, `da_leitura`, `pendente`, `pronta`, `pronto`, `aberta`… */
+  estado: string | null;
+  funcao: string | null;
+  modo: { id: string; revisao: number; nome: string } | null;
   cor: { claro: string; escuro: string } | null;
   citacao: string;
   nota: string | null;
-  marca_id: Id | null;
+  nota_id: Id | null;
+  comentario: string | null;
+  texto: string | null;
+  destino: { citacao: string | null; documento: { id: Id; titulo: string } | null; titulo_externo: string | null; abrir: AberturaNoLeitor | null } | null;
+  mensagens: number | null;
+  documento: { id: Id; titulo: string; autor: string | null };
+  versao_id: Id;
+  capitulo: { id: Id; titulo: string } | null;
+  pagina: string | null;
+  abrir: AberturaNoLeitor;
+  /** A relação ou a dificuldade que está só na análise do Codex: onde apagá-la (J143). */
+  analise: { execucao_id: string; secao_id: string } | null;
+  link: string;
+  criada_em: string;
+  atualizada_em: string;
+}
+export interface FacetasDaCentral {
+  tipos: Record<FiltroDeTipoDaCentral | 'total', number>;
+  autorias: { leitor: number; codex: number };
+  documentos: { id: Id; titulo: string; autor: string | null; total: number }[];
+  funcoes: { funcao: string; modo: { id: string; revisao: number; nome: string } | null; rotulo: string; cor: { claro: string; escuro: string } | null; total: number }[];
+}
+export interface PaginaDaCentral { itens: ItemDaCentral[]; total: number; limite: number; deslocamento: number; facetas?: FacetasDaCentral }
+
+/** Uma anotação ou um grifo do leitor na tela "Notas" (`servico/src/notas/listar.ts`). */
+/**
+ * Um item da página Notas (modelo D, J138): um grifo com o trecho, a função no modo dele, a nota do leitor
+ * (sem tipo) e o comentário do Codex à parte; ou uma nota antiga solta, só leitura.
+ */
+export interface ItemDeNota {
+  /** O id do grifo; na nota antiga, o da anotação. */
+  id: Id;
+  especie: 'grifo' | 'nota_antiga';
+  /** Chave da função (`nenhuma`: sem função); `null` na nota antiga. */
+  funcao: string | null;
+  modo: { id: string; revisao: number; nome: string } | null;
+  /** Rótulo da função no modo do grifo; "Grifo" sem função; "Nota antiga". */
+  rotulo: string;
+  cor: { claro: string; escuro: string } | null;
+  autoria: 'leitor' | 'codex';
+  citacao: string;
+  nota: string | null;
+  nota_id: Id | null;
+  comentario_codex: string | null;
   documento: { id: Id; titulo: string; autor: string | null };
   versao_id: Id;
   bloco_id: Id;

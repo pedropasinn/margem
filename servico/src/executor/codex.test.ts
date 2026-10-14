@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, expect, test } from 'vitest';
@@ -9,6 +9,7 @@ import type { spawn } from 'node:child_process';
 import type { ChildProcess, SpawnOptions } from 'node:child_process';
 import { ARQUIVO_SAIDA, executarCodex, montarArgumentos } from './codex.js';
 import { conferirResposta, escreverSchemaDoCodex } from './artefato.js';
+import { ARQUIVO_PROMPT, PONTEIRO_DO_PROMPT, promptCabeNaLinha, tamanhoNaLinhaDoWindows } from './entrada.js';
 import { classificarSaida, esforcoDaSaida, horarioDeVolta, modeloDaSaida } from './classificacao.js';
 import type { Capacidades } from './capacidades.js';
 import { FLAGS_NECESSARIAS } from './capacidades.js';
@@ -101,6 +102,15 @@ test('monta o comando com o perfil restrito pedido pelo desenho', () => {
   expect(argumentos).not.toContain('--dangerously-bypass-approvals-and-sandbox');
 });
 
+test('V-T2: a busca na web do Codex só liga quando pedida (identificação de quadro)', () => {
+  const base = { diretorio: '/tmp/margem-job-abc', schema: '/tmp/s.json', saida: '/tmp/o.json', prompt: 'que obra é esta?', imagens: ['/tmp/margem-job-abc/obra.jpg'] };
+  const ligada = montarArgumentos({ ...base, buscaNaWeb: true }).join(' ');
+  expect(ligada).toContain('web_search="live"');
+  expect(ligada).not.toContain('web_search="disabled"');
+  expect(ligada).toContain('--image /tmp/margem-job-abc/obra.jpg -- que obra é esta?');
+  expect(montarArgumentos(base).join(' ')).toContain('web_search="disabled"');
+});
+
 test('com imagens, o prompt vem depois de -- e não vira mais uma imagem (codex 0.154+)', () => {
   const argumentos = montarArgumentos({ diretorio: '/d', schema: '/s', saida: '/o', prompt: 'resolva', imagens: ['/d/recorte.png', '/d/extra.png'] });
   expect(argumentos.slice(-2)).toEqual(['--', 'resolva']);
@@ -182,6 +192,84 @@ test('cota vira adiamento com horário de volta e autenticação vira auth', asy
     { capacidades: CAPACIDADES, gerar: spawnFalso({ codigo: 1, stderr: 'Error: not logged in; run codex login' }, []) },
   );
   expect(semSessao).toMatchObject({ estado: 'falhou', codigo: 'auth' });
+});
+
+test('falha do processo devolve código de saída, classe, causa legível e stderr redigido (V-W2)', async () => {
+  const stderr = [
+    '2026-10-14T12:33:00.1Z ERROR codex_models_manager::manager: failed to refresh available models: unexpected status 401 Unauthorized, cf-ray: 8f429-GRU',
+    'Authorization: Bearer token-que-nao-pode-sair',
+    'ERROR: unexpected status 400 Bad Request: {"error":{"code":"invalid_json_schema"}}',
+  ].join('\n');
+  const resultado = await executarCodex(
+    { diretorioEntrada: entrada, prompt: 'r', schema, prazoMs: 5_000, diretorioArtefatos: artefatos },
+    { capacidades: CAPACIDADES, gerar: spawnFalso({ codigo: 1, stderr }, []) },
+  );
+  // O 401 do aviso de modelos não vira "sem sessão".
+  expect(resultado).toMatchObject({
+    estado: 'falhou', codigo: 'processo',
+    mensagem: 'O Codex recusou o formato de resposta pedido pelo Margem. É um defeito do Margem; avise o suporte.',
+    detalhe: { codigo_saida: 1, classe: 'desconhecido', causa: 'O Codex recusou o formato de resposta pedido pelo Margem. É um defeito do Margem; avise o suporte.' },
+  });
+  if (resultado.estado !== 'falhou') throw new Error('esperava falha');
+  expect(resultado.detalhe?.stderr_resumo).toContain('invalid_json_schema');
+  expect(resultado.detalhe?.stderr_resumo).not.toContain('token-que-nao-pode-sair');
+
+  const semCausa = await executarCodex(
+    { diretorioEntrada: entrada, prompt: 's', schema, prazoMs: 5_000, diretorioArtefatos: artefatos },
+    { capacidades: CAPACIDADES, gerar: spawnFalso({ codigo: 3, stderr: 'ERROR: algo que ninguém previu' }, []) },
+  );
+  expect(semCausa).toMatchObject({ estado: 'falhou', codigo: 'processo', mensagem: 'A CLI terminou com código 3.', detalhe: { codigo_saida: 3, causa: null } });
+
+  const naoAbriu = await executarCodex(
+    { diretorioEntrada: entrada, prompt: 't', schema, prazoMs: 5_000, diretorioArtefatos: artefatos },
+    { capacidades: CAPACIDADES, gerar: spawnFalso({ erro: 'spawn ENAMETOOLONG' }, []) },
+  );
+  expect(naoAbriu).toMatchObject({ estado: 'falhou', codigo: 'processo', mensagem: 'A linha de comando do Codex ficou longa demais para este sistema.', detalhe: { codigo_saida: null } });
+});
+
+test('Windows: prompt que estoura a linha de comando vai para prompt.md; Linux mantém o teto por argumento (V-W4)', async () => {
+  const longo = `Leia "isto" com cuidado. ${'texto da parte com aspas " e barras \\ '.repeat(1_100)}`;
+  expect(longo.length).toBeGreaterThan(40_000);
+  const rodar = async (plataforma: NodeJS.Platform) => {
+    const registro: Chamada[] = [];
+    const falso = spawnFalso({ saida: '{"ok":true}' }, registro);
+    let noArquivo: string | null = null;
+    const gerar = ((arquivo: string, argumentos: readonly string[], opcoes: SpawnOptions) => {
+      const caminho = join(String(opcoes.cwd), ARQUIVO_PROMPT);
+      noArquivo = existsSync(caminho) ? readFileSync(caminho, 'utf8') : null;
+      return falso(arquivo, argumentos, opcoes);
+    }) as unknown as typeof spawn;
+    const resultado = await executarCodex(
+      { diretorioEntrada: entrada, prompt: longo, schema, prazoMs: 5_000, diretorioArtefatos: artefatos },
+      { capacidades: CAPACIDADES, gerar, plataforma, binario: 'C:\\Program Files\\Margem\\resources\\codex\\codex.exe' },
+    );
+    expect(resultado.estado).toBe('ok');
+    return { chamada: registro[0]!, noArquivo: noArquivo as string | null };
+  };
+  const windows = await rodar('win32');
+  expect(windows.chamada.argumentos.at(-1)).toBe(PONTEIRO_DO_PROMPT);
+  expect(windows.noArquivo).toBe(longo);
+  expect(tamanhoNaLinhaDoWindows([windows.chamada.arquivo, ...windows.chamada.argumentos])).toBeLessThan(30_000);
+  // 40 mil caracteres cabem num argumento do Linux (até 100 KB): lá nada muda.
+  const linux = await rodar('linux');
+  expect(linux.chamada.argumentos.at(-1)).toBe(longo);
+  expect(linux.noArquivo).toBeNull();
+  // Prompt curto no Windows continua por argumento.
+  const registro: Chamada[] = [];
+  await executarCodex(
+    { diretorioEntrada: entrada, prompt: 'Leia a parte.', schema, prazoMs: 5_000, diretorioArtefatos: artefatos },
+    { capacidades: CAPACIDADES, gerar: spawnFalso({ saida: '{"ok":true}' }, registro), plataforma: 'win32' },
+  );
+  expect(registro[0]!.argumentos.at(-1)).toBe('Leia a parte.');
+});
+
+test('tamanho da linha do Windows conta aspas e escapes que o Node acrescenta', () => {
+  expect(tamanhoNaLinhaDoWindows(['codex', 'exec'])).toBe(11);
+  expect(tamanhoNaLinhaDoWindows(['a b'])).toBe(6);
+  expect(tamanhoNaLinhaDoWindows(['diz "oi"'])).toBe(13);
+  expect(promptCabeNaLinha('x'.repeat(29_000), ['codex', 'x'.repeat(29_000)], 'win32')).toBe(true);
+  expect(promptCabeNaLinha('x'.repeat(31_000), ['codex', 'x'.repeat(31_000)], 'win32')).toBe(false);
+  expect(promptCabeNaLinha('x'.repeat(31_000), ['codex', 'x'.repeat(31_000)], 'linux')).toBe(true);
 });
 
 test('prazo estourado mata o processo e cancelamento devolve cancelado', async () => {

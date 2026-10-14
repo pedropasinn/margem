@@ -8,6 +8,8 @@ export function fraseDoEstado(item: ItemDaBiblioteca): string {
     case 'transcrevendo': return 'transcrevendo as páginas';
     case 'marcando': return `marcando ${item.detalhe ?? `${String(item.partes_prontas)} de ${String(item.partes_total)}`}`;
     case 'revisando': return 'revisando';
+    // A preparação da leitura (compreensão): "preparando · capítulo 2 de 9".
+    case 'preparando': return item.detalhe === null ? 'preparando a leitura' : `preparando · ${item.detalhe}`;
     case 'falhou': return `falhou: ${item.detalhe ?? 'motivo não registrado'}`;
     default: return item.detalhe === null ? 'texto disponível' : `texto disponível · última falha: ${item.detalhe}`;
   }

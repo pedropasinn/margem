@@ -120,7 +120,7 @@ export function semRevisao(c: ModeloCandidato): CandidatoRevisado {
  * região válida, inferência sem apoio, repetição da identidade, ciclos), solta regiões sem uso e devolve
  * o candidato reindexado com a lista de cortes.
  */
-export function filtrarFinal(c: CandidatoRevisado, dossie: DossieDaObra, corpus: Map<string, string>): { candidato: CandidatoRevisado; cortes: Corte[] } {
+export function filtrarFinal(c: CandidatoRevisado, dossie: DossieDaObra, corpus: Map<string, string>, opcoes: { soImagem?: boolean } = {}): { candidato: CandidatoRevisado; cortes: Corte[] } {
   const cortes: Corte[] = [];
   const fontes = new Set(dossie.fontes.map((f) => f.id));
   const regioes = c.regioes.map((r) => (r.rotulo ? { ...r, forma: normalizarForma(r.forma) } : null));
@@ -130,6 +130,9 @@ export function filtrarFinal(c: CandidatoRevisado, dossie: DossieDaObra, corpus:
   const cortar = (i: number, motivo: string) => { cortes.push({ tipo: 'afirmacao', indice: i, motivo, texto: afirmacoes[i]!.texto }); afirmacoes[i] = null; };
   afirmacoes.forEach((a, i) => {
     if (!a) return;
+    // Obra não identificada (V-W5): só o que se vê e o que se infere disso; nada se documenta.
+    if (opcoes.soImagem && a.tipo !== 'observacao' && a.tipo !== 'inferencia_ia') { cortar(i, 'so_pela_imagem'); return; }
+    if (opcoes.soImagem && (a.fontes.length || a.citacoes.length)) afirmacoes[i] = { ...a, fontes: [], citacoes: [] };
     if (documentada(a)) {
       const { validas } = citacoesValidas(a, corpus);
       if (!validas.length) { cortar(i, 'citacao_nao_encontrada'); return; }

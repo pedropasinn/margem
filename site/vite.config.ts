@@ -1,10 +1,12 @@
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { CONFIG } from './src/config';
 
 const raiz = import.meta.dirname;
+const doRepositorio = (caminho: string): string => resolve(raiz, '..', caminho);
+const caminhosDoTsconfig = (JSON.parse(readFileSync(resolve(raiz, 'tsconfig.json'), 'utf8')) as { compilerOptions: { paths: Record<string, string[]> } }).compilerOptions.paths;
 
 // Páginas estáticas: cada uma é um index.html próprio e funciona em qualquer hospedagem estática,
 // sem regra de reescrita. As da documentação são achadas em docs/<pagina>/index.html.
@@ -33,7 +35,19 @@ export default defineConfig({
       transformIndexHtml: (html) => Object.entries(substituicoes).reduce((h, [chave, valor]) => h.replaceAll(chave, valor), html),
     },
   ],
-  server: { port: 5201, strictPort: true },
+  // As demonstrações usam o próprio app: componentes, CSS e funções de `web/src` (por `@app/…`), os
+  // contratos e o núcleo pelas fontes (como o `web/vite.config.ts`) e o exportador do Obsidian do
+  // serviço. Um React só (o do site), mesmo para os arquivos de fora desta pasta.
+  resolve: {
+    // Os mesmos `paths` do tsconfig.json, do mais específico para o mais geral.
+    alias: Object.entries(caminhosDoTsconfig)
+      .sort(([a], [b]) => b.length - a.length)
+      .map(([chave, [alvo]]) => (chave.endsWith('/*')
+        ? { find: new RegExp(`^${chave.slice(0, -1).replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}`), replacement: `${resolve(raiz, alvo!.slice(0, -1))}/` }
+        : { find: new RegExp(`^${chave.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}$`), replacement: resolve(raiz, alvo!) })),
+    dedupe: ['react', 'react-dom'],
+  },
+  server: { port: 5201, strictPort: true, fs: { allow: [doRepositorio('.')] } },
   preview: { port: 5201, strictPort: true },
   build: {
     rollupOptions: {
@@ -42,6 +56,7 @@ export default defineConfig({
         privacidade: resolve(raiz, 'privacidade/index.html'),
         termos: resolve(raiz, 'termos/index.html'),
         novidades: resolve(raiz, 'novidades/index.html'),
+        download: resolve(raiz, 'download/index.html'),
         docs: resolve(raiz, 'docs/index.html'),
         ...Object.fromEntries(paginasDeDocs),
       },

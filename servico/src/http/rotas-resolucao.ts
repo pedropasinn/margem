@@ -24,6 +24,8 @@ import { DadoRecusado } from '../repos/anotacoes.js';
 import * as repo from '../repos/resolucoes.js';
 import { TIPO_EXPLICAR, TIPO_RESOLVER, caminhoDaImagem, chaves, enfileirarExplicacao, enfileirarResolucao } from '../resolucao/pipeline.js';
 import { ErroDaApi } from './erros.js';
+import * as jobsRepo from '../repos/jobs.js';
+import { cancelarOperacoes } from '../apagar/cancelar.js';
 
 type ContextoDeCorpo = { req: { raw: Request } };
 export interface ApoioDaResolucao {
@@ -148,8 +150,10 @@ export function registrarRotasDaResolucao(api: Hono, apoio: ApoioDaResolucao): v
     await comTransacao(banco, async (cliente) => {
       const sessao = await repo.obter(cliente, id, { travar: true });
       if (!sessao) throw new ErroDaApi(404, 'resolucao_inexistente');
-      const estado = estadoDa(sessao, await jobsDa(cliente, sessao));
-      if (estado === 'resolvendo' || estado === 'respondendo') throw new ErroDaApi(409, 'resolucao_em_andamento', 'Espere o Codex terminar antes de remover.');
+      // Em andamento, o Codex para antes (V-T8): nada do que ele faria fica.
+      for (const job of await jobsDa(cliente, sessao)) {
+        if (jobsRepo.CANCELAVEIS.includes(job.estado as jobsRepo.EstadoJob)) await cancelarOperacoes(cliente, { job_id: job.id });
+      }
       await repo.remover(cliente, id);
     });
     return c.body(null, 204);

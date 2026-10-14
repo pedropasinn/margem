@@ -183,7 +183,11 @@ export async function levarProgresso(cliente: Transacao, documentoId: Id, base: 
   return 'levado';
 }
 
-export interface OpcoesDaRevisao { banco: pg.Pool; raiz?: string; prazoMs?: number }
+export interface OpcoesDaRevisao {
+  banco: pg.Pool; raiz?: string; prazoMs?: number;
+  /** J142: depois de publicar a versão revisada, a análise do vídeo que esperava a transcrição limpa segue. */
+  aoPublicar?: (cliente: Transacao, documentoId: Id) => Promise<void>;
+}
 
 /** Job `canonizar_revisao`: canoniza o texto revisado e publica versão + mídia realinhada numa transação. */
 export function manipuladorCanonizarRevisao(opcoes: OpcoesDaRevisao): Manipulador {
@@ -228,6 +232,7 @@ export function manipuladorCanonizarRevisao(opcoes: OpcoesDaRevisao): Manipulado
       await cliente.query('INSERT INTO evento_job(job_id,tipo,detalhe) VALUES ($1,$2,$3)', [tarefa.job.id, 'midia_realinhada', JSON.stringify({
         revisao_id: revisao.id, versao_base_id: revisao.versao_base_id, versao_id: nova.id, numero: nova.numero, midia_id: midia.id, progresso, ...diagnostico,
       })]);
+      await opcoes.aoPublicar?.(cliente, revisao.documento_id);
       return resultado;
     },
   };

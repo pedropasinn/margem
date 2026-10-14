@@ -1,0 +1,84 @@
+{
+  "versao": 1,
+  "id": "teologica",
+  "revisao": 1,
+  "nome": "Teologia, patrística e escolástica",
+  "descricao": "Ler teologia, Padres da Igreja e escolástica distinguindo a questão, a tese do autor, as autoridades invocadas, as razões, as objeções e as respostas. Na forma escolástica, as objeções não são a posição do autor e o sed contra é autoridade.",
+  "funcoes": [
+    {
+      "chave": "questao",
+      "rotulo": "Questão",
+      "pergunta": "Que pergunta está sendo investigada?",
+      "descricao": "Problema ou artigo posto em discussão. Ex.: “Se Deus existe.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "tese",
+      "rotulo": "Tese",
+      "pergunta": "O que o autor sustenta como resposta?",
+      "descricao": "Posição do autor, no respondeo ou na conclusão. Ex.: “Deve-se dizer que a existência de Deus pode ser provada de cinco modos.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "autoridade",
+      "rotulo": "Autoridade",
+      "pergunta": "Que Escritura, Padre ou concílio é invocado, e para quê?",
+      "descricao": "Citação de autoridade, atribuída. Ex.: “Em sentido contrário, diz-se na pessoa de Deus: Eu sou quem sou.”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "razao",
+      "rotulo": "Razão",
+      "pergunta": "Que argumento de razão sustenta a tese?",
+      "descricao": "Premissa, inferência ou distinção que sustenta a tese. Ex.: “Tudo o que se move é movido por outro.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "objecao",
+      "rotulo": "Objeção",
+      "pergunta": "Que posição contrária é considerada?",
+      "descricao": "Objeção apresentada para ser respondida; não é a posição do autor. Ex.: “Parece que Deus não existe, pois…”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "resposta",
+      "rotulo": "Resposta à objeção",
+      "pergunta": "Como o autor responde à objeção?",
+      "descricao": "Solução da objeção. Ex.: “Quanto à primeira, deve-se dizer que…”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

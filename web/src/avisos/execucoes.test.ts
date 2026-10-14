@@ -1,21 +1,21 @@
 import { describe, expect, test } from 'vitest';
-import type { ExecucaoDoCodexV1, ExecucoesDoCodexV1 } from '@margem/contratos';
+import type { ExecucaoDoCodexV2, ExecucoesDoCodexV2 } from '@margem/contratos';
 import {
-  AUTO_DISPENSA_MS, ESTADO_INICIAL, anuncioDaMudanca, formatarDuracao, organizarPilha, pareceLista, reduzirAvisos, tempoDoAviso,
+  AUTO_DISPENSA_MS, ESTADO_INICIAL, anuncioDaMudanca, formatarDuracao, normalizarLista, organizarPilha, pareceLista, reduzirAvisos, tempoDoAviso,
   type EstadoDosAvisos,
 } from './execucoes';
 import { listaDeExemplo } from './exemplos';
 
 const T0 = Date.parse('2026-10-01T12:00:00.000Z');
 const iso = (ms: number) => new Date(ms).toISOString();
-function execucao(n: number, estado: ExecucaoDoCodexV1['estado'], extra: Partial<ExecucaoDoCodexV1> = {}): ExecucaoDoCodexV1 {
+function execucao(n: number, estado: ExecucaoDoCodexV2['estado'], extra: Partial<ExecucaoDoCodexV2> = {}): ExecucaoDoCodexV2 {
   const terminou = estado === 'concluida' || estado === 'falhou';
   return { id: `01K0000000000000000000J${String(n).padStart(3, '0')}`, tipo: 'ler_parte', rotulo: `Tarefa ${String(n)}`, estado,
     inicio: iso(T0 - 60_000), fim: terminou ? iso(T0) : null, documento: null, secao: null, rota: terminou ? '/ler/x' : null,
-    mensagem: estado === 'falhou' ? 'O Codex parou antes de terminar.' : null, ...extra };
+    mensagem: estado === 'falhou' ? 'O Codex parou antes de terminar.' : null, avisos: [], ...extra };
 }
-const lista = (execucoes: ExecucaoDoCodexV1[], gerado = T0, omitidas = 0): ExecucoesDoCodexV1 => ({ versao: 1, gerado_em: iso(gerado), execucoes, omitidas });
-const receber = (estado: EstadoDosAvisos, l: ExecucoesDoCodexV1, recebidaEm = Date.parse(l.gerado_em)) => reduzirAvisos(estado, { tipo: 'lista', lista: l, recebidaEm });
+const lista = (execucoes: ExecucaoDoCodexV2[], gerado = T0, omitidas = 0): ExecucoesDoCodexV2 => ({ versao: 2, gerado_em: iso(gerado), execucoes, omitidas });
+const receber = (estado: EstadoDosAvisos, l: ExecucoesDoCodexV2, recebidaEm = Date.parse(l.gerado_em)) => reduzirAvisos(estado, { tipo: 'lista', lista: l, recebidaEm });
 const visiveis = (estado: EstadoDosAvisos) => organizarPilha(estado).visiveis.map((a) => [a.execucao.rotulo, a.execucao.estado]);
 
 describe('reduzir as listas do serviço em avisos', () => {
@@ -107,5 +107,36 @@ describe('tempos e anúncios', () => {
     expect(pareceLista(listaDeExemplo(T0))).toBe(true);
     expect(pareceLista({ versao: 2, execucoes: [] })).toBe(false);
     expect(pareceLista({ ...listaDeExemplo(T0), execucoes: [{ id: 'x', rotulo: 'y', estado: 'cancelado' }] })).toBe(false);
+  });
+});
+
+describe('concluída com avisos', () => {
+  const AVISO = 'O Codex leu só parte deste trecho; pode faltar alguma marca.';
+  const comAviso = (n: number, extra: Partial<ExecucaoDoCodexV2> = {}) => execucao(n, 'concluida', {
+    mensagem: AVISO, avisos: [{ codigo: 'leitura_parcial', mensagem: AVISO }], ...extra });
+
+  test('não sai sozinha, diz "com avisos" no tempo e no anúncio', () => {
+    const antes = receber(ESTADO_INICIAL, lista([execucao(1, 'rodando')]));
+    let estado = receber(antes, lista([comAviso(1)], T0 + 2000));
+    expect(anuncioDaMudanca(antes, estado)).toBe(`Pronto, com avisos: Tarefa 1. ${AVISO}`);
+    estado = reduzirAvisos(estado, { tipo: 'expirar', agora: T0 + 2000 + AUTO_DISPENSA_MS * 10 });
+    expect(visiveis(estado)).toEqual([['Tarefa 1', 'concluida']]);
+    expect(tempoDoAviso(comAviso(1), T0, 0)).toBe('Pronto com avisos em 1 min 00 s');
+    estado = reduzirAvisos(estado, { tipo: 'dispensar', id: comAviso(1).id });
+    expect(visiveis(estado)).toEqual([]);
+  });
+
+  test('vista só depois de terminar, aparece mesmo se não for de agora', () => {
+    const estado = receber(ESTADO_INICIAL, lista([comAviso(2, { fim: iso(T0 - 120_000), inicio: iso(T0 - 180_000) })]));
+    expect(visiveis(estado)).toEqual([['Tarefa 2', 'concluida']]);
+  });
+
+  test('a lista V1 de um serviço anterior vira V2 com avisos vazios', () => {
+    const v1 = { versao: 1, gerado_em: iso(T0), omitidas: 0, execucoes: [{ ...execucao(1, 'rodando'), avisos: undefined }] };
+    const normalizada = normalizarLista(v1);
+    expect(normalizada?.versao).toBe(2);
+    expect(normalizada?.execucoes[0]?.avisos).toEqual([]);
+    expect(pareceLista(v1)).toBe(false);
+    expect(normalizarLista({ versao: 2, gerado_em: iso(T0), omitidas: 0, execucoes: [{ ...execucao(1, 'rodando'), avisos: undefined }] })).toBeNull();
   });
 });

@@ -50,7 +50,10 @@ async function estado(api: ReturnType<typeof criarApi>, consulta = ''): Promise<
 
 test('instalação nova: tudo pronto, primeira execução pendente; concluir é idempotente', async () => comBanco('j103_estado', async (banco) => {
   const { api, chamadas } = montar(banco);
-  const inicial = await estado(api);
+  const { instancia, ...inicial } = await estado(api);
+  // V-W9: a identificação deste Margem (a mesma da saúde, que a extensão do navegador lê) e a porta.
+  expect(instancia.id).toMatch(/^[0-9a-f]{4}-[0-9a-f]{4}$/);
+  expect(Number.isInteger(instancia.porta)).toBe(true);
   expect(inicial).toEqual({
     versao: 1, banco: { ok: true }, motor: { ok: true },
     codex: { ...LOGADO, executor: 'codex' },
@@ -72,6 +75,15 @@ test('instalação nova: tudo pronto, primeira execução pendente; concluir é 
   const segunda = await api.request('/api/estado-instalacao/concluir', { method: 'POST', headers: ESCRITA });
   expect(await segunda.json()).toEqual({ concluida: true, concluida_em });
   expect((await estado(api)).primeira_execucao).toEqual({ concluida: true, concluida_em, exemplo_documento_id: null });
+}));
+
+test('V-D5: dentro do app de computador o estado diz a origem, para a interface não refazer a checagem', async () => comBanco('j133_origem', async (banco) => {
+  const { api } = montar(banco);
+  expect((await estado(api)).origem).toBeUndefined();
+  const antes = process.env.MARGEM_APP_DESKTOP;
+  process.env.MARGEM_APP_DESKTOP = '1';
+  try { expect((await estado(api)).origem).toBe('desktop'); }
+  finally { if (antes === undefined) delete process.env.MARGEM_APP_DESKTOP; else process.env.MARGEM_APP_DESKTOP = antes; }
 }));
 
 test('escrita vinda de outra origem é recusada', async () => comBanco('j103_seguranca', async (banco) => {

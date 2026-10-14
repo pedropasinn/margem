@@ -1,0 +1,82 @@
+{
+  "versao": 1,
+  "id": "espiritual",
+  "revisao": 1,
+  "nome": "Leitura espiritual",
+  "descricao": "Ler livros de espiritualidade, devocionais e vidas de santos para rezar e viver: a verdade de fé que sustenta a passagem, o conselho prático, as imagens, os exemplos de vida, os obstáculos e a oração ou propósito proposto. O que o autor relata fica atribuído a ele.",
+  "funcoes": [
+    {
+      "chave": "verdade",
+      "rotulo": "Verdade de fé",
+      "pergunta": "Que verdade de fé sustenta a passagem?",
+      "descricao": "Afirmação de fé em que o conselho se apoia. Ex.: “Somos filhos de Deus.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "conselho",
+      "rotulo": "Conselho",
+      "pergunta": "Que conselho prático é dado para a vida espiritual?",
+      "descricao": "Orientação concreta ao leitor. Ex.: “Faze tudo por Amor; assim não há coisas pequenas.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "imagem",
+      "rotulo": "Imagem",
+      "pergunta": "Que imagem ou comparação torna o ensinamento concreto?",
+      "descricao": "Comparação, metáfora ou cena que ilumina o conselho. Ex.: “como o burrico de nora”.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "exemplo",
+      "rotulo": "Exemplo de vida",
+      "pergunta": "Que gesto ou episódio de vida ilustra o ensinamento?",
+      "descricao": "Episódio narrado, da vida de um santo ou do autor, como relatado. Ex.: “Teresa beijava a parede da cela.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "obstaculo",
+      "rotulo": "Obstáculo",
+      "pergunta": "Que tentação, defeito ou dificuldade é apontada?",
+      "descricao": "Dificuldade, tentação ou engano descrito. Ex.: “A tibieza começa por descuidos pequenos.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "oracao",
+      "rotulo": "Oração e propósito",
+      "pergunta": "Que oração, propósito ou exame a passagem propõe?",
+      "descricao": "Convite a rezar, examinar-se ou decidir algo. Ex.: “Pergunta-te hoje: fiz tudo por Ele?”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

@@ -6,7 +6,7 @@
 import { useEffect, type ReactNode } from 'react';
 import type { AfirmacaoDaObra, ModeloDaObraV1 } from '@margem/contratos';
 import { BotaoDoPlayer, PlayerCentral } from '../leitor/player/PlayerCentral';
-import { ROTULO_DA_CONFIANCA, ROTULO_DO_TIPO } from './rotulos';
+import { linkDaFonte, ROTULO_DA_CONFIANCA, ROTULO_DO_TIPO } from './rotulos';
 
 export function CartaoDaAfirmacao({ afirmacao, modelo }: { afirmacao: AfirmacaoDaObra; modelo: ModeloDaObraV1 }): ReactNode {
   const regioes = afirmacao.regioes.map((id) => modelo.regioes.find((r) => r.id === id)?.rotulo).filter((r): r is string => r !== undefined);
@@ -16,7 +16,7 @@ export function CartaoDaAfirmacao({ afirmacao, modelo }: { afirmacao: AfirmacaoD
     <p className="fala-no-quadro">{afirmacao.texto}</p>
     {regioes.length > 0 && <p className="regioes-no-cartao">{regioes.join(' · ')}</p>}
     <details><summary>Evidência</summary><p>{afirmacao.evidencia}</p>
-      {fontes.map((f) => <a key={f.id} href={f.url} target="_blank" rel="noreferrer">{f.titulo}</a>)}
+      {fontes.map((f) => { const link = linkDaFonte(f); return link ? <a key={f.id} href={link} target="_blank" rel="noreferrer">{f.titulo}</a> : <span key={f.id}>{f.titulo}</span>; })}
     </details>
   </aside>;
 }

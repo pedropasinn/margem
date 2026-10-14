@@ -4,7 +4,7 @@
  */
 import { expect, test } from 'vitest';
 import { ancoraDeSelecao } from '@margem/core';
-import { validarExecucoesDoCodex, type ExecucoesDoCodexV1 } from '@margem/contratos';
+import { validarExecucoesDoCodexV2, type ExecucoesDoCodexV2 } from '@margem/contratos';
 import { canonicoDeTeste, comBanco, idTeste } from '../../testes/apoio';
 import { comTransacao } from '../db/transacao';
 import * as documentos from '../repos/documentos';
@@ -12,6 +12,7 @@ import * as anotacoes from '../repos/anotacoes';
 import * as jobsRepo from '../repos/jobs';
 import { TIPOS_DO_CODEX, mensagemDaExecucao, rotuloDaExecucao } from '../execucoes/ativas';
 import { criarApi } from './app';
+import { resultadoDoJob } from '../worker/worker';
 
 const HASH = 'a'.repeat(64);
 
@@ -45,13 +46,13 @@ async function preparar(banco: Parameters<Parameters<typeof comBanco>[1]>[0]) {
   });
 }
 
-async function ativas(api: ReturnType<typeof criarApi>): Promise<ExecucoesDoCodexV1> {
+async function ativas(api: ReturnType<typeof criarApi>): Promise<ExecucoesDoCodexV2> {
   const resposta = await api.request('/api/execucoes/ativas');
   expect(resposta.status).toBe(200);
   expect(resposta.headers.get('cache-control')).toBe('no-store');
   const corpo: unknown = await resposta.json();
-  expect(validarExecucoesDoCodex(corpo), JSON.stringify(validarExecucoesDoCodex.errors)).toBe(true);
-  return corpo as ExecucoesDoCodexV1;
+  expect(validarExecucoesDoCodexV2(corpo), JSON.stringify(validarExecucoesDoCodexV2.errors)).toBe(true);
+  return corpo as ExecucoesDoCodexV2;
 }
 
 test('lista as execuções do Codex com rótulo, seção, rota e estados', async () => comBanco('execucoes_ativas', async (banco) => {
@@ -82,7 +83,11 @@ test('lista as execuções do Codex com rótulo, seção, rota e estados', async
   lista = await ativas(api);
   expect(lista.execucoes[0]).toMatchObject({ id: jobs.sintetizar.id, estado: 'rodando', fim: null });
 
-  await jobsRepo.publicar(banco, reservado!.id, reservado!.lease_token!, () => Promise.resolve(undefined));
+  // Concluída com ressalvas: o aviso chega à lista (o `info` não), com a mensagem que o resume.
+  await jobsRepo.publicar(banco, reservado!.id, reservado!.lease_token!, () => Promise.resolve(undefined), undefined, [
+    { nivel: 'aviso', codigo: 'leitura_parcial', mensagem: 'blocos 3 a 9 sem leitura' },
+    { nivel: 'info', codigo: 'proveniencia', mensagem: 'gpt-x' },
+  ]);
   const nota = (await jobsRepo.reservar(banco, 'teste', [...TIPOS_DO_CODEX]))!;
   expect(nota.id).toBe(jobs.nota.id);
   await jobsRepo.falhar(banco, nota.id, nota.lease_token!, 'timeout', []);
@@ -95,6 +100,11 @@ test('lista as execuções do Codex com rótulo, seção, rota e estados', async
   ]);
   expect(lista.execucoes[0]).toMatchObject({ mensagem: 'O Codex demorou demais e parou.' });
   expect(lista.execucoes[1]!.fim).not.toBeNull();
+  expect(lista.execucoes[1]).toMatchObject({
+    avisos: [{ codigo: 'leitura_parcial', mensagem: 'O Codex leu só parte deste trecho; pode faltar alguma marca.' }],
+    mensagem: 'O Codex leu só parte deste trecho; pode faltar alguma marca.',
+  });
+  expect(lista.execucoes[0]!.avisos).toEqual([]);
   expect(Date.parse(lista.execucoes[1]!.fim!)).toBeGreaterThanOrEqual(Date.parse(lista.execucoes[1]!.inicio));
 
   // Fora da janela de terminadas, a execução sai da lista.
@@ -102,6 +112,22 @@ test('lista as execuções do Codex com rótulo, seção, rota e estados', async
   lista = await ativas(api);
   expect(lista.execucoes.map((e) => e.id)).not.toContain(jobs.sintetizar.id);
   expect(lista.omitidas).toBe(0);
+
+  // V-W2: falha do processo com causa reconhecida no stderr mostra a frase da tabela, não a genérica.
+  const revisar = (await jobsRepo.reservar(banco, 'teste', [...TIPOS_DO_CODEX]))!;
+  expect(revisar.id).toBe(jobs.revisar.id);
+  const falha = resultadoDoJob({ ...revisar, entrada: null, cancel_requested_at: null }, revisar.lease_token!, {
+    estado: 'falhou', codigo: 'processo', mensagem: 'x', duracao_ms: 4912,
+    detalhe: { codigo_saida: 1, classe: 'desconhecido', stderr_resumo: 'ERROR: invalid_json_schema', causa: 'O Codex recusou o formato de resposta pedido pelo Margem. É um defeito do Margem; avise o suporte.' },
+  });
+  expect(falha.diagnosticos.map((d) => d.codigo)).toEqual(['processo', 'causa', 'saida_do_codex']);
+  await jobsRepo.falhar(banco, revisar.id, revisar.lease_token!, 'processo', falha.diagnosticos);
+  lista = await ativas(api);
+  expect(lista.execucoes.find((e) => e.id === jobs.revisar.id)).toMatchObject({
+    estado: 'falhou', mensagem: 'O Codex recusou o formato de resposta pedido pelo Margem. É um defeito do Margem; avise o suporte.',
+  });
+  // Sem causa, continua a frase do código.
+  expect(lista.execucoes.find((e) => e.id === jobs.nota.id)).toMatchObject({ mensagem: 'O Codex demorou demais e parou.' });
 }));
 
 test('o SSE manda a lista ao abrir e de novo quando ela muda', async () => comBanco('execucoes_sse', async (banco) => {
@@ -114,7 +140,7 @@ test('o SSE manda a lista ao abrir e de novo quando ela muda', async () => comBa
   const leitor: ReadableStreamDefaultReader<Uint8Array> = resposta.body!.getReader();
   const decodificador = new TextDecoder();
   let acumulado = '';
-  async function proximaLista(): Promise<ExecucoesDoCodexV1> {
+  async function proximaLista(): Promise<ExecucoesDoCodexV2> {
     for (;;) {
       const fim = acumulado.indexOf('\n\n');
       if (fim >= 0) {
@@ -122,7 +148,7 @@ test('o SSE manda a lista ao abrir e de novo quando ela muda', async () => comBa
         acumulado = acumulado.slice(fim + 2);
         if (!bloco.includes('event: execucoes')) continue; // comentário de manutenção
         const dados = bloco.split('\n').filter((l) => l.startsWith('data: ')).map((l) => l.slice(6)).join('\n');
-        return JSON.parse(dados) as ExecucoesDoCodexV1;
+        return JSON.parse(dados) as ExecucoesDoCodexV2;
       }
       const { value, done } = await leitor.read();
       if (done) throw new Error('Fluxo terminou.');
@@ -153,4 +179,7 @@ test('rótulos e mensagens sem documento nem seção', () => {
   expect(mensagemDaExecucao({ estado: 'adiado', error_code: 'cota' })).toMatch(/^A cota do Codex da sua conta acabou por agora\./);
   expect(mensagemDaExecucao({ estado: 'falhou', error_code: 'algo_novo' })).toBe('O Codex não conseguiu terminar.');
   expect(mensagemDaExecucao({ estado: 'ok', error_code: null })).toBeNull();
+  expect(mensagemDaExecucao({ estado: 'falhou', error_code: 'processo', causa: null })).toBe('O Codex parou antes de terminar.');
+  expect(mensagemDaExecucao({ estado: 'falhou', error_code: 'publicacao' })).toBe('O Codex terminou, mas o resultado não pôde ser guardado no disco.');
+  expect(mensagemDaExecucao({ estado: 'adiado', error_code: 'cota', causa: 'ignorada' })).toMatch(/^A cota/);
 });

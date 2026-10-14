@@ -5,26 +5,6 @@
 .aviso-estudo, .precedencia-camadas { margin: 12px clamp(16px, 4vw, 48px); font: 13px/1.5 var(--sans); color: var(--texto-2); }
 .metodo-estudo summary { cursor: pointer; }
 .metodo-estudo p { max-width: 65ch; }
-/* Superfície invertida: contraste herdado dos três temas. */
-.barra-selecao { position: fixed; z-index: 80; display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; box-sizing: border-box; height: 40px; width: max-content; max-width: calc(100vw - 24px); padding: 3px; border: 0; border-radius: var(--r-pilula); background: var(--texto-1); color: var(--bg); box-shadow: 0 8px 28px #0002; font: 13px var(--sans); }
-.barra-selecao > .ui-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 0 0 auto; min-height: 34px; height: 34px; padding: 0 9px; border: 0; border-radius: var(--r-pilula); background: transparent; color: inherit; box-shadow: none; transform: none; white-space: nowrap; font: inherit; }
-.barra-selecao > .ui-button:hover:not(:disabled) { background: color-mix(in srgb, var(--bg) 14%, transparent); }
-.barra-selecao > .ui-button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
-.barra-selecao > .ui-icon { width: 34px; padding: 0; }
-.barra-selecao svg { flex-shrink: 0; }
-.barra-selecao kbd { font: 11px var(--sans); color: inherit; opacity: .6; }
-.separador-selecao { width: 1px; height: 18px; flex: 0 0 1px; background: currentColor; opacity: .2; }
-.barra-selecao .aviso-selecao { position: absolute; top: calc(100% + 8px); left: 0; margin: 0; padding: 6px 10px; border-radius: var(--r-8); background: var(--painel); color: var(--texto-2); font: 12px/1.4 var(--sans); }
-@media (max-width: 799.98px) {
-  .barra-selecao { inset: auto 16px calc(16px + env(safe-area-inset-bottom)) !important; width: auto; max-width: none; height: 60px; gap: 0; padding: 4px; justify-content: space-between; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
-  /* Com Imagem e Fluxograma (J70) as ações não cabem em 380 px: cada uma guarda o rótulo inteiro e a pílula rola. */
-  .barra-selecao > .ui-button { flex: 1 0 auto; min-width: 58px; height: 52px; padding: 4px 2px; flex-direction: column; gap: 4px; font-size: 11px; }
-  .barra-selecao > .ui-icon { flex: 0 0 36px; }
-  .barra-selecao kbd, .barra-selecao .separador-selecao { display: none; }
-  /* A pílula rola, então o aviso sai do fluxo dela para não ser cortado; o fechar fica sempre à mão. */
-  .barra-selecao .aviso-selecao { position: fixed; top: auto; left: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); }
-  .barra-selecao > .ui-icon { position: sticky; right: 0; background: var(--texto-1); }
-}
 .cabeca-estudo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .cabeca-estudo h2 { font-size: 18px; }
 .formulario-estudo { gap: 12px; }
@@ -34,24 +14,46 @@
 .nota-pessoal .eyebrow { font-size: 12px; color: var(--texto-1); }
 .acoes-pessoais { display: flex; gap: 6px; flex-wrap: wrap; }
 .fonte-pessoal { font-size: 12px; }
-.reabrir-conversa { text-align: left; width: 100%; }
-.reabrir-conversa span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--texto-2); }
+.reabrir-conversa.ui-button { display: grid; justify-items: start; gap: 2px; width: 100%; padding: 4px 8px; margin-inline: -8px; text-align: left; white-space: normal; font-weight: 500; }
+.reabrir-conversa-rotulo { display: inline-flex; align-items: center; gap: 6px; color: var(--texto-1); }
+.reabrir-conversa-citacao { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--texto-2); font-weight: 400; }
+.conexoes-da-margem.ui-button { margin-inline: -8px; padding-inline: 8px; color: var(--texto-2); font-weight: 500; }
+/* Margem leve (J132): só leitura; o "…" aparece no hover ou foco e abre a nota no painel do trecho. */
+.nota-pessoal .nota-cabeca { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; }
+.nota-pessoal .abrir-da-margem { opacity: 0; transition: opacity .12s; color: var(--texto-3); }
+.nota-pessoal:is(:hover, :focus-within) .abrir-da-margem, .pessoais-moveis .abrir-da-margem { opacity: 1; }
+@media (hover: none) { .nota-pessoal .abrir-da-margem { opacity: 1; } }
+.conexao-da-nota.ui-icon { color: var(--texto-3); margin-left: auto; }
 .pessoais-moveis { display: grid; gap: 22px; margin-bottom: 24px; }
 .pessoais-moveis .nota-pessoal { position: static; }
 .mensagem { border-bottom: 1px solid var(--borda); padding: 14px 0; }
 .mensagem .eyebrow { margin-bottom: 4px; }
 .citacao-link { display: block; text-align: left; color: var(--accent-texto) !important; margin-block: 10px; white-space: pre-wrap; }
 .fio-conversa form { margin-top: 20px; }
-.conexoes-do-trecho > div { border-bottom: 1px solid var(--borda); padding-block: 10px; }
-.conexoes-do-trecho p { margin: 4px 0; }
-.indicadores-estudo button { position: absolute; width: 40px; height: 40px; padding: 0; z-index: 2; }
-.escolha-destino { position: sticky; top: 0; z-index: 90; padding: 10px 16px; border-bottom: 1px solid var(--borda); background: var(--painel); font: 14px/1.4 var(--sans); }
+/* Conexões (J132): lista compacta, citação curta que leva ao trecho. */
+.conexoes-do-trecho { list-style: none; margin: 0 0 12px; padding: 0; }
+.conexoes-do-trecho > li { display: grid; gap: 4px; padding-block: 10px; border-bottom: 1px solid var(--borda); }
+.conexoes-do-trecho p { margin: 0; }
+.conexao-tipo { font: 600 12.5px var(--sans); color: var(--texto-3); }
+.conexao-citacao { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0; border: 0; background: none; color: var(--accent-texto); font: 400 15px/1.45 var(--serif); text-align: left; cursor: pointer; }
+.conexao-citacao:hover { text-decoration: underline; }
+.conexao-nota { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--texto-2); font-size: 13.5px; }
+/* Escolhendo o segundo trecho da conexão: um aviso flutuante (o primeiro trecho fica marcado no texto). */
+.escolha-destino { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 85; display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100vw - 32px); padding: 6px 6px 6px 16px; border: 1px solid var(--borda); border-radius: var(--r-pilula); background: var(--painel); box-shadow: 0 8px 24px #0002; color: var(--texto-1); font: 13.5px/1.4 var(--sans); }
+@media (max-width: 799.98px) { .escolha-destino { top: auto; bottom: calc(84px + env(safe-area-inset-bottom)); border-radius: var(--r-12); } }
+.barra-selecao .botao-de-destino.ui-button { padding-inline: 12px; font-weight: 600; }
+/* O diálogo pequeno do fim da conexão. */
+.veu-leve { background: #0001; }
+.dialogo-de-conexao { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 20px 20px 16px; border: 1px solid var(--borda); border-radius: var(--r-16); background: var(--bg); box-shadow: 0 16px 48px #0003; color: var(--texto-1); font: 14px/1.5 var(--sans); }
+.dialogo-de-conexao h2 { margin: 0; font: 600 17px var(--sans); }
+.trechos-da-conexao { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.trechos-da-conexao li { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 6px 10px; border-radius: var(--r-8); background: var(--painel); font: 400 14.5px/1.45 var(--serif); color: var(--texto-2); }
+.trechos-da-conexao span { margin-right: 6px; font: 600 11.5px var(--sans); text-transform: uppercase; letter-spacing: .04em; color: var(--texto-3); }
 @media (max-width: 899.98px) {
   .estudo-capitulo .capitulo-na-barra { display: none; }
 
 }
 .metodo-estudo { font: 13px/1.5 var(--sans); color: var(--texto-2); }
-.indicadores-estudo .ui-button { min-height: 40px; width: 40px; transform: translateX(-4px); }
 
 
 /* Dificuldade textual (nível 3): o círculo das notas, tracejado e na cor de aviso do sublinhado no texto. */

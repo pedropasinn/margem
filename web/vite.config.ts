@@ -59,6 +59,7 @@ export default defineConfig({
       { find: '@margem/core/youtube', replacement: daRaiz('../core/src/youtube.ts') },
       { find: '@margem/contratos/texto', replacement: daRaiz('../contratos/src/texto.ts') },
       { find: '@margem/contratos/sala', replacement: daRaiz('../contratos/src/sala.ts') },
+      { find: '@margem/contratos/grifo', replacement: daRaiz('../contratos/src/grifo.ts') },
       { find: '@margem/contratos/regras', replacement: daRaiz('../contratos/src/regras.ts') },
       { find: '@margem/contratos', replacement: daRaiz('../contratos/src/index.ts') },
     ],

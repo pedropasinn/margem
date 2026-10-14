@@ -1,0 +1,41 @@
+/* A barra de seleção e a pílula do balão do grifo (J132): superfície invertida, contraste herdado dos
+   três temas. Cores das funções primeiro (grifar já com a função), depois Perguntar, Conectar e o "…". */
+.barra-selecao { position: fixed; z-index: 80; display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; box-sizing: border-box; height: 40px; width: max-content; max-width: calc(100vw - 24px); padding: 3px 4px; border: 0; border-radius: var(--r-pilula); background: var(--texto-1); color: var(--bg); box-shadow: 0 8px 28px #0002; font: 13px var(--sans); }
+.barra-selecao .ui-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 0 0 auto; min-height: 34px; height: 34px; padding: 0 9px; border: 0; border-radius: var(--r-pilula); background: transparent; color: inherit; box-shadow: none; transform: none; white-space: nowrap; font: inherit; }
+.barra-selecao .ui-button:hover:not(:disabled) { background: color-mix(in srgb, var(--bg) 14%, transparent); }
+.barra-selecao .ui-button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.barra-selecao .ui-icon { width: 34px; padding: 0; }
+.barra-selecao svg { flex-shrink: 0; }
+.separador-selecao { width: 1px; height: 18px; flex: 0 0 1px; margin-inline: 3px; background: currentColor; opacity: .2; }
+.barra-selecao .aviso-selecao { position: absolute; top: calc(100% + 8px); left: 0; margin: 0; padding: 6px 10px; border-radius: var(--r-8); background: var(--painel); color: var(--texto-2); font: 12px/1.4 var(--sans); }
+.barra-selecao[data-lado="abaixo"] .aviso-selecao { top: auto; bottom: calc(100% + 8px); }
+
+.fileira-de-cores { display: inline-flex; align-items: center; gap: 0; }
+.cor-do-grifo { display: grid; place-items: center; width: 28px; height: 34px; padding: 0; border: 0; border-radius: var(--r-pilula); background: transparent; color: inherit; cursor: pointer; }
+.cor-do-grifo:disabled { cursor: default; opacity: .5; }
+.ponto-do-grifo { width: 14px; height: 14px; border-radius: 50%; background: var(--cor-do-grifo); box-shadow: 0 0 0 1.5px color-mix(in srgb, currentColor 30%, transparent); transition: transform .1s; }
+.cor-do-grifo:hover:not(:disabled) .ponto-do-grifo { transform: scale(1.18); }
+.cor-do-grifo:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+/* A função atual (balão do grifo): um anel na cor do texto da pílula, como uma seleção. */
+.cor-do-grifo[aria-pressed="true"] .ponto-do-grifo { box-shadow: 0 0 0 2px var(--texto-1), 0 0 0 3.5px currentColor; }
+
+.menu-de-mais { position: relative; display: inline-flex; }
+.menu-da-barra { position: absolute; right: 0; top: calc(100% + 8px); z-index: 81; min-width: 220px; margin: 0; padding: 6px; list-style: none; border-radius: 12px; background: var(--painel); color: var(--texto-1); box-shadow: 0 10px 28px #0004; font: 14px/1.3 var(--sans); }
+.barra-selecao[data-lado="acima"] .menu-da-barra { top: auto; bottom: calc(100% + 8px); }
+.menu-da-barra button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.menu-da-barra button:hover:not(:disabled), .menu-da-barra button:focus-visible { background: var(--bg-hover); outline: none; }
+.menu-da-barra button:disabled { opacity: .5; cursor: default; }
+.menu-da-barra svg { color: var(--texto-3); flex-shrink: 0; }
+.menu-da-barra kbd { margin-left: auto; color: var(--texto-3); font: 500 12px var(--sans); }
+.menu-da-barra .perigo, .balao-menu .perigo { color: var(--error-texto); }
+
+@media (max-width: 799.98px) {
+  /* No celular, a mesma pílula fixa embaixo e sem rolagem: só ícones de 44 px, os rótulos ficam para o leitor de tela. */
+  .barra-selecao { inset: auto 16px calc(16px + env(safe-area-inset-bottom)) !important; width: auto; max-width: none; height: 56px; padding: 4px 6px; justify-content: space-between; }
+  .barra-selecao .botao-da-selecao.ui-button { width: 44px; height: 44px; min-height: 44px; padding: 0; }
+  .barra-selecao .rotulo-da-selecao { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .barra-selecao .cor-do-grifo { width: 36px; height: 44px; }
+  .barra-selecao .ponto-do-grifo { width: 18px; height: 18px; }
+  .barra-selecao .menu-da-barra, .barra-selecao[data-lado] .menu-da-barra { top: auto; bottom: calc(100% + 12px); }
+  .barra-selecao .aviso-selecao, .barra-selecao[data-lado] .aviso-selecao { position: fixed; top: auto; left: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); }
+}

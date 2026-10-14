@@ -18,7 +18,7 @@ describe('sequência das boas-vindas', () => {
     let e = aplicar(ONBOARDING_INICIAL, { tipo: 'avancar_tela' });
     expect(e.tela).toBe(1);
     expect(e.atualizado_em).toBe(AGORA);
-    e = aplicar(e, { tipo: 'avancar_tela' });
+    e = aplicar(e, { tipo: 'avancar_tela' }, { tipo: 'avancar_tela' });
     expect(e.tela).toBe(TELAS_DAS_BOAS_VINDAS - 1);
     expect(e.boas_vindas).toBe('pendente');
     e = aplicar(e, { tipo: 'avancar_tela' });
@@ -60,22 +60,33 @@ describe('primeiro documento', () => {
   });
 });
 
-describe('tour do leitor', () => {
+describe('tours de texto, vídeo e quadro', () => {
   test('avança, volta, conclui ao passar da última dica e pode ser revisto', () => {
-    let e = aplicar(ONBOARDING_INICIAL, { tipo: 'avancar_dica', total: 3 }, { tipo: 'avancar_dica', total: 3 });
-    expect(e.dica).toBe(2);
-    e = aplicar(e, { tipo: 'voltar_dica' });
-    expect(e.dica).toBe(1);
-    e = aplicar(e, { tipo: 'avancar_dica', total: 3 }, { tipo: 'avancar_dica', total: 3 });
-    expect(e).toMatchObject({ tour: 'concluida', dica: 0 });
-    expect(mostrarTour(e)).toBe(false);
-    e = aplicar(e, { tipo: 'rever_tour' });
-    expect(mostrarTour(e)).toBe(true);
+    let e = aplicar(ONBOARDING_INICIAL, { tipo: 'avancar_dica', tour: 'texto', total: 3 }, { tipo: 'avancar_dica', tour: 'texto', total: 3 });
+    expect(e.dicas.texto).toBe(2);
+    e = aplicar(e, { tipo: 'voltar_dica', tour: 'texto' });
+    expect(e.dicas.texto).toBe(1);
+    e = aplicar(e, { tipo: 'avancar_dica', tour: 'texto', total: 3 }, { tipo: 'avancar_dica', tour: 'texto', total: 3 });
+    expect(e.tours.texto).toBe('concluida');
+    expect(e.dicas.texto).toBe(0);
+    expect(mostrarTour(e, 'texto')).toBe(false);
+    e = aplicar(e, { tipo: 'rever_tour', tour: 'texto' });
+    expect(mostrarTour(e, 'texto')).toBe(true);
+  });
+
+  test('cada tour anda sozinho: concluir o do texto não toca no do vídeo nem no do quadro', () => {
+    const e = aplicar(ONBOARDING_INICIAL, { tipo: 'avancar_dica', tour: 'video', total: 3 }, { tipo: 'concluir_tour', tour: 'texto' });
+    expect(e.tours).toEqual({ texto: 'concluida', video: 'pendente', quadro: 'pendente' });
+    expect(e.dicas.video).toBe(1);
+    expect(mostrarTour(e, 'video')).toBe(true);
+    expect(mostrarTour(e, 'quadro')).toBe(true);
   });
 
   test('pular encerra sem perder um tour já concluído', () => {
-    expect(aplicar(ONBOARDING_INICIAL, { tipo: 'avancar_dica', total: 5 }, { tipo: 'pular_tour' })).toMatchObject({ tour: 'pulada', dica: 0 });
-    expect(aplicar(ONBOARDING_INICIAL, { tipo: 'concluir_tour' }, { tipo: 'pular_tour' }).tour).toBe('concluida');
+    const pulado = aplicar(ONBOARDING_INICIAL, { tipo: 'avancar_dica', tour: 'quadro', total: 5 }, { tipo: 'pular_tour', tour: 'quadro' });
+    expect(pulado.tours.quadro).toBe('pulada');
+    expect(pulado.dicas.quadro).toBe(0);
+    expect(aplicar(ONBOARDING_INICIAL, { tipo: 'concluir_tour', tour: 'video' }, { tipo: 'pular_tour', tour: 'video' }).tours.video).toBe('concluida');
   });
 });
 
@@ -83,37 +94,52 @@ describe('etapas e retomada', () => {
   test('a próxima etapa é a primeira pendente; puladas não contam como feitas', () => {
     expect(proximaEtapa(ONBOARDING_INICIAL)).toBe('boas_vindas');
     const e = aplicar(ONBOARDING_INICIAL, { tipo: 'pular_boas_vindas' }, { tipo: 'registrar_documento', origem: 'exemplo', documento_id: 'EX1' });
-    expect(proximaEtapa(e)).toBe('tour');
+    expect(proximaEtapa(e)).toBe('tour_texto');
     expect(concluidas(e)).toBe(1);
-    expect(etapas(e).map((x) => x.estado)).toEqual(['pulada', 'concluida', 'pendente', 'pendente']);
-    const tudo = aplicar(e, { tipo: 'concluir_tour' }, { tipo: 'pular_levar' });
+    expect(etapas(e).map((x) => x.nome)).toEqual(['boas_vindas', 'primeiro_documento', 'tour_texto', 'tour_video', 'tour_quadro', 'levar']);
+    expect(etapas(e).map((x) => x.estado)).toEqual(['pulada', 'concluida', 'pendente', 'pendente', 'pendente', 'pendente']);
+    // Sem a arte, não há tour do quadro.
+    expect(etapas(e, { quadros: false }).map((x) => x.nome)).not.toContain('tour_quadro');
+    const tudo = aplicar(e, { tipo: 'concluir_tour', tour: 'texto' }, { tipo: 'pular_tour', tour: 'video' }, { tipo: 'concluir_tour', tour: 'quadro' }, { tipo: 'pular_levar' });
     expect(proximaEtapa(tudo)).toBeNull();
   });
 
   test('quem já usava o app não é recebido como estreante, mas só antes da primeira gravação', () => {
     const e = aplicar(ONBOARDING_INICIAL, { tipo: 'dispensar_por_uso_anterior' });
-    expect(e).toMatchObject({ boas_vindas: 'pulada', tour: 'pulada', primeiro_documento: { estado: 'concluida', origem: 'uso_anterior' } });
+    expect(e).toMatchObject({ boas_vindas: 'pulada', tours: { texto: 'pulada', video: 'pulada', quadro: 'pulada' }, primeiro_documento: { estado: 'concluida', origem: 'uso_anterior' } });
     expect(e.levar).toBe('pendente');
     const jaComecou = aplicar(ONBOARDING_INICIAL, { tipo: 'avancar_tela' });
     expect(reduzirOnboarding(jaComecou, { tipo: 'dispensar_por_uso_anterior' }, AGORA)).toBe(jaComecou);
   });
 
   test('recomeçar volta ao início, mas não esquece o exemplo (para não duplicá-lo)', () => {
-    const e = aplicar(ONBOARDING_INICIAL, { tipo: 'registrar_documento', origem: 'exemplo', documento_id: 'EX1' }, { tipo: 'concluir_tour' }, { tipo: 'recomecar' });
-    expect(e).toMatchObject({ boas_vindas: 'pendente', tour: 'pendente', primeiro_documento: { estado: 'pendente' }, exemplo_id: 'EX1' });
+    const e = aplicar(ONBOARDING_INICIAL, { tipo: 'registrar_documento', origem: 'exemplo', documento_id: 'EX1' }, { tipo: 'concluir_tour', tour: 'texto' }, { tipo: 'recomecar' });
+    expect(e).toMatchObject({ boas_vindas: 'pendente', tours: { texto: 'pendente' }, primeiro_documento: { estado: 'pendente' }, exemplo_id: 'EX1' });
   });
 });
 
 describe('validação e armazenamento', () => {
-  test('valores desconhecidos voltam ao inicial campo a campo; outra versão volta ao inicial', () => {
+  test('valores desconhecidos voltam ao inicial campo a campo; versão desconhecida volta ao inicial', () => {
     expect(validarOnboarding(null)).toEqual(ONBOARDING_INICIAL);
-    expect(validarOnboarding({ ...ONBOARDING_INICIAL, versao: 2, tour: 'concluida' })).toEqual(ONBOARDING_INICIAL);
-    const lido = validarOnboarding({ versao: 1, boas_vindas: 'talvez', tela: 99, tour: 'concluida', dica: -3, exemplo_id: '<script>', primeiro_documento: { estado: 'concluida', origem: 'hacker', documento_id: 'ABC' }, atualizado_em: 'ontem', extra: 1 });
-    expect(lido).toEqual({ ...ONBOARDING_INICIAL, tela: TELAS_DAS_BOAS_VINDAS - 1, tour: 'concluida', primeiro_documento: { estado: 'concluida', origem: null, documento_id: 'ABC' } });
+    expect(validarOnboarding({ ...ONBOARDING_INICIAL, versao: 3, boas_vindas: 'concluida' })).toEqual(ONBOARDING_INICIAL);
+    const lido = validarOnboarding({ versao: 2, boas_vindas: 'talvez', tela: 99, tours: { texto: 'concluida', video: 'xyz' }, dicas: { quadro: -3, video: 2 }, exemplo_id: '<script>', primeiro_documento: { estado: 'concluida', origem: 'hacker', documento_id: 'ABC' }, atualizado_em: 'ontem', extra: 1 });
+    expect(lido).toEqual({ ...ONBOARDING_INICIAL, tela: TELAS_DAS_BOAS_VINDAS - 1, tours: { texto: 'concluida', video: 'pendente', quadro: 'pendente' }, dicas: { texto: 0, video: 2, quadro: 0 }, primeiro_documento: { estado: 'concluida', origem: null, documento_id: 'ABC' } });
+  });
+
+  test('V-D4: o estado da versão 1 migra sem rever o que já foi visto; vídeo e quadro ficam por ver', () => {
+    const v1 = { versao: 1, boas_vindas: 'concluida', tela: 2, primeiro_documento: { estado: 'concluida', origem: 'exemplo', documento_id: 'EX1' }, exemplo_id: 'EX1', tour: 'concluida', dica: 0, levar: 'pulada', atualizado_em: AGORA };
+    const migrado = validarOnboarding(v1);
+    expect(migrado).toEqual({ versao: 2, boas_vindas: 'concluida', tela: 2, primeiro_documento: { estado: 'concluida', origem: 'exemplo', documento_id: 'EX1' }, exemplo_id: 'EX1',
+      tours: { texto: 'concluida', video: 'pendente', quadro: 'pendente' }, dicas: { texto: 0, video: 0, quadro: 0 }, levar: 'pulada', atualizado_em: AGORA });
+    expect(mostrarBoasVindas(migrado, false)).toBe(false);
+    expect(mostrarTour(migrado, 'texto')).toBe(false);
+    expect(mostrarTour(migrado, 'video')).toBe(true);
+    // No meio do tour de texto: a dica onde parou continua.
+    expect(validarOnboarding({ ...v1, tour: 'pendente', dica: 3 }).dicas.texto).toBe(3);
   });
 
   test('a chave é versionada e por usuário; o armazém sobrevive a JSON corrompido e a storage ausente', () => {
-    expect(chaveDoOnboarding('local')).toBe('margem:onboarding:v1:local');
+    expect(chaveDoOnboarding('local')).toBe('margem:onboarding:v2:local');
     const dados = new Map<string, string>();
     const storage = { getItem: (k: string) => dados.get(k) ?? null, setItem: (k: string, v: string) => { dados.set(k, v); } } as unknown as Storage;
     const leitor = armazemLocal('leitor', () => storage);
@@ -171,6 +197,22 @@ describe('documento de exemplo', () => {
   });
 });
 
+describe('migração do armazém (V-D4)', () => {
+  test('sem a chave da versão 2, lê a da versão 1, migra e grava na nova', () => {
+    const dados = new Map<string, string>();
+    const storage = { getItem: (k: string) => dados.get(k) ?? null, setItem: (k: string, v: string) => { dados.set(k, v); } } as unknown as Storage;
+    dados.set('margem:onboarding:v1:local', JSON.stringify({ versao: 1, boas_vindas: 'concluida', tela: 2, tour: 'concluida', dica: 0, levar: 'pendente',
+      primeiro_documento: { estado: 'concluida', origem: 'importado', documento_id: 'DOC' }, exemplo_id: null, atualizado_em: AGORA }));
+    const armazem = armazemLocal('local', () => storage);
+    const lido = armazem.ler()!;
+    expect(lido.versao).toBe(2);
+    expect(lido.tours).toEqual({ texto: 'concluida', video: 'pendente', quadro: 'pendente' });
+    armazem.gravar(lido);
+    expect((JSON.parse(dados.get('margem:onboarding:v2:local')!) as { versao: number }).versao).toBe(2);
+    expect(armazem.ler()).toEqual(lido);
+  });
+});
+
 describe('instalação e integrações', () => {
   const base = { standalone: false, userAgent: 'Mozilla/5.0 (X11; Linux x86_64) Chrome/140', plataforma: 'Linux x86_64', toques: 0, pedido: false };
   test('escolhe o caminho de instalação certo', () => {
@@ -216,11 +258,20 @@ describe('posição da dica ancorada', () => {
 });
 
 describe('rotas dos primeiros passos', () => {
-  test('primeiros passos, ajuda e adicionar com texto colado vão e voltam pelo caminho', async () => {
-    const { caminhoDaRota, rotaDoCaminho } = await import('../biblioteca/rotas');
-    for (const rota of [{ nome: 'primeiros-passos' }, { nome: 'ajuda', pagina: 'obsidian' }, { nome: 'adicionar', entrada: 'colado' }, { nome: 'adicionar' }] as const) {
+  test('primeiros passos (nas Configurações), ajuda e adicionar com texto colado vão e voltam pelo caminho', async () => {
+    const { caminhoCanonico, caminhoDaRota, rotaDoCaminho } = await import('../biblioteca/rotas');
+    for (const rota of [{ nome: 'configuracoes', secao: 'primeiros-passos' }, { nome: 'configuracoes' }, { nome: 'ajuda', pagina: 'obsidian' }, { nome: 'adicionar', aba: 'documento', modo: 'colar' }, { nome: 'adicionar' }, { nome: 'adicionar', aba: 'video' }, { nome: 'adicionar', aba: 'quadro' }] as const) {
       expect(rotaDoCaminho(caminhoDaRota(rota))).toEqual(rota);
     }
+    // O endereço antigo do texto colado abre a aba Documento no campo de colar.
+    expect(rotaDoCaminho('/adicionar?entrada=colado')).toEqual({ nome: 'adicionar', aba: 'documento', modo: 'colar' });
+    expect(rotaDoCaminho('/adicionar/qualquer')).toEqual({ nome: 'adicionar' });
     expect(rotaDoCaminho('/ajuda/inexistente')).toEqual({ nome: 'inicio' });
+    // Os Primeiros passos moram nas Configurações (V-T1): o endereço antigo leva até lá e é trocado pelo novo.
+    expect(rotaDoCaminho('/primeiros-passos')).toEqual({ nome: 'configuracoes', secao: 'primeiros-passos' });
+    expect(caminhoDaRota({ nome: 'configuracoes', secao: 'primeiros-passos' })).toBe('/configuracoes/primeiros-passos');
+    expect(caminhoCanonico('/primeiros-passos')).toBe('/configuracoes/primeiros-passos');
+    expect(caminhoCanonico('/configuracoes/primeiros-passos')).toBeNull();
+    expect(caminhoCanonico('/configuracoes')).toBeNull();
   });
 });

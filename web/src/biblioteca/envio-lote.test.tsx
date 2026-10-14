@@ -4,7 +4,7 @@ import { Adicionar } from './Adicionar';
 import { App } from './App';
 import { escolherOpcao } from '../../tests/apoio-react';
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); window.history.replaceState(null, '', '/'); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); window.history.replaceState(null, '', '/'); localStorage.clear(); });
 const arquivo = (nome: string) => new File(['conteúdo'], nome);
 const json = (corpo: unknown, status = 200) => new Response(JSON.stringify(corpo), { status });
 const fila = () => within(screen.getByRole('list', { name: 'Fila' }));
@@ -66,13 +66,13 @@ test.each(['/', '/biblioteca'])('soltar na casca em %s abre a fila com todos os 
   window.history.replaceState(null, '', caminho);
   vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(json({ documentos: [] }))));
   const { container } = render(<App />);
-  await screen.findByText('Nenhum texto ainda.');
+  await screen.findByText('Nenhum item ainda.');
   const casca = container.querySelector('.app-shell')!;
   expect(fireEvent.dragOver(casca, { dataTransfer: { types: ['Files'] } })).toBe(false);
   fireEvent.drop(casca, { dataTransfer: { files: [arquivo('um.pdf'), arquivo('dois.md')] } });
-  expect(window.location.pathname).toBe('/adicionar');
-  expect(screen.getByRole('heading', { name: 'Adicionar à biblioteca' })).toBeDefined();
-  expect(fila().getByText('um.pdf')).toBeDefined();
+  expect(window.location.pathname).toBe('/adicionar/documento');
+  expect(await screen.findByRole('heading', { name: 'Adicionar à biblioteca' })).toBeDefined();
+  expect(await fila().findByText('um.pdf')).toBeDefined();
   expect(fila().getByText('dois.md')).toBeDefined();
   expect(vi.mocked(fetch).mock.calls.every(([, inicio]) => inicio?.method !== 'POST')).toBe(true);
 });
@@ -99,10 +99,40 @@ test('413 do proxy em HTML vira recusa legível', async () => {
   expect(screen.getByRole('status').textContent).toBe('Envio concluído: 0 enviados, 2 recusados.');
 });
 
-test('soltar fora da área em Adicionar não deixa o navegador abrir o arquivo', () => {
-  window.history.replaceState(null, '', '/adicionar');
+test('soltar só vídeo na casca abre a aba Vídeo; /adicionar sem aba volta à última usada', async () => {
   vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(json({ documentos: [] }))));
   const { container } = render(<App />);
+  await screen.findByText('Nenhum item ainda.');
+  fireEvent.drop(container.querySelector('.app-shell')!, { dataTransfer: { files: [arquivo('aula.mp4'), arquivo('aula.json')] } });
+  expect(window.location.pathname).toBe('/adicionar/video');
+  expect(await fila().findByText('aula.mp4')).toBeDefined();
+  cleanup();
+  window.history.replaceState(null, '', '/adicionar');
+  render(<App />);
+  await waitFor(() => expect(window.location.pathname).toBe('/adicionar/video'));
+  localStorage.clear();
+});
+
+test('soltar fora da área em Adicionar leva o arquivo à fila, sem o navegador abri-lo', async () => {
+  window.history.replaceState(null, '', '/adicionar/documento');
+  vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(json({ documentos: [] }))));
+  const { container } = render(<App />);
+  await screen.findByRole('heading', { name: 'Adicionar à biblioteca' });
   expect(fireEvent.drop(container.querySelector('.app-shell')!, { dataTransfer: { files: [arquivo('um.pdf')] } })).toBe(false);
-  expect(screen.queryByRole('list', { name: 'Fila' })).toBeNull();
+  expect(fila().getByText('um.pdf')).toBeDefined();
+  expect(fila().getByText('Pronto para enviar')).toBeDefined();
+});
+
+test.each(['/', '/biblioteca'])('colar uma imagem em %s a leva à aba Quadro, sem enviar nada (V-D2)', async (caminho) => {
+  window.history.replaceState(null, '', caminho);
+  const fetch = vi.fn<(url: string, inicio?: RequestInit) => Promise<Response>>(() => Promise.resolve(json({ documentos: [], obras: [], preparando: [] })));
+  vi.stubGlobal('fetch', fetch);
+  render(<App />);
+  await screen.findByText('Nenhum item ainda.');
+  fireEvent.paste(document.body, { clipboardData: { files: [new File([Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], 'image.png', { type: 'image/png' })], items: [] } });
+  expect(window.location.pathname).toBe('/adicionar/quadro');
+  expect(await screen.findByText('print.png')).toBeDefined();
+  await new Promise((resolver) => setTimeout(resolver, 20));
+  expect(fetch.mock.calls.filter(([, inicio]) => inicio?.method === 'POST')).toHaveLength(0);
+  expect(fetch.mock.calls.some(([url]) => url.includes('questao'))).toBe(false);
 });

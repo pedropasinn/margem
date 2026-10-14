@@ -1,34 +1,51 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { Button, Input, Textarea, Select } from '../ui/Primitives';
+import { Button, Input, Textarea, Select, classesDoBotao } from '../ui/Primitives';
 import { Icon } from '../ui/Icon';
-import type { Rota } from './rotas';
+import type { AbaDeAdicionar, Rota } from './rotas';
 import { usarOnboarding } from '../onboarding/ContextoDoOnboarding';
+import { integracoes } from '../onboarding/integracoes';
 import { ErroDaApi } from './api';
 import {
-  ACEITOS, LIMITE_DOCUMENTO_BYTES, LIMITE_MIDIA_BYTES, ROTULO_DO_TIPO, SERVICOS_PADRAO,
-  aceitaPoesia, classificarLink, documentoExistente, ehDocumento, ehMidia, emparelharTranscricoes, lerTextoDoArquivo, lerTranscricao, motivoDaFalha,
+  ACEITOS_POR_ABA, LIMITE_DOCUMENTO_BYTES, LIMITE_MIDIA_BYTES, ROTULO_DO_TIPO, SERVICOS_PADRAO,
+  abaDoTipo, aceitaPoesia, guardarAba, classificarLink, documentoExistente, ehDocumento, ehMidia, emparelharTranscricoes, imagensColadas, lerTextoDoArquivo, lerTranscricao, motivoDaFalha,
   recusaLocal, tamanhoLegivel, textoDaTranscricao, tipoDoArquivo, tituloAutomatico, tituloDoNome, tituloDoTexto,
   type DocumentoCriado, type ServicosDaImportacao, type TipoDeArquivo, type TranscricaoV1,
 } from './importacao';
-import { ImportacaoAvancada, OutrasFontes } from './OutrasFontes';
+import { FormularioDaObra } from '../quadros/NaBiblioteca';
+import { OPERACOES_DOS_QUADROS, type OperacoesDosQuadros } from '../quadros/api';
+import type { QuadroDaPessoaV1 } from '../quadros/tipos';
+import { usarRecurso } from '../recursos';
 
 /**
- * Adicionar (J108): o lugar único para trazer qualquer coisa para a biblioteca. Uma área de soltar
- * aceita documento, vídeo e áudio de uma vez e encaminha cada um para a rota certa; ao lado, um link
- * (YouTube pelo serviço, outras páginas pela extensão) e o texto colado. Tudo o que entra vira uma
- * linha da fila, que acompanha o envio e depois a preparação do texto.
+ * Adicionar (J108, V-D2): trazer qualquer coisa para a biblioteca, em três abas com rota própria.
+ *
+ * - Documento: PDF, EPUB, Markdown e TXT pela área de soltar, o texto colado e, para páginas da web,
+ *   a extensão do navegador.
+ * - Vídeo: o link do YouTube (o caminho principal) e, como opção avançada, o arquivo de vídeo ou áudio
+ *   com a transcrição `.json`.
+ * - Quadro: a imagem de uma obra, com título, artista e ano opcionais (`POST /api/arte`).
+ *
+ * Tudo o que é documento ou mídia vira uma linha da fila, que acompanha o envio e a preparação do
+ * texto; a fila é uma só e cada aba mostra a sua parte. O que chega à aba errada vai para a certa,
+ * com um aviso e o atalho. Imagem solta ou colada vai para Quadro e espera o botão: nada é enviado
+ * sem confirmação.
  */
 export interface PropsDoAdicionar {
-  ir: (destino: Rota) => void;
+  ir: (destino: Rota, substituir?: boolean) => void;
+  aba?: AbaDeAdicionar;
+  /** `colar`: abre o Documento com o foco no texto colado. */
+  modo?: 'colar';
+  /** Arquivos soltos (ou a imagem colada) no Início ou na Biblioteca. */
   arquivosIniciais?: File[];
   /** Atalho dos testes antigos: troca só o envio de documentos. */
   enviar?: (formulario: FormData) => Promise<DocumentoCriado>;
   servicos?: Partial<ServicosDaImportacao>;
-  entradaInicial?: 'arquivo' | 'colado';
+  operacoesDosQuadros?: Pick<OperacoesDosQuadros, 'adicionar'>;
 }
 
 type TipoDoItem = TipoDeArquivo | 'colado' | 'youtube';
 type TipoDoTexto = 'automatico' | 'prosa' | 'poesia';
+type AbaDaFila = Exclude<AbaDeAdicionar, 'quadro'>;
 type Estado =
   | { fase: 'na_fila' }
   | { fase: 'falta_transcricao' }
@@ -42,6 +59,8 @@ type Estado =
 interface Item {
   chave: number;
   tipo: TipoDoItem;
+  /** A aba em que a linha aparece. */
+  aba: AbaDaFila;
   nome: string;
   arquivo?: File;
   transcricao?: File;
@@ -59,13 +78,21 @@ interface Item {
 const TENTATIVAS_MAXIMAS = 240;
 const FAIXA_DE_PAGINAS = /^[1-9][0-9]*-[1-9][0-9]*$/;
 
+export const ROTULO_DA_ABA: Readonly<Record<AbaDeAdicionar, string>> = { documento: 'Documento', video: 'Vídeo', quadro: 'Quadro' };
+const SUBTITULO: Readonly<Record<AbaDeAdicionar, string>> = {
+  documento: 'PDFs, EPUBs, Markdown e TXT, ou um texto colado. O texto fica pronto em instantes; as marcas chegam depois.',
+  video: 'Um vídeo do YouTube entra com a transcrição e toca ao lado dela, frase a frase.',
+  quadro: 'A imagem de uma obra vira uma leitura guiada: as regiões da pintura, o que se vê e o que se sabe dela.',
+};
+
 let proximaChave = 1;
-function novoItem(base: Omit<Item, 'chave' | 'titulo' | 'autor' | 'paginas' | 'tipoDoTexto' | 'opcoesAbertas' | 'estado'> & Partial<Item>): Item {
-  return { titulo: '', autor: '', paginas: '', tipoDoTexto: 'automatico', opcoesAbertas: false, estado: { fase: 'na_fila' }, ...base, chave: proximaChave++ };
+function novoItem(base: Omit<Item, 'chave' | 'titulo' | 'autor' | 'paginas' | 'tipoDoTexto' | 'opcoesAbertas' | 'estado' | 'aba'> & Partial<Item>): Item {
+  const aba = abaDoTipo(base.tipo);
+  return { titulo: '', autor: '', paginas: '', tipoDoTexto: 'automatico', opcoesAbertas: false, estado: { fase: 'na_fila' }, aba: aba === 'video' ? 'video' : 'documento', ...base, chave: proximaChave++ };
 }
 
-/** Os itens de um lote solto ou escolhido: documentos, mídias com a sua transcrição, recusas com motivo. */
-function itensDosArquivos(arquivos: File[]): Item[] {
+/** Os itens de um lote (sem as imagens): documentos, mídias com a sua transcrição, recusas com motivo. */
+function itensDosArquivos(arquivos: File[], onde: AbaDaFila): Item[] {
   const tipos = new Map(arquivos.map((arquivo) => [arquivo, tipoDoArquivo(arquivo)]));
   const midias = arquivos.filter((arquivo) => ehMidia(tipos.get(arquivo)!));
   const { pares, sobras } = emparelharTranscricoes(midias, arquivos.filter((arquivo) => tipos.get(arquivo) === 'transcricao'));
@@ -73,7 +100,8 @@ function itensDosArquivos(arquivos: File[]): Item[] {
   for (const arquivo of arquivos) {
     const tipo = tipos.get(arquivo)!;
     if (tipo === 'transcricao' && !sobras.includes(arquivo)) continue;
-    const base = { tipo, nome: arquivo.name, arquivo };
+    // O que nenhuma aba recebe fica onde foi solto, recusado com o motivo.
+    const base = { tipo, nome: arquivo.name, arquivo, ...(abaDoTipo(tipo) === null ? { aba: onde } : {}) };
     if (tipo === 'transcricao') {
       itens.push(novoItem({ ...base, estado: { fase: 'recusado', motivo: 'Transcrição sem vídeo ou áudio: solte-a junto com o arquivo de mídia.' } }));
       continue;
@@ -92,14 +120,22 @@ function itensDosArquivos(arquivos: File[]): Item[] {
 
 const ICONE: Readonly<Record<TipoDoItem, string>> = {
   pdf: 'pdf', epub: 'livro', md: 'texto', txt: 'texto', colado: 'aspas', video: 'video-doc', audio: 'ouvir',
-  youtube: 'video-doc', transcricao: 'arquivo', desconhecido: 'arquivo',
+  youtube: 'video-doc', transcricao: 'arquivo', imagem: 'imagem', desconhecido: 'arquivo',
 };
 
-export function Adicionar({ ir, arquivosIniciais = [], enviar, servicos: parciais, entradaInicial = 'arquivo' }: PropsDoAdicionar): ReactNode {
+/** O que foi para outra aba no último lote, para o aviso com o atalho. */
+interface Desvio { aba: AbaDeAdicionar; quantos: number }
+
+export function Adicionar({ ir, aba: abaPedida = 'documento', modo, arquivosIniciais = [], enviar, servicos: parciais, operacoesDosQuadros = OPERACOES_DOS_QUADROS }: PropsDoAdicionar): ReactNode {
   const servicos: ServicosDaImportacao = { ...SERVICOS_PADRAO, ...(enviar ? { enviarDocumento: enviar } : {}), ...parciais };
   const servicosRef = useRef(servicos); servicosRef.current = servicos;
+  const arte = usarRecurso('arte');
+  // Com os quadros desligados, a aba Quadro some e o endereço dela mostra Documento.
+  const aba: AbaDeAdicionar = abaPedida === 'quadro' && !arte ? 'documento' : abaPedida;
+  const abaRef = useRef(aba); abaRef.current = aba;
+  const abas = (['documento', 'video', 'quadro'] as const).filter((valor) => valor !== 'quadro' || arte);
   const { despachar } = usarOnboarding();
-  const [itens, definirItensBrutos] = useState<Item[]>(() => itensDosArquivos(arquivosIniciais));
+  const [itens, definirItensBrutos] = useState<Item[]>([]);
   const itensRef = useRef(itens);
   const mudar = (fazer: (atuais: Item[]) => Item[]) => { itensRef.current = fazer(itensRef.current); definirItensBrutos(itensRef.current); };
   const atualizar = (chave: number, parcial: Partial<Item>) => mudar((atuais) => atuais.map((item) => item.chave === chave ? { ...item, ...parcial } : item));
@@ -109,8 +145,67 @@ export function Adicionar({ ir, arquivosIniciais = [], enviar, servicos: parciai
   const montado = useRef(true);
   useEffect(() => { montado.current = true; return () => { montado.current = false; }; }, []);
   const [anuncio, anunciar] = useState('');
+  const [desvios, definirDesvios] = useState<Desvio[]>([]);
+  /** A imagem que espera na aba Quadro; `chave` refaz o formulário quando chega outra. */
+  const [obra, definirObra] = useState<{ arquivo: File; chave: number } | null>(null);
+  const [obraEnviada, definirObraEnviada] = useState<QuadroDaPessoaV1 | null>(null);
+  /** Vídeo: o arquivo próprio (com a transcrição .json) é a opção avançada, atrás de um botão. */
+  const [arquivoProprio, abrirArquivoProprio] = useState(false);
   const colado = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => { if (entradaInicial === 'colado') colado.current?.focus(); }, [entradaInicial]);
+  useEffect(() => { if (modo === 'colar' && aba === 'documento') colado.current?.focus(); }, [modo, aba]);
+  // Trocar de aba lembra a escolha (`/adicionar` volta a ela) e apaga o aviso do lote anterior.
+  const abaAnterior = useRef(aba);
+  useEffect(() => {
+    guardarAba(aba);
+    if (abaAnterior.current !== aba) definirDesvios([]);
+    abaAnterior.current = aba;
+  }, [aba]);
+  const irPara = (destino: AbaDeAdicionar) => ir({ nome: 'adicionar', aba: destino });
+
+  /**
+   * Um lote solto, escolhido ou colado em `onde`. Documentos e mídias entram na fila (cada um na sua
+   * aba); a imagem vai para Quadro e espera o botão. O que não é desta aba ganha o aviso com o atalho.
+   */
+  function acolher(arquivos: File[], onde: AbaDeAdicionar) {
+    const imagens = arquivos.filter((arquivo) => tipoDoArquivo(arquivo) === 'imagem');
+    const resto = arquivos.filter((arquivo) => tipoDoArquivo(arquivo) !== 'imagem');
+    const novos = itensDosArquivos(resto, onde === 'quadro' ? 'documento' : onde);
+    if (!arte) {
+      for (const imagem of imagens) novos.push(novoItem({ tipo: 'imagem', nome: imagem.name, arquivo: imagem, aba: onde === 'video' ? 'video' : 'documento', estado: { fase: 'recusado', motivo: 'Imagens entram como quadros, e os quadros estão desligados nesta instalação.' } }));
+    }
+    acrescentar(novos);
+    const contagem = new Map<AbaDeAdicionar, number>();
+    for (const item of novos) if (item.aba !== onde && item.estado.fase !== 'recusado') contagem.set(item.aba, (contagem.get(item.aba) ?? 0) + 1);
+    if (arte && imagens[0]) {
+      definirObra({ arquivo: imagens[0], chave: proximaChave++ });
+      definirObraEnviada(null);
+      if (onde !== 'quadro') contagem.set('quadro', 1);
+      if (imagens.length > 1) anunciar('Uma obra por vez: ficou a primeira imagem.');
+    }
+    definirDesvios([...contagem.entries()].map(([destino, quantos]) => ({ aba: destino, quantos })));
+  }
+
+  // Os arquivos soltos no Início ou na Biblioteca entram uma vez, ao abrir a página.
+  const iniciais = useRef(arquivosIniciais);
+  useEffect(() => { if (iniciais.current.length) acolher(iniciais.current, abaRef.current); iniciais.current = []; }, []);
+  // Soltar fora das áreas leva cada arquivo à sua aba; colar uma imagem a leva para Quadro, sem enviar.
+  useEffect(() => {
+    const soltar = (evento: DragEvent) => {
+      const arquivos = Array.from(evento.dataTransfer?.files ?? []);
+      if (!arquivos.length || evento.defaultPrevented) return;
+      evento.preventDefault();
+      acolher(arquivos, abaRef.current);
+    };
+    const colar = (evento: ClipboardEvent) => {
+      const imagens = imagensColadas(evento.clipboardData);
+      if (imagens.length === 0) return;
+      evento.preventDefault();
+      acolher(imagens.slice(0, 1), 'quadro');
+      if (arte && abaRef.current !== 'quadro') irPara('quadro');
+    };
+    window.addEventListener('drop', soltar); window.addEventListener('paste', colar);
+    return () => { window.removeEventListener('drop', soltar); window.removeEventListener('paste', colar); };
+  }, [arte]);
 
   function acrescentar(novos: Item[]) {
     if (!novos.length) return;
@@ -270,68 +365,130 @@ export function Adicionar({ ir, arquivosIniciais = [], enviar, servicos: parciai
     anunciar(`${item.nome}: transcrição anexada.`);
   }
 
-  const naFila = itens.filter((item) => item.estado.fase === 'na_fila');
   const abrirDocumento = (id: string) => (e: React.MouseEvent) => {
     // Com a fila andando, abre em outra aba para não interromper os envios.
     if (ocupadoRef.current) return;
     e.preventDefault(); ir({ nome: 'documento', documento_id: id });
   };
 
+  /** A fila da aba: só as linhas dela, com o botão que envia só elas. */
+  const fila = (alvo: AbaDaFila) => {
+    const lista = itens.filter((item) => item.aba === alvo);
+    const naFila = lista.filter((item) => item.estado.fase === 'na_fila');
+    if (lista.length === 0) return null;
+    return <div className="fila">
+      <div className="fila-topo">
+        <h3 id={`fila-titulo-${alvo}`}>Fila</h3>
+        {lista.some((item) => ['enviado', 'recusado'].includes(item.estado.fase)) && !ocupado && <Button variante="ghost" className="small" onClick={() => mudar((atuais) => atuais.filter((item) => item.aba !== alvo || !['enviado', 'recusado'].includes(item.estado.fase)))}>Limpar concluídos</Button>}
+      </div>
+      <ul className="fila-lista" aria-labelledby={`fila-titulo-${alvo}`}>
+        {lista.map((item) => <LinhaDaFila key={item.chave} item={item} ocupado={ocupado} abrir={abrirDocumento}
+          mudar={(parcial) => atualizar(item.chave, parcial)} remover={() => mudar((atuais) => atuais.filter((atual) => atual.chave !== item.chave))}
+          repetir={() => atualizar(item.chave, { estado: { fase: 'na_fila' }, opcoesAbertas: true })}
+          transcrever={() => void transcreverEscaneado(item)} anexar={(arquivo) => anexarTranscricao(item, arquivo)} />)}
+      </ul>
+      {naFila.length > 0 && <div className="button-row fila-acoes">
+        <Button variante="primario" disabled={ocupado} onClick={() => agendar((item) => item.aba === alvo && item.estado.fase === 'na_fila')}>
+          {naFila.length === 1 ? 'Adicionar 1 arquivo' : `Adicionar ${String(naFila.length)} arquivos`}
+        </Button>
+      </div>}
+    </div>;
+  };
+
   return <div className="importar">
     <header className="importar-topo">
       <h1 className="page-title">Adicionar à biblioteca</h1>
-      <p className="importar-sub">Arquivos, links e textos entram por aqui. O texto fica pronto em instantes; as marcas chegam depois.</p>
+      <p className="importar-sub">{SUBTITULO[aba]}</p>
     </header>
-    <div className="importar-grade">
+    <nav className="biblioteca-abas importar-abas" aria-label="O que adicionar" data-abas={abas.length}>
+      {abas.map((valor) => <Button key={valor} variante="ghost" aria-current={aba === valor ? 'page' : undefined} onClick={() => irPara(valor)}>{ROTULO_DA_ABA[valor]}</Button>)}
+    </nav>
+    {desvios.length > 0 && <div className="importar-desvio" role="status">
+      {desvios.map(({ aba: destino, quantos }) => <p key={destino}>
+        <span>{destino === 'quadro' ? 'A imagem foi para a aba Quadro e espera a sua confirmação.' : `${String(quantos)} ${quantos === 1 ? 'arquivo foi' : 'arquivos foram'} para a aba ${ROTULO_DA_ABA[destino]}.`}</span>
+        <Button variante="ghost" className="small" onClick={() => irPara(destino)}>Ir para {ROTULO_DA_ABA[destino]} <Icon name="arrow" size={14} /></Button>
+      </p>)}
+    </div>}
+    {aba === 'documento' && <div className="importar-grade">
       <section className="card importar-principal" aria-labelledby="importar-arquivos">
         <h2 id="importar-arquivos" className="apenas-leitores">Arquivos</h2>
-        <AreaDeSoltar aoEscolher={(arquivos) => acrescentar(itensDosArquivos(arquivos))} />
-        {itens.length > 0 && <div className="fila">
-          <div className="fila-topo">
-            <h3 id="fila-titulo">Fila</h3>
-            {itens.some((item) => ['enviado', 'recusado'].includes(item.estado.fase)) && !ocupado && <Button variante="ghost" className="small" onClick={() => mudar((atuais) => atuais.filter((item) => !['enviado', 'recusado'].includes(item.estado.fase)))}>Limpar concluídos</Button>}
-          </div>
-          <ul className="fila-lista" aria-labelledby="fila-titulo">
-            {itens.map((item) => <LinhaDaFila key={item.chave} item={item} ocupado={ocupado} abrir={abrirDocumento}
-              mudar={(parcial) => atualizar(item.chave, parcial)} remover={() => mudar((atuais) => atuais.filter((atual) => atual.chave !== item.chave))}
-              repetir={() => atualizar(item.chave, { estado: { fase: 'na_fila' }, opcoesAbertas: true })}
-              transcrever={() => void transcreverEscaneado(item)} anexar={(arquivo) => anexarTranscricao(item, arquivo)} />)}
-          </ul>
-          {naFila.length > 0 && <div className="button-row fila-acoes">
-            <Button variante="primario" disabled={ocupado} onClick={() => agendar((item) => item.estado.fase === 'na_fila')}>
-              {naFila.length === 1 ? 'Adicionar 1 arquivo' : `Adicionar ${String(naFila.length)} arquivos`}
-            </Button>
-          </div>}
-        </div>}
-        <p className="apenas-leitores" role="status" aria-live="polite">{anuncio}</p>
+        <AreaDeSoltar aceitos={ACEITOS_POR_ABA.documento} titulo="Solte PDFs, EPUBs, Markdown ou TXT" texto="Vários de uma vez."
+          formatos={`.pdf · .epub · .md · .txt · até ${tamanhoLegivel(LIMITE_DOCUMENTO_BYTES)} por arquivo`} aoEscolher={(arquivos) => acolher(arquivos, 'documento')} />
+        {fila('documento')}
       </section>
       <div className="importar-lado">
-        <EntradaDeLink ir={ir} aoImportar={(url, link) => { acrescentar([novoItem({ tipo: 'youtube', nome: link, url, estado: { fase: 'aguardando' } })]); void processar(); }} />
         <EntradaColada referencia={colado} aoAdicionar={(texto, titulo, autor, tipoDoTexto) => {
           acrescentar([novoItem({ tipo: 'colado', nome: titulo || tituloDoTexto(texto), texto, titulo, autor, tipoDoTexto, estado: { fase: 'aguardando' } })]);
           void processar();
         }} />
+        <PaginaDaWeb ir={ir} />
       </div>
-    </div>
-    <OutrasFontes ir={ir} />
-    <ImportacaoAvancada ir={ir} servicos={servicos} />
+    </div>}
+    {aba === 'video' && <div className="importar-coluna">
+      <EntradaDeLink ir={ir} aoImportar={(url, link) => { acrescentar([novoItem({ tipo: 'youtube', nome: link, url, estado: { fase: 'aguardando' } })]); void processar(); }} />
+      {itens.some((item) => item.aba === 'video') && <section className="card importar-principal" aria-label="Fila de vídeos">{fila('video')}</section>}
+      {arquivoProprio || itens.some((item) => item.aba === 'video' && item.tipo !== 'youtube')
+        ? <ArquivoProprio aoEscolher={(arquivos) => acolher(arquivos, 'video')} />
+        : <Button variante="ghost" className="importar-mais" aria-expanded={false} onClick={() => abrirArquivoProprio(true)}><Icon name="upload" size={16} /> Tenho o arquivo do vídeo e a transcrição</Button>}
+    </div>}
+    {aba === 'quadro' && <div className="importar-grade">
+      <section className="card importar-principal" aria-labelledby="importar-obra">
+        <h2 id="importar-obra" className="apenas-leitores">Obra</h2>
+        {obraEnviada ? <div className="importar-obra-enviada" role="status">
+          <p><strong>A obra entrou na fila de preparo.</strong> Ela aparece em Quadros com o progresso; a análise leva alguns minutos.</p>
+          <div className="button-row">
+            <Button variante="primario" onClick={() => ir({ nome: 'biblioteca', tipo: 'quadros' })}>Ver em Quadros</Button>
+            <Button variante="ghost" onClick={() => { definirObraEnviada(null); definirObra(null); }}>Adicionar outra</Button>
+          </div>
+        </div> : <FormularioDaObra key={obra?.chave ?? 0} arquivoInicial={obra?.arquivo ?? null} operacoes={operacoesDosQuadros} rotulo="Adicionar obra"
+          aoAdicionar={(novo) => { definirObraEnviada(novo); definirObra(null); anunciar('Obra enviada.'); }} />}
+      </section>
+      <section className="card importar-entrada" aria-labelledby="importar-sobre-quadros">
+        <h2 id="importar-sobre-quadros">Como fica</h2>
+        <p className="importar-dica">O Margem reconhece a obra pela imagem, procura fontes públicas e prepara uma leitura guiada: percorre a pintura por regiões, separa o que se vê do que se sabe e narra.</p>
+        <p className="importar-dica">Use uma imagem sua ou de domínio público. Sem título e artista, o reconhecimento é feito pela imagem, e você pode corrigir depois.</p>
+      </section>
+    </div>}
+    <p className="apenas-leitores" role="status" aria-live="polite">{anuncio}</p>
   </div>;
 }
 
-function AreaDeSoltar({ aoEscolher }: { aoEscolher: (arquivos: File[]) => void }): ReactNode {
+function AreaDeSoltar({ aceitos, titulo, texto, formatos, aoEscolher }: { aceitos: string; titulo: string; texto: string; formatos: string; aoEscolher: (arquivos: File[]) => void }): ReactNode {
   const entrada = useRef<HTMLInputElement>(null);
   const [arrastando, arrastar] = useState(false);
   return <div className="dropzone importar-soltar" data-arrastando={arrastando}
     onDragOver={(e) => { e.preventDefault(); arrastar(true); }} onDragLeave={() => arrastar(false)}
     onDrop={(e) => { e.preventDefault(); arrastar(false); const novos = Array.from(e.dataTransfer.files); if (novos.length) aoEscolher(novos); }}>
     <span className="importar-soltar-icone" aria-hidden="true"><Icon name="upload" size={26} /></span>
-    <p className="importar-soltar-titulo">Solte arquivos aqui</p>
-    <p className="importar-soltar-texto">PDF, EPUB, Markdown, TXT, vídeo ou áudio. Vários de uma vez.</p>
-    <input ref={entrada} type="file" multiple hidden aria-label="Arquivo" accept={ACEITOS}
+    <p className="importar-soltar-titulo">{titulo}</p>
+    <p className="importar-soltar-texto">{texto}</p>
+    <input ref={entrada} type="file" multiple hidden aria-label="Arquivo" accept={aceitos}
       onChange={(e) => { const novos = Array.from(e.target.files ?? []); if (novos.length) aoEscolher(novos); e.target.value = ''; }} />
     <Button onClick={() => entrada.current?.click()}>Escolher arquivos</Button>
-    <small className="importar-limites">Até {tamanhoLegivel(LIMITE_DOCUMENTO_BYTES)} por documento e {tamanhoLegivel(LIMITE_MIDIA_BYTES)} por vídeo ou áudio</small>
+    <small className="importar-limites">{formatos}</small>
   </div>;
+}
+
+/** Vídeo ou áudio do próprio computador: a opção avançada da aba Vídeo, explicada uma vez só. */
+function ArquivoProprio({ aoEscolher }: { aoEscolher: (arquivos: File[]) => void }): ReactNode {
+  return <section className="card importar-entrada" aria-labelledby="importar-arquivo-proprio">
+    <h2 id="importar-arquivo-proprio">Arquivo próprio</h2>
+    <p className="importar-dica">Um vídeo ou áudio do seu computador entra junto com a transcrição em JSON, no formato do Margem (feita pelo Whisper, fora do app). O Margem ainda não transcreve sozinho. O texto vira um documento e a mídia toca alinhada a ele.</p>
+    <AreaDeSoltar aceitos={ACEITOS_POR_ABA.video} titulo="Solte o vídeo ou o áudio e a transcrição" texto="Os dois juntos; o par se forma pelo nome."
+      formatos={`.mp4 · .mov · .webm · .mkv · .mp3 · .m4a · .ogg + .json · até ${tamanhoLegivel(LIMITE_MIDIA_BYTES)}`} aoEscolher={aoEscolher} />
+  </section>;
+}
+
+/** Páginas da web não entram por aqui: o caminho é a extensão do navegador. */
+function PaginaDaWeb({ ir }: { ir: (destino: Rota) => void }): ReactNode {
+  const [extensao] = integracoes();
+  return <section className="card importar-entrada" aria-labelledby="importar-web">
+    <h2 id="importar-web">Página da web</h2>
+    <p className="importar-dica">Artigos, notícias e PDFs abertos no navegador entram pela extensão do Margem, com um clique: ela guarda o texto limpo, com autor e data.</p>
+    <div className="button-row">{extensao?.link
+      ? <a className="button small" href={extensao.link} target="_blank" rel="noreferrer">Instalar a extensão<span className="apenas-leitores"> (nova aba)</span></a>
+      : <a className="button small" href="/ajuda/extensao" onClick={(e) => { e.preventDefault(); ir({ nome: 'ajuda', pagina: 'extensao' }); }}>Instalar a extensão</a>}</div>
+  </section>;
 }
 
 function textoDoEstado(item: Item): string {
@@ -380,7 +537,7 @@ function LinhaDaFila({ item, ocupado, abrir, mudar, remover, repetir, transcreve
       <p className="item-nome">{item.nome}</p>
       <p className="item-meta"><span className="badge">{ROTULO_DO_TIPO[item.tipo]}</span>{tamanho && <span>{tamanho}</span>}<span className="item-estado">{textoDoEstado(item)}</span></p>
       {e.fase === 'falta_transcricao' && <div className="item-nota">
-        <p>O Margem ainda não transcreve vídeo e áudio sozinho. Junte a transcrição em JSON no formato do Margem (gerada pelo Whisper, com as ferramentas de <code>tools/midia</code>): o texto vira um documento e a mídia toca alinhada a ele.</p>
+        <p>Junte a transcrição <code>.json</code> deste arquivo.</p>
         <input ref={seletorDaTranscricao} type="file" hidden accept=".json,application/json" aria-label={`Transcrição de ${item.nome}`}
           onChange={(ev) => { const arquivo = ev.target.files?.[0]; if (arquivo) anexar(arquivo); ev.target.value = ''; }} />
         <Button className="small" onClick={() => seletorDaTranscricao.current?.click()}>Escolher a transcrição</Button>
@@ -396,7 +553,7 @@ function LinhaDaFila({ item, ocupado, abrir, mudar, remover, repetir, transcreve
       {temOpcoes && <Button variante="ghost" className="small" aria-expanded={item.opcoesAbertas} aria-controls={idDasOpcoes} onClick={() => mudar({ opcoesAbertas: !item.opcoesAbertas })}>
         Mais opções<span className="apenas-leitores">: {item.nome}</span>
       </Button>}
-      {documentoId && <a className="button small" href={`/documentos/${documentoId}`} target={ocupado ? '_blank' : undefined} rel="noreferrer" onClick={abrir(documentoId)}>
+      {documentoId && <a className={classesDoBotao({ tamanho: 'md' })} href={`/documentos/${documentoId}`} target={ocupado ? '_blank' : undefined} rel="noreferrer" onClick={abrir(documentoId)}>
         {e.fase === 'recusado' ? 'Abrir o existente' : 'Abrir'}<span className="apenas-leitores">: {item.nome}{ocupado ? ' (nova aba)' : ''}</span>
       </a>}
       {e.fase === 'recusado' && !e.existente && (item.arquivo && ehDocumento(item.tipo) || item.tipo === 'colado' || (ehMidia(item.tipo) && item.transcricao)) && <Button variante="ghost" className="small" onClick={repetir}>Tentar de novo<span className="apenas-leitores">: {item.nome}</span></Button>}
@@ -431,17 +588,17 @@ function EntradaDeLink({ ir, aoImportar }: { ir: (destino: Rota) => void; aoImpo
     definirAviso(null); aoImportar(link.url, valor.trim()); definirValor('');
   }
   return <section className="card importar-entrada" aria-labelledby="importar-link">
-    <h2 id="importar-link">Link</h2>
+    <h2 id="importar-link">Link do YouTube</h2>
     <form className="importar-linha" onSubmit={aoEnviar}>
       <label className="apenas-leitores" htmlFor="importar-endereco">Endereço</label>
       <Input id="importar-endereco" value={valor} inputMode="url" autoComplete="off" spellCheck={false} placeholder="https://youtu.be/…"
         aria-describedby="importar-link-dica" aria-invalid={aviso === 'invalido'} onChange={(e) => { definirValor(e.target.value); definirAviso(null); }} />
-      <Button type="submit" disabled={valor.trim() === ''}>Trazer</Button>
+      <Button type="submit" variante="primario" disabled={valor.trim() === ''}>Trazer</Button>
     </form>
-    <p id="importar-link-dica" className="importar-dica">Vídeos do YouTube entram com a transcrição. Artigos e outras páginas, pela extensão do navegador.</p>
-    {aviso === 'invalido' && <p className="aviso" role="alert">Isso não parece um endereço. Cole o link inteiro, como https://exemplo.com/artigo.</p>}
+    <p id="importar-link-dica" className="importar-dica">O vídeo entra com a transcrição e toca pelo player oficial, alinhado ao texto: clique numa frase para ir ao momento.</p>
+    {aviso === 'invalido' && <p className="aviso" role="alert">Isso não parece um endereço. Cole o link inteiro, como https://youtu.be/…</p>}
     {aviso === 'pagina' && <div className="aviso importar-extensao" role="alert">
-      <p>O Margem não busca páginas da internet sozinho. Abra o artigo no navegador e use a extensão do Margem: ela guarda o texto limpo, com autor e data.</p>
+      <p>Aqui entram vídeos do YouTube. Artigos e outras páginas entram pela extensão do Margem, no navegador: ela guarda o texto limpo, com autor e data.</p>
       <a href="/ajuda/extensao" onClick={(e) => { e.preventDefault(); ir({ nome: 'ajuda', pagina: 'extensao' }); }}>Como instalar a extensão <Icon name="arrow" size={14} /></a>
     </div>}
   </section>;

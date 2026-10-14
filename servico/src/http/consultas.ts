@@ -5,7 +5,10 @@
  * Tudo aqui é leitura. A escrita continua nos repositórios do J03 e nos
  * manipuladores do J06; nenhuma rota monta SQL a partir de texto do cliente.
  */
-import type { AnotacaoV1, Bloco, CanonicoV1, ConexaoV2, EtiquetaV1, Id, MarcaV2, ReferenciaModo, Secao } from '@margem/contratos';
+import { mensagemDaFalha } from '../compreensao/mensagens.js';
+import type {
+  AnotacaoV1, AvisoDaExecucaoV2, DificuldadeV1, Bloco, CanonicoV1, ConexaoV2, EtiquetaV1, Id, JobResultV1, MarcaV2, ReferenciaModo, Secao,
+} from '@margem/contratos';
 import { hashMarcas } from '@margem/contratos';
 import { completarPaginasDoCapitulo, paginasDoCapitulo } from '@margem/core';
 import type { Transacao } from '../db/transacao.js';
@@ -15,15 +18,20 @@ import * as conexoesRepo from '../repos/conexoes.js';
 import * as conversasRepo from '../repos/conversas.js';
 import { obterVersao } from '../repos/documentos.js';
 import { modoOuNada } from '../modos.js';
+import { resumirAvisos } from '../execucoes/avisos.js';
+import { resumirLimites, type ResumoDoLimite } from '../execucoes/limites.js';
 import { listarPorVersao, listarV2PorVersao } from '../repos/marcas.js';
 import * as marcasRepo from '../repos/marcas.js';
 import * as etiquetasRepo from '../repos/etiquetas.js';
+import * as dificuldadesRepo from '../repos/dificuldades.js';
+import { lerTipoDoDocumento } from '../tipo-de-texto/identificar.js';
+import { modoDoTipo } from '../compreensao/preparacao.js';
 import * as preferenciasRepo from '../repos/preferencias.js';
 import { geometriaDisponivel } from '../geometria/arquivos.js';
 import { paginasSemTexto } from '../escaneado/transcricao.js';
 
 export type EstadoDoDocumento =
-  | 'sem_texto' | 'canonizando' | 'transcrevendo' | 'pronto' | 'marcando' | 'revisando' | 'falhou';
+  | 'sem_texto' | 'canonizando' | 'transcrevendo' | 'pronto' | 'marcando' | 'revisando' | 'preparando' | 'falhou';
 
 /** Uma função na contagem da biblioteca: chave, rótulo do modo da marca e quantas o leitor mostra. */
 export interface FuncaoContada {
@@ -105,6 +113,8 @@ export interface ItemDaBiblioteca {
   arquivado_em: string | null;
   /** Vídeo ou áudio com transcrição (J71), o mais recente; `null` para os textos. */
   midia: { tipo: 'video' | 'audio'; duracao_s: number; fonte_url: string | null } | null;
+  /** Capítulos (seções de nível 1) da última versão; `null` sem versão. A lista não precisa da árvore. */
+  capitulos_total: number | null;
 }
 
 interface LinhaDaBiblioteca {
@@ -123,15 +133,24 @@ interface LinhaDaBiblioteca {
   marcando: number;
   revisando: number;
   falha: string | null;
+  /** Jobs abertos da compreensão vigente (e a identificação do tipo, quando uma leitura espera por ela). */
+  preparando: number;
+  /** Código da última falha da preparação vigente (compreensão ou identificação esperada). */
+  falha_preparacao: string | null;
+  capitulos_compreensao: number;
+  capitulos_compreendidos: number;
   capitulos_concluidos: number | null;
   progresso_em: string | null;
   arquivado_em: string | null;
   midia_tipo: 'video' | 'audio' | null;
   midia_duracao: number | null;
   midia_url: string | null;
+  capitulos_total: number | null;
 }
 
 const ESTADOS_ABERTOS = "('fila','reservado','adiado')";
+/** Jobs da compreensão do capítulo (`servico/src/compreensao/pipeline.ts`). */
+const TIPOS_DA_PREPARACAO = "('analisar_passagens','sintetizar_capitulo','revisar_capitulo','planejar_leitura')";
 
 /** Filtro final da consulta; nunca vem do cliente, só destas três formas fixas. */
 type FiltroDaBiblioteca = 'ativos' | 'arquivados' | 'um';
@@ -168,7 +187,8 @@ const MARCAS_QUE_O_LEITOR_MOSTRA = `
         ORDER BY EXISTS (SELECT 1 FROM presentes p WHERE p.capitulo=cap.id AND p.camada_id=c.id) DESC,
                  c.criada_em DESC, c.id DESC LIMIT 1)) AS camada_id,
       NOT coalesce(pd.primeiro_eu,false) OR EXISTS (SELECT 1 FROM anotacao a JOIN bloco ba ON ba.versao_id=a.versao_id AND ba.id=a.bloco_id
-        WHERE a.versao_id=v.id AND ba.ordem BETWEEN cap.inicio AND cap.fim) AS liberado
+        WHERE a.versao_id=v.id AND ba.ordem BETWEEN cap.inicio AND cap.fim)
+        OR EXISTS (SELECT 1 FROM no_capitulo g WHERE g.capitulo=cap.id AND g.origem='manual') AS liberado
     FROM cap
     LEFT JOIN preferencia_documento pd ON pd.documento_id=d.id
     LEFT JOIN camada pref ON pref.id=pd.camada_padrao AND pref.versao_id=v.id AND pref.tipo<>'leitor'
@@ -191,11 +211,15 @@ SELECT d.id, d.titulo, d.autor, d.formato,
   coalesce(j.marcando,0)::int AS marcando,
   coalesce(j.revisando,0)::int AS revisando,
   j.falha,
+  coalesce(cj.preparando,0)::int AS preparando, cj.falha AS falha_preparacao,
+  coalesce(cc.capitulos,0)::int AS capitulos_compreensao, coalesce(cc.prontos,0)::int AS capitulos_compreendidos,
   pr.capitulos_concluidos_total AS capitulos_concluidos,
   pr.atualizado_em AS progresso_em,
   -- J109: vídeo importado do YouTube é vídeo mesmo quando a mídia local é só o áudio (ou não há mídia).
   CASE WHEN yt.url IS NOT NULL THEN 'video' ELSE md.tipo END AS midia_tipo,
-  coalesce(md.duracao, yt.duracao) AS midia_duracao, coalesce(md.url, yt.url) AS midia_url
+  coalesce(md.duracao, yt.duracao) AS midia_duracao, coalesce(md.url, yt.url) AS midia_url,
+  CASE WHEN v.id IS NULL THEN NULL
+    ELSE (SELECT count(*)::int FROM secao s WHERE s.versao_id=v.id AND s.nivel=1) END AS capitulos_total
 FROM documento d
 LEFT JOIN LATERAL (
   SELECT id FROM versao_texto WHERE documento_id=d.id ORDER BY numero DESC LIMIT 1
@@ -218,6 +242,25 @@ LEFT JOIN LATERAL (
             ORDER BY atualizado_em DESC LIMIT 1) AS falha
   FROM job WHERE documento_id=d.id
 ) j ON true
+-- v0.1: a compreensão vigente da última versão (a da camada padrão, senão a mais recente) e os jobs dela.
+LEFT JOIN LATERAL (
+  SELECT e.id AS execucao_id FROM execucao_leitura e
+  LEFT JOIN preferencia_documento pd ON pd.documento_id = d.id
+  WHERE e.versao_id = v.id AND e.schema_versao = 3
+  ORDER BY (e.id = pd.camada_padrao) IS TRUE DESC, e.criada_em DESC, e.id DESC LIMIT 1
+) ce ON true
+LEFT JOIN LATERAL (
+  SELECT count(DISTINCT pt.secao_id) AS capitulos,
+    (SELECT count(DISTINCT m.secao_id) FROM modelo_capitulo m WHERE m.execucao_id = ce.execucao_id AND m.revisao >= 2) AS prontos
+  FROM parte pt WHERE pt.execucao_id = ce.execucao_id AND pt.secao_id IS NOT NULL
+) cc ON true
+LEFT JOIN LATERAL (
+  SELECT count(*) FILTER (WHERE jb.estado IN ${ESTADOS_ABERTOS}) AS preparando,
+    (array_agg(coalesce(jb.error_code, jb.estado) ORDER BY jb.atualizado_em DESC) FILTER (WHERE jb.estado IN ('falhou','cancelado')))[1] AS falha
+  FROM job jb WHERE jb.documento_id = d.id AND (
+    (jb.tipo IN ${TIPOS_DA_PREPARACAO} AND jb.dedup_key LIKE '%:' || ce.execucao_id || ':%')
+    OR (jb.tipo = 'identificar_tipo' AND d.preparacao_pedida IS NOT NULL AND jb.versao_id = v.id))
+) cj ON true
 LEFT JOIN LATERAL (
   SELECT jsonb_array_length(capitulos_concluidos) AS capitulos_concluidos_total,
          to_char(atualizado_em AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS atualizado_em
@@ -250,6 +293,12 @@ function estadoDaLinha(linha: LinhaDaBiblioteca): { estado: EstadoDoDocumento; d
   // adiada de 5 em 5 minutos enquanto houver parte pendente, e uma parte que falhou
   // deixaria o documento eternamente "revisando", escondendo o motivo da falha (J10).
   if (linha.revisando > 0 && linha.falha === null) return { estado: 'revisando', detalhe: null };
+  // A preparação da leitura (compreensão), contada à parte: "preparando · capítulo 2 de 9".
+  if (linha.preparando > 0) {
+    const total = linha.capitulos_compreensao;
+    return { estado: 'preparando', detalhe: total > 1 ? `capítulo ${String(Math.min(linha.capitulos_compreendidos + 1, total))} de ${String(total)}` : null };
+  }
+  if (linha.falha_preparacao !== null) return { estado: 'falhou', detalhe: mensagemDaFalha(linha.falha_preparacao) };
   // Texto disponível é independente da marcação: uma leitura falhada não o esconde.
   return { estado: 'pronto', detalhe: linha.falha };
 }
@@ -270,6 +319,7 @@ function itemDaLinha(linha: LinhaDaBiblioteca): ItemDaBiblioteca {
       jobs_em_curso: linha.jobs_em_curso,
       arquivado_em: linha.arquivado_em,
       midia: linha.midia_tipo === null ? null : { tipo: linha.midia_tipo, duracao_s: linha.midia_duracao ?? 0, fonte_url: linha.midia_url },
+      capitulos_total: linha.capitulos_total,
   };
 }
 
@@ -289,6 +339,8 @@ export interface VersaoResumida {
   secoes: number;
   assets: number;
   limites: string[];
+  /** Os limites resumidos para quem lê (V-T4): o que se perdeu, como aviso, e o esperado, como informação. */
+  resumo_dos_limites: ResumoDoLimite[];
 }
 
 export interface JobResumido {
@@ -301,6 +353,8 @@ export interface JobResumido {
   atualizado_em: string;
   /** Só os da tentativa vencedora, quando `ok`; os da última tentativa, quando não (J14). */
   diagnosticos: { nivel: string; codigo: string; mensagem: string }[];
+  /** Concluído com ressalvas: os diagnósticos de nível `aviso` em frases para quem lê (vazio fora de `ok`). */
+  avisos: AvisoDaExecucaoV2[];
 }
 
 export interface ExecucaoResumida {
@@ -345,13 +399,14 @@ export async function detalhe(cliente: Transacao, documentoId: Id): Promise<Deta
   const linha = linhas[0];
   if (!linha) return null;
   const item = itemDaLinha(linha);
-  const versoes = (await cliente.query<VersaoResumida>(`SELECT id, numero::int AS numero, motor, hash_estrutural,
+  const versoes = (await cliente.query<Omit<VersaoResumida, 'resumo_dos_limites'>>(`SELECT id, numero::int AS numero, motor, hash_estrutural,
       to_char(criado_em AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS criado_em,
       jsonb_array_length(canonico->'blocos') AS blocos,
       jsonb_array_length(canonico->'secoes') AS secoes,
       jsonb_array_length(canonico->'assets') AS assets,
       canonico->'limites' AS limites
-    FROM versao_texto WHERE documento_id=$1 ORDER BY numero DESC`, [documentoId])).rows;
+    FROM versao_texto WHERE documento_id=$1 ORDER BY numero DESC`, [documentoId])).rows
+    .map((versao): VersaoResumida => ({ ...versao, resumo_dos_limites: resumirLimites(versao.limites ?? []) }));
   const execucoes = (await cliente.query<ExecucaoResumida>(`SELECT e.id, e.versao_id, e.modelo, e.esforco,
       e.modelo_pedido, e.esforco_pedido, e.proveniencia, e.divergencias,
       e.schema_versao::int AS schema_versao, jsonb_build_object('id', e.modo_id, 'revisao', e.modo_revisao) AS modo,
@@ -361,10 +416,11 @@ export async function detalhe(cliente: Transacao, documentoId: Id): Promise<Deta
       (SELECT count(*)::int FROM parte p WHERE p.execucao_id=e.id AND p.estado='ok') AS partes_prontas
     FROM execucao_leitura e JOIN versao_texto v ON v.id=e.versao_id
     WHERE v.documento_id=$1 ORDER BY e.criada_em DESC`, [documentoId])).rows;
-  const jobs = (await cliente.query<JobResumido>(`SELECT id, tipo, estado, attempt, diagnosticos,
+  const jobs = (await cliente.query<Omit<JobResumido, 'avisos'>>(`SELECT id, tipo, estado, attempt, diagnosticos,
       to_char(not_before AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS not_before, error_code,
       to_char(atualizado_em AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS atualizado_em
-    FROM job WHERE documento_id=$1 ORDER BY criado_em DESC LIMIT 20`, [documentoId])).rows;
+    FROM job WHERE documento_id=$1 ORDER BY criado_em DESC LIMIT 20`, [documentoId])).rows
+    .map((job) => ({ ...job, avisos: job.estado === 'ok' ? resumirAvisos(job.tipo, job.diagnosticos as JobResultV1['diagnosticos']) : [] }));
   const exportacoes = (await cliente.query<ExportacaoResumida>(`SELECT id, tipo, sha256,
       to_char(criada_em AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS criada_em
     FROM exportacao WHERE documento_id=$1 ORDER BY criada_em DESC`, [documentoId])).rows;
@@ -446,6 +502,13 @@ export interface SnapshotDoCapitulo {
   etiquetas: EtiquetaV1[];
   /** J37: as notas do leitor do capítulo que o Codex está revisando. */
   revisoes_pendentes: Id[];
+  /** J138: os sinais de dificuldade gravados no capítulo (do leitor e decisões sobre as do Codex). */
+  dificuldades: DificuldadeV1[];
+  /**
+   * J138: o modo do tipo de texto do documento, quando já se sabe: as funções dele vêm primeiro no balão do
+   * grifo. Não restringe nada: cada grifo guarda o seu modo, e o leitor grifa com funções de qualquer modo.
+   */
+  modo_principal: ReferenciaModo | null;
   /** Camada cujas marcas vieram: um id, `todas` ou `null` (versão sem camada). */
   camada: string | null;
   /** Com `todas`, a precedência declarada: da camada mais recente para a mais antiga. */
@@ -538,13 +601,37 @@ export async function camadasResumidas(cliente: Transacao, versaoId: Id, blocos?
 }
 
 /** Palavras do livro inteiro e das que vêm antes do capítulo (mesma separação por espaços do leitor). */
-function palavrasNoLivro(blocos: CanonicoV1['blocos'], inicio: string): { antes: number; total: number } {
-  let antes = 0; let total = 0;
-  for (const bloco of blocos) {
+/** Capítulos do fim do livro que não se leem de ponta a ponta: o progresso termina antes deles (V-T5). */
+const FIM_DO_LIVRO = /^(?:refer[êe]ncias(?: bibliogr[áa]ficas)?|bibliografia|references|bibliography|works cited|[íi]ndice(?: remissivo)?|index|gloss[áa]rio|glossary)$/iu;
+function normalizarTitulo(titulo: string): string {
+  return titulo.normalize('NFC').replace(/^[\d.\s]+/u, '').trim();
+}
+
+/**
+ * Palavras antes do capítulo e no documento, para o percentual do leitor. Referências, bibliografia e
+ * índice no fim não contam: chegar ao fim da última parte lida é 100% (V-T5).
+ */
+export function palavrasNoLivro(canonico: Pick<CanonicoV1, 'blocos' | 'secoes'>, inicio: string): { antes: number; total: number } {
+  const ordem = [...canonico.secoes].sort((a, b) => a.ordem - b.ordem).filter((secao) => secao.nivel === 1);
+  let corte: string | null = null;
+  for (let i = ordem.length - 1; i > 0; i -= 1) {
+    if (!FIM_DO_LIVRO.test(normalizarTitulo(ordem[i]!.titulo))) break;
+    corte = ordem[i]!.bloco_inicio;
+  }
+  let antes = 0; let total = 0; let contando = true;
+  for (const bloco of canonico.blocos) {
+    if (bloco.id === corte) contando = false;
     if (bloco.id === inicio) antes = total;
-    total += bloco.texto.match(/\S+/g)?.length ?? 0;
+    if (contando) total += bloco.texto.match(/\S+/g)?.length ?? 0;
   }
   return { antes, total };
+}
+
+/** O modo do tipo de texto do documento (J131), ou `null` enquanto o tipo não é conhecido. */
+async function modoPrincipal(cliente: Transacao, documentoId: Id): Promise<ReferenciaModo | null> {
+  const tipo = await lerTipoDoDocumento(cliente, documentoId);
+  if (!tipo) return null;
+  try { const { modo } = modoDoTipo(tipo); return { id: modo.id, revisao: modo.revisao }; } catch { return null; }
 }
 
 export async function snapshotDoCapitulo(
@@ -573,8 +660,9 @@ export async function snapshotDoCapitulo(
   const idsDaCamada = new Set(marcasDaCamada.map((marca) => marca.id));
   const anotacoes = await anotacoesRepo.listarNosBlocos(cliente, versaoId, idsDaFatia);
   const preferencia = await preferenciasRepo.ler(cliente, versao.documento_id);
-  // "Primeiro eu": sem anotação do leitor no capítulo, as marcas da IA ficam no banco e fora da resposta.
-  const liberado = opcoes.ignorarPrimeiroEu === true || !preferencia.primeiro_eu || anotacoes.length > 0;
+  // "Primeiro eu": sem grifo nem anotação do leitor no capítulo, as marcas da IA ficam no banco e fora da resposta.
+  const grifouNoCapitulo = [...doLeitor, ...marcasDaCamada].some((marca) => marca.origem === 'manual' && daFatia.has(marca.ancora.bloco_id));
+  const liberado = opcoes.ignorarPrimeiroEu === true || !preferencia.primeiro_eu || anotacoes.length > 0 || grifouNoCapitulo;
   const etiquetas = await etiquetasRepo.daVersao(cliente, versaoId);
   const alvos = etiqueta === undefined ? null : new Set(etiquetas.filter((item) => item.nome.toLowerCase() === etiqueta.toLowerCase()).map((item) => item.alvo.id));
   const assets: Record<Id, string> = {};
@@ -592,7 +680,7 @@ export async function snapshotDoCapitulo(
     paginas = completarPaginasDoCapitulo(paginas, anterior, proxima, total);
   }
   return {
-    palavras_no_livro: palavrasNoLivro(canonico.blocos, secao.bloco_inicio),
+    palavras_no_livro: palavrasNoLivro(canonico, secao.bloco_inicio),
     idioma: canonico.documento.idioma,
     formato: canonico.documento.formato,
     paginas,
@@ -605,6 +693,8 @@ export async function snapshotDoCapitulo(
       .filter((marca) => daFatia.has(marca.ancora.bloco_id) && (alvos === null || alvos.has(marca.id))),
     edicoes: await marcasRepo.edicoes(cliente, versaoId, idsDaFatia),
     revisoes_pendentes: (await anotacoesRepo.comRevisaoPendente(cliente, versaoId)).filter((id) => anotacoes.some((anotacao) => anotacao.id === id)),
+    dificuldades: await dificuldadesRepo.listarNosBlocos(cliente, versaoId, idsDaFatia),
+    modo_principal: await modoPrincipal(cliente, versao.documento_id),
     etiquetas: etiquetas.filter((etiqueta) => etiqueta.alvo.tipo === 'anotacao'
       ? anotacoes.some((anotacao) => anotacao.id === etiqueta.alvo.id) : true),
     camada,

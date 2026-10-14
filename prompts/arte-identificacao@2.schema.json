@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/arte-identificacao@2.schema.json",
+  "title": "Identificação de uma obra a partir da imagem, com candidatos (V-T2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reconhecida", "titulo", "titulo_original", "artista", "ano", "confianca", "justificativa", "candidatos"],
+  "properties": {
+    "reconhecida": { "type": "boolean" },
+    "titulo": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+    "titulo_original": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+    "artista": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+    "ano": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 40 }, { "type": "null" }] },
+    "confianca": { "type": "string", "enum": ["alta", "media", "baixa"] },
+    "justificativa": { "type": "string", "minLength": 1, "maxLength": 1200 },
+    "candidatos": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["titulo", "titulo_original", "artista", "ano", "confianca", "pistas"],
+        "properties": {
+          "titulo": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "titulo_original": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+          "artista": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "ano": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 40 }, { "type": "null" }] },
+          "confianca": { "type": "string", "enum": ["alta", "media", "baixa"] },
+          "pistas": { "type": "string", "minLength": 1, "maxLength": 800 }
+        }
+      }
+    }
+  }
+}

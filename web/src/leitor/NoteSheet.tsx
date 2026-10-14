@@ -21,7 +21,7 @@ export interface PropsDaFolha {
  * anotada na abertura e restaurada no fechamento, caso alguma coisa a tenha mexido.
  */
 export function NoteSheet({ marca, numero, aoFechar, conexao }: PropsDaFolha): ReactNode {
-  const { daMarca, funcoes } = usarFuncoes();
+  const { daMarca, rotuloDaMarca } = usarFuncoes();
   const cor = daMarca(marca);
   const fechar = useRef<HTMLButtonElement>(null);
 
@@ -39,10 +39,10 @@ export function NoteSheet({ marca, numero, aoFechar, conexao }: PropsDaFolha): R
     <div className="folha" role="dialog" aria-modal="false" aria-label="Nota do trecho">
       <div className="folha-cabeca">
         <p className="folha-funcao">
-          {numero === undefined ? null : <span className={`nota-numero funcao-${marca.funcao}${'saliencia' in marca && marca.saliencia === 3 ? ' periferica' : ''}`} style={estiloDoNumero(cor)}>{numero}</span>}
-          <span>{funcoes.find((f) => f.chave === marca.funcao)?.rotulo ?? NOME_DA_FUNCAO[marca.funcao] ?? marca.funcao.replaceAll('_', ' ')} · {ROTULOS_DA_ORIGEM[marca.origem]}</span>
+          {numero === undefined ? null : <span className={`nota-numero funcao-${marca.funcao}`} style={estiloDoNumero(cor)}>{numero}</span>}
+          <span>{marca.funcao === 'nenhuma' ? NOME_DA_FUNCAO[marca.funcao] ?? 'Grifo' : rotuloDaMarca(marca)} · {ROTULOS_DA_ORIGEM[marca.origem]}</span>
         </p>
-        <IconButton ref={fechar} aria-label="Fechar" className="folha-fechar" onClick={aoFechar}>×</IconButton>
+        <IconButton ref={fechar} aria-label="Fechar" className="folha-fechar" onClick={aoFechar} icone="xis" />
       </div>
       {marca.comentario === null ? <p className="folha-citacao">{marca.ancora.citacao}</p> : (
         <>

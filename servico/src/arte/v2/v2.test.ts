@@ -13,7 +13,7 @@ import type { Executor } from '../../executor/tipos';
 import { corpusPorFonte, ligarTextosAsFontes, lerObra, montarDossie } from './acervo';
 import { avaliarGeracao, medirCurta, relatorioMarkdown } from './avaliacao';
 import { conferirRoteiro, filtrarFinal, semRevisao } from './conferencias';
-import { filtroDaImagem, passoDaGrade } from './imagens';
+import { caminhoNoFiltro, filtroDaImagem, passoDaGrade } from './imagens';
 import type { PrepararImagem } from './imagens';
 import { criarIds, uniaoQuadrada } from './montagem';
 import { gerarQuadroV2 } from './pipeline';
@@ -251,6 +251,14 @@ describe('algoritmo v2: peças determinísticas', () => {
     expect(filtro).not.toContain('drawbox=x=-1:'); // a borda do recorte não ganha linha
     expect(filtro).toContain('drawbox=x=200:y=100:w=200:h=200:color=yellow');
     expect(saida).toEqual({ largura: 1000, altura: 1000 });
+  });
+
+  it('fonte dos rótulos no filtro do ffmpeg: caminho do Linux como está, o do Windows escapado (J114)', () => {
+    expect(caminhoNoFiltro('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf')).toBe('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    expect(caminhoNoFiltro('C:\\Program Files\\Margem\\recursos\\fontes\\DejaVuSans.ttf')).toBe("'C\\:/Program Files/Margem/recursos/fontes/DejaVuSans.ttf'");
+    expect(() => caminhoNoFiltro("/Users/o'neil/f.ttf")).toThrow();
+    const { filtro } = filtroDaImagem({ largura: 100, altura: 100 }, { recorte: { x: 0, y: 0, largura: 1, altura: 1 }, ladoMax: 100, grade: true, caixas: [] }, 'C:\\f.ttf');
+    expect(filtro).toContain("drawtext=fontfile='C\\:/f.ttf':text=");
   });
 
   it('IDs determinísticos são ULIDs e a união quadrada contém os dois retângulos', () => {

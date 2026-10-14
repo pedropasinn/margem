@@ -2,15 +2,18 @@
  * Miniatura leve de cada quadro (capa na Biblioteca): gerada uma vez e guardada em cache. No acervo, em
  * `<obra>/.cache/miniatura-<lado>.jpg`; nas fixtures (ou num acervo só de leitura), no diretório
  * temporário do sistema. Pillow do `python3` do sistema; sem ele, o PyMuPDF do motor (`motor/.venv`, o que
- * a imagem Docker tem: J110); por fim `ffmpeg`. Sem dependência nova.
+ * a imagem Docker tem: J110, ou o motor congelado do app de desktop: J114); por fim `ffmpeg`. Sem
+ * dependência nova. Com o motor congelado (`MARGEM_MOTOR`) o `python3` do sistema não é tentado: no
+ * Windows ele pode ser o atalho da loja, e o motor já basta.
  */
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, rename, stat } from 'node:fs/promises';
+import { mkdir, stat } from 'node:fs/promises';
+import { renomearComRetentativa } from '../plataforma/disco.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { raizDoRepositorio } from '../dados.js';
+import { comandoDoMotor, ffmpeg, motorCongelado } from '../plataforma/executaveis.js';
 
 const executar = promisify(execFile);
 export const LADO_DA_MINIATURA = 640;
@@ -24,29 +27,20 @@ const SCRIPT_PIL = [
   'im.save(sys.argv[2], "JPEG", quality=82, optimize=True, progressive=True)',
 ].join('\n');
 
-/** O mesmo com o PyMuPDF do motor: reduz (sem ampliar) mantendo a proporção; CMYK/cinza viram RGB. */
-const SCRIPT_PYMUPDF = [
-  'import sys, pymupdf',
-  'p = pymupdf.Pixmap(sys.argv[1])',
-  'if p.alpha: p = pymupdf.Pixmap(p, 0)',
-  'if p.n != 3: p = pymupdf.Pixmap(pymupdf.csRGB, p)',
-  'lado = int(sys.argv[3]); f = min(1.0, lado / max(p.width, p.height))',
-  'if f < 1: p = pymupdf.Pixmap(p, max(1, round(p.width * f)), max(1, round(p.height * f)), None)',
-  'open(sys.argv[2], "wb").write(p.tobytes(output="jpg", jpg_quality=82))',
-].join('\n');
 
 async function gerar(origem: string, destino: string, lado: number): Promise<void> {
   const temporario = `${destino}.${String(process.pid)}.${String(Date.now())}.tmp.jpg`;
+  const doMotor = comandoDoMotor('miniatura', [origem, temporario, String(lado)]);
   const tentativas: [string, string[]][] = [
-    ['python3', ['-c', SCRIPT_PIL, origem, temporario, String(lado)]],
-    [join(raizDoRepositorio(), 'motor/.venv/bin/python'), ['-c', SCRIPT_PYMUPDF, origem, temporario, String(lado)]],
-    ['ffmpeg', ['-y', '-loglevel', 'error', '-i', origem, '-vf', `scale='min(${String(lado)},iw)':'min(${String(lado)},ih)':force_original_aspect_ratio=decrease`, '-q:v', '4', temporario]],
+    ...(motorCongelado() === undefined ? [['python3', ['-c', SCRIPT_PIL, origem, temporario, String(lado)]] as [string, string[]]] : []),
+    [doMotor.programa, doMotor.argumentos],
+    [ffmpeg(), ['-y', '-loglevel', 'error', '-i', origem, '-vf', `scale='min(${String(lado)},iw)':'min(${String(lado)},ih)':force_original_aspect_ratio=decrease`, '-q:v', '4', temporario]],
   ];
   let ultimo: unknown = null;
   for (const [programa, argumentos] of tentativas) {
     try {
-      await executar(programa, argumentos, { timeout: 60_000 });
-      await rename(temporario, destino);
+      await executar(programa, argumentos, { timeout: 60_000, windowsHide: true });
+      await renomearComRetentativa(temporario, destino);
       return;
     } catch (erro) { ultimo = erro; }
   }

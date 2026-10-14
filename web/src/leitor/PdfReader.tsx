@@ -236,7 +236,7 @@ export const PdfReader = forwardRef<ApiDoLeitor, PropsDoLeitor & { documento_id:
           const y = Math.min(...linhas.map((l) => l.y));
           if (y + 22 < recorte.y || y > recorte.y + recorte.altura) continue;
           numeros.push({ id: marca.id, numero, y, cor: corDaFuncao(marca.funcao, 'modo' in marca ? marca.modo : undefined, modos, preferencias, false),
-            classe: `funcao-${marca.funcao}${'saliencia' in marca && marca.saliencia === 3 ? ' periferica' : ''}` });
+            classe: `funcao-${marca.funcao}` });
         }
         numeros.sort((a, b) => a.y - b.y);
         for (let i = 1; i < numeros.length; i++) numeros[i]!.y = Math.max(numeros[i]!.y, numeros[i - 1]!.y + ESPACO_ENTRE_NUMEROS);

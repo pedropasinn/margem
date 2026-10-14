@@ -173,18 +173,20 @@ export async function cancelar(banco: pg.Pool, jobId: string): Promise<boolean> 
  * `reenfileirado` e a coluna recomeça vazia.
  */
 export async function reenfileirar(banco: pg.Pool, jobId: string): Promise<Job | null> {
-  return comTransacao(banco, async cliente => {
-    const antes = (await cliente.query<Job>('SELECT * FROM job WHERE id=$1 FOR UPDATE', [jobId])).rows[0];
-    if (!antes || !REENFILEIRAVEIS.includes(antes.estado)) return null;
-    const depois = (await cliente.query<Job>(`UPDATE job SET estado='fila',attempt=attempt+1,not_before=NULL,
-      cancel_requested_at=NULL,error_code=NULL,diagnosticos='[]',${limparConcessao},atualizado_em=clock_timestamp()
-      WHERE id=$1 RETURNING *`, [jobId])).rows[0]!;
-    await evento(cliente, jobId, 'reenfileirado', {
-      estado_anterior: antes.estado, attempt_anterior: antes.attempt, error_code: antes.error_code,
-      diagnosticos: antes.diagnosticos as unknown as ValorJson,
-    });
-    return depois;
+  return comTransacao(banco, cliente => reenfileirarNa(cliente, jobId));
+}
+/** O mesmo que `reenfileirar`, dentro de uma transação já aberta. */
+export async function reenfileirarNa(cliente: Transacao, jobId: string): Promise<Job | null> {
+  const antes = (await cliente.query<Job>('SELECT * FROM job WHERE id=$1 FOR UPDATE', [jobId])).rows[0];
+  if (!antes || !REENFILEIRAVEIS.includes(antes.estado)) return null;
+  const depois = (await cliente.query<Job>(`UPDATE job SET estado='fila',attempt=attempt+1,not_before=NULL,
+    cancel_requested_at=NULL,error_code=NULL,diagnosticos='[]',${limparConcessao},atualizado_em=clock_timestamp()
+    WHERE id=$1 RETURNING *`, [jobId])).rows[0]!;
+  await evento(cliente, jobId, 'reenfileirado', {
+    estado_anterior: antes.estado, attempt_anterior: antes.attempt, error_code: antes.error_code,
+    diagnosticos: antes.diagnosticos as unknown as ValorJson,
   });
+  return depois;
 }
 /**
  * Teto de tentativas automáticas. Uma concessão que vence (worker morto, OOM, motor travado)

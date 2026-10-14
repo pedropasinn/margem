@@ -6,8 +6,9 @@
  * A canonização (motor Python) fica de fora: não é o Codex. Jobs cancelados também: quem cancelou
  * já sabe.
  */
-import type { ExecucaoDoCodexV1, ExecucoesDoCodexV1, Id } from '@margem/contratos';
+import type { ExecucaoDoCodexV2, ExecucoesDoCodexV2, Id, JobResultV1 } from '@margem/contratos';
 import type { Transacao } from '../db/transacao.js';
+import { mensagemDosAvisos, resumirAvisos } from './avisos.js';
 
 /** Tipos de job que rodam o Codex, com o verbo do rótulo. */
 export const TIPOS_DO_CODEX = [
@@ -15,6 +16,8 @@ export const TIPOS_DO_CODEX = [
   'analisar_passagens', 'sintetizar_capitulo', 'revisar_capitulo', 'planejar_leitura',
   'resolver_exercicio', 'explicar_resolucao', 'revisar_anotacao', 'responder',
   'gerar_imagem', 'gerar_diagrama', 'gerar_esquema', 'roteirizar_visita', 'comentar_leitura', 'gerar_flashcards', 'responder_agente',
+  // J142: a análise do vídeo (transcrição passada a limpo; partes e momentos sobre o vídeo).
+  'revisar_transcricao', 'conceitos_do_video',
 ] as const;
 export type TipoDoCodex = typeof TIPOS_DO_CODEX[number];
 
@@ -31,8 +34,12 @@ export const LIMITE_DA_LISTA = 50;
 export interface LinhaDaExecucao {
   id: Id; tipo: string; estado: 'fila' | 'reservado' | 'adiado' | 'ok' | 'falhou';
   error_code: string | null; inicio: string; fim: string | null;
+  /** V-W2: frase legível da causa, quando o executor a reconheceu no stderr (diagnóstico `causa`). */
+  causa?: string | null;
   documento_id: Id | null; documento_titulo: string | null;
   secao_id: Id | null; secao_titulo: string | null; secao_numero: number | null;
+  /** Os da tentativa vencedora (ou da última); só os de um job `ok` viram avisos. */
+  diagnosticos?: JobResultV1['diagnosticos'] | null;
 }
 
 const TITULO_MAXIMO = 60;
@@ -73,6 +80,8 @@ export function rotuloDaExecucao(linha: LinhaDaExecucao): string {
     case 'roteirizar_visita': return com('Preparando a visita guiada', 'de', 'Preparando a visita guiada');
     case 'comentar_leitura': return com('Preparando a leitura comentada', 'de', 'Preparando a leitura comentada');
     case 'gerar_flashcards': return com('Criando flashcards', 'de', 'Criando flashcards do capítulo');
+    case 'revisar_transcricao': return com('Passando a limpo a transcrição', 'de', 'Passando a limpo a transcrição');
+    case 'conceitos_do_video': return com('Separando as partes e os momentos', 'de', 'Separando as partes e os momentos do vídeo');
     case 'responder': return 'Respondendo à sua pergunta';
     case 'responder_agente': return 'Lendo a biblioteca para responder';
     case 'revisar_anotacao': return 'Revisando sua nota';
@@ -83,13 +92,15 @@ export function rotuloDaExecucao(linha: LinhaDaExecucao): string {
 }
 
 /** Por que falhou (ou por que espera, quando adiado), em uma frase curta. Nunca o texto cru do erro. */
-export function mensagemDaExecucao(linha: Pick<LinhaDaExecucao, 'estado' | 'error_code'>): string | null {
+export function mensagemDaExecucao(linha: Pick<LinhaDaExecucao, 'estado' | 'error_code' | 'causa'>): string | null {
   if (linha.estado === 'adiado') {
     return linha.error_code === 'cota'
       ? 'A cota do Codex da sua conta acabou por agora. Esta leitura espera na fila e continua sozinha quando ela voltar.'
       : 'Vai tentar de novo daqui a pouco.';
   }
   if (linha.estado !== 'falhou') return null;
+  // A causa vem de uma tabela fixa do serviço (`executor/stderr.ts`), nunca do texto cru do erro.
+  if (linha.causa) return linha.causa.slice(0, 200);
   switch (linha.error_code) {
     case 'cota': return 'A cota do Codex da sua conta acabou. Peça de novo quando ela voltar.';
     case 'auth': return 'O Codex não está conectado à sua conta do ChatGPT. Entre de novo (o aviso no topo mostra o comando) e peça outra vez.';
@@ -99,15 +110,16 @@ export function mensagemDaExecucao(linha: Pick<LinhaDaExecucao, 'estado' | 'erro
     case 'schema': return 'A resposta do Codex veio num formato que não deu para usar.';
     case 'cli_incompativel': return 'A versão instalada do Codex é antiga para o Margem. Atualize o Codex e peça outra vez.';
     case 'sem_imagem': return 'O Codex terminou sem gerar a imagem.';
+    case 'publicacao': return 'O Codex terminou, mas o resultado não pôde ser guardado no disco.';
     default: return 'O Codex não conseguiu terminar.';
   }
 }
 
-const ESTADO: Record<LinhaDaExecucao['estado'], ExecucaoDoCodexV1['estado']> = {
+const ESTADO: Record<LinhaDaExecucao['estado'], ExecucaoDoCodexV2['estado']> = {
   fila: 'na_fila', adiado: 'na_fila', reservado: 'rodando', ok: 'concluida', falhou: 'falhou',
 };
 
-export function projetarExecucao(linha: LinhaDaExecucao): ExecucaoDoCodexV1 {
+export function projetarExecucao(linha: LinhaDaExecucao): ExecucaoDoCodexV2 {
   const estado = ESTADO[linha.estado];
   const terminou = estado === 'concluida' || estado === 'falhou';
   const documento = linha.documento_id === null ? null : { id: linha.documento_id, titulo: linha.documento_titulo ?? '' };
@@ -121,9 +133,13 @@ export function projetarExecucao(linha: LinhaDaExecucao): ExecucaoDoCodexV1 {
   }
   // `fim` antes de `inicio` só aconteceria com relógios fora de ordem; o contrato não aceita.
   const fim = terminou ? (linha.fim !== null && Date.parse(linha.fim) >= Date.parse(linha.inicio) ? linha.fim : linha.inicio) : null;
+  // Concluída com ressalvas (leitura parcial, marcas que não ancoraram…): os avisos e um resumo.
+  const avisos = estado === 'concluida' ? resumirAvisos(linha.tipo, linha.diagnosticos) : [];
   return {
     id: linha.id, tipo: linha.tipo, rotulo: rotuloDaExecucao(linha), estado,
-    inicio: linha.inicio, fim, documento, secao, rota, mensagem: mensagemDaExecucao(linha),
+    inicio: linha.inicio, fim, documento, secao, rota,
+    mensagem: estado === 'concluida' ? mensagemDosAvisos(avisos) : mensagemDaExecucao(linha),
+    avisos,
   };
 }
 
@@ -133,11 +149,11 @@ const iso = (coluna: string) => `to_char(${coluna} AT TIME ZONE 'UTC','YYYY-MM-D
  * A lista que a interface mostra: rodando, falhas e conclusões recentes primeiro, depois a fila
  * (por prioridade, como o worker a consome). `agora` vem do chamador para os testes.
  */
-export async function listarExecucoes(cliente: Transacao, agora: Date = new Date()): Promise<ExecucoesDoCodexV1> {
+export async function listarExecucoes(cliente: Transacao, agora: Date = new Date()): Promise<ExecucoesDoCodexV2> {
   const desde = new Date(agora.getTime() - JANELA_DE_TERMINADAS_MS);
   const linhas = (await cliente.query<LinhaDaExecucao & { total: number }>(`
     WITH alvo AS (
-      SELECT j.id, j.tipo, j.estado, j.error_code, j.dedup_key, j.parte_id, j.versao_id, j.prioridade, j.criado_em,
+      SELECT j.id, j.tipo, j.estado, j.error_code, j.diagnosticos, j.dedup_key, j.parte_id, j.versao_id, j.prioridade, j.criado_em,
         coalesce(j.documento_id, v.documento_id) AS documento_id,
         CASE WHEN j.estado IN ('fila','adiado') THEN j.criado_em
           ELSE coalesce((SELECT max(e.quando) FROM evento_job e WHERE e.job_id=j.id AND e.tipo='reservado'), j.criado_em) END AS inicio,
@@ -151,7 +167,8 @@ export async function listarExecucoes(cliente: Transacao, agora: Date = new Date
         j.prioridade DESC, j.criado_em, j.id
       LIMIT $4
     )
-    SELECT a.id, a.tipo, a.estado, a.error_code, a.total, ${iso('a.inicio')} AS inicio, ${iso('a.fim')} AS fim,
+    SELECT a.id, a.tipo, a.estado, a.error_code, a.diagnosticos, a.total, ${iso('a.inicio')} AS inicio, ${iso('a.fim')} AS fim,
+      CASE WHEN a.estado = 'falhou' THEN (SELECT d->>'mensagem' FROM jsonb_array_elements(a.diagnosticos) d WHERE d->>'codigo' = 'causa' LIMIT 1) END AS causa,
       d.id AS documento_id, d.titulo AS documento_titulo,
       s.id AS secao_id, s.titulo AS secao_titulo, s.numero AS secao_numero
     FROM alvo a
@@ -183,7 +200,7 @@ export async function listarExecucoes(cliente: Transacao, agora: Date = new Date
   [TIPOS_DO_CODEX, desde, SECAO_NA_CHAVE, LIMITE_DA_LISTA])).rows;
   const total = linhas[0]?.total ?? 0;
   return {
-    versao: 1,
+    versao: 2,
     gerado_em: agora.toISOString(),
     execucoes: linhas.map(projetarExecucao),
     omitidas: Math.max(0, total - linhas.length),

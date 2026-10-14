@@ -5,6 +5,15 @@
  * - `GET /api/obsidian/indice` — `IndiceObsidianV1`: um item por documento, com o sha256 da nota;
  * - `GET /api/obsidian/exportacao.zip` — todas as notas num ZIP.
  *
+ * Formato 2 (uma nota por item, numa pasta por documento; ver `servico/src/obsidian/FORMATO.md`):
+ *
+ * - `GET /api/obsidian/v2/indice` — `IndiceObsidianV2`: uma entrada por nota, com o caminho e o sha256;
+ * - `GET /api/obsidian/v2/documentos/:id` — as notas de um documento (JSON, com o conteúdo);
+ * - `GET /api/obsidian/v2/exportacao.zip` — a árvore `Margem/<documento>/…` com `Margem/.margem/manifesto.json`
+ *   (o índice das notas do ZIP); `documento=<id>` restringe a um documento.
+ *
+ * No formato 2, `incluir=grifo,anotacao,…` escolhe os tipos de nota (padrão: todos).
+ *
  * Parâmetros comuns: `marcas=minhas|todas` (padrão `minhas`) e `base=<url>`, o endereço do Margem
  * nos links de volta. Sem `base`, vale `MARGEM_URL_PUBLICA`; sem ela, a origem do próprio pedido
  * (com https quando o pedido chegou pelo nome do Tailscale Serve). No índice e no ZIP, `todos=1`
@@ -12,9 +21,12 @@
  */
 import type { Hono } from 'hono';
 import type pg from 'pg';
-import { validarIndiceObsidian, type Id, type MarcasDaExportacao } from '@margem/contratos';
+import {
+  TIPOS_DE_NOTA_DO_OBSIDIAN, validarIndiceObsidian, validarIndiceObsidianV2, type Id, type MarcasDaExportacao, type TipoDeNotaDoObsidian,
+} from '@margem/contratos';
 import { comTransacao } from '../db/transacao.js';
-import { exportarTudo, notaDoDocumento, type OpcoesDaExportacao } from '../obsidian/dados.js';
+import { exportarTudo, notaDoDocumento, sha256, type OpcoesDaExportacao } from '../obsidian/dados.js';
+import { INCLUIR_TUDO, documentoV2, exportarTudoV2, type OpcoesDaExportacaoV2 } from '../obsidian/dados-v2.js';
 import { FUSO_DA_NOTA } from '../obsidian/exportar.js';
 import { criarZip } from '../obsidian/zip.js';
 import { hostTailscale } from './ambiente.js';
@@ -57,6 +69,14 @@ function lerMarcas(bruto: string | undefined): MarcasDaExportacao {
   if (bruto === undefined || bruto === '' || bruto === 'minhas') return 'minhas';
   if (bruto === 'todas') return 'todas';
   throw new ErroDaApi(400, 'marcas_invalidas', 'Use marcas=minhas ou marcas=todas.');
+}
+
+function lerIncluir(bruto: string | undefined): readonly TipoDeNotaDoObsidian[] {
+  if (bruto === undefined || bruto.trim() === '') return INCLUIR_TUDO;
+  const pedidos = bruto.split(',').map((parte) => parte.trim()).filter((parte) => parte !== '');
+  const invalido = pedidos.find((parte) => !(TIPOS_DE_NOTA_DO_OBSIDIAN as readonly string[]).includes(parte));
+  if (invalido !== undefined) throw new ErroDaApi(400, 'incluir_invalido', `Tipo de nota desconhecido: ${invalido}. Use ${TIPOS_DE_NOTA_DO_OBSIDIAN.join(', ')}.`);
+  return TIPOS_DE_NOTA_DO_OBSIDIAN.filter((tipo) => tipo === 'documento' || pedidos.includes(tipo));
 }
 
 /** `Content-Disposition` com o nome em UTF-8 (RFC 6266) e um substituto ASCII. */
@@ -112,5 +132,49 @@ export function registrarRotasDoObsidian(api: Hono, { banco, exigirUlid }: Depen
     c.header('Content-Disposition', disposicao('Margem.zip'));
     c.header('Cache-Control', 'no-cache');
     return c.body(new Uint8Array(zip));
+  });
+
+  // ---------------------------------------------------------------- formato 2
+
+  type Contexto = Parameters<typeof urlBase>[0];
+  const opcoesV2 = (c: Contexto & { req: { query: (nome: string) => string | undefined } }): OpcoesDaExportacaoV2 & { todos: boolean } => ({
+    marcas: lerMarcas(c.req.query('marcas')), url_base: urlBase(c), incluir: lerIncluir(c.req.query('incluir')), todos: c.req.query('todos') === '1',
+  });
+
+  api.get('/api/obsidian/v2/indice', async (c) => {
+    const { indice } = await comTransacao(banco, (cliente) => exportarTudoV2(cliente, opcoesV2(c)));
+    if (!validarIndiceObsidianV2(indice)) throw new ErroDaApi(500, 'indice_invalido', 'O índice gerado não segue IndiceObsidianV2.');
+    c.header('Cache-Control', 'no-cache');
+    return c.json(indice);
+  });
+
+  api.get('/api/obsidian/v2/documentos/:id', async (c) => {
+    const id = exigirUlid(c.req.param('id'), 'documento');
+    const resultado = await comTransacao(banco, (cliente) => documentoV2(cliente, id, opcoesV2(c)));
+    if (resultado.estado === 'inexistente') throw new ErroDaApi(404, 'documento_inexistente');
+    if (resultado.estado === 'sem_texto') throw new ErroDaApi(409, 'sem_texto', 'O documento ainda não tem texto canonizado.');
+    c.header('Cache-Control', 'no-cache');
+    return c.json({
+      versao: 2, documento_id: id, versao_id: resultado.versao_id, nome: resultado.exportacao.nome,
+      notas: resultado.exportacao.notas.map((nota) => ({ ...nota, sha256: sha256(nota.conteudo) })),
+    });
+  });
+
+  api.get('/api/obsidian/v2/exportacao.zip', async (c) => {
+    const bruto = c.req.query('documento');
+    const apenas = bruto === undefined || bruto === '' ? undefined : exigirUlid(bruto, 'documento');
+    const { indice, documentos } = await comTransacao(banco, (cliente) => exportarTudoV2(cliente, { ...opcoesV2(c), ...(apenas === undefined ? {} : { apenas }) }));
+    if (apenas !== undefined && !documentos.has(apenas)) throw new ErroDaApi(404, 'documento_inexistente', 'O documento não existe, está arquivado ou não tem texto.');
+    const codificador = new TextEncoder();
+    const arquivos = [...documentos.values()].flatMap((exportacao) => exportacao.notas.map((nota) => ({
+      nome: `Margem/${nota.caminho}`, conteudo: codificador.encode(nota.conteudo), modificado_em: horaLocal(nota.atualizado_em),
+    })));
+    const maisRecente = indice.notas.reduce((maior, nota) => (nota.atualizado_em > maior ? nota.atualizado_em : maior), '1980-01-01T00:00:00.000Z');
+    arquivos.push({ nome: 'Margem/.margem/manifesto.json', conteudo: codificador.encode(`${JSON.stringify(indice, null, 2)}\n`), modificado_em: horaLocal(maisRecente) });
+    const unico = apenas === undefined ? undefined : documentos.get(apenas);
+    c.header('Content-Type', 'application/zip');
+    c.header('Content-Disposition', disposicao(unico === undefined ? 'Margem.zip' : `${unico.nome}.zip`));
+    c.header('Cache-Control', 'no-cache');
+    return c.body(new Uint8Array(criarZip(arquivos)));
   });
 }

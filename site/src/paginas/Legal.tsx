@@ -34,16 +34,16 @@ const N = CONFIG.nome;
 
 export const PRIVACIDADE: readonly Secao[] = [
   { titulo: 'Em resumo', paragrafos: [
-    `O ${N} é um programa que você instala no seu computador. Os seus documentos, marcas, notas, conversas e o progresso de leitura ficam no seu computador, numa pasta e num banco de dados da sua instalação. Nós não temos servidor que receba nem guarde a sua biblioteca, e não temos acesso a ela.`,
+    `O ${N} é um programa que você instala no seu computador. Os seus documentos, marcas, notas, conversas e o progresso de leitura ficam no seu computador, na pasta da biblioteca que você escolheu. Nós não temos servidor que receba nem guarde a sua biblioteca, e não temos acesso a ela.`,
   ] },
   { titulo: 'Quem é o responsável', paragrafos: [
     '[A definir: pessoa ou empresa responsável pelo site e pela distribuição do app, com endereço e documento.]',
   ] },
   { titulo: 'O que sai do seu computador', paragrafos: [
     `Leitura por IA: para marcar o texto, escrever as notas da margem e responder às suas perguntas, o ${N} usa o Codex, com a conta do ChatGPT que você conectou. Os trechos necessários vão da sua instalação para a OpenAI, pela sua conta, e seguem os termos e a política de privacidade da OpenAI para essa conta, inclusive quanto a retenção e treinamento. Nós não ficamos no meio nem recebemos cópia.`,
-    'Áudio (opcional): se você colar a sua chave da ElevenLabs nas Configurações, o texto que você mandar narrar vai para a ElevenLabs, que gera o áudio. Vale a política da ElevenLabs para a sua conta. A chave fica guardada só na sua instalação.',
-    'Extensão de navegador e plugin do Obsidian: falam só com o endereço que você configurar, por padrão a sua própria instalação. Não mandam nada para nós.',
-    '[A definir: se o app consulta a existência de versões novas e, se sim, o que essa consulta envia.]',
+    'Áudio (opcional): se você colar a sua chave da ElevenLabs nas Configurações, o texto que você mandar narrar vai para a ElevenLabs, que gera o áudio. Vale a política da ElevenLabs para a sua conta. A chave fica guardada só no seu computador.',
+    'Extensão de navegador e plugin do Obsidian: falam só com o endereço que você configurar, por padrão o app no seu próprio computador. Não mandam nada para nós.',
+    'Atualizações: o app consulta o GitHub, onde as versões são publicadas, para saber se há versão nova e baixá-la. Essa consulta leva o endereço IP e os dados técnicos de qualquer acesso a um site, e nada da sua biblioteca. Vale a política de privacidade do GitHub. [A definir: confirmar com o empacotamento final.]',
   ] },
   { titulo: 'O que não fazemos', paragrafos: [
     'O app não envia métricas de uso, registros de erro nem conteúdo para nós. Não há conta no app, publicidade ou rastreamento.',

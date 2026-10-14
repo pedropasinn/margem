@@ -212,7 +212,9 @@ async function executarImagem(config: ConfiguracaoDosVisuais, tarefa: Tarefa, en
   try {
     imagem = await guardarImagem(escolhida);
   } catch (erro) {
-    return falhou('sem_imagem', erro instanceof Error ? erro.message : 'Imagem gerada ilegível.', Date.now() - inicio);
+    // A imagem foi gerada; o que falhou foi guardá-la. Código próprio para não confundir com "o Codex não gerou".
+    const causa = erro instanceof Error ? erro.message : 'erro desconhecido';
+    return falhou('publicacao', `A imagem foi gerada, mas não pôde ser guardada: ${causa}`.slice(0, 800), Date.now() - inicio);
   }
   const diagnosticos = geradas.length > 1
     ? [{ codigo: 'varias_imagens', mensagem: `O Codex gerou ${String(geradas.length)} imagens; ficou a última.` }] : [];

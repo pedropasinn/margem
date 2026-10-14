@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/arte-identificacao@1.schema.json",
+  "title": "Identificação de uma obra a partir da imagem (J118)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reconhecida", "titulo", "titulo_original", "artista", "ano", "confianca", "justificativa"],
+  "properties": {
+    "reconhecida": { "type": "boolean" },
+    "titulo": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+    "titulo_original": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+    "artista": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+    "ano": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 40 }, { "type": "null" }] },
+    "confianca": { "type": "string", "enum": ["alta", "media", "baixa"] },
+    "justificativa": { "type": "string", "minLength": 1, "maxLength": 1200 }
+  }
+}

@@ -19,7 +19,8 @@
       "@margem/contratos": ["../contratos/src/index.ts"],
       "@margem/contratos/texto": ["../contratos/src/texto.ts"],
       "@margem/contratos/regras": ["../contratos/src/regras.ts"],
-      "@margem/contratos/sala": ["../contratos/src/sala.ts"]
+      "@margem/contratos/sala": ["../contratos/src/sala.ts"],
+      "@margem/contratos/grifo": ["../contratos/src/grifo.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", "../core/src/**/*.ts", "../contratos/src/**/*.ts"],

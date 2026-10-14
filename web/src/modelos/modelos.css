@@ -1,0 +1,27 @@
+/* Configurações → Modelos (V-T10): composição dentro da linguagem atual (cartão, formulário, selects). */
+.configuracao-dos-modelos { display: grid; gap: 16px; }
+.configuracao-dos-modelos h2 { margin: 0; font-size: 22px; }
+.configuracao-dos-modelos .cabeca-da-secao { display: grid; gap: 6px; }
+.configuracao-dos-modelos .cabeca-da-secao p { margin: 0; }
+.configuracao-dos-modelos .secundario { margin: 0; max-width: 60ch; }
+.configuracao-dos-modelos .aviso, .configuracao-dos-modelos .dados { margin: 0; }
+.categorias-de-modelo { list-style: none; margin: 0; padding: 0; display: grid; }
+.categoria-de-modelo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 12px 24px; align-items: start; padding: 16px 0; border-top: 1px solid var(--borda); }
+.categoria-de-modelo:first-child { border-top: 0; padding-top: 4px; }
+.sobre-a-categoria { display: grid; gap: 4px; }
+.sobre-a-categoria h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.sobre-a-categoria .secundario { font-size: 14px; color: var(--texto-2); }
+.padrao-da-categoria { margin: 0; font-size: 14px; color: var(--texto-3); }
+.escolha-da-categoria { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.escolha-da-categoria label { min-width: 0; display: grid; gap: 6px; font-size: 14px; font-weight: 500; }
+.escolha-da-categoria .ui-select, .escolha-da-categoria .ui-select > .ui-button { width: 100%; }
+.modelo-digitado { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.modelo-digitado .ui-input { flex: 1 1 14em; min-width: 0; }
+.lista-de-modelos { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.lista-de-modelos .secundario { font-size: 14px; color: var(--texto-3); }
+@media (max-width: 760px) {
+  .categoria-de-modelo { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .escolha-da-categoria { grid-template-columns: 1fr; }
+}

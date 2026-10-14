@@ -11,10 +11,15 @@ import { join } from 'node:path';
 import type { FonteDaObra, ModeloDaObraV1 } from '@margem/contratos';
 import { validarModeloDaObra } from '../../../../contratos/src/validadores.js';
 import { conferirModeloDaObra } from '../../../../core/src/arte.js';
-import { raizDoAcervo as raizDasRotas } from '../acervo.js';
+import { raizDoAcervo as raizDasRotas, raizesDeLeitura } from '../acervo.js';
 
-/** A mesma raiz das rotas (`MARGEM_ARTE_DIR`, senão `<MARGEM_DADOS>/arte/obras`): na imagem Docker, `/dados/arte/obras`. */
+/** A mesma raiz das rotas, onde o app grava as obras da pessoa (`MARGEM_ARTE_DIR`, senão `<MARGEM_DADOS>/quadros`). */
 export function raizDoAcervo(): string { return raizDasRotas(); }
+
+/** A raiz que tem a obra: a da pessoa ou, para as ferramentas de desenvolvimento, a antiga (`<dados>/arte/obras`). */
+export function raizDaObra(slug: string): string {
+  return raizesDeLeitura().find((raiz) => existsSync(join(raiz, slug))) ?? raizDoAcervo();
+}
 
 export interface ObraDoAcervo {
   slug: string;
@@ -27,7 +32,7 @@ export interface ObraDoAcervo {
   textos: Map<string, string>;
 }
 
-export async function lerObra(slug: string, raiz = raizDoAcervo()): Promise<ObraDoAcervo> {
+export async function lerObra(slug: string, raiz = raizDaObra(slug)): Promise<ObraDoAcervo> {
   const pasta = join(raiz, slug);
   const imagem = join(pasta, 'imagem.jpg');
   if (!existsSync(imagem)) throw new Error(`obra_sem_imagem: ${slug}`);

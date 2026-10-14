@@ -352,12 +352,18 @@ export function canonicoDaSessao(sessao: SessaoHorarium, opcoes: OpcoesDaImporta
   conferirOrcamento(sessao, ORCAMENTOS.canonico);
   const rawText = sessao.documento.rawText;
   const linhaDe = (indice: number): number => (rawText.slice(0, indice).match(/\n/g)?.length ?? 0) + 1;
-  const blocos: Bloco[] = paragrafosDe(rawText)
+  const paragrafos: Bloco[] = paragrafosDe(rawText)
     .filter((paragrafo) => paragrafo.texto.trim() !== '')
     .map((paragrafo, ordem) => ({
-      id: novoId(), ordem, tipo: 'paragrafo', texto: paragrafo.texto, inline: [],
+      id: novoId(), ordem: ordem + 1, tipo: 'paragrafo', texto: paragrafo.texto, inline: [],
       origens: [{ tipo: 'texto', linha_inicio: linhaDe(paragrafo.inicio), linha_fim: linhaDe(paragrafo.fim) }],
     }));
+  // Capítulo único (v0.1, V-A8): o título abre o texto, como o motor faz com um texto colado sem seções.
+  // Sem capítulo, nada se prepara: a compreensão, o leitor e os capítulos trabalham por seção de nível 1.
+  const nomeDoCapitulo = sessao.documento.titulo.trim() || 'Texto';
+  const titulo: Bloco = { id: novoId(), ordem: 0, tipo: 'capitulo', texto: nomeDoCapitulo, inline: [],
+    origens: [{ tipo: 'texto', linha_inicio: 1, linha_fim: 1 }] };
+  const blocos: Bloco[] = paragrafos.length > 0 ? [titulo, ...paragrafos] : [];
   const canonico: CanonicoV1 = {
     versao: 1,
     documento: {
@@ -373,10 +379,12 @@ export function canonicoDaSessao(sessao: SessaoHorarium, opcoes: OpcoesDaImporta
       config: { origem: 'sessao_horarium', documento_id: sessao.documento.id },
     },
     hash_estrutural: hashEstrutural(blocos),
-    secoes: [],
+    secoes: blocos.length > 0
+      ? [{ id: novoId(), nivel: 1, titulo: nomeDoCapitulo, ordem: 0, bloco_inicio: titulo.id, bloco_fim: blocos[blocos.length - 1]!.id }]
+      : [],
     blocos,
     assets: [],
-    limites: ['importacao: canônico derivado do rawText da sessão do Horarium, sem paginação nem estrutura de seções.'],
+    limites: ['importacao: canônico derivado do rawText da sessão do Horarium, sem paginação; o texto inteiro é um capítulo, aberto pelo título.'],
   };
   if (!validarCanonico(canonico)) throw new Error('Canônico derivado da sessão do Horarium é inválido.');
   return canonico;

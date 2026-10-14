@@ -25,6 +25,25 @@ button svg, a svg { pointer-events: none; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 ::selection { background: var(--accent-suave); }
 
+/*
+ * Barras de rolagem (V-U2): finas e discretas em toda a aplicação. No Chromium (e no Electron do
+ * Windows, que desenha a barra clássica de 15 px com setas) valem os pseudo-elementos: 10 px de faixa,
+ * polegar de 4 px arredondado, sem setas e sem trilho; o polegar aparece mais forte quando o mouse
+ * está sobre a região que rola e mais ainda sobre ele. No Firefox, `scrollbar-width`/`scrollbar-color`.
+ * Ninguém mais define `scrollbar-width`: no Chromium ele desliga os pseudo-elementos daquele elemento.
+ */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+  ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+  ::-webkit-scrollbar-thumb { min-height: 36px; min-width: 36px; border: 3px solid transparent; border-radius: 999px; background: var(--rolagem) padding-box; }
+  :hover::-webkit-scrollbar-thumb { background-color: var(--rolagem-hover); }
+  ::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active { background-color: var(--rolagem-ativa); }
+}
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: var(--rolagem-hover) transparent; }
+}
+
 /* ---------- Casca ---------- */
 /* A navegação da aplicação é definida em casca.css. */
 

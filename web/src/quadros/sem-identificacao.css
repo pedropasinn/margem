@@ -1,0 +1,10 @@
+/* Obra não identificada (V-W5): a frase, o palpite num fundo suave (sem faixa lateral) e a ação. */
+.obra-sem-identificacao { display: grid; gap: 8px; margin: 4px 0 12px; font-size: 14px; line-height: 1.45; color: var(--texto-2); }
+.obra-sem-identificacao p { margin: 0; }
+.obra-sem-identificacao .sem-identificacao-titulo { color: var(--texto-1); font-weight: 600; }
+.obra-sem-identificacao .sem-identificacao-nota { font-size: 13px; color: var(--texto-3); }
+.obra-sem-identificacao .button-row { margin-top: 2px; }
+.palpite-da-obra { display: grid; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--bg-hover); color: var(--texto-1); }
+.palpite-da-obra p { margin: 0; }
+.palpite-da-obra .palpite-rotulo { font-size: 12px; color: var(--texto-3); }
+.palpite-da-obra .palpite-nome { font-weight: 600; }

@@ -37,6 +37,10 @@ const CAMINHOS: Record<string, string> = {
   'janela-lateral': 'M3 4h18v16H3zM14 4v16',
   'janela-flutuante': 'M3 4h18v16H3zM11 10h7v7h-7z',
   'tela-cheia': 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  /** Seta para cima (enviar a pergunta). */
+  enviar: 'M12 19V5M6 11l6-6 6 6',
+  lapis: 'M15 5l4 4M4 20l1-5L16 4l4 4L9 19z',
+  lixeira: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
 };
 
 export function Icon({ name, size = 20 }: { name: string; size?: number }): ReactNode {

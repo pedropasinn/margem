@@ -13,7 +13,7 @@ export interface ValorDoOnboarding {
 }
 
 const TUDO_VISTO: EstadoDoOnboarding = {
-  ...ONBOARDING_INICIAL, boas_vindas: 'concluida', tour: 'concluida', levar: 'concluida',
+  ...ONBOARDING_INICIAL, boas_vindas: 'concluida', tours: { texto: 'concluida', video: 'concluida', quadro: 'concluida' }, levar: 'concluida',
   primeiro_documento: { estado: 'concluida', origem: 'uso_anterior', documento_id: null },
 };
 

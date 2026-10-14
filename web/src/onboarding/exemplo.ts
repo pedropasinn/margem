@@ -9,7 +9,7 @@
  *
  * Abrir o exemplo usa o mesmo caminho da adição (`POST /api/documentos`, formato Markdown): o
  * serviço enfileira a preparação do texto (motor Python, sem IA) e nada mais. As marcas só chegam
- * quando a pessoa pedir "Preparar leitura" — o onboarding nunca dispara uma leitura do Codex.
+ * quando a pessoa pedir "Analisar" — o onboarding nunca dispara uma leitura do Codex.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { adicionarDocumento, ErroDaApi, obterDocumento } from '../biblioteca/api';

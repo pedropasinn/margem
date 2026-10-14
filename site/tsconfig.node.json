@@ -16,9 +16,7 @@
     ],
     "types": [
       "node"
-    ],
-    "composite": true,
-    "tsBuildInfoFile": "node_modules/.tmp/node.tsbuildinfo"
+    ]
   },
   "include": [
     "vite.config.ts",

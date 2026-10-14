@@ -22,7 +22,7 @@ export interface OpcoesDaExportacao {
   url_base: string;
 }
 
-interface LinhaDoDocumento {
+export interface LinhaDoDocumento {
   id: Id;
   titulo: string;
   autor: string | null;
@@ -32,7 +32,7 @@ interface LinhaDoDocumento {
   versao_id: Id | null;
 }
 
-const SQL_DOCUMENTO = `SELECT d.id, d.titulo, d.autor, d.formato,
+export const SQL_DOCUMENTO = `SELECT d.id, d.titulo, d.autor, d.formato,
     to_char(d.criado_em AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS criado_em,
     (SELECT m.conteudo->'fonte'->>'url' FROM midia m WHERE m.documento_id=d.id ORDER BY m.criado_em DESC LIMIT 1) AS fonte_url,
     (SELECT v.id FROM versao_texto v WHERE v.documento_id=d.id ORDER BY v.numero DESC LIMIT 1) AS versao_id
@@ -52,7 +52,7 @@ function rotulos(): Readonly<Record<string, string>> {
  * comentou (nota ou pergunta ligada à marca); e, com `todas`, também as visíveis e não rejeitadas
  * da camada que o leitor abre por padrão.
  */
-function escolherMarcas(marcas: readonly MarcaV2[], doLeitor: ReadonlySet<Id>, tocadas: ReadonlySet<Id>,
+export function escolherMarcas(marcas: readonly MarcaV2[], doLeitor: ReadonlySet<Id>, tocadas: ReadonlySet<Id>,
   camadaPadrao: Id | null, escolha: MarcasDaExportacao): MarcaV2[] {
   return marcas.filter((marca) => {
     if (doLeitor.has(marca.camada_id)) return true;

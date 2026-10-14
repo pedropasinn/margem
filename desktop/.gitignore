@@ -1,0 +1,8 @@
+node_modules/
+dist/
+saida/
+# Binários montados pelo recursos/preparar.mjs (J114): nunca no git. Ficam só o script, versoes.json e TERCEIROS.md.
+recursos/*
+!recursos/preparar.mjs
+!recursos/versoes.json
+!recursos/TERCEIROS.md

@@ -15,7 +15,8 @@
     "./visita": "./src/visita.ts",
     "./leitura-comentada": "./src/leitura-comentada.ts",
     "./karaoke": "./src/karaoke.ts",
-    "./youtube": "./src/youtube.ts"
+    "./youtube": "./src/youtube.ts",
+    "./obsidian": "./src/obsidian.ts"
   },
   "types": "./src/index.ts"
 }

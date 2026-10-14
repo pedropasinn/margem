@@ -20,14 +20,19 @@ export const VALIDADE_DA_VERIFICACAO_MS = 20_000;
 
 export function registrarRotasDaPrimeiraExecucao(api: Hono, apoio: { banco: pg.Pool; verificadores?: Partial<Verificadores> }): void {
   const { banco } = apoio;
-  const base = { ...VERIFICADORES_PADRAO, ...apoio.verificadores };
+  // Quem injeta verificadores (os testes) injeta também as ferramentas, se quiser vê-las no estado.
+  const base: Verificadores = apoio.verificadores === undefined
+    ? VERIFICADORES_PADRAO
+    : { ...VERIFICADORES_PADRAO, ferramentas: undefined, ...apoio.verificadores };
   const codex = comMemoria(base.codex, VALIDADE_DA_VERIFICACAO_MS);
   const motor = comMemoria(base.motor, VALIDADE_DA_VERIFICACAO_MS);
+  const ferramentas = base.ferramentas === undefined ? undefined : comMemoria(base.ferramentas, VALIDADE_DA_VERIFICACAO_MS);
 
   api.get('/api/estado-instalacao', async (c) => {
     const renovar = c.req.query('renovar') === '1';
     const estado = await lerEstadoDaInstalacao(banco, {
       codex: () => codex(renovar), motor: () => motor(renovar), executor: base.executor,
+      ...(ferramentas === undefined ? {} : { ferramentas: () => ferramentas(renovar) }),
     });
     c.header('Cache-Control', 'no-store');
     return c.json(estado);

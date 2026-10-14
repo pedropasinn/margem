@@ -78,7 +78,8 @@ export function escolherLegenda(meta: Pick<MetadadosDoYoutube, 'idioma' | 'legen
   if (escrita !== undefined) return { idioma: escrita, automatica: false };
   const originais = meta.automaticas.filter((l) => l.toLowerCase().endsWith('-orig'));
   const automatica = (idioma === null ? undefined : originais.find((l) => base(l) === idioma) ?? meta.automaticas.find((l) => l.toLowerCase() === idioma))
-    ?? (originais.length === 1 ? originais[0] : undefined);
+    // Sem idioma no metadado e mais de uma original: a em português, se houver (B-14.4); senão, nenhuma.
+    ?? (originais.length === 1 ? originais[0] : originais.find((l) => base(l) === 'pt'));
   return automatica === undefined ? null : { idioma: automatica, automatica: true };
 }
 
@@ -100,6 +101,8 @@ export function palavrasDaLegendaJson3(bruto: unknown): PalavraTranscrita[] {
   let dentroDeAnotacao = false;
   for (const evento of eventos) {
     if (!Array.isArray(evento.segs) || typeof evento.tStartMs !== 'number' || !Number.isFinite(evento.tStartMs)) continue;
+    // Uma anotação aberta ("(que" sem fechar) não engole as falas seguintes: vale só dentro do evento (B-14.5).
+    dentroDeAnotacao = false;
     const inicioDoEvento = Math.max(0, evento.tStartMs);
     const fimDoEvento = inicioDoEvento + (typeof evento.dDurationMs === 'number' && Number.isFinite(evento.dDurationMs) && evento.dDurationMs > 0 ? evento.dDurationMs : 0);
     const pedacos = (evento.segs as unknown[]).map((s) => {

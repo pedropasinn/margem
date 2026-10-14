@@ -1,15 +1,25 @@
 .app-shell { min-height: 100vh; background: var(--bg); }
-.app-shell > main { max-width: 1100px; margin: 0 auto; padding: 32px; outline: none; }
+/* Largura única das páginas (V-U4): a área de conteúdo inteira, como a Biblioteca, com a mesma margem. */
+.app-shell > main { max-width: none; margin: 0; padding: 32px var(--pagina-margem) 64px; outline: none; }
 .app-shell.pagina-ampla > main { max-width: none; padding: 0; }
 .app-shell.lendo > main { max-width: none; padding: 0; }
-.brand { font-family: var(--serif); font-size: 24px; font-weight: 700; color: var(--texto-1); line-height: 1; }
+/* Assinatura (docs/identidade/): arco com cores fixas; palavra e lema pelo tema. */
+.assinatura { display: block; width: auto; flex-shrink: 0; }
+.assinatura-palavra { fill: var(--marca-palavra); }
+.assinatura-lema { fill: var(--marca-lema); }
+.brand { display: inline-flex; align-items: center; line-height: 1; border-radius: var(--r-8); }
+.brand .assinatura { height: 34px; }
+.topbar .brand .assinatura { height: 30px; }
 .brand:hover { text-decoration: none; }
 .topbar, .bottomnav { display: none; }
-.barra-lateral { position: fixed; inset: 0 auto 0 0; width: 248px; z-index: 50; background: var(--bg); border-right: 1px solid var(--borda); }
+.barra-lateral { position: fixed; inset: 0 auto 0 0; width: 248px; z-index: 50; display: flex; flex-direction: column; background: var(--bg); border-right: 1px solid var(--borda); }
 .barra-marca { display: flex; align-items: center; gap: 2px; height: 80px; padding: 16px; }
 .barra-marca .brand { margin-right: auto; }
 .barra-marca .ui-icon { width: 32px; min-width: 32px; }
 .navegacao-lateral { display: flex; flex-direction: column; padding: 8px 16px; height: calc(100dvh - 80px); gap: 4px; }
+/* O meio da barra rola sozinho (V-U2); o rodapé (Primeiros passos, Configurações) fica sempre à vista (V-U3). */
+.navegacao-rolagem { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 4px; margin: 0 -16px; padding: 0 16px 8px; overflow-y: auto; overscroll-behavior: contain; }
+.navegacao-rolagem > *, .barra-inferior > * { flex-shrink: 0; }
 .navegacao-lateral a { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; color: var(--texto-2); font-size: 15px; font-weight: 500; border-radius: var(--r-8); }
 .navegacao-lateral a:hover, .navegacao-lateral a.active { background: var(--bg-hover); color: var(--texto-1); text-decoration: none; }
 .navegacao-lateral a.active { font-weight: 600; }
@@ -18,7 +28,35 @@
 .grupo-biblioteca .ui-icon { min-width: 24px; width: 24px; }
 .chevron-aberto { display: inline-block; transform: rotate(90deg); }
 .filhos-biblioteca { padding-left: 16px; }
-.barra-inferior { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--borda); }
+.contagem-categoria { margin-left: auto; color: var(--texto-3); font-size: 13px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.barra-inferior { flex-shrink: 0; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--borda); }
+.barra-inferior a { height: 36px; font-size: 14px; }
+
+/* Conversas do Perguntar na barra (V-U1): uma linha cada, o "…" aparece no hover, no foco e na atual. */
+.conversas-da-barra { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.conversas-da-barra ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.navegacao-lateral .conversa-nova { height: 36px; font-size: 14px; }
+.rotulo-conversas { padding: 10px 12px 4px; color: var(--texto-3); font-size: 12px; font-weight: 600; }
+.conversa-da-barra { position: relative; display: flex; align-items: center; min-width: 0; border-radius: var(--r-8); }
+.conversa-da-barra:hover, .conversa-da-barra.active, .conversa-da-barra.com-menu { background: var(--bg-hover); }
+.navegacao-lateral .conversa-da-barra > a { flex: 1; min-width: 0; display: block; height: auto; padding: 7px 12px; font-size: 14px; font-weight: 400; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: none; }
+.navegacao-lateral .conversa-da-barra.active > a { color: var(--texto-1); font-weight: 500; }
+.navegacao-lateral .conversa-da-barra > a:hover { background: none; }
+.conversa-opcoes.ui-icon.ui-sm { position: absolute; right: 2px; width: 28px; height: 28px; min-height: 28px; opacity: 0; background: var(--painel); }
+.conversa-da-barra:hover > .conversa-opcoes, .conversa-da-barra.active > .conversa-opcoes, .conversa-da-barra.com-menu > .conversa-opcoes, .conversa-opcoes:focus-visible { opacity: 1; }
+.conversa-da-barra:hover > a, .conversa-da-barra.active > a, .conversa-da-barra.com-menu > a { padding-right: 34px; }
+@media (pointer: coarse) { .conversa-opcoes.ui-icon.ui-sm { opacity: 1; position: static; width: 40px; height: 40px; min-height: 40px; background: none; } .navegacao-lateral .conversa-da-barra > a { padding-right: 4px; } }
+.conversa-renomear { flex: 1; min-width: 0; padding: 2px; }
+.conversa-renomear .ui-input { min-height: 32px; padding: 4px 10px; font-size: 14px; border-width: 1px; }
+.conversa-erro { position: absolute; top: 100%; left: 12px; right: 0; z-index: 2; color: var(--error-texto); font-size: 12px; }
+.menu-da-conversa.ui-popover { padding: 6px; }
+.menu-da-conversa ul { list-style: none; margin: 0; padding: 0; }
+.menu-da-conversa [role=menuitem] { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--r-8); background: none; color: var(--texto-1); font: 500 14px var(--sans); text-align: left; cursor: pointer; }
+.menu-da-conversa [role=menuitem]:hover, .menu-da-conversa [role=menuitem]:focus-visible { background: var(--bg-hover); }
+.menu-da-conversa [role=menuitem].perigo { color: var(--error-texto); }
+.confirmar-apagar { padding: 8px 8px 4px; }
+.confirmar-apagar p { margin: 0 0 12px; font-size: 14px; overflow-wrap: anywhere; }
+.conversas-na-gaveta { height: auto; padding: 0; }
 .abrir-barra { position: fixed; left: 12px; top: 12px; z-index: 45; background: var(--bg); }
 @media (min-width: 1000px) { .app-shell.com-barra { padding-left: 248px; } }
 @media (min-width: 800px) {
@@ -35,9 +73,21 @@
   .bottomnav { position: fixed; inset: auto 0 0; z-index: 50; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding-bottom: env(safe-area-inset-bottom); background: var(--bg); border-top: 1px solid var(--borda); }
   .bottomnav-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 64px; gap: 3px; color: var(--texto-2); font-size: 12px; font-weight: 600; }
   .bottomnav-item.active { color: var(--texto-1); }
+  button.bottomnav-item { border: 0; background: none; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
   .bottomnav-item.active::before { content: ''; position: absolute; top: -1px; width: 32px; height: 2px; background: var(--texto-1); }
   h1 { font-size: 30px; }
   h2 { font-size: 22px; }
 }
 
-.barra-gaveta .navegacao-lateral { height: calc(100dvh - 200px); min-height: 320px; }
+.barra-gaveta .navegacao-lateral { height: calc(100dvh - 120px); min-height: 320px; }
+
+/*
+ * Páginas de altura fixa (V-U2): Perguntar e Biblioteca. A casca não rola; cada página rola só a sua
+ * região (a conversa, a lista, o painel), com o cabeçalho e a caixa de texto sempre no lugar.
+ */
+.app-shell.altura-fixa > main { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+.app-shell.altura-fixa > main > * { flex-shrink: 0; }
+.app-shell.altura-fixa > main > .perguntar, .app-shell.altura-fixa > main > .biblioteca-grade { flex: 1 1 auto; min-height: 0; }
+@media (max-width: 799px) {
+  .app-shell.altura-fixa > main { height: calc(100dvh - 57px - 65px - env(safe-area-inset-bottom)); padding: 0; }
+}

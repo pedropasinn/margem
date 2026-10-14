@@ -19,7 +19,11 @@
 .instrucao { display: grid; gap: 8px; padding: 14px 18px; border-radius: var(--r-16); background: var(--bg-2); }
 .instrucao-titulo, .aviso-titulo { margin: 0; font-weight: 600; color: var(--texto-1); }
 .instrucao-texto { margin: 0; color: var(--texto-2); font-size: 14px; line-height: 1.55; }
+.avisos-do-app { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.avisos-do-app .aviso { margin: 0; font-size: 14px; }
 .verificar-de-novo { margin: 0; }
+.identificacao-da-instalacao { margin: 0; font-size: 13px; color: var(--texto-2); }
+.identificacao-da-instalacao code { font-size: 13px; }
 
 /* ---------- Comando com botão de copiar ---------- */
 .comandos { display: grid; gap: 6px; }

@@ -17,7 +17,7 @@ import * as documentos from '../repos/documentos.js';
 import * as jobsRepo from '../repos/jobs.js';
 import { FilaPostgres } from '../worker/fila-postgres.js';
 import { Worker } from '../worker/worker.js';
-import { faixaDeQuantidade, lerChaveDosConceitos, listaDosGrifos, manipuladoresDosConceitos, paragrafosFalados } from './conceitos.js';
+import { faixaDeQuantidade, lerChaveDosConceitos, listaDosGrifos, manipuladoresDosConceitos, maximoDePartes, midiaDeVideo, paragrafosFalados } from './conceitos.js';
 import { montarMidia } from './publicacao.js';
 
 const temporarios: string[] = [];
@@ -38,16 +38,22 @@ function transcricao(): { texto: string; inicio_s: number; fim_s: number }[] {
   return PARAGRAFOS.flatMap((p, i) => p.split(' ').map((texto, j) => ({ texto, inicio_s: i * 150 + j * 2.5, fim_s: i * 150 + j * 2.5 + 2 })));
 }
 
-const SAIDA = { conceitos: [
-  { paragrafo: 'P1', citacao: 'stablecoin, que é uma moeda', titulo: 'O que é uma stablecoin?', curto: 'Stablecoin', explicacao: 'Uma moeda digital com valor atrelado a outra. Serve para guardar dólar na rede.' },
+const SAIDA = { partes: [
+  { paragrafo: 'P1', titulo: 'Stablecoins', resumo: 'O que são e por que importam.' },
+  { paragrafo: 'P4', titulo: 'Juros no Brasil', resumo: 'A Selic e o crédito.' },
+  { paragrafo: 'P4', titulo: 'Repetida', resumo: 'No mesmo parágrafo.' },
+  { paragrafo: 'P9', titulo: 'Fora', resumo: 'Parágrafo inexistente.' },
+  { paragrafo: 'P6', titulo: 'Regra fiscal', resumo: 'O arcabouço.' },
+], momentos: [
+  { paragrafo: 'P1', citacao: 'stablecoin, que é uma moeda', tipo: 'conceito', titulo: 'O que é uma stablecoin?', curto: 'Stablecoin', explicacao: 'Uma moeda digital com valor atrelado a outra. Serve para guardar dólar na rede.' },
   // Perto demais da anterior (o mesmo parágrafo, 10 s depois).
-  { paragrafo: 'P1', citacao: 'atrelada ao dólar', titulo: 'Paridade', curto: 'Paridade', explicacao: 'Valor fixo em relação a outra moeda.' },
-  { paragrafo: 'P2', citacao: 'compra e vende ações', titulo: 'Títulos do Tesouro', curto: 'Títulos', explicacao: 'Dívida do governo.' },
-  { paragrafo: 'P3', citacao: 'Banco Central', titulo: 'Banco Central', curto: 'Banco Central', explicacao: 'Quem cuida da moeda.' },
-  { paragrafo: 'P4', citacao: 'A Selic subiu', titulo: 'Selic', curto: 'Taxa de juros do BC', explicacao: 'A taxa básica de juros do Brasil. Ela orienta o custo do crédito.' },
-  { paragrafo: 'P5', citacao: 'o lastro precisa', titulo: 'O que é uma stablecoin', curto: 'Stablecoin', explicacao: 'Repetida.' },
-  { paragrafo: 'P9', citacao: 'nada', titulo: 'Fora', curto: 'Fora', explicacao: 'Parágrafo inexistente.' },
-  { paragrafo: 'P6', citacao: 'o arcabouço fiscal limita', titulo: 'Arcabouço fiscal', curto: 'Arcabouço fiscal', explicacao: 'A regra que limita o gasto federal. Substituiu o teto de gastos.' },
+  { paragrafo: 'P1', citacao: 'atrelada ao dólar', tipo: 'conceito', titulo: 'Paridade', curto: 'Paridade', explicacao: 'Valor fixo em relação a outra moeda.' },
+  { paragrafo: 'P2', citacao: 'compra e vende ações', tipo: 'conceito', titulo: 'Títulos do Tesouro', curto: 'Títulos', explicacao: 'Dívida do governo.' },
+  { paragrafo: 'P3', citacao: 'Banco Central', tipo: 'contexto', titulo: 'Banco Central', curto: 'Banco Central', explicacao: 'Quem cuida da moeda.' },
+  { paragrafo: 'P4', citacao: 'A Selic subiu', tipo: 'dado', titulo: 'Selic', curto: 'Taxa de juros do BC', explicacao: 'A taxa básica de juros do Brasil. Ela orienta o custo do crédito.' },
+  { paragrafo: 'P5', citacao: 'o lastro precisa', tipo: 'conceito', titulo: 'O que é uma stablecoin', curto: 'Stablecoin', explicacao: 'Repetida.' },
+  { paragrafo: 'P9', citacao: 'nada', tipo: 'conceito', titulo: 'Fora', curto: 'Fora', explicacao: 'Parágrafo inexistente.' },
+  { paragrafo: 'P6', citacao: 'o arcabouço fiscal limita', tipo: 'pergunta', titulo: 'Arcabouço fiscal', curto: 'Arcabouço fiscal', explicacao: 'A regra que limita o gasto federal. Substituiu o teto de gastos.' },
 ] };
 
 test('conceitos do vídeo: API → Codex (falso) → cartões conferidos, com instante e diagnósticos', async () => comBanco('conceitos_video', async (banco) => {
@@ -93,6 +99,8 @@ test('conceitos do vídeo: API → Codex (falso) → cartões conferidos, com in
   expect(prompt).toContain('Canal: Fernando Ulrich');
   expect(prompt).toContain(`de ${String(faixaDeQuantidade(900).minimo)} a ${String(faixaDeQuantidade(900).maximo)} momentos`);
   expect(prompt).toContain('(nenhum grifo neste vídeo)');
+  expect(prompt).toContain(`Dê de 2 a ${String(maximoDePartes(900))} partes`);
+  expect(prompt).toContain('Capítulos que o próprio canal marcou (podem faltar):\n\n(nenhum)');
   expect(prompt).not.toMatch(/[0-7][0-9A-HJKMNP-TV-Z]{25}/u);
 
   const resposta = await (await api.request(url)).json() as { estado: string; conceitos: ConceitosDoVideoV1 };
@@ -104,21 +112,26 @@ test('conceitos do vídeo: API → Codex (falso) → cartões conferidos, com in
   ]);
   // O rótulo da pílula: guardado quando cabe na regra; fora dela, some (a web deriva do título).
   expect(conceitos.map((c) => c.curto)).toEqual(['Stablecoin', undefined, 'Arcabouço fiscal']);
+  expect(conceitos.map((c) => c.tipo)).toEqual(['conceito', 'dado', 'pergunta']);
+  // As partes: uma por assunto, no instante do primeiro parágrafo; repetida e fora caem com diagnóstico.
+  expect(resposta.conceitos.partes?.map((p) => [p.titulo, p.instante_s, p.ancora.bloco_id])).toEqual([
+    ['Stablecoins', 0, canonico.blocos[1]!.id], ['Juros no Brasil', 450, canonico.blocos[4]!.id], ['Regra fiscal', 750, canonico.blocos[6]!.id],
+  ]);
   expect(conceitos[0]!.ancora).toMatchObject({ bloco_id: canonico.blocos[1]!.id, citacao: 'stablecoin, que é uma moeda', inicio_utf16: 20 });
-  expect(diagnosticos.map((d) => d.codigo).sort()).toEqual(['citacao_ambigua', 'citacao_ausente', 'curto_invalido', 'paragrafo_inexistente', 'perto_demais', 'repetido']);
-  expect(resposta.conceitos.execucao).toMatchObject({ esforco: 'medium', prompt: 'conceitos-do-video@2' });
+  expect(diagnosticos.map((d) => d.codigo).sort()).toEqual(['citacao_ambigua', 'citacao_ausente', 'curto_invalido', 'paragrafo_inexistente', 'parte_fora', 'parte_repetida', 'perto_demais', 'repetido']);
+  expect(resposta.conceitos.execucao).toMatchObject({ esforco: 'medium', prompt: 'conceitos-do-video@3' });
 
   // Pronto: pedir de novo não gera outro job. Imutável.
   await api.request(url, { method: 'POST', headers: ESCRITA });
   expect((await banco.query("SELECT count(*)::int AS n FROM job WHERE tipo='conceitos_do_video'")).rows[0]).toEqual({ n: 1 });
   await expect(banco.query('DELETE FROM conceitos_video')).rejects.toThrow(/imutável/u);
 
-  // Conceitos prontos de um prompt anterior (@1, sem `curto`): "Preparar" pede de novo com o atual.
+  // Conceitos prontos de um prompt anterior (@1, sem `curto` nem partes): "Preparar" pede de novo com o atual.
   const antigo = await comTransacao(banco, (cliente) => jobsRepo.enfileirar(cliente, { tipo: 'conceitos_do_video', dedup_key: `conceitos:${midia.id}:conceitos-do-video@1:0`, input_snapshot_hash: 'd'.repeat(64), versao_id: midia.versao_id }));
   const conteudoAntigo = { ...resposta.conceitos, id: '01K0000000000000000000ANTG', job_id: antigo.id, execucao: { ...resposta.conceitos.execucao, prompt: 'conceitos-do-video@1' } };
   await banco.query('INSERT INTO conceitos_video(id,midia_id,versao_id,job_id,conteudo) VALUES ($1,$2,$3,$4,$5)', [conteudoAntigo.id, midia.id, midia.versao_id, antigo.id, JSON.stringify(conteudoAntigo)]);
   expect((await (await api.request(url, { method: 'POST', headers: ESCRITA })).json() as { estado: string }).estado).toBe('preparando');
-  expect((await banco.query("SELECT dedup_key FROM job WHERE tipo='conceitos_do_video' ORDER BY criado_em DESC LIMIT 1")).rows[0]).toEqual({ dedup_key: `conceitos:${midia.id}:conceitos-do-video@2:1` });
+  expect((await banco.query("SELECT dedup_key FROM job WHERE tipo='conceitos_do_video' ORDER BY criado_em DESC LIMIT 1")).rows[0]).toEqual({ dedup_key: `conceitos:${midia.id}:conceitos-do-video@3:1` });
 }));
 
 test('conceitos do vídeo: depois de uma falha, "Preparar" enfileira outra tentativa', async () => comBanco('conceitos_falha', async (banco) => {
@@ -139,7 +152,7 @@ test('conceitos do vídeo: depois de uma falha, "Preparar" enfileira outra tenta
   expect((await (await api.request(url)).json() as { estado: string }).estado).toBe('falhou');
   expect((await (await api.request(url, { method: 'POST', headers: ESCRITA })).json() as { estado: string }).estado).toBe('preparando');
   const chaves = (await banco.query<{ dedup_key: string }>("SELECT dedup_key FROM job WHERE tipo='conceitos_do_video' ORDER BY criado_em")).rows.map((r) => r.dedup_key);
-  expect(chaves).toEqual([`conceitos:${midia.id}:conceitos-do-video@2:0`, `conceitos:${midia.id}:conceitos-do-video@2:1`]);
+  expect(chaves).toEqual([`conceitos:${midia.id}:conceitos-do-video@3:0`, `conceitos:${midia.id}:conceitos-do-video@3:1`]);
 }));
 
 test('conceitos do vídeo: o prompt lista os grifos dos parágrafos falados, na ordem do texto', () => {
@@ -152,4 +165,11 @@ test('conceitos do vídeo: o prompt lista os grifos dos parágrafos falados, na 
     { funcao: 'tese', ancora: { bloco_id: 'B3', citacao: 'Não falado' } },
   ], paragrafos)).toBe('- P1 · conceito · "stablecoin"\n- P2 · tese · "com a Selic"');
   expect(listaDosGrifos([], paragrafos)).toBe('(nenhum grifo neste vídeo)');
+});
+
+test('momentos sobre a tela valem para vídeo e para o áudio de um vídeo do YouTube, não para áudio comum', () => {
+  expect(midiaDeVideo({ tipo: 'video' })).toBe(true);
+  expect(midiaDeVideo({ tipo: 'audio', url: 'https://www.youtube.com/watch?v=dO8EW2LqBfU' })).toBe(true);
+  expect(midiaDeVideo({ tipo: 'audio', url: null })).toBe(false);
+  expect(midiaDeVideo({ tipo: 'audio', url: 'https://exemplo.com/podcast.mp3' })).toBe(false);
 });

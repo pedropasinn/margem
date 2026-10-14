@@ -14,7 +14,7 @@ export function ListaDeAtalhos({ aoFechar }: { aoFechar: () => void }): ReactNod
   }, [aoFechar]);
   return <div className="fundo-da-paleta" onPointerDown={(evento) => { if (evento.target === evento.currentTarget) aoFechar(); }}>
     <section className="lista-de-atalhos" role="dialog" aria-modal="true" aria-label="Atalhos de teclado">
-      <header><h2>Atalhos de teclado</h2><IconButton ref={fechar} type="button" aria-label="Fechar atalhos" onClick={aoFechar}>×</IconButton></header>
+      <header><h2>Atalhos de teclado</h2><IconButton ref={fechar} type="button" aria-label="Fechar atalhos" onClick={aoFechar} icone="xis" /></header>
       {ATALHOS.map((grupo) => <div key={grupo.titulo} className="grupo-de-atalhos">
         <h3>{grupo.titulo}</h3>
         <dl>{grupo.atalhos.map((atalho) => <div key={atalho.descricao}>

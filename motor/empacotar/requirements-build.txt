@@ -1,0 +1,10 @@
+# Construção do motor congelado (J114): PyInstaller e dependências, fixados. O motor em si vem de
+# ../requirements.txt (PyMuPDF e numpy), instalado no mesmo venv de construção.
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.8
+altgraph==0.17.5
+packaging==26.3
+setuptools==84.0.0
+macholib==1.16.4; sys_platform == "darwin"
+pefile==2024.8.26; sys_platform == "win32"
+pywin32-ctypes==0.2.3; sys_platform == "win32"

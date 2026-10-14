@@ -2,7 +2,7 @@
  * J70 na API e no worker: visuais ancorados (imagem e fluxograma). Postgres de teste, worker
  * de verdade e executor falso determinístico; nenhuma chamada ao Codex.
  */
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Hono } from 'hono';
@@ -12,7 +12,7 @@ import { validarVisual, type AncoraV1, type Bloco, type CanonicoV1, type VisualV
 import { canonicoDeTeste, comBanco } from '../../testes/apoio.js';
 import { comTransacao } from '../db/transacao.js';
 import { criarExecutorFalso, pngDeTeste, type PassoRoteiro } from '../executor/fake.js';
-import type { PedidoExecucao } from '../executor/tipos.js';
+import type { PedidoExecucao, ResultadoExecutor } from '../executor/tipos.js';
 import { criarApi } from '../http/app.js';
 import * as documentos from '../repos/documentos.js';
 import { FilaPostgres } from '../worker/fila-postgres.js';
@@ -51,12 +51,16 @@ async function preparar(banco: pg.Pool): Promise<{ canonico: CanonicoV1; versaoI
   return { canonico, versaoId, secaoId: canonico.secoes[0]!.id };
 }
 
-function montar(banco: pg.Pool, passos: PassoRoteiro[]) {
+function montar(banco: pg.Pool, passos: PassoRoteiro[], depois?: (resultado: ResultadoExecutor) => Promise<ResultadoExecutor>) {
   const pedidos: PedidoExecucao[] = [];
   const api = criarApi({ banco, leitura: () => { throw new Error('Leitura não usada.'); }, intervaloEventosMs: 20 });
   const falso = criarExecutorFalso({ versao: 1, passos });
   const artefatos = join(dados, 'artefatos');
-  const executor = (pedido: PedidoExecucao) => { pedidos.push(pedido); return falso({ ...pedido, diretorioArtefatos: artefatos }); };
+  const executor = async (pedido: PedidoExecucao) => {
+    pedidos.push(pedido);
+    const resultado = await falso({ ...pedido, diretorioArtefatos: artefatos });
+    return depois === undefined ? resultado : depois(resultado);
+  };
   const rodar = async (ciclos = 1) => {
     const slots = await mkdtemp(join(tmpdir(), 'margem-j70-slots-'));
     temporarios.push(slots);
@@ -137,6 +141,22 @@ test('quadro do poema (capítulo) sem imagem gerada falha legível; gerar de nov
   expect((await escrever(api, 'DELETE', `/api/visuais/${visual.id}`)).status).toBe(200);
   expect((await escrever(api, 'DELETE', `/api/visuais/${visual.id}`)).status).toBe(404);
   expect((await listar(api, versaoId, secaoId)).map((v) => v.id)).toEqual([segundo.id]);
+}));
+
+test('imagem gerada que não pode ser guardada falha como publicação, com a causa, e não como "sem imagem" (V-W1)', async () => comBanco('j130_publicacao', async (banco) => {
+  const { versaoId, secaoId } = await preparar(banco);
+  const { api, rodar } = montar(banco, [{ quando: { ordem: 1 }, tipo: 'ok', conteudo: { descricao: 'Um quadro.' } }], async (resultado) => {
+    // O Codex gerou, mas o arquivo chega estragado ao guardar (no Windows era o EPERM do fsync).
+    if (resultado.estado === 'ok') for (const imagem of resultado.imagens ?? []) await writeFile(imagem, 'não é png');
+    return resultado;
+  });
+  const { visual } = await (await escrever(api, 'POST', '/api/visuais', { tipo: 'imagem', versao_id: versaoId, secao_id: secaoId, alvo: { tipo: 'capitulo' } })).json() as { visual: VisualV1 };
+  await rodar();
+  const [falhou] = await listar(api, versaoId, secaoId);
+  expect(falhou).toMatchObject({ id: visual.id, estado: 'falhou' });
+  expect(falhou!.motivo).toBe('A imagem foi gerada, mas não pôde ser guardada: O arquivo gerado não é PNG.');
+  const { rows: [job] } = await banco.query<{ error_code: string }>('SELECT j.error_code FROM visual v JOIN job j ON j.id = v.job_id WHERE v.id = $1', [visual.id]);
+  expect(job!.error_code).toBe('publicacao');
 }));
 
 test('fluxograma do capítulo: Mermaid recusado ganha uma segunda chamada com o erro; citações viram âncoras ou diagnósticos', async () => comBanco('j70_diagrama', async (banco) => {

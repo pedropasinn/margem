@@ -10,6 +10,7 @@
  * mais grave (`contraste`). Os tempos de cada fala saem da própria montagem (contagem de amostras).
  */
 import { spawn } from 'node:child_process';
+import { ffmpeg } from '../plataforma/executaveis.js';
 import { join } from 'node:path';
 import { falasDaLeitura, type LeituraComentadaV1, type NarracaoDaLeituraV1 } from '@margem/contratos';
 
@@ -128,7 +129,7 @@ export interface CenaParaMontar { fala_id: string; tipo: 'trecho' | 'pausa'; blo
 
 function rodar(comando: string, argumentos: readonly string[], entrada?: Buffer): Promise<Buffer> {
   return new Promise((resolver, rejeitar) => {
-    const filho = spawn(comando, argumentos, { stdio: ['pipe', 'pipe', 'pipe'] });
+    const filho = spawn(comando, argumentos, { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     const saida: Buffer[] = [];
     const erro: Buffer[] = [];
     filho.stdout.on('data', (d: Buffer) => saida.push(d));
@@ -144,7 +145,7 @@ function rodar(comando: string, argumentos: readonly string[], entrada?: Buffer)
 
 /** PCM s16le mono na taxa pedida. */
 async function decodificar(mp3: string, taxa: number): Promise<Buffer> {
-  return rodar('ffmpeg', ['-v', 'error', '-i', mp3, '-f', 's16le', '-ac', '1', '-ar', String(taxa), '-']);
+  return rodar(ffmpeg(), ['-v', 'error', '-i', mp3, '-f', 's16le', '-ac', '1', '-ar', String(taxa), '-']);
 }
 
 function silencio(segundos: number, taxa: number): Buffer {
@@ -168,7 +169,7 @@ export function sinal(taxa: number): Buffer {
 }
 
 async function contrastar(pcm: Buffer, taxa: number): Promise<Buffer> {
-  return rodar('ffmpeg', ['-v', 'error', '-f', 's16le', '-ac', '1', '-ar', String(taxa), '-i', '-',
+  return rodar(ffmpeg(), ['-v', 'error', '-f', 's16le', '-ac', '1', '-ar', String(taxa), '-i', '-',
     '-af', `asetrate=${String(Math.round(taxa * 0.97))},aresample=${String(taxa)},atempo=0.98`, '-f', 's16le', '-ac', '1', '-ar', String(taxa), '-'], pcm);
 }
 
@@ -204,7 +205,7 @@ export async function montarMp3(cenas: readonly CenaParaMontar[], destino: strin
   }
   por(silencio(0.4, taxa));
   const pcm = Buffer.concat(pedacos);
-  await rodar('ffmpeg', ['-v', 'error', '-y', '-f', 's16le', '-ac', '1', '-ar', String(taxa), '-i', '-', '-c:a', 'libmp3lame', '-b:a', '96k', destino], pcm);
+  await rodar(ffmpeg(), ['-v', 'error', '-y', '-f', 's16le', '-ac', '1', '-ar', String(taxa), '-i', '-', '-c:a', 'libmp3lame', '-b:a', '96k', destino], pcm);
   return { falas, duracao_s: amostras / taxa };
 }
 

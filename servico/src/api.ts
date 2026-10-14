@@ -11,6 +11,7 @@ import { servirWeb } from './http/estatico.js';
 import { donos, enderecoDeEscuta, hostTailscale, porta, portaPublica } from './http/ambiente.js';
 import { ouvinteDoPool } from './http/ouvinte.js';
 import { modoInstalado } from './instalacao.js';
+import { aoPedirParada, ehPontoDeEntrada } from './plataforma/processos.js';
 import { configuracaoDaCompreensao, configuracaoDaLeitura, escolherExecutor } from './worker/configuracao.js';
 
 export async function principal(): Promise<void> {
@@ -38,17 +39,17 @@ export async function principal(): Promise<void> {
       console.warn(JSON.stringify({ evento: 'sem_donos', detalhe: 'MARGEM_DONOS vazio: nenhuma escrita pelo Tailscale Serve' }));
     }
   });
-  for (const sinal of ['SIGTERM', 'SIGINT'] as const) {
-    process.on(sinal, () => {
-      servidor.close(() => {
-        void ouvinte.encerrar().then(() => pool.end()).finally(() => process.exit(0));
-      });
+  let parando = false;
+  aoPedirParada(() => {
+    if (parando) return;
+    parando = true;
+    servidor.close(() => {
+      void ouvinte.encerrar().then(() => pool.end()).finally(() => process.exit(0));
     });
-  }
+  });
 }
 
-const caminho = process.argv[1] ?? '';
-if (caminho.endsWith('src/api.ts') || caminho.endsWith('src/api.js')) {
+if (ehPontoDeEntrada(['src/api.ts', 'src/api.js'])) {
   principal().catch((erro: unknown) => {
     console.error(erro instanceof Error ? erro.message : 'falha desconhecida na API');
     process.exitCode = 1;

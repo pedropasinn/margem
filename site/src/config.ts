@@ -4,20 +4,20 @@
  * dos HTML (via `vite.config.ts`), a documentação e a imagem Open Graph (`scripts/capturar.mjs`)
  * leem daqui.
  *
- * Nome e domínio são definitivos (Margem, margem.dev; decisão de 12/10/2026). O repositório
- * (github.com/pedropasinn/margem) e a imagem (ghcr.io/pedropasinn/margem) ainda não existem: enquanto
- * `publicado` for falso, o site mostra "Download em preparação". Ao publicar o primeiro release,
- * troque `publicado` para `true`. Pastas de instalação, serviços do `compose.yml` e porta seguem o
- * empacotamento (J100). Este arquivo é importado também pelo Node (vite.config e capturar.mjs): só dados,
- * sem sintaxe que exija compilação além de tipos.
+ * Nome e domínio são definitivos (Margem, margem.dev; decisão de 12/10/2026). O app é distribuído
+ * como app de desktop (decisão de 13/10/2026, J113–J116): um instalador por sistema, publicado no
+ * GitHub Releases com nomes fixos. Enquanto `publicado` for falso, o site mostra "Download em
+ * preparação" e os botões não apontam para os arquivos. Ao publicar o primeiro release, troque
+ * `publicado` para `true` e confira os tamanhos. Este arquivo é importado também pelo Node
+ * (vite.config e capturar.mjs): só dados, sem sintaxe que exija compilação além de tipos.
  */
 export const CONFIG = {
   /** Nome do produto. */
   nome: 'Margem',
   /** Frase curta da marca (rodapé, títulos, Open Graph). */
-  slogan: 'Um leitor que marca o que o texto faz.',
+  slogan: 'Seu assistente de estudos para uma formação integral.',
   /** Descrição para buscadores e Open Graph. */
-  descricao: 'Um leitor que marca a tese, o argumento, a objeção e a definição do seu texto, com notas na margem e perguntas presas ao trecho. Instalado no seu computador, com a sua conta do ChatGPT.',
+  descricao: 'Um assistente de estudos para ir mais fundo em livros, artigos, poemas, vídeos e obras de arte: grifos por função, relações entre os trechos, notas na margem e exercícios resolvidos passo a passo. Um app para o seu computador, com a sua conta do ChatGPT.',
   /** Endereço do site (canonical e Open Graph), sem barra no fim. `VITE_SITE_URL` no build tem precedência. */
   dominio: 'https://margem.dev',
 
@@ -26,7 +26,7 @@ export const CONFIG = {
   dataDaVersao: '12/10/2026',
 
   /**
-   * Já existe um release público (instaladores e imagem)? Falso até o primeiro release: o site avisa
+   * Já existe um release público com os instaladores? Falso até o primeiro release: o site avisa
    * que o download está em preparação. Os endereços abaixo já são os definitivos.
    */
   publicado: false as boolean,
@@ -35,43 +35,84 @@ export const CONFIG = {
   licenca: 'AGPL-3.0',
   /** Repositório do código. */
   urlDoRepositorio: 'https://github.com/pedropasinn/margem',
-  /** Página do último release (assets: instalar.sh, instalar.ps1 e compose.yml). */
+  /** Página do último release (instaladores, extensão do navegador e plugin do Obsidian). */
   urlDoRelease: 'https://github.com/pedropasinn/margem/releases/latest',
   /** Página para relatar defeitos e sugerir melhorias. */
   urlDeProblemas: 'https://github.com/pedropasinn/margem/issues',
-  /** Instaladores, baixados direto do release. */
-  urlDoInstalador: 'https://github.com/pedropasinn/margem/releases/latest/download/instalar.sh',
-  urlDoInstaladorWindows: 'https://github.com/pedropasinn/margem/releases/latest/download/instalar.ps1',
   /** Contato direto (dúvidas de privacidade, imprensa). */
   contato: '[A definir: e-mail de contato @margem.dev]',
 
   /**
-   * Onde o instalador deixa o `compose.yml`, o `.env` e os backups (J100: `~/<PRODUTO_PROJETO>` de
-   * `distribuicao/produto.env`). Os livros e o banco ficam em volumes do Docker, não nesta pasta.
+   * Endereço local em que o app atende enquanto está aberto. A extensão do navegador e o plugin
+   * do Obsidian falam com ele.
    */
-  pastaDeInstalacao: '~/margem',
-  pastaDeInstalacaoWindows: '$HOME\\margem',
-  /** Comando de gestão que o instalador cria (`<PRODUTO_PROJETO> iniciar | parar | backup …`, J100). */
-  comando: 'margem',
-  /** Endereço do app depois de instalado. */
   enderecoLocal: 'http://localhost:8730',
-  /** Nomes dos serviços e do banco no `distribuicao/compose.yml` (J100). */
-  servicoWorker: 'worker',
-  servicoBanco: 'postgres',
-  usuarioDoBanco: 'app',
-  nomeDoBanco: 'app',
-  /** Arquiteturas da imagem. Confirmar quando a imagem multiplataforma existir. */
-  arquiteturas: 'x86_64 e arm64 (Apple Silicon)',
+  porta: 8730,
+
+  /**
+   * Onde o app guarda as próprias configurações (não a biblioteca, que fica na pasta que a pessoa
+   * escolhe). Padrão do Electron (`app.getPath('userData')`); conferir com o J113.
+   */
+  pastaDeConfiguracoes: {
+    windows: '%APPDATA%\\Margem',
+    macos: '~/Library/Application Support/Margem',
+    linux: '~/.config/Margem',
+  },
+  /** Nome do pacote .deb, para remover pelo apt. Conferir com o J113. */
+  pacoteDeb: 'margem',
 } as const;
 
 /** Verdadeiro enquanto não há release publicado: o site avisa que o download não abriu. */
 export const downloadEmPreparacao: boolean = !CONFIG.publicado;
 
-/** Linux e macOS: baixar o script (para poder lê-lo antes) e rodar. */
-export const COMANDO_DE_INSTALACAO = `curl -fsSL ${CONFIG.urlDoInstalador} -o instalar.sh\nbash instalar.sh`;
+export type Sistema = 'windows' | 'macos' | 'linux';
+export type Arquitetura = 'arm64' | 'x64';
 
-/** Windows (PowerShell): mesma ideia, com o instalar.ps1. */
-export const COMANDO_DE_INSTALACAO_WINDOWS = `Invoke-WebRequest ${CONFIG.urlDoInstaladorWindows} -OutFile instalar.ps1\npowershell -ExecutionPolicy Bypass -File .\\instalar.ps1`;
+export const SISTEMAS: Record<Sistema, string> = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
 
-/** Login do Codex dentro do container, pelo código de dispositivo. */
-export const COMANDO_DE_LOGIN = `docker compose exec ${CONFIG.servicoWorker} codex login --device-auth`;
+/**
+ * Sistemas ainda sem instalador no release (14/10/2026: a primeira versão é só para Windows e Linux).
+ * O site mostra "Em breve" no lugar dos botões; para liberar, tire o sistema daqui.
+ */
+export const SISTEMAS_EM_BREVE: readonly Sistema[] = ['macos'];
+export const emBreve = (sistema: Sistema): boolean => SISTEMAS_EM_BREVE.includes(sistema);
+
+/** Requisitos mínimos de cada sistema. */
+export const REQUISITOS: Record<Sistema, string> = {
+  windows: 'Windows 10 ou 11, 64 bits.',
+  macos: 'Em breve. A primeira versão é para Windows e Linux.',
+  linux: 'Distribuição de 64 bits (x86_64). O .deb serve para Debian, Ubuntu e derivados.',
+};
+
+export interface Instalador {
+  /** Identificador estável (âncoras e testes). */
+  id: string;
+  sistema: Sistema;
+  /** Só no macOS: para qual processador é o .dmg. */
+  arquitetura?: Arquitetura;
+  /** Nome do botão. */
+  rotulo: string;
+  /** Formato mostrado ao lado do nome. */
+  formato: string;
+  /** Nome FIXO do arquivo no release (J116 publica com estes nomes). */
+  arquivo: string;
+  /** Tamanho aproximado do download. Conferir a cada release. */
+  tamanho: string;
+  /** Uma linha de ajuda, opcional. */
+  detalhe?: string;
+}
+
+/** Os instaladores, na ordem em que aparecem. O primeiro de cada sistema é o principal. Os do macOS ficam aqui para quando a versão sair (veja `SISTEMAS_EM_BREVE`). */
+export const INSTALADORES: readonly Instalador[] = [
+  { id: 'windows', sistema: 'windows', rotulo: 'Instalador para Windows', formato: '.exe', arquivo: 'Margem-Setup.exe', tamanho: 'cerca de 250 MB' },
+  { id: 'mac-arm64', sistema: 'macos', arquitetura: 'arm64', rotulo: 'Apple Silicon', formato: '.dmg', arquivo: 'Margem-mac-arm64.dmg', tamanho: 'cerca de 250 MB', detalhe: 'Macs com chip M1 ou mais novo.' },
+  { id: 'mac-x64', sistema: 'macos', arquitetura: 'x64', rotulo: 'Intel', formato: '.dmg', arquivo: 'Margem-mac-x64.dmg', tamanho: 'cerca de 260 MB', detalhe: 'Macs com processador Intel.' },
+  { id: 'linux-appimage', sistema: 'linux', rotulo: 'AppImage', formato: '.AppImage', arquivo: 'Margem-linux-x86_64.AppImage', tamanho: 'cerca de 260 MB', detalhe: 'Roda em qualquer distribuição e se atualiza sozinho.' },
+  { id: 'linux-deb', sistema: 'linux', rotulo: 'Pacote Debian', formato: '.deb', arquivo: 'margem_amd64.deb', tamanho: 'cerca de 200 MB', detalhe: 'Debian, Ubuntu, Mint e derivados.' },
+];
+
+/** Endereço de download direto de um arquivo do último release. */
+export const urlDoArquivo = (arquivo: string): string => `${CONFIG.urlDoRelease}/download/${arquivo}`;
+
+/** Instaladores de um sistema, na ordem de preferência. */
+export const instaladoresDe = (sistema: Sistema): Instalador[] => INSTALADORES.filter((i) => i.sistema === sistema);

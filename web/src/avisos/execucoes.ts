@@ -1,6 +1,6 @@
 /**
  * Lógica dos avisos das execuções do Codex, sem React: cada lista que chega do serviço
- * (`ExecucoesDoCodexV1`, pelo SSE ou pela consulta) vira o estado dos avisos, e o estado vira o
+ * (`ExecucoesDoCodexV2`, pelo SSE ou pela consulta) vira o estado dos avisos, e o estado vira o
  * que a pilha mostra.
  *
  * - Uma execução ativa (na fila ou rodando) ganha aviso ao aparecer e o perde se sumir da lista
@@ -8,17 +8,18 @@
  * - Ao concluir, o aviso fica `AUTO_DISPENSA_MS` e sai sozinho. Uma conclusão que este leitor
  *   nunca viu ativa só aparece se for recente (`CONCLUSAO_RECENTE_MS`): abrir o app não desenterra
  *   o que terminou minutos atrás.
- * - Uma falha fica até ser dispensada, mesmo depois de sair da lista do serviço.
+ * - Uma falha fica até ser dispensada, mesmo depois de sair da lista do serviço. Uma conclusão com
+ *   avisos (leitura parcial, marcas que ficaram de fora…) também: não sai sozinha.
  * - Dispensado não volta: o id fica lembrado enquanto o serviço ainda o listar.
  */
-import type { ExecucaoDoCodexV1, ExecucoesDoCodexV1 } from '@margem/contratos';
+import type { ExecucaoDoCodexV2, ExecucoesDoCodexV2 } from '@margem/contratos';
 
 export const AUTO_DISPENSA_MS = 6_000;
 export const CONCLUSAO_RECENTE_MS = 30_000;
 export const MAXIMO_VISIVEIS = 3;
 
 export interface Aviso {
-  execucao: ExecucaoDoCodexV1;
+  execucao: ExecucaoDoCodexV2;
   /** Relógio do navegador em que este leitor viu a execução terminar. */
   terminouEm: number | null;
   dispensado: boolean;
@@ -34,13 +35,15 @@ export interface EstadoDosAvisos {
 }
 
 export type AcaoDosAvisos =
-  | { tipo: 'lista'; lista: ExecucoesDoCodexV1; recebidaEm: number }
+  | { tipo: 'lista'; lista: ExecucoesDoCodexV2; recebidaEm: number }
   | { tipo: 'dispensar'; id: string }
   | { tipo: 'expirar'; agora: number };
 
 export const ESTADO_INICIAL: EstadoDosAvisos = { avisos: {}, ordem: [], omitidas: 0, desvioMs: 0 };
 
-const ativa = (e: ExecucaoDoCodexV1) => e.estado === 'na_fila' || e.estado === 'rodando';
+const ativa = (e: ExecucaoDoCodexV2) => e.estado === 'na_fila' || e.estado === 'rodando';
+/** Concluída, mas com ressalvas que quem lê precisa ver. */
+export const concluidaComAvisos = (e: ExecucaoDoCodexV2): boolean => e.estado === 'concluida' && e.avisos.length > 0;
 
 export function reduzirAvisos(estado: EstadoDosAvisos, acao: AcaoDosAvisos): EstadoDosAvisos {
   switch (acao.tipo) {
@@ -53,7 +56,7 @@ export function reduzirAvisos(estado: EstadoDosAvisos, acao: AcaoDosAvisos): Est
       let mudou = false;
       const avisos: Record<string, Aviso> = {};
       for (const [id, aviso] of Object.entries(estado.avisos)) {
-        const vencido = !aviso.dispensado && aviso.execucao.estado === 'concluida'
+        const vencido = !aviso.dispensado && aviso.execucao.estado === 'concluida' && !concluidaComAvisos(aviso.execucao)
           && aviso.terminouEm !== null && acao.agora - aviso.terminouEm >= AUTO_DISPENSA_MS;
         avisos[id] = vencido ? { ...aviso, dispensado: true } : aviso;
         mudou ||= vencido;
@@ -76,7 +79,7 @@ export function reduzirAvisos(estado: EstadoDosAvisos, acao: AcaoDosAvisos): Est
         }
         if (ativa(execucao)) { avisos[execucao.id] = { execucao, terminouEm: null, dispensado: false }; continue; }
         // Terminada e nunca vista ativa: a falha aparece (o serviço só lista as recentes); a conclusão, só se for de agora.
-        const recente = execucao.estado === 'falhou'
+        const recente = execucao.estado === 'falhou' || concluidaComAvisos(execucao)
           || (execucao.fim !== null && agoraNoServico - Date.parse(execucao.fim) <= CONCLUSAO_RECENTE_MS);
         avisos[execucao.id] = { execucao, terminouEm: recebidaEm, dispensado: !recente };
       }
@@ -92,7 +95,7 @@ export function reduzirAvisos(estado: EstadoDosAvisos, acao: AcaoDosAvisos): Est
   }
 }
 
-const PESO: Record<ExecucaoDoCodexV1['estado'], number> = { falhou: 0, concluida: 1, rodando: 2, na_fila: 3 };
+const PESO: Record<ExecucaoDoCodexV2['estado'], number> = { falhou: 0, concluida: 1, rodando: 2, na_fila: 3 };
 
 export interface PilhaOrganizada {
   /** Os que aparecem como avisos, do mais importante ao menos. */
@@ -128,11 +131,14 @@ export function formatarDuracao(ms: number): string {
 }
 
 /** O tempo que o aviso mostra ao lado do estado. `agora` é o relógio do navegador. */
-export function tempoDoAviso(execucao: ExecucaoDoCodexV1, agora: number, desvioMs: number): string {
+export function tempoDoAviso(execucao: ExecucaoDoCodexV2, agora: number, desvioMs: number): string {
   switch (execucao.estado) {
     case 'na_fila': return 'Na fila';
     case 'rodando': return formatarDuracao(agora + desvioMs - Date.parse(execucao.inicio));
-    case 'concluida': return `Pronto em ${formatarDuracao(Date.parse(execucao.fim ?? execucao.inicio) - Date.parse(execucao.inicio))}`;
+    case 'concluida': {
+      const duracao = formatarDuracao(Date.parse(execucao.fim ?? execucao.inicio) - Date.parse(execucao.inicio));
+      return concluidaComAvisos(execucao) ? `Pronto com avisos em ${duracao}` : `Pronto em ${duracao}`;
+    }
     case 'falhou': return 'Falhou';
   }
 }
@@ -144,6 +150,7 @@ export function anuncioDaMudanca(antes: EstadoDosAvisos, depois: EstadoDosAvisos
     const anterior = antes.avisos[id]?.execucao.estado;
     const atual = aviso.execucao.estado;
     if (anterior === atual) continue;
+    if (atual === 'concluida' && concluidaComAvisos(aviso.execucao)) return `Pronto, com avisos: ${aviso.execucao.rotulo}. ${aviso.execucao.mensagem ?? ''}`.trim();
     if (atual === 'concluida') return `Pronto: ${aviso.execucao.rotulo}.`;
     if (atual === 'falhou') return `Falhou: ${aviso.execucao.rotulo}. ${aviso.execucao.mensagem ?? ''}`.trim();
     if (atual === 'rodando' && anterior === undefined) return `O Codex começou: ${aviso.execucao.rotulo}.`;
@@ -152,10 +159,21 @@ export function anuncioDaMudanca(antes: EstadoDosAvisos, depois: EstadoDosAvisos
 }
 
 /** Conferência mínima do que veio da rede (o validador completo mora no serviço, que lê os schemas do disco). */
-export function pareceLista(valor: unknown): valor is ExecucoesDoCodexV1 {
-  if (typeof valor !== 'object' || valor === null) return false;
-  const v = valor as Partial<ExecucoesDoCodexV1>;
-  return v.versao === 1 && typeof v.gerado_em === 'string' && Array.isArray(v.execucoes) && typeof v.omitidas === 'number'
-    && v.execucoes.every((e) => typeof e === 'object' && e !== null && typeof e.id === 'string' && typeof e.rotulo === 'string'
-      && ['na_fila', 'rodando', 'concluida', 'falhou'].includes(e.estado));
+export function pareceLista(valor: unknown): valor is ExecucoesDoCodexV2 {
+  return normalizarLista(valor) === valor;
+}
+
+/**
+ * A lista que veio da rede, ou `null` se não parece uma. Um serviço anterior aos avisos manda a V1:
+ * ela vira V2 com `avisos` vazios, sem quebrar a casca.
+ */
+export function normalizarLista(valor: unknown): ExecucoesDoCodexV2 | null {
+  if (typeof valor !== 'object' || valor === null) return null;
+  const v = valor as Partial<Omit<ExecucoesDoCodexV2, 'versao'>> & { versao?: unknown };
+  if ((v.versao !== 1 && v.versao !== 2) || typeof v.gerado_em !== 'string' || !Array.isArray(v.execucoes) || typeof v.omitidas !== 'number') return null;
+  const bemFormadas = v.execucoes.every((e) => typeof e === 'object' && e !== null && typeof e.id === 'string' && typeof e.rotulo === 'string'
+    && ['na_fila', 'rodando', 'concluida', 'falhou'].includes(e.estado) && (v.versao === 1 || Array.isArray(e.avisos)));
+  if (!bemFormadas) return null;
+  if (v.versao === 2) return valor as ExecucoesDoCodexV2;
+  return { ...(valor as ExecucoesDoCodexV2), versao: 2, execucoes: v.execucoes.map((e) => ({ ...e, avisos: [] })) };
 }

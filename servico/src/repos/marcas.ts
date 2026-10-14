@@ -219,6 +219,10 @@ export async function apagarGrifo(cliente: Transacao, id: Id): Promise<boolean |
   const linha = (await cliente.query<{ tipo: string }>(`SELECT c.tipo FROM marca m JOIN camada c ON c.id=m.camada_id WHERE m.id=$1`, [id])).rows[0];
   if (!linha) return null;
   if (linha.tipo !== 'leitor') return false;
+  // Modelo D (J138): a nota é do grifo e sai com ele (a tela pede confirmação antes). As notas que a 0032
+  // juntou nela também saem, para não voltarem soltas.
+  await cliente.query('DELETE FROM anotacao WHERE marca_id=$1 AND fundida_em IS NOT NULL', [id]);
+  await cliente.query('DELETE FROM anotacao WHERE marca_id=$1', [id]);
   await cliente.query('DELETE FROM marca WHERE id=$1', [id]);
   return true;
 }
@@ -244,9 +248,10 @@ async function marcaV2(cliente: Transacao, id: Id): Promise<MarcaV2 | null> {
  * Troca a função de uma marca (a etiqueta de função). Na marca da IA a função original fica em
  * `funcao_da_ia` na primeira troca; voltar a ela limpa a edição. `null` se a marca não existe.
  */
-export async function trocarFuncao(cliente: Transacao, id: Id, funcao: string): Promise<MarcaV2 | null> {
+export async function trocarFuncao(cliente: Transacao, id: Id, funcao: string, outroModo?: ReferenciaModo): Promise<MarcaV2 | null> {
   const atual = await marcaV2(cliente, id);
   if (!atual) return null;
+  if (outroModo !== undefined && !mesmoModo(outroModo, atual.modo)) return trocarOlhar(cliente, atual, funcao, outroModo);
   const modo = modoOuNada(atual.modo);
   if (!modo || !conferirMarcaNoModo({ ...atual, funcao }, modo)) throw new GrifoRecusado('funcao_fora_do_modo', `A função ${funcao} não existe no modo da marca.`);
   // A sobreposição editorial vale para a nova função também (duas marcas editoriais da camada no mesmo trecho).
@@ -257,6 +262,26 @@ export async function trocarFuncao(cliente: Transacao, id: Id, funcao: string): 
                           WHEN funcao_da_ia = $2 THEN NULL ELSE funcao_da_ia END,
       funcao=$2, atualizada_em=clock_timestamp() WHERE id=$1`, [id, funcao]);
   return marcaV2(cliente, id);
+}
+
+/**
+ * Outro olhar sobre o grifo do leitor (J138): a função de outro modo. O vocabulário não fica preso ao tipo de
+ * leitura: o grifo passa para a camada do leitor daquele modo (uma por versão e modo), com a função escolhida.
+ * Só os grifos do leitor mudam de modo; a marca da IA é do modo da execução dela (quem chama cria um grifo do
+ * leitor no mesmo trecho).
+ */
+async function trocarOlhar(cliente: Transacao, atual: MarcaV2, funcao: string, outroModo: ReferenciaModo): Promise<MarcaV2> {
+  if (atual.origem !== 'manual') throw new GrifoRecusado('modo_da_marca_da_ia', 'A marca da IA fica no modo dela; grife o trecho com este olhar.');
+  const modo = modoOuNada(outroModo);
+  if (!modo) throw new GrifoRecusado('modo_inexistente', 'O modo do grifo não existe.');
+  if (!conferirMarcaNoModo({ ...atual, funcao, modo: outroModo }, modo)) throw new GrifoRecusado('funcao_fora_do_modo', `A função ${funcao} não existe no modo ${outroModo.id}.`);
+  const camada = await camadasRepo.camadaDoLeitor(cliente, atual.ancora.versao_id, outroModo);
+  const movida = { ...atual, funcao, modo: outroModo, camada_id: camada.id };
+  const daCamada = [...(await listarV2PorVersao(cliente, atual.ancora.versao_id, { camada_id: camada.id })).filter((marca) => marca.id !== atual.id), movida];
+  if (validarCamadaEditorialV2(daCamada).length > 0) throw new GrifoRecusado('grifo_sobreposto', 'Neste olhar o trecho já tem um grifo seu; mude a função dele ou tire-o antes.');
+  await cliente.query(`UPDATE marca SET funcao=$2, camada_id=$3, modo_id=$4, modo_revisao=$5, atualizada_em=clock_timestamp() WHERE id=$1`,
+    [atual.id, funcao, camada.id, outroModo.id, outroModo.revisao]);
+  return (await marcaV2(cliente, atual.id))!;
 }
 
 /**

@@ -70,15 +70,15 @@ export function FioDeConversa({ id, ancora, documentoId, conexoes, aoCriar, aoMu
   return <section className="fio-conversa" aria-label="Conversa ancorada">
     {estado.conversa?.mensagens.map((m) => <div className={`mensagem mensagem-${m.autor}`} key={m.id}>
       <span className="eyebrow">{m.autor === 'leitor' ? 'Você' : 'Leitura da IA'}</span><p>{m.texto}</p>
-      {m.autor === 'ia' && m.citacoes.map((a, i) => <Button type="button" className="citacao-link" key={`${a.bloco_id}:${a.inicio_utf16}:${i}`} onClick={() => aoCitar(a)}>“{a.citacao}”</Button>)}
+      {m.autor === 'ia' && m.citacoes.map((a, i) => <Button variante="ghost" className="citacao-link" key={`${a.bloco_id}:${a.inicio_utf16}:${i}`} onClick={() => aoCitar(a)}>“{a.citacao}”</Button>)}
     </div>)}
     {estado.pendentes.map((p) => <p role="status" key={p.mensagem_id}>{p.estado === 'falhou' ? 'A resposta falhou. Reenfileire o trabalho no detalhe do documento.' : p.estado === 'cancelado' ? 'Resposta cancelada.' : p.estado === 'adiado' ? 'Leitura adiada; aguardando retomada…' : 'lendo o capítulo…'}</p>)}
     {desconectado && <p role="status">Reconectando à conversa…</p>}
-    {(erro || estado.erro) && <p role="alert">{erro ?? estado.erro} <Button type="button" onClick={() => recarregarRef.current()}>Atualizar conversa</Button></p>}
+    {(erro || estado.erro) && <p role="alert">{erro ?? estado.erro} <Button variante="ghost" tamanho="sm" onClick={() => recarregarRef.current()}>Atualizar conversa</Button></p>}
     <ListaDeConexoes conexoes={conexoes.filter((c) => c.conversa_id === id)} aoMudar={aoMudar} aoCitar={aoCitar} />
     <form className="formulario formulario-estudo" onSubmit={(e) => void enviar(e)}>
       <label>Sua pergunta<Textarea autoFocus value={pergunta} onChange={(e) => definirPergunta(e.target.value)} required maxLength={8000} /></label>
-      <Button type="submit" disabled={ocupado || estado.conversa?.estado === 'arquivada'}>{ocupado ? 'Enviando…' : 'Enviar pergunta'}</Button>
+      <div className="ui-rodape"><Button type="submit" variante="primario" tamanho="md" disabled={ocupado || estado.conversa?.estado === 'arquivada'}>{ocupado ? 'Enviando…' : 'Enviar pergunta'}</Button></div>
     </form>
   </section>;
 }

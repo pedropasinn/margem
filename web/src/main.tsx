@@ -14,9 +14,13 @@ import { RotaDoEink } from './eink/RotaDoEink';
 import './ui/componentes.css';
 import './leitor/reader.css';
 import './biblioteca/biblioteca.css';
+// Depois das folhas da casca: as regras da janela do app de computador ganham no empate.
+import { ligarJanelaDoDesktop } from './ui/janela-desktop';
 
 const raiz = document.getElementById('raiz');
 if (raiz === null) throw new Error('A página precisa de #raiz.');
+// No app de computador: a faixa de arraste no topo da janela sem barra de título (V-U5). No navegador, nada.
+ligarJanelaDoDesktop();
 
 // `/dev` é a página de desenvolvimento do texto (capturas do J08) e `/dev/margem` a da
 // interação completa (capturas do J09): as duas sem API e sem roteador. O resto é a biblioteca.

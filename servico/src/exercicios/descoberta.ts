@@ -9,6 +9,8 @@
  * numerado depois de um título "Exercícios" vira um pedido de trecho).
  */
 import { spawn } from 'node:child_process';
+import { comandoDoMotor } from '../plataforma/executaveis.js';
+import { opcoesDeProcesso } from '../plataforma/processos.js';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -70,8 +72,8 @@ export function descobrirNoCanonico(versaoId: Id, canonico: CanonicoV1): Exercic
 function rodarPython(argumentos: string[], entrada?: string): Promise<string> {
   const raiz = raizDoRepositorio();
   return new Promise((resolver, rejeitar) => {
-    const processo = spawn(process.env.MARGEM_PYTHON_EXERCICIOS?.trim() || join(raiz, 'motor/.venv/bin/python'), [join(raiz, 'tools/exercicios-do-pdf.py'), ...argumentos],
-      { stdio: ['pipe', 'pipe', 'pipe'] });
+    const comando = comandoDoMotor('exercicios', argumentos, { raiz });
+    const processo = spawn(comando.programa, comando.argumentos, { cwd: comando.cwd, stdio: ['pipe', 'pipe', 'pipe'], ...opcoesDeProcesso() });
     const saida: Buffer[] = [];
     let erro = '';
     processo.stdout.on('data', (pedaco: Buffer) => saida.push(pedaco));

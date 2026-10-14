@@ -1,0 +1,351 @@
+# App de desktop (J116): instaladores do Margem nos três sistemas, teste de fumaça no app EMPACOTADO
+# de cada um e, numa tag vX.Y.Z, um release RASCUNHO com tudo. Nunca publica: quem publica é o mantenedor.
+#
+#   - Actions → "App de desktop" → Run workflow   testa (artefatos no run, sem release); dá para
+#                                                  escolher um sistema só para gastar menos minutos
+#   - git tag v0.2.0 && git push origin v0.2.0     gera os instaladores e o release rascunho v0.2.0
+#
+# Roda no repositório público (pedropasinn/margem, a árvore de tools/publico/exportar.mjs): o rascunho
+# sai em `github.repository`, só com o GITHUB_TOKEN do run. Numa tag, os sistemas vêm da variável de
+# repositório MARGEM_SISTEMAS_DO_RELEASE (padrão "windows,linux": o macOS fica para depois do teste
+# no Mac). O feed da atualização automática vem de MARGEM_FEED_ATUALIZACAO (padrão
+# https://margem.dev/atualizacoes, que o site redireciona para os releases deste repositório; J146).
+#
+# Sem assinatura de código por enquanto. Os ganchos ficam prontos: com os secrets CSC_LINK e
+# CSC_KEY_PASSWORD (ou WIN_CSC_LINK/WIN_CSC_KEY_PASSWORD) o electron-builder assina; com APPLE_ID,
+# APPLE_APP_SPECIFIC_PASSWORD e APPLE_TEAM_ID, notariza. Sem eles, nada muda.
+# Detalhes, custos e como publicar: docs/lancamento/RELEASE.md.
+name: App de desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      sistemas:
+        description: Sistemas a gerar
+        type: choice
+        default: todos
+        options: [todos, windows, macos, linux, 'windows,linux']
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plano:
+    name: Plano
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      matriz: ${{ steps.matriz.outputs.matriz }}
+      sistemas: ${{ steps.matriz.outputs.sistemas }}
+      todos: ${{ steps.matriz.outputs.todos }}
+    steps:
+      - id: matriz
+        env:
+          # Run manual: o que foi escolhido. Tag: MARGEM_SISTEMAS_DO_RELEASE, senão Windows e Linux.
+          SISTEMAS: ${{ inputs.sistemas || vars.MARGEM_SISTEMAS_DO_RELEASE || 'windows,linux' }}
+          # macos-13 foi aposentado; o runner Intel do macOS hoje é o macos-15-intel.
+          TODOS: >-
+            [
+              {"nome": "Windows", "sistema": "windows", "runner": "windows-latest", "plataforma": "win32-x64", "empacotar": "--win"},
+              {"nome": "macOS Apple Silicon", "sistema": "macos", "runner": "macos-14", "plataforma": "darwin-arm64", "empacotar": "--mac --arch arm64"},
+              {"nome": "macOS Intel", "sistema": "macos", "runner": "macos-15-intel", "plataforma": "darwin-x64", "empacotar": "--mac --arch x64"},
+              {"nome": "Linux", "sistema": "linux", "runner": "ubuntu-22.04", "plataforma": "linux-x64", "empacotar": "--linux"}
+            ]
+        run: >-
+          node -e "const t = JSON.parse(process.env.TODOS);
+          const s = process.env.SISTEMAS.split(',').map((x) => x.trim()).filter(Boolean);
+          const pedidos = s.includes('todos') ? ['windows', 'macos', 'linux'] : s;
+          const desconhecidos = pedidos.filter((x) => !t.some((y) => y.sistema === x));
+          if (desconhecidos.length || !pedidos.length) { console.error('sistemas desconhecidos: ' + (desconhecidos.join(', ') || '(nenhum)')); process.exit(1); }
+          const m = t.filter((x) => pedidos.includes(x.sistema));
+          const lista = [...new Set(m.map((x) => x.sistema))].join(',');
+          require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'matriz=' + JSON.stringify({ include: m }) + '\nsistemas=' + lista + '\ntodos=' + (lista === 'windows,macos,linux') + '\n');
+          console.log(m.map((x) => x.nome).join(', '));"
+
+  instaladores:
+    name: ${{ matrix.nome }}
+    needs: plano
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plano.outputs.matriz) }}
+    env:
+      # Versão do app: a da tag (v0.2.0 → 0.2.0); fora de tag, a do desktop/package.json.
+      MARGEM_VERSAO: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+      MARGEM_SEM_ATUALIZACAO: '1'
+      # Feed da atualização automática (provedor generic; J146). O site (site/vercel.json) redireciona
+      # margem.dev/atualizacoes/<arquivo> para releases/latest/download/<arquivo> deste repositório. Só o
+      # empacotamento local, sem a variável, sai com a atualização desligada (V-W6).
+      MARGEM_FEED_ATUALIZACAO: ${{ vars.MARGEM_FEED_ATUALIZACAO || 'https://margem.dev/atualizacoes' }}
+      npm_config_audit: 'false'
+      npm_config_fund: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            motor/requirements.txt
+            motor/empacotar/requirements-build.txt
+
+      # Um comando por passo: no Windows o pwsh só olha o código de saída do último.
+      - name: npm ci (raiz)
+        run: npm ci
+
+      - name: npm ci (desktop)
+        run: npm ci --prefix desktop
+
+      - name: Cache dos downloads dos recursos
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/recursos-cache
+          key: recursos-${{ matrix.plataforma }}-${{ hashFiles('desktop/recursos/versoes.json') }}
+
+      - name: Cache do Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/electron-cache
+            ${{ runner.temp }}/electron-builder-cache
+          key: electron-${{ matrix.plataforma }}-${{ hashFiles('desktop/package-lock.json') }}
+
+      # PyInstaller não faz construção cruzada: cada runner constrói o motor da própria plataforma.
+      - name: Motor congelado
+        run: python motor/empacotar/construir.py --saida "${{ runner.temp }}/motor" --trabalho "${{ runner.temp }}/motor-trabalho"
+
+      - name: Recursos (Postgres, Codex, yt-dlp, FFmpeg, fonte, motor)
+        run: node desktop/recursos/preparar.mjs --plataforma ${{ matrix.plataforma }} --motor "${{ runner.temp }}/motor/margem-motor" --cache "${{ runner.temp }}/recursos-cache"
+
+      # Só passa adiante os secrets de assinatura que existem: variável vazia confundiria o electron-builder.
+      - name: Assinatura (opcional, pelos secrets)
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: >-
+          node -e "const nomes = ['CSC_LINK', 'CSC_KEY_PASSWORD', 'WIN_CSC_LINK', 'WIN_CSC_KEY_PASSWORD', 'APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID'];
+          const ativos = nomes.filter((n) => (process.env[n] || '').length > 0);
+          for (const n of ativos) require('fs').appendFileSync(process.env.GITHUB_ENV, n + '<<FIM_DO_SEGREDO\n' + process.env[n] + '\nFIM_DO_SEGREDO\n');
+          console.log(ativos.length ? 'assinatura: ' + ativos.join(', ') : 'sem assinatura (nenhum secret)');"
+
+      - name: Construir (processo principal, serviço e web)
+        working-directory: desktop
+        run: node scripts/construir.mjs --com-web
+
+      - name: Empacotar
+        working-directory: desktop
+        env:
+          ELECTRON_CACHE: ${{ runner.temp }}/electron-cache
+          ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/electron-builder-cache
+        run: node scripts/empacotar.mjs ${{ matrix.empacotar }}
+
+      # ------------------------------------------------------------ fumaça no app empacotado
+      # Executor Codex falso, biblioteca e userData temporários numa pasta com espaço no nome.
+
+      - name: Fumaça (Linux, AppImage sob xvfb)
+        if: runner.os == 'Linux'
+        env:
+          MARGEM_DESKTOP_TMP: ${{ runner.temp }}/fumaca
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libfuse2
+          mkdir -p "$MARGEM_DESKTOP_TMP"
+          xvfb-run -a node desktop/scripts/fumaca.mjs --manter-se-falhar
+
+      - name: Instalar o .deb (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y ./desktop/saida/margem_amd64.deb
+          test -x /opt/Margem/margem
+          test -x /opt/Margem/resources/recursos/postgres/bin/postgres
+          sudo apt-get remove -y margem
+
+      - name: Instalar pelo NSIS (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "desktop\saida\Margem-Setup.exe" -ArgumentList '/S' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "o instalador saiu com $($p.ExitCode)" }
+          $exe = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter margem.exe | Select-Object -First 1
+          if (-not $exe) { throw 'margem.exe não foi instalado em %LOCALAPPDATA%\Programs' }
+          Write-Output "instalado em $($exe.FullName)"
+          "MARGEM_APP_INSTALADO=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Fumaça (Windows, app instalado)
+        if: runner.os == 'Windows'
+        env:
+          MARGEM_DESKTOP_TMP: ${{ runner.temp }}\fumaca
+        run: node desktop/scripts/fumaca.mjs --app "$env:MARGEM_APP_INSTALADO" --manter-se-falhar
+
+      # Informativo: pasta com "ç" (como C:\Users\João). Se falhar, o release não para, mas fica o aviso.
+      - name: Fumaça com acento no caminho (Windows, informativo)
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        env:
+          MARGEM_DESKTOP_TMP: ${{ runner.temp }}\fumaca
+        run: node desktop/scripts/fumaca.mjs --app "$env:MARGEM_APP_INSTALADO" --acento --manter-se-falhar
+
+      - name: Fumaça (macOS, app copiado do .dmg)
+        if: runner.os == 'macOS'
+        env:
+          MARGEM_DESKTOP_TMP: ${{ runner.temp }}/fumaca
+          ARCH: ${{ matrix.plataforma == 'darwin-arm64' && 'arm64' || 'x64' }}
+        run: |
+          mkdir -p "$MARGEM_DESKTOP_TMP" "$RUNNER_TEMP/Aplicativos de teste"
+          ponto="$(mktemp -d)"
+          hdiutil attach -nobrowse -readonly -mountpoint "$ponto" "desktop/saida/Margem-mac-$ARCH.dmg"
+          ditto "$ponto/Margem.app" "$RUNNER_TEMP/Aplicativos de teste/Margem.app"
+          hdiutil detach "$ponto"
+          app="$RUNNER_TEMP/Aplicativos de teste/Margem.app"
+          codesign -dv "$app" 2>&1 | head -5 || true
+          codesign --verify --deep --strict "$app" && echo "assinatura (ad hoc ou Developer ID) válida"
+          file "$app/Contents/MacOS/Margem" "$app/Contents/Resources/recursos/postgres/bin/postgres" "$app/Contents/Resources/recursos/motor/margem-motor"
+          node desktop/scripts/fumaca.mjs --app "$app/Contents/MacOS/Margem" --manter-se-falhar
+
+      - name: Registros da fumaça (se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registros-fumaca-${{ matrix.plataforma }}
+          path: |
+            ${{ runner.temp }}/fumaca/**/registros/**
+            desktop/saida/builder-debug.yml
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Coletar os instaladores
+        run: node desktop/scripts/release.mjs coletar --plataforma ${{ matrix.plataforma }} --destino "${{ runner.temp }}/publicar"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: margem-${{ matrix.plataforma }}
+          path: ${{ runner.temp }}/publicar/*
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
+
+  # A página de download e as docs mandam baixar a extensão e o plugin do Obsidian no mesmo release.
+  # Roda em toda tag e no run manual com todos os sistemas.
+  complementos:
+    name: Extensão e plugin do Obsidian
+    needs: plano
+    if: startsWith(github.ref, 'refs/tags/v') || needs.plano.outputs.todos == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            extensao/package-lock.json
+            integracoes/obsidian/package-lock.json
+
+      - name: npm ci (extensão)
+        run: npm ci --prefix extensao
+
+      - name: Extensão (Chrome/Edge/Brave e Firefox)
+        working-directory: extensao
+        run: node scripts/construir.mjs --zip
+
+      - name: npm ci (plugin do Obsidian)
+        run: npm ci --prefix integracoes/obsidian
+
+      - name: Plugin do Obsidian
+        working-directory: integracoes/obsidian
+        run: npm run build
+
+      - name: Coletar
+        run: |
+          mkdir -p "$RUNNER_TEMP/complementos"
+          cp extensao/dist/margem-chrome.zip extensao/dist/margem-firefox.zip "$RUNNER_TEMP/complementos/"
+          cp integracoes/obsidian/main.js integracoes/obsidian/manifest.json "$RUNNER_TEMP/complementos/"
+          ls -la "$RUNNER_TEMP/complementos"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: margem-complementos
+          path: ${{ runner.temp }}/complementos/*
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    name: Release rascunho
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [plano, instaladores, complementos]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: margem-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/release
+
+      # Confere também os latest*.yml e o .blockmap do Windows (atualização automática e diferencial).
+      - name: latest-mac.yml único e conferência dos instaladores
+        run: node desktop/scripts/release.mjs juntar --pasta "${{ runner.temp }}/release" --sistemas "${{ needs.plano.outputs.sistemas }}"
+
+      - name: Notas
+        run: node desktop/scripts/release.mjs notas --versao "${{ github.ref_name }}" --sistemas "${{ needs.plano.outputs.sistemas }}" --saida "${{ runner.temp }}/notas.md"
+
+      # Sempre RASCUNHO. Rodar de novo na mesma tag só atualiza um rascunho; release já publicado não é tocado.
+      - name: Criar ou atualizar o rascunho
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          PASTA: ${{ runner.temp }}/release
+          NOTAS: ${{ runner.temp }}/notas.md
+        run: |
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            if [ "$(gh release view "$TAG" --repo "$REPO" --json isDraft --jq .isDraft)" != "true" ]; then
+              echo "::error::O release $TAG já foi publicado; este workflow só mexe em rascunhos."
+              exit 1
+            fi
+            gh release upload "$TAG" "$PASTA"/* --repo "$REPO" --clobber
+            gh release edit "$TAG" --repo "$REPO" --notes-file "$NOTAS"
+          else
+            pre=""
+            case "$TAG" in *-*) pre="--prerelease" ;; esac
+            gh release create "$TAG" "$PASTA"/* --repo "$REPO" --draft $pre --verify-tag --title "Margem $TAG" --notes-file "$NOTAS"
+          fi
+          echo "Rascunho pronto: https://github.com/$REPO/releases (publique pela página do release)" >> "$GITHUB_STEP_SUMMARY"

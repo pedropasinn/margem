@@ -35,7 +35,7 @@ export function Galeria(): ReactNode {
         <label>Duração · {duracao} ms<Input type="range" min="0" max="2000" step="100" value={duracao} onChange={(e) => definirDuracao(Number(e.target.value))} /></label>
         <label>Lado do colchete<Select aria-label="Lado do colchete" value={opcoes.lado} onChange={(e) => mudar({ lado: e.target.value as 'esquerda' | 'direita' })}><option value="esquerda">Esquerda</option><option value="direita">Direita</option></Select></label>
         <Checkbox checked={multilinha} onChange={definirMultilinha}>Texto em várias linhas</Checkbox>
-        <Button className="button small" type="button" onClick={() => repetir(rodada + 1)}>Redesenhar</Button>
+        <Button tamanho="md" onClick={() => repetir(rodada + 1)}>Redesenhar</Button>
       </section>
       <section className="amostras-tracos" aria-label="Ações do marcador">{ACOES.map(({ acao, nome, texto }) => <article className="amostra-traco" key={acao}>
         <span className="eyebrow">{nome}</span><p><Destaque key={rodada} {...opcoes} acao={acao} duracao={duracao}>{multilinha ? `${texto} Ler com atenção é reconhecer o argumento, preservar suas condições e voltar ao trecho quando uma pergunta pedir mais tempo. A margem guarda essa conversa.` : texto}</Destaque></p>

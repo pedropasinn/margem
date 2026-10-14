@@ -6,7 +6,7 @@ import type { MarcaV1, ProgressoV1 } from '@margem/contratos';
 import type { RespostaDoProgresso } from '../leitor/hooks/useProgresso';
 import type { MudancaDeMarca } from '../leitor/notas';
 import type {
-  ArvoreDaVersao, DetalheDoDocumento, ItemDaBiblioteca, ItemDeNota, ProgressoPersistido, RespostaDaBusca, SnapshotDoCapitulo,
+  ArvoreDaVersao, DetalheDoDocumento, FiltroDeTipoDaCentral, ItemDaBiblioteca, ItemDeNota, PaginaDaCentral, ProgressoPersistido, RespostaDaBusca, SnapshotDoCapitulo,
 } from './tipos';
 
 export const CABECALHO_MARGEM = 'X-Margem';
@@ -72,6 +72,7 @@ export function adicionarDocumento(formulario: FormData): Promise<{ documento_id
   return pedir('/api/documentos', { method: 'POST', body: formulario });
 }
 
+/** Leitura antiga (F1/V2): fica para ferramentas e testes; a interface usa `prepararLeitura`. */
 export function prepararMarcas(id: string, opcoes: OpcoesDeLeitura = {}): Promise<{ execucao_id: string; partes: number }> {
   return pedir(`/api/documentos/${id}/leituras`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(opcoes),
@@ -170,13 +171,83 @@ export interface RelacaoDoCapitulo {
   destino?: import('@margem/contratos').ElementoSemanticoV1;
   conexao_id: string | null;
 }
+// ---------------------------------------------------------------- "Preparar leitura" (v0.1)
+
+export type EstadoDaPreparacao = 'sem_texto' | 'nao_preparada' | 'identificando' | 'preparando' | 'pronta' | 'parcial' | 'falhou';
+/** O tipo do texto como a página mostra ("Conto · Literatura"): detectado pelo Codex ou escolhido. */
+export interface TipoDaPreparacao {
+  tipo_id: string; rotulo: string; grupo: string; origem: 'detectado' | 'escolhido';
+  confianca: 'alta' | 'media' | 'baixa' | null; justificativa: string | null; alternativas: { tipo_id: string; rotulo: string }[];
+}
+export interface CapituloDaPreparacao { secao_id: string; titulo: string; estado: EstadoVisivelDaCompreensao; etapa: string; relacoes: number | null }
+export interface SituacaoDaPreparacao {
+  documento_id: string;
+  versao_id: string | null;
+  estado: EstadoDaPreparacao;
+  tipo: TipoDaPreparacao | null;
+  compreensao: { id: string; modo: { id: string; revisao: number } } | null;
+  capitulos: CapituloDaPreparacao[];
+  erro: { codigo: string; mensagem: string } | null;
+  /** Itens pedidos além de grifos e relações, com o andamento (pelos jobs). */
+  itens: ProgressoDoItem[];
+}
+export interface ProgressoDoItem { id: string; rotulo: string; estado: 'aguardando' | 'preparando' | 'pronto' | 'falhou'; prontos: number; total: number }
+export interface ItemDaPreparacao { id: string; rotulo: string; descricao: string; disponivel: boolean; ao_importar: boolean; requer: string[] }
+export interface PadraoDaPreparacao { ao_importar: boolean; itens: string[] }
+export interface CatalogoDaPreparacao { itens: ItemDaPreparacao[]; padrao: PadraoDaPreparacao }
+/** O que "Preparar leitura" pode criar e o padrão das Configurações. */
+export const catalogoDaPreparacao = () => pedir<CatalogoDaPreparacao>('/api/preparacao/itens');
+export const gravarPadraoDaPreparacao = (padrao: PadraoDaPreparacao) => escrever<CatalogoDaPreparacao>('/api/configuracoes/preparacao', padrao, 'PUT');
+/** Exercícios do livro: descobre e cria os pedidos; depois manda até 50 ao Codex. */
+export async function pedirExercicios(documentoId: string): Promise<number> {
+  const descoberta = await escrever<{ total: number }>(`/api/documentos/${documentoId}/exercicios/descobrir`, { criar: true });
+  if (descoberta.total === 0) return 0;
+  const { disparados } = await escrever<{ disparados: number }>(`/api/documentos/${documentoId}/exercicios/disparar`, { limite: 50 });
+  return disparados;
+}
+export interface RespostaDaPreparacao {
+  compreensao_id: string | null; criada: boolean; enfileirados: number; devolvidos: number; aguardando_tipo: boolean; situacao: SituacaoDaPreparacao;
+}
+export const situacaoDaPreparacao = (documentoId: string) => pedir<SituacaoDaPreparacao>(`/api/documentos/${documentoId}/preparacao`);
+/** Grupos e tipos de texto, lidos do contrato (`contratos/tipos-de-texto.json`). */
+export const tiposDeTexto = () => pedir<{ tipos: import('@margem/contratos').TiposDeTextoV1 }>('/api/tipos-de-texto');
+/** A escolha da pessoa: nenhuma detecção a substitui. Se uma leitura esperava pelo tipo, ela começa. */
+export const escolherTipoDeTexto = (documentoId: string, tipoId: string) =>
+  escrever<SituacaoDaPreparacao>(`/api/documentos/${documentoId}/tipo-de-texto`, { tipo_id: tipoId }, 'PUT');
+/** Um clique: cria ou reaproveita a compreensão e enfileira já; de novo depois de uma falha, tenta de novo. */
+export const prepararLeitura = (documentoId: string, todos = false, itens?: readonly string[]) =>
+  escrever<RespostaDaPreparacao>(`/api/documentos/${documentoId}/preparacao`, { ...(todos ? { todos: true } : {}), ...(itens ? { itens } : {}) });
+
+// ---------------------------------------------------------------- "Analisar" por tipo (J142)
+
+/** No vídeo: o que aconteceu com a transcrição e com as partes e os momentos (os popups). */
+export interface SituacaoDoVideo {
+  midia_id: string | null;
+  transcricao: { estado: 'sem_transcricao' | 'sem_sincronia' | 'original' | 'passando_a_limpo' | 'limpa' | 'falhou' | 'sem_limpeza'; detalhe: string | null };
+  momentos: { estado: 'nao_preparado' | 'preparando' | 'pronto' | 'falhou' | 'sem_fala'; quantidade: number; partes: number };
+  aguardando_transcricao: boolean;
+}
+/** A situação da preparação e, nos documentos de vídeo, `video`; nos outros, `video: null`. */
+export interface SituacaoDaAnalise extends SituacaoDaPreparacao { video: SituacaoDoVideo | null }
+export interface RespostaDaAnalise extends Omit<RespostaDaPreparacao, 'situacao'> { aguardando_transcricao: boolean; situacao: SituacaoDaAnalise }
+export const situacaoDaAnalise = (documentoId: string) => pedir<SituacaoDaAnalise>(`/api/documentos/${documentoId}/analise`);
+/**
+ * O botão "Analisar" da página do documento: uma rota só, e o serviço decide pelo tipo. Texto: grifos,
+ * relações e o que estiver marcado; vídeo: a transcrição passada a limpo, grifos e relações, e as partes e
+ * os momentos sobre o vídeo.
+ */
+export const analisarDocumento = (documentoId: string, todos = false, itens?: readonly string[]) =>
+  escrever<RespostaDaAnalise>(`/api/documentos/${documentoId}/analise`, { ...(todos ? { todos: true } : {}), ...(itens ? { itens } : {}) });
+
 export const compreensoesDoDocumento = (documentoId: string) =>
   pedir<{ versao_id: string; compreensoes: import('@margem/contratos').ExecucaoCompreensaoV1[] }>(`/api/documentos/${documentoId}/compreensoes`);
 export const criarCompreensao = (documentoId: string, modo: { id: string; revisao: number }) =>
   escrever<{ compreensao: import('@margem/contratos').ExecucaoCompreensaoV1 }>(`/api/documentos/${documentoId}/compreensoes`, { modo_de_leitura: modo });
 export const capitulosDaCompreensao = (id: string) => pedir<{ capitulos: CapituloDaCompreensao[] }>(`/api/compreensoes/${id}/capitulos`);
-export const prepararCapituloDaCompreensao = (id: string, secaoId: string, prefetch = true) =>
-  escrever<{ estado: string; visivel: EstadoVisivelDaCompreensao; seguinte: string | null }>(`/api/compreensoes/${id}/capitulos/${secaoId}/preparar`, { prefetch });
+/** `tentarDeNovo` devolve à fila os jobs do capítulo que falharam antes de avançar. */
+export const prepararCapituloDaCompreensao = (id: string, secaoId: string, prefetch = true, tentarDeNovo = false) =>
+  escrever<{ estado: string; visivel: EstadoVisivelDaCompreensao; seguinte: string | null }>(`/api/compreensoes/${id}/capitulos/${secaoId}/preparar`,
+    tentarDeNovo ? { prefetch, tentar_de_novo: true } : { prefetch });
 export const capituloDaCompreensao = (id: string, secaoId: string) => pedir<DetalheDoCapituloDaCompreensao>(`/api/compreensoes/${id}/capitulos/${secaoId}`);
 export const relacoesDoCapitulo = (id: string, secaoId: string, filtro: 'relevantes' | 'todas', modeloId?: string) =>
   pedir<{ relacoes: RelacaoDoCapitulo[] }>(`/api/compreensoes/${id}/capitulos/${secaoId}/relacoes?filtro=${filtro}${modeloId ? `&modelo_id=${encodeURIComponent(modeloId)}` : ''}`);
@@ -272,7 +343,9 @@ type AncoraV1 = import('@margem/contratos').AncoraV1;
 export const criarGrifo = (ancora: AncoraV1, funcao: string, modo?: { id: string; revisao: number }) =>
   escrever<{ marca: MarcaV2 }>('/api/grifos', { ancora, funcao, ...(modo ? { modo } : {}) });
 export const apagarGrifo = (id: string) => pedir<unknown>(`/api/grifos/${id}`, { method: 'DELETE' });
-export const trocarFuncaoDaMarca = (id: string, funcao: string) => escrever<{ marca: MarcaV2 }>(`/api/marcas/${id}/funcao`, { funcao }, 'PUT');
+/** `modo` (J138, "Outros olhares"): a função de outro modo; o grifo do leitor passa para aquele modo. */
+export const trocarFuncaoDaMarca = (id: string, funcao: string, modo?: { id: string; revisao: number }) =>
+  escrever<{ marca: MarcaV2 }>(`/api/marcas/${id}/funcao`, { funcao, ...(modo ? { modo } : {}) }, 'PUT');
 /** `texto: null` volta à nota original da IA. */
 export const editarNotaDaMarca = (id: string, texto: string | null) => escrever<{ marca: MarcaV2 }>(`/api/marcas/${id}/nota`, { texto }, 'PUT');
 export const pedirRevisaoDaNota = (anotacaoId: string, instrucao?: string) =>
@@ -281,7 +354,22 @@ export const editarAnotacao = (id: string, mudanca: { texto?: string; tipo?: str
   escrever<{ anotacao: import('@margem/contratos').AnotacaoV1 }>(`/api/anotacoes/${id}`, mudanca, 'PATCH');
 export const apagarAnotacao = (id: string, revisao: number) => escrever<unknown>(`/api/anotacoes/${id}`, { revisao }, 'DELETE');
 
-export interface FiltroDeNotas { documento?: string; especie?: 'anotacao' | 'grifo'; tipo?: string; texto?: string }
+// J138 (modelo D): a nota do leitor é do grifo; a dificuldade é um sinal à parte.
+type NotaDoGrifoV1 = import('@margem/contratos').NotaDoGrifoV1;
+type DificuldadeV1 = import('@margem/contratos').DificuldadeV1;
+/** Cria ou troca o texto da nota do grifo; `revisao` é a da nota vista (409 se ela mudou em outro lugar). */
+export const gravarNotaDoGrifo = (marcaId: string, texto: string, revisao?: number) =>
+  escrever<{ nota: NotaDoGrifoV1 }>(`/api/marcas/${marcaId}/nota-do-leitor`, { texto, ...(revisao === undefined ? {} : { revisao }) }, 'PUT');
+export const apagarNotaDoGrifo = (marcaId: string, revisao: number) => escrever<unknown>(`/api/marcas/${marcaId}/nota-do-leitor`, { revisao }, 'DELETE');
+export const marcarDificuldade = (ancora: AncoraV1, marcaId?: string, tipo?: import('@margem/contratos').TipoDificuldadeTextual) =>
+  escrever<{ dificuldade: DificuldadeV1 }>('/api/dificuldades', { ancora, ...(marcaId ? { marca_id: marcaId } : {}), ...(tipo ? { tipo } : {}) });
+export const decidirDificuldadeDoCodex = (modeloId: string, dificuldadeId: string, estado: DificuldadeV1['estado']) =>
+  escrever<{ dificuldade: DificuldadeV1 }>('/api/dificuldades/codex', { modelo_id: modeloId, dificuldade_id: dificuldadeId, estado });
+export const mudarDificuldade = (id: string, mudanca: { estado?: DificuldadeV1['estado']; tipo?: import('@margem/contratos').TipoDificuldadeTextual | null }) =>
+  escrever<{ dificuldade: DificuldadeV1 }>(`/api/dificuldades/${id}`, mudanca, 'PATCH');
+
+/** `mostrar`: `com_nota` (só com a nota do leitor) ou `grifos` (só os grifos, sem nota); `funcao` e `modo`: a função de um modo. */
+export interface FiltroDeNotas { documento?: string; mostrar?: 'com_nota' | 'grifos'; funcao?: string; modo?: string; texto?: string }
 
 export function consultaDasNotas(filtro: FiltroDeNotas): string {
   const parametros = new URLSearchParams();
@@ -291,4 +379,22 @@ export function consultaDasNotas(filtro: FiltroDeNotas): string {
 
 export function listarNotas(filtro: FiltroDeNotas = {}): Promise<{ itens: ItemDeNota[] }> {
   return pedir(`/api/notas${consultaDasNotas(filtro)}`);
+}
+
+/** Central de Notas (J145): o recorte e a página pedidos a `GET /api/notas/central`. */
+export interface FiltroDaCentral {
+  documento?: string; tipo?: FiltroDeTipoDaCentral; autoria?: 'leitor' | 'codex'; funcao?: string; modo?: string; texto?: string;
+  desde?: string; ate?: string; ordem?: 'recentes' | 'antigos' | 'documento'; limite?: number; deslocamento?: number; facetas?: boolean;
+}
+export function consultaDaCentral(filtro: FiltroDaCentral): string {
+  const parametros = new URLSearchParams();
+  for (const [chave, valor] of Object.entries(filtro)) {
+    if (typeof valor === 'string' && valor !== '') parametros.set(chave, valor);
+    else if (typeof valor === 'number') parametros.set(chave, String(valor));
+    else if (valor === true) parametros.set(chave, '1');
+  }
+  return parametros.size ? `?${parametros}` : '';
+}
+export function listarCentral(filtro: FiltroDaCentral = {}): Promise<PaginaDaCentral> {
+  return pedir(`/api/notas/central${consultaDaCentral(filtro)}`);
 }

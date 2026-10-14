@@ -1,11 +1,35 @@
+import type { IdentificacaoDaObraV1 } from '@margem/contratos';
 import { pedir } from '../biblioteca/api';
-import type { AnaliseDoQuadro, DetalheDoQuadro, ListaDeQuadros, ManifestoDaNarracao } from './tipos';
+import type { AnaliseDoQuadro, DetalheDoQuadro, ListaDeQuadros, ManifestoDaNarracao, QuadroDaPessoaV1 } from './tipos';
 
 const segmento = (valor: string): string => encodeURIComponent(valor);
 
 export function listarQuadros(): Promise<ListaDeQuadros> {
   return pedir('/api/arte');
 }
+/** Envia a imagem de uma obra (`arquivo`) e, se houver, `titulo`, `artista` e `ano` (J118). */
+export function adicionarObra(formulario: FormData): Promise<QuadroDaPessoaV1> {
+  return pedir('/api/arte', { method: 'POST', body: formulario });
+}
+export function corrigirIdentificacao(slug: string, identificacao: IdentificacaoDaObraV1): Promise<QuadroDaPessoaV1> {
+  return pedir(`/api/arte/${segmento(slug)}/identificacao`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(identificacao) });
+}
+export function tentarObraDeNovo(slug: string): Promise<QuadroDaPessoaV1> {
+  return pedir(`/api/arte/${segmento(slug)}/tentar-de-novo`, { method: 'POST' });
+}
+export function removerObra(slug: string): Promise<null> {
+  return pedir(`/api/arte/${segmento(slug)}`, { method: 'DELETE' });
+}
+
+/** Operações de escrita da área de Quadros; os testes trocam. */
+export interface OperacoesDosQuadros {
+  adicionar: typeof adicionarObra;
+  corrigir: typeof corrigirIdentificacao;
+  tentarDeNovo: typeof tentarObraDeNovo;
+  remover: typeof removerObra;
+}
+export const OPERACOES_DOS_QUADROS: OperacoesDosQuadros = { adicionar: adicionarObra, corrigir: corrigirIdentificacao, tentarDeNovo: tentarObraDeNovo, remover: removerObra };
+
 export function obterQuadro(slug: string): Promise<DetalheDoQuadro> {
   return pedir(`/api/arte/${segmento(slug)}`);
 }

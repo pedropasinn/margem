@@ -1,0 +1,414 @@
+{
+  "versao": 1,
+  "padrao": "outro",
+  "grupos": [
+    {
+      "id": "literatura",
+      "rotulo": "Literatura",
+      "tipos": [
+        {
+          "id": "conto",
+          "rotulo": "Conto",
+          "exemplos": "Machado de Assis, Tchékhov, Borges",
+          "modo": {
+            "id": "ficcao_narrativa",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "romance",
+          "rotulo": "Romance ou novela",
+          "exemplos": "capítulo de romance, novela, narrativa longa",
+          "modo": {
+            "id": "ficcao_narrativa",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "poesia",
+          "rotulo": "Poesia",
+          "exemplos": "poema, soneto, livro de poemas",
+          "modo": {
+            "id": "literaria",
+            "revisao": 2
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "teatro",
+          "rotulo": "Teatro",
+          "exemplos": "peça, cena, diálogo dramático",
+          "modo": {
+            "id": "dramaturgia",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "cronica",
+          "rotulo": "Crônica",
+          "exemplos": "Rubem Braga, Fernando Sabino, crônica de jornal",
+          "modo": {
+            "id": "ensaio_cronica",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "critica_literaria",
+          "rotulo": "Crítica literária ou resenha",
+          "exemplos": "resenha de livro, ensaio crítico sobre uma obra",
+          "modo": {
+            "id": "critica_literaria",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "filosofia",
+      "rotulo": "Filosofia",
+      "tipos": [
+        {
+          "id": "tratado_filosofico",
+          "rotulo": "Tratado ou argumento filosófico",
+          "exemplos": "Descartes, Kant, filosofia analítica",
+          "modo": {
+            "id": "filosofica",
+            "revisao": 2
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "dialogo_filosofico",
+          "rotulo": "Diálogo filosófico",
+          "exemplos": "Platão, Berkeley, diálogos",
+          "modo": {
+            "id": "filosofica_dialogica",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "classico_comentado",
+          "rotulo": "Clássico com comentário",
+          "exemplos": "Aristóteles comentado, tradução com notas",
+          "modo": {
+            "id": "filosofica_comentada",
+            "revisao": 2
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "religiao",
+      "rotulo": "Religião e espiritualidade",
+      "tipos": [
+        {
+          "id": "escritura",
+          "rotulo": "Escritura e exegese",
+          "exemplos": "Bíblia, comentário bíblico, lectio divina",
+          "modo": {
+            "id": "escritura",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "magisterio",
+          "rotulo": "Documento da Igreja",
+          "exemplos": "encíclica, catecismo, concílio, exortação",
+          "modo": {
+            "id": "magisterio",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "teologia",
+          "rotulo": "Teologia, patrística e escolástica",
+          "exemplos": "Santo Agostinho, Santo Tomás, manual de teologia",
+          "modo": {
+            "id": "teologica",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "espiritualidade",
+          "rotulo": "Leitura espiritual e vida de santo",
+          "exemplos": "Imitação de Cristo, São Josemaria, biografia de santo",
+          "modo": {
+            "id": "espiritual",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "economia",
+      "rotulo": "Economia",
+      "tipos": [
+        {
+          "id": "economia_empirica",
+          "rotulo": "Artigo ou livro empírico",
+          "exemplos": "paper com dados, avaliação de política, econometria aplicada",
+          "modo": {
+            "id": "economica",
+            "revisao": 2
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "economia_teorica",
+          "rotulo": "Teoria e modelo formal",
+          "exemplos": "modelo de equilíbrio, microeconomia teórica",
+          "modo": {
+            "id": "economia_formal",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "politica_economica",
+          "rotulo": "Relatório de política econômica",
+          "exemplos": "relatório do FMI, nota técnica, relatório de inflação",
+          "modo": {
+            "id": "relatorio_institucional",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "comunicado_monetario",
+          "rotulo": "Comunicado de banco central",
+          "exemplos": "comunicado ou ata do Copom, discurso de banqueiro central",
+          "modo": {
+            "id": "comunicacao_monetaria",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "matematica",
+      "rotulo": "Matemática e estatística",
+      "tipos": [
+        {
+          "id": "matematica",
+          "rotulo": "Matemática",
+          "exemplos": "livro-texto, demonstração, notas de aula de cálculo ou álgebra",
+          "modo": {
+            "id": "matematica",
+            "revisao": 2
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "estatistica",
+          "rotulo": "Estatística e probabilidade",
+          "exemplos": "inferência, probabilidade, regressão, métodos",
+          "modo": {
+            "id": "estatistica",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "computacao",
+      "rotulo": "Computação",
+      "tipos": [
+        {
+          "id": "computacao",
+          "rotulo": "Livro técnico de computação",
+          "exemplos": "engenharia de software, banco de dados, sistemas, programação",
+          "modo": {
+            "id": "computacao",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "artigo_computacao",
+          "rotulo": "Artigo de computação",
+          "exemplos": "paper de algoritmo, sistema ou aprendizado de máquina",
+          "modo": {
+            "id": "artigo_cientifico",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "ciencia",
+      "rotulo": "Ciência",
+      "tipos": [
+        {
+          "id": "artigo_cientifico",
+          "rotulo": "Artigo científico",
+          "exemplos": "psicologia, medicina, biologia, física, ciências sociais",
+          "modo": {
+            "id": "artigo_cientifico",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "historia",
+      "rotulo": "História",
+      "tipos": [
+        {
+          "id": "historiografia",
+          "rotulo": "História e narrativa histórica",
+          "exemplos": "livro de história, biografia histórica",
+          "modo": {
+            "id": "historia",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "fonte_historica",
+          "rotulo": "Fonte histórica",
+          "exemplos": "documento de época, carta antiga, crônica medieval",
+          "modo": {
+            "id": "historia",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "noticias",
+      "rotulo": "Notícias e opinião",
+      "tipos": [
+        {
+          "id": "noticia",
+          "rotulo": "Notícia ou reportagem",
+          "exemplos": "jornal, agência, reportagem",
+          "modo": {
+            "id": "jornalistica_factual",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "analise_jornalistica",
+          "rotulo": "Análise jornalística",
+          "exemplos": "análise, explicador, coluna de análise",
+          "modo": {
+            "id": "jornalistica_analitica",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "opiniao",
+          "rotulo": "Ensaio ou opinião",
+          "exemplos": "Chesterton, Lewis, artigo de opinião, newsletter, Substack",
+          "modo": {
+            "id": "opinativa",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "correspondencia",
+      "rotulo": "Correspondência",
+      "tipos": [
+        {
+          "id": "email",
+          "rotulo": "E-mail",
+          "exemplos": "e-mail de trabalho, troca de mensagens",
+          "modo": {
+            "id": "correspondencia",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "carta",
+          "rotulo": "Carta",
+          "exemplos": "carta pessoal, epistolário",
+          "modo": {
+            "id": "correspondencia",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "estudo",
+      "rotulo": "Estudo",
+      "tipos": [
+        {
+          "id": "didatico",
+          "rotulo": "Livro didático ou manual",
+          "exemplos": "apostila, manual, livro-texto de qualquer área",
+          "modo": {
+            "id": "didatico",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "direito",
+      "rotulo": "Direito",
+      "tipos": [
+        {
+          "id": "lei",
+          "rotulo": "Lei ou norma",
+          "exemplos": "lei, decreto, regulamento",
+          "modo": {
+            "id": "normativa_juridica",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        },
+        {
+          "id": "decisao_judicial",
+          "rotulo": "Decisão judicial",
+          "exemplos": "acórdão, sentença, voto",
+          "modo": {
+            "id": "decisao_judicial",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    },
+    {
+      "id": "outro",
+      "rotulo": "Outro",
+      "tipos": [
+        {
+          "id": "outro",
+          "rotulo": "Outro ou não sei",
+          "exemplos": "texto argumentativo em geral",
+          "modo": {
+            "id": "geral",
+            "revisao": 1
+          },
+          "estado": "em_avaliacao"
+        }
+      ]
+    }
+  ]
+}

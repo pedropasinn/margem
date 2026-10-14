@@ -1,0 +1,83 @@
+{
+  "versao": 1,
+  "id": "correspondencia",
+  "revisao": 1,
+  "nome": "Correspondência",
+  "descricao": "Ler e-mails e cartas distinguindo pedidos, compromissos, prazos, decisões, informações e o tom da relação. Cada frase é de quem a escreveu; mensagem citada ou encaminhada é de outra pessoa.",
+  "funcoes": [
+    {
+      "chave": "pedido",
+      "rotulo": "Pedido",
+      "pergunta": "O que é pedido, e a quem?",
+      "descricao": "Pedido, pergunta ou solicitação. Ex.: “Você consegue revisar até sexta?”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "compromisso",
+      "rotulo": "Compromisso",
+      "pergunta": "O que alguém se compromete a fazer?",
+      "descricao": "Promessa ou aceite explícito. Ex.: “Envio a planilha amanhã cedo.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "prazo",
+      "rotulo": "Prazo",
+      "pergunta": "Que data, horário ou prazo é dado?",
+      "descricao": "Data, hora ou condição temporal literal. Ex.: “até 18h de quinta”.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "decisao",
+      "rotulo": "Decisão",
+      "pergunta": "Que decisão foi tomada ou comunicada?",
+      "descricao": "Decisão registrada, de quem a tomou. Ex.: “Decidimos adiar o lançamento.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "informacao",
+      "rotulo": "Informação",
+      "pergunta": "Que fato ou dado novo a mensagem traz?",
+      "descricao": "Informação, anexo ou atualização. Ex.: “O contrato foi assinado ontem.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "tom",
+      "rotulo": "Tom e relação",
+      "pergunta": "Que tom ou sinal da relação entre as pessoas aparece?",
+      "descricao": "Cortesia, tensão, urgência ou afeto, como o texto mostra. Ex.: “Fico chateado por não ter sido avisado.”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO",
+    "TENSAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

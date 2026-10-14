@@ -56,7 +56,8 @@ describe('SVG do Mermaid', () => {
     render(<DiagramaMermaid id="x" codigo={'flowchart TD\nA["Amor"] --> B["Síntese"]'} nos={[{ id: 'A', rotulo: 'Amor', ancora }, { id: 'B', rotulo: 'Síntese' }]} aoCitar={aoCitar} renderizar={renderizar} />);
     const botao = await screen.findByRole('button', { name: 'Amor — ir ao trecho' });
     expect(screen.queryByRole('button', { name: /Síntese/u })).toBeNull();
-    expect(renderizar).toHaveBeenCalledWith(expect.stringMatching(/^mermaid-x-\d+$/u), 'flowchart TD\nA["Amor"] --> B["Síntese"]', false);
+    // Dois nós: o desenho sai na horizontal (J132); o código conferido continua TD.
+    expect(renderizar).toHaveBeenCalledWith(expect.stringMatching(/^mermaid-x-\d+$/u), 'flowchart LR\nA["Amor"] --> B["Síntese"]', false);
     fireEvent.click(botao);
     expect(aoCitar).toHaveBeenCalledWith(ancora);
     fireEvent.keyDown(botao, { key: 'Enter' });
@@ -78,6 +79,9 @@ describe('nota, pedido e visualização', () => {
     const { rerender } = render(<NotaDoVisual serie={{ atual: visual({ id: '01K0000000000000000000X009', estado: 'executando' }), anteriores: [] }} rotulo="Imagem" ocupado={false} aoAbrir={abrir} aoTentarDeNovo={tentar} />);
     expect(screen.getByRole('status').textContent).toBe('O Codex está desenhando…');
     rerender(<NotaDoVisual serie={{ atual: falhou, anteriores: [] }} rotulo="Imagem" ocupado={false} aoAbrir={abrir} aoTentarDeNovo={tentar} />);
+    // A falha é só um triângulo na margem; o motivo e as ações aparecem ao tocar.
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Imagem não saiu: ver o motivo' }));
     expect(screen.getByRole('alert').textContent).toBe('O Codex terminou sem gerar imagem.');
     fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(tentar).toHaveBeenCalledOnce();
@@ -138,4 +142,11 @@ test('useVisuais relê enquanto houver visual na fila e para quando todos termin
   await new Promise((resolver) => setTimeout(resolver, 80));
   expect(buscar.mock.calls.length).toBe(chamadas);
   expect((buscar.mock.calls as unknown as [string][])[0]?.[0]).toBe(`/api/versoes/${V}/capitulos/${S}/visuais`);
+});
+
+test('J132: fluxograma com poucos nós sai na horizontal; com muitos, continua vertical; só o cabeçalho muda', async () => {
+  const { orientarFluxograma, NOS_NA_HORIZONTAL } = await import('./DiagramaMermaid');
+  const curto = 'flowchart TD\n  A["Tese"] --> B["Razão"]';
+  expect(orientarFluxograma(curto, 2)).toBe('flowchart LR\n  A["Tese"] --> B["Razão"]');
+  expect(orientarFluxograma(curto, NOS_NA_HORIZONTAL + 1)).toBe(curto);
 });

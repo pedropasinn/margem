@@ -57,7 +57,8 @@ export function useCompreensao(
   const preparar = useCallback(() => {
     if (ativa === null) return;
     definirErro(null);
-    fontes.preparar(ativa, secaoId, true).then((resposta) => { definirVisivel(resposta.visivel); novaRodada((atual) => atual + 1); }, (falha: unknown) => {
+    // "Tentar de novo": os jobs do capítulo que falharam voltam à fila antes de a preparação avançar.
+    fontes.preparar(ativa, secaoId, true, true).then((resposta) => { definirVisivel(resposta.visivel); novaRodada((atual) => atual + 1); }, (falha: unknown) => {
       definirErro(falha instanceof Error ? falha.message : 'Não foi possível preparar o capítulo.');
     });
   }, [ativa, fontes, secaoId]);

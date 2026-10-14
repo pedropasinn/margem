@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/revisar-transcricao@3.schema.json",
+  "title": "Transcrição passada a limpo, versão 3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["paragrafos"],
+  "properties": {
+    "paragrafos": {
+      "type": "array",
+      "maxItems": 80,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["numero", "texto"],
+        "properties": {
+          "numero": { "type": "integer" },
+          "texto": { "type": "string", "minLength": 1, "maxLength": 20000 }
+        }
+      }
+    }
+  }
+}

@@ -18,26 +18,39 @@ import type { NavegacaoDeDestaques } from '../NavegadorDeDestaques';
  * relações do mesmo parágrafo compartilham, são só desenho. Nada rola a página para seguir o mouse.
  */
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import type { AncoraV1, Bloco } from '@margem/contratos';
-import { relacoesDoCapitulo, type RelacaoDoCapitulo } from '../../biblioteca/api';
+import { adotarRelacao, relacoesDoCapitulo, type RelacaoDoCapitulo } from '../../biblioteca/api';
+import { apagarItemDaAnalise } from '../../apagar/api';
+import { ConfirmarApagar } from '../../apagar/ConfirmarApagar';
 import type { ApiDoLeitor } from '../tipos';
 import { ancoraDoBloco, distribuirEmPistas, faixaDaAncora, type Faixa } from './geometria';
 import { ROTULO_DA_RELACAO } from './rotulos';
-import { IconButton } from '../../ui/Primitives';
+import { Button, IconButton } from '../../ui/Primitives';
 import { nomeDaUnidade, usarForma } from '../forma';
 import { arranjarDobra, construirDobra, SobreposicaoDaDobra, yDoCirculoNaDobra, type EstadoDaDobra } from './DobraDoPdf';
+import { indiceDaCorDaRelacao } from './cores';
 
 export type VisualizacaoDeRelacoes = 'linhas' | 'pontos';
 export type FiltroDeRelacoes = 'ocultas' | 'relevantes' | 'todas';
 
-export interface FontesDosBraquetes { relacoes: typeof relacoesDoCapitulo }
-export const FONTES_DOS_BRAQUETES: FontesDosBraquetes = { relacoes: relacoesDoCapitulo };
+export interface FontesDosBraquetes {
+  relacoes: typeof relacoesDoCapitulo;
+  /** "Adotar como minha conexão": a relação da leitura vira uma conexão do leitor (sem ela, a da API). */
+  adotar?: typeof adotarRelacao;
+  /** "Remover relação": a relação sai de vez da análise do Codex (V-T8; sem ela, a da API). */
+  remover?: (compreensaoId: string, secaoId: string, relacaoId: string) => Promise<unknown>;
+}
+export const FONTES_DOS_BRAQUETES: FontesDosBraquetes = { relacoes: relacoesDoCapitulo, adotar: adotarRelacao, remover: apagarItemDaAnalise };
 
 export interface PropsDosBraquetes {
   visualizacao?: VisualizacaoDeRelacoes;
   navegacao?: NavegacaoDeDestaques;
-  compreensaoId: string;
+  /** Sem compreensão (`null`), só as `extras` (as conexões do leitor) são desenhadas. */
+  compreensaoId: string | null;
   secaoId: string;
+  /** Relações a mais, desenhadas do mesmo jeito: as conexões que o leitor fez à mão entre dois trechos (J132). */
+  extras?: readonly RelacaoDoCapitulo[];
   /** Muda quando a revisão do modelo muda: recarrega as relações. */
   modeloId: string;
   filtro: FiltroDeRelacoes;
@@ -60,6 +73,8 @@ export interface PropsDosBraquetes {
   fixas?: readonly string[];
   /** Com `fixas`, a relação em destaque (o leitor está sobre ela na barra); as outras recuam. */
   destacada?: string | null;
+  /** Depois de adotar uma relação: as "Minhas conexões" do leitor mudaram. */
+  aoAdotar?: () => void;
 }
 
 /** Um lado da relação: a faixa da citação, suas linhas e o parágrafo de contexto. */
@@ -69,7 +84,6 @@ interface Desenhado { item: RelacaoDoCapitulo; cor: number; de: Ponta; para: Pon
 /** Distância entre as espinhas de relações que se cruzam na vertical. */
 const LARGURA_DA_PISTA = 14;
 /** Cores das relações, na ordem em que aparecem; definidas em `compreensao.css`. */
-const CORES = 5;
 /** Da barra do leitor para baixo é que a página é visível. */
 const TOPO_UTIL = 64;
 const ESPERA_AO_SAIR_MS = 140;
@@ -117,15 +131,18 @@ export const ESPERA_PARA_ACENDER_MS = 700;
 /** No PDF, a intenção de hover que abre a dobra: curta, mas o bastante para não piscar ao atravessar. */
 export const ESPERA_DA_DOBRA_MS = 130;
 
-export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, secaoId, modeloId, filtro, leitor, coluna, blocos, artigo, pdf = false, fontes = FONTES_DOS_BRAQUETES, esperaMs = pdf ? ESPERA_DA_DOBRA_MS : ESPERA_PARA_ACENDER_MS, fixas, destacada = null }: PropsDosBraquetes): ReactNode {
+export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, secaoId, modeloId, filtro, extras, leitor, coluna, blocos, artigo, pdf = false, fontes = FONTES_DOS_BRAQUETES, esperaMs = pdf ? ESPERA_DA_DOBRA_MS : ESPERA_PARA_ACENDER_MS, fixas, destacada = null, aoAdotar }: PropsDosBraquetes): ReactNode {
   const [carregadas, definirRelacoes] = useState<RelacaoDoCapitulo[]>([]);
   const unidade = nomeDaUnidade(usarForma());
   const chaveDasFixas = fixas?.join(' ');
   const relacoes = useMemo(() => {
-    if (chaveDasFixas === undefined) return carregadas;
+    // As conexões do leitor entram depois das da compreensão; a que já virou conexão (adotada) não se repete.
+    const adotadas = new Set<string | null>(carregadas.map((item) => item.conexao_id).filter((id) => id !== null));
+    const doLeitor = filtro === 'ocultas' ? [] : (extras ?? []).filter((item) => !adotadas.has(item.conexao_id));
+    if (chaveDasFixas === undefined) return [...carregadas, ...doLeitor];
     const porId = new Map(carregadas.map((item) => [item.relacao.id, item]));
     return chaveDasFixas.split(' ').flatMap((id) => { const item = porId.get(id); return item ? [item] : []; });
-  }, [carregadas, chaveDasFixas]);
+  }, [carregadas, chaveDasFixas, extras, filtro]);
   const guiada = fixas !== undefined;
   const compacta = useCompacta();
   const porPontos = visualizacao === 'pontos' && !compacta && !guiada;
@@ -141,11 +158,25 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
   const carregar = useCallback(() => {
     const pedido = ++consultaRelacoes.current;
     definirRelacoes([]);
-    if (filtro === 'ocultas' && !guiada) { definirRelacoes([]); return; }
+    if ((filtro === 'ocultas' && !guiada) || compreensaoId === null) { definirRelacoes([]); return; }
     fontes.relacoes(compreensaoId, secaoId, guiada || filtro === 'ocultas' ? 'todas' : filtro, modeloId).then((resposta) => { if (pedido !== consultaRelacoes.current) return; definirRelacoes(resposta.relacoes); definirErro(null); },
       (falha: unknown) => { if (pedido === consultaRelacoes.current) definirErro(falha instanceof Error ? falha.message : 'Não foi possível carregar as relações.'); });
   }, [compreensaoId, secaoId, filtro, fontes, guiada, modeloId]);
   useEffect(() => { carregar(); return () => { consultaRelacoes.current++; }; }, [carregar]);
+  const adotar = useCallback(async (relacaoId: string) => {
+    // Sem compreensão só há conexões do leitor, que já são dele: nada a adotar.
+    if (compreensaoId === null) return;
+    const resposta = await (fontes.adotar ?? adotarRelacao)(compreensaoId, secaoId, relacaoId);
+    definirRelacoes((atual) => atual.map((item) => item.relacao.id === relacaoId ? { ...item, conexao_id: resposta.conexao_id } : item));
+    aoAdotar?.();
+  }, [fontes, compreensaoId, secaoId, aoAdotar]);
+  // Só as relações da análise do Codex saem por aqui; as conexões do leitor têm o painel delas.
+  const remover = useCallback(async (relacaoId: string) => {
+    if (compreensaoId === null) return;
+    await (fontes.remover ?? apagarItemDaAnalise)(compreensaoId, secaoId, relacaoId);
+    definirRelacoes((atual) => atual.filter((item) => item.relacao.id !== relacaoId));
+  }, [fontes, compreensaoId, secaoId]);
+  const daAnalise = useCallback((relacaoId: string) => carregadas.some((item) => item.relacao.id === relacaoId), [carregadas]);
 
   const blocosPorId = useMemo(() => new Map(blocos?.map(b => [b.id, b])), [blocos]);
   const medir = useCallback(() => {
@@ -169,11 +200,11 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
       pontas.set(chave, medida);
       return medida;
     };
-    const medidos = relacoes.flatMap((item, indice) => {
+    const medidos = relacoes.flatMap((item) => {
       const de = ponta(item.origem?.ancoras[0]);
       const para = ponta(item.destino?.ancoras[0]);
       if (!de || !para) return [];
-      return [{ item, cor: indice % CORES, de, para, topo: Math.min(de.faixa.topo, para.faixa.topo), base: Math.max(de.faixa.base, para.faixa.base) }];
+      return [{ item, cor: indiceDaCorDaRelacao(item.relacao.id), de, para, topo: Math.min(de.faixa.topo, para.faixa.topo), base: Math.max(de.faixa.base, para.faixa.base) }];
     });
     // A pista de cada relação é decidida uma vez e não muda com a rolagem nem com o texto recolhido:
     // se relações sumissem da conta, a acesa pularia para perto do texto e sairia de baixo do mouse.
@@ -230,12 +261,15 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
   };
   // O clique no círculo fixa a relação (e a dobra do PDF) até outro clique ou Esc.
   const fixadaRef = useRef<string | null>(null);
+  // Fixada, o card recebe o mouse e oferece "Adotar como minha conexão".
+  const [fixada, definirFixada] = useState<string | null>(null);
   const fixar = (id: string) => {
     fixadaRef.current = fixadaRef.current === id ? null : id;
+    definirFixada(fixadaRef.current);
     if (fixadaRef.current === id) acender(id);
   };
   useEffect(() => {
-    const soltar = (evento: KeyboardEvent) => { if (evento.key === 'Escape' && fixadaRef.current !== null) { fixadaRef.current = null; definirSobre(null); } };
+    const soltar = (evento: KeyboardEvent) => { if (evento.key === 'Escape' && fixadaRef.current !== null) { fixadaRef.current = null; definirFixada(null); definirSobre(null); } };
     window.addEventListener('keydown', soltar);
     return () => window.removeEventListener('keydown', soltar);
   }, []);
@@ -283,6 +317,7 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
     navegava.current = navegacaoAberta;
     clearTimeout(saida.current); clearTimeout(espera.current);
     fixadaRef.current = null;
+    definirFixada(null);
     definirSobre(null);
     desdobrar(dobra);
     medir();
@@ -364,7 +399,7 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
     medir();
   });
 
-  if (compacta && !guiada && !navegacaoAberta) return <BraquetesCompactas itens={desenho.itens} x={desenho.x} />;
+  if (compacta && !guiada && !navegacaoAberta) return <BraquetesCompactas itens={desenho.itens} x={desenho.x} adotar={adotar} remover={remover} daAnalise={daAnalise} />;
   if (filtro === 'ocultas' && !guiada) return null;
   // No celular (leitura guiada), a lateral é a sarjeta do texto: chaves estreitas, pistas de 4 px.
   const sarjeta = desenho.x >= 20 ? desenho.x - 8 : desenho.x + 10;
@@ -448,9 +483,11 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
         Um fieldset cuja legenda (a relação, em miúdo) interrompe a borda; mesma geometria para todas as
         relações, muda só a cor e a legenda. Não recebe o mouse, para não disputar o hover; o botão do
         círculo continua sendo a âncora lógica (hover, foco, clique fixa). */}
-    {acesa && (!navegacaoAberta || navegacao?.cartao === true) && <fieldset className={`popover-braquete cor-${String(acesa.cor)}`} role="tooltip" ref={card} style={posicaoDoCard(xDaPista(acesa.pista), yDoCard, limiteDoCard(acesa, desenho.x, xColchete, yDoCard, alturaDoCard))}>
+    {acesa && (!navegacaoAberta || navegacao?.cartao === true) && <fieldset className={`popover-braquete cor-${String(acesa.cor)}${fixada === acesa.item.relacao.id ? ' fixado' : ''}`}
+      role={fixada === acesa.item.relacao.id ? 'group' : 'tooltip'} aria-label={fixada === acesa.item.relacao.id ? 'Relação da leitura' : undefined} ref={card} style={posicaoDoCard(xDaPista(acesa.pista), yDoCard, limiteDoCard(acesa, desenho.x, xColchete, yDoCard, alturaDoCard))}>
       <legend>{ROTULO_DA_RELACAO[acesa.item.relacao.tipo]}{acesa.item.relacao.retrospectiva ? ' · retrospectiva' : ''}</legend>
       <p>{acesa.item.relacao.explicacao}</p>
+      {fixada === acesa.item.relacao.id && <AdotarRelacao item={acesa.item} adotar={adotar} {...(daAnalise(acesa.item.relacao.id) ? { remover } : {})} />}
     </fieldset>}
     {erro && <p className="aviso-estudo" role="alert">{erro}</p>}
   </div>;
@@ -487,7 +524,34 @@ interface EntradaDaLateral { chave: string; y: number; item: Desenhado; aqui: Po
  * com as relações da linha, e só a pilha tocada fica na tela; tocar numa relação deixa só os dois pontos
  * dela, ligados pela espinha, e leva ao outro trecho.
  */
-function BraquetesCompactas({ itens, x }: { itens: readonly Desenhado[]; x: number }): ReactNode {
+/**
+ * "Adotar como minha conexão" (A-11): a relação que a leitura encontrou vira uma conexão do leitor, que
+ * aparece em "Minhas conexões". Adotar de novo não duplica.
+ */
+export function AdotarRelacao({ item, adotar, remover }: { item: RelacaoDoCapitulo; adotar: (relacaoId: string) => Promise<void>; remover?: ((relacaoId: string) => Promise<void>) | undefined }): ReactNode {
+  const [ocupado, ocupar] = useState(false);
+  const [erro, definirErro] = useState<string | null>(null);
+  const [removendo, confirmarRemocao] = useState(false);
+  // "Remover relação" (V-T8): sai de vez da análise do Codex, com confirmação (não se desfaz).
+  const confirmacao = removendo && remover && createPortal(<ConfirmarApagar titulo="Remover esta relação?"
+    texto="Ela sai da análise do Codex deste capítulo." itens={[`${ROTULO_DA_RELACAO[item.relacao.tipo]}: ${item.relacao.explicacao}`]}
+    rotuloDoBotao="Remover" aoConfirmar={() => remover(item.relacao.id)} aoFechar={() => confirmarRemocao(false)} />, document.body);
+  const botaoRemover = remover && <Button variante="ghost" tamanho="sm" className="botao-remover-relacao" onClick={() => confirmarRemocao(true)}>Remover relação</Button>;
+  if (item.conexao_id !== null) return <div className="adocao-da-relacao feita"><p>Está em Minhas conexões.</p>{botaoRemover}{confirmacao}</div>;
+  return <div className="adocao-da-relacao">
+    <Button tamanho="sm" className="botao-adotar" disabled={ocupado} onClick={() => {
+      ocupar(true); definirErro(null);
+      adotar(item.relacao.id).catch((falha: unknown) => definirErro(falha instanceof Error ? falha.message : 'Não foi possível adotar a relação.'))
+        .finally(() => ocupar(false));
+    }}>Adotar como minha conexão</Button>
+    {botaoRemover}
+    {erro && <p role="alert">{erro}</p>}
+    {confirmacao}
+  </div>;
+}
+
+function BraquetesCompactas({ itens, x, adotar, remover, daAnalise }: { itens: readonly Desenhado[]; x: number; adotar: (relacaoId: string) => Promise<void>;
+  remover: (relacaoId: string) => Promise<void>; daAnalise: (relacaoId: string) => boolean }): ReactNode {
   const [aberto, abrir] = useState<string | null>(null);
   const [escolhida, escolher] = useState<string | null>(null);
   const unidade = nomeDaUnidade(usarForma());
@@ -535,7 +599,7 @@ function BraquetesCompactas({ itens, x }: { itens: readonly Desenhado[]; x: numb
     })}
     {doAberto && <div className="folha folha-braquete" role="dialog" aria-modal="false" aria-label="Nesta linha">
       <div className="folha-cabeca">
-        <span className="eyebrow">{quantos(doAberto)}</span>
+        <span className="eyebrow">Relações da leitura · {quantos(doAberto)}</span>
         <IconButton ref={fechar} className="folha-fechar" aria-label="Fechar" onClick={() => { abrir(null); escolher(null); }}>×</IconButton>
       </div>
       <ol className="pontas-da-folha">
@@ -546,6 +610,7 @@ function BraquetesCompactas({ itens, x }: { itens: readonly Desenhado[]; x: numb
               <span className="explicacao-braquete">{entrada.item.item.relacao.explicacao}</span>
               <span className="citacao-da-ponta">↗ “{entrada.outra.ancora.citacao}”</span>
             </button>
+            {escolhida === entrada.item.item.relacao.id && <AdotarRelacao item={entrada.item.item} adotar={adotar} {...(daAnalise(entrada.item.item.relacao.id) ? { remover } : {})} />}
           </li>)}
       </ol>
     </div>}

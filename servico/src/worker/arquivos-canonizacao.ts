@@ -1,7 +1,8 @@
 import type pg from 'pg';
 import { comTransacao } from '../db/transacao.js';
 /** Diário de publicação: o banco decide quais diretórios definitivos foram publicados. */
-import { lstat, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { lstat, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { renomearComRetentativa } from '../plataforma/disco.js';
 import { join } from 'node:path';
 import type { Transacao } from '../db/transacao.js';
 import { ehUlid, pastaDoDocumento, pastaDaVersao } from '../dados.js';
@@ -48,7 +49,7 @@ export async function finalizarArquivos(origem: string, documentoId: string, ver
   try { await lstat(destino); throw new Error('Destino da versão já existe.'); }
   catch (erro) { if (!ausente(erro)) throw erro; }
   await writeFile(join(origem, DIARIO), JSON.stringify({ documento_id: documentoId, versao_id: versaoId, job_id: jobId }), { flag: 'wx', mode: 0o600 });
-  await rename(origem, destino);
+  await renomearComRetentativa(origem, destino);
   return destino;
 }
 function ausente(erro: unknown): boolean {

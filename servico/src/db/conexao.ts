@@ -2,17 +2,25 @@ import { randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { lerUrlBanco } from './configuracao.js';
 
-function criarPool(url: URL): pg.Pool {
+/**
+ * Quanto uma conexão ociosa fica aberta no pool do processo (V-W7). O padrão do `pg` (10 s) fazia o
+ * pool abrir e fechar conexões o tempo todo; no Windows cada conexão é um `postgres.exe` novo (144 em
+ * 38 min no teste de 14/10). Cinco minutos, com uma conexão mantida, deixam o número estável.
+ */
+export const OCIOSA_MS = 300_000;
+
+function criarPool(url: URL, extra: Pick<pg.PoolConfig, 'idleTimeoutMillis' | 'min'> = {}): pg.Pool {
   return new pg.Pool({
     connectionString: url.toString(),
     connectionTimeoutMillis: 3_000,
     query_timeout: 5_000,
     max: 4,
+    ...extra,
   });
 }
 
 // O Pool só abre conexões quando usado. Quem o utiliza deve encerrá-lo com end().
-export const pool = criarPool(lerUrlBanco());
+export const pool = criarPool(lerUrlBanco(), { idleTimeoutMillis: OCIOSA_MS, min: 1 });
 // Uma conexão ociosa que cai (Postgres reiniciado, 57P01) emite `error` no pool; sem ouvinte, o
 // evento não tratado derruba a API e o worker no meio dos jobs. O pool descarta a conexão sozinho.
 pool.on('error', (erro: Error & { code?: string }) => {

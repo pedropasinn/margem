@@ -27,6 +27,9 @@ describe('escolha da legenda', () => {
     expect(escolherLegenda({ idioma: null, legendas: [], automaticas: ['en-orig', 'pt'] })).toEqual({ idioma: 'en-orig', automatica: true });
     expect(escolherLegenda({ idioma: null, legendas: [], automaticas: ['pt', 'en'] })).toBeNull();
     expect(escolherLegenda({ idioma: 'pt', legendas: [], automaticas: [] })).toBeNull();
+    // Sem idioma e com várias originais: a em português (J142, B-14.4).
+    expect(escolherLegenda({ idioma: null, legendas: [], automaticas: ['en-orig', 'pt-orig'] })).toEqual({ idioma: 'pt-orig', automatica: true });
+    expect(escolherLegenda({ idioma: null, legendas: [], automaticas: ['en-orig', 'es-orig'] })).toBeNull();
   });
 });
 
@@ -45,6 +48,13 @@ describe('legendas json3', () => {
     expect(palavras[2]!.fim_s).toBeCloseTo(3, 3);
     expect(palavras[3]!.inicio_s).toBeGreaterThanOrEqual(3);
     for (let i = 1; i < palavras.length; i++) expect(palavras[i]!.inicio_s).toBeGreaterThanOrEqual(palavras[i - 1]!.inicio_s);
+  });
+  test('anotação sem fechar não engole as falas dos eventos seguintes (J142, B-14.5)', () => {
+    const palavras = palavrasDaLegendaJson3({ events: [
+      { tStartMs: 0, dDurationMs: 1000, segs: [{ utf8: 'ele' }, { utf8: ' (que', tOffsetMs: 300 }, { utf8: ' disse', tOffsetMs: 600 }] },
+      { tStartMs: 1000, dDurationMs: 1000, segs: [{ utf8: 'a' }, { utf8: ' China', tOffsetMs: 400 }] },
+    ] });
+    expect(palavras.map((p) => p.texto)).toEqual(['ele', 'a', 'China']);
   });
   test('entrada estranha não quebra', () => {
     expect(palavrasDaLegendaJson3(null)).toEqual([]);

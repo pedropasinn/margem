@@ -1,9 +1,18 @@
 /**
- * Configurações → Áudio (J106): a chave da ElevenLabs da pessoa, o teste da chave, a voz (vozes da
- * conta) e o modelo. A chave nunca volta do servidor: a tela só sabe se há uma e como ela termina.
+ * Configurações. Duas seções (V-T1): "Geral" (a preparação ao importar, as marcas, o áudio, os modelos e, no
+ * app de computador, "Sobre e atualizações", J146) e "Primeiros passos" (antes uma página à parte, na barra lateral).
+ *
+ * Áudio (J106): a chave da ElevenLabs da pessoa, o teste da chave, a voz (vozes da conta) e o modelo.
+ * A chave nunca volta do servidor: a tela só sabe se há uma e como ela termina.
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ErroDaApi } from '../biblioteca/api';
+import { PadraoDaPreparacaoNasConfiguracoes } from '../biblioteca/Operacoes';
+import { MarcasNasConfiguracoes } from '../leitor/MarcasNasConfiguracoes';
+import { caminhoDaRota, type Rota, type SecaoDasConfiguracoes } from '../biblioteca/rotas';
+import { PrimeirosPassos } from '../onboarding/PrimeirosPassos';
+import { ModelosNasConfiguracoes } from '../modelos/Modelos';
+import { SobreEAtualizacoes } from '../atualizacao/SobreEAtualizacoes';
 import { Icon } from '../ui/Icon';
 import { Button, Input, Select } from '../ui/Primitives';
 import {
@@ -14,11 +23,30 @@ import './audio.css';
 
 const mensagem = (erro: unknown, padrao: string): string => erro instanceof ErroDaApi ? erro.detalhe ?? padrao : padrao;
 
-export function Configuracoes(): ReactNode {
-  useEffect(() => { document.title = 'Configurações · Margem'; }, []);
+const SECOES: readonly { secao: SecaoDasConfiguracoes | undefined; rotulo: string }[] = [
+  { secao: undefined, rotulo: 'Geral' },
+  { secao: 'primeiros-passos', rotulo: 'Primeiros passos' },
+];
+
+export function Configuracoes({ secao, ir }: { secao?: SecaoDasConfiguracoes | undefined; ir?: (destino: Rota) => void } = {}): ReactNode {
+  useEffect(() => { document.title = secao === 'primeiros-passos' ? 'Primeiros passos · Configurações · Margem' : 'Configurações · Margem'; }, [secao]);
+  const irPara = (destino: Rota) => { if (ir) ir(destino); else window.location.assign(caminhoDaRota(destino)); };
   return <article className="configuracoes">
     <h1 className="page-title">Configurações</h1>
-    <ConfiguracaoDoAudio />
+    <nav className="secoes-das-configuracoes" aria-label="Seções das configurações">{SECOES.map((item) => {
+      const destino: Rota = item.secao === undefined ? { nome: 'configuracoes' } : { nome: 'configuracoes', secao: item.secao };
+      return <a key={item.rotulo} href={caminhoDaRota(destino)} aria-current={secao === item.secao ? 'page' : undefined}
+        onClick={(e) => { e.preventDefault(); irPara(destino); }}>{item.rotulo}</a>;
+    })}</nav>
+    {secao === 'primeiros-passos'
+      ? <PrimeirosPassos ir={irPara} />
+      : <>
+        <PadraoDaPreparacaoNasConfiguracoes />
+        <MarcasNasConfiguracoes />
+        <ConfiguracaoDoAudio />
+        <ModelosNasConfiguracoes />
+        <SobreEAtualizacoes />
+      </>}
   </article>;
 }
 

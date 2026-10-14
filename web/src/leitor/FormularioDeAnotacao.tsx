@@ -13,7 +13,9 @@ export function FormularioDeAnotacao({ ancora, anotacao: inicial, marcaId, aoSal
   const [anotacao, definirAnotacao] = useState(inicial);
   const [chaveCliente] = useState(() => crypto.randomUUID());
   const enviando = useRef(false);
-  const [tipo, definirTipo] = useState<TipoAnotacao>(anotacao?.tipo ?? 'impressao');
+  // A nota nova é do grifo e não tem tipo (fica "nota"); o tipo só aparece ao editar uma anotação antiga que tinha um.
+  const [tipo, definirTipo] = useState<TipoAnotacao>(anotacao?.tipo ?? 'nota');
+  const comTipo = anotacao !== undefined && anotacao.tipo !== 'nota';
   const [erro, definirErro] = useState<string | null>(null);
   const [ocupado, ocupar] = useState(false);
   async function salvar(e: FormEvent<HTMLFormElement>) {
@@ -38,11 +40,11 @@ export function FormularioDeAnotacao({ ancora, anotacao: inicial, marcaId, aoSal
     }
     finally { enviando.current = false; ocupar(false); }
   }
-  return <form key={anotacao?.revisao_edicao ?? 0} className="formulario formulario-estudo" aria-label={anotacao ? 'Editar anotação' : 'Anotar trecho'} onSubmit={(e) => void salvar(e)}>
-    <label>Tipo<Select aria-label="Tipo de anotação" value={tipo} onChange={(e) => definirTipo(e.target.value as TipoAnotacao)}>{Object.entries(TIPOS_DE_ANOTACAO).map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}</Select></label>
-    <label>Sua anotação<Textarea name="texto" autoFocus required maxLength={8000} defaultValue={anotacao?.texto ?? ''} /></label>
+  return <form key={anotacao?.revisao_edicao ?? 0} className="formulario formulario-estudo" aria-label={anotacao ? 'Editar anotação' : 'Nota do grifo'} onSubmit={(e) => void salvar(e)}>
+    {comTipo && <label>Tipo<Select aria-label="Tipo de anotação" value={tipo} onChange={(e) => definirTipo(e.target.value as TipoAnotacao)}>{Object.entries(TIPOS_DE_ANOTACAO).map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}</Select></label>}
+    <label>{anotacao ? 'Sua anotação' : 'Sua nota'}<Textarea name="texto" autoFocus required maxLength={8000} defaultValue={anotacao?.texto ?? ''} /></label>
     {tipo === 'fonte' && <><label>Título da fonte<Input name="titulo" required maxLength={500} defaultValue={anotacao?.fonte?.titulo ?? ''} /></label><label>Página<Input name="pagina" maxLength={100} defaultValue={anotacao?.fonte?.pagina ?? ''} /></label><label>URL<Input name="url" type="url" pattern="https?://.*" defaultValue={anotacao?.fonte?.url ?? ''} /></label></>}
     {erro && <p role="alert">{erro}</p>}
-    <div className="button-row"><Button type="submit" disabled={ocupado}>{ocupado ? 'Salvando…' : 'Salvar anotação'}</Button><Button type="button" onClick={aoFechar}>Cancelar</Button></div>
+    <div className="ui-rodape"><Button variante="ghost" tamanho="md" onClick={aoFechar}>Cancelar</Button><Button type="submit" variante="primario" tamanho="md" disabled={ocupado}>{ocupado ? 'Salvando…' : 'Salvar'}</Button></div>
   </form>;
 }

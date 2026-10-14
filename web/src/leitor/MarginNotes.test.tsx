@@ -93,7 +93,7 @@ function topos(container: HTMLElement): number[] {
 }
 
 describe('MarginNotes', () => {
-  test('a nota de uma marca periférica (saliência 3) tem o círculo tracejado', () => {
+  test('a saliência não muda o número da nota (V-T3: sem níveis de atenção)', () => {
     const [primeira, segunda] = notasDeTeste();
     if (!primeira || !segunda) throw new Error('notas esperadas');
     const periferica = { ...segunda, marca: { ...segunda.marca, saliencia: 3 as const } };
@@ -101,7 +101,7 @@ describe('MarginNotes', () => {
       <MarginNotes notas={[primeira, periferica]} artigo={artigoCom([primeira.marca.id, segunda.marca.id])} ativa={null} fixada={null} />,
     );
     const numeros = [...container.querySelectorAll('.nota-numero')];
-    expect(numeros.map((numero) => numero.classList.contains('periferica'))).toEqual([false, true]);
+    expect(numeros.map((numero) => numero.classList.contains('periferica'))).toEqual([false, false]);
   });
   test('alinha pelo topo do trecho e empilha sem cobrir a nota anterior', () => {
     const notas = notasDeTeste();
@@ -116,6 +116,18 @@ describe('MarginNotes', () => {
     );
     // A primeira fica no topo do trecho; a segunda desce o necessário; a terceira volta a alinhar.
     expect(topos(container)).toEqual([100, 100 + 60 + ESPACO_ENTRE_NOTAS, 900]);
+  });
+
+  test('recolhida (J132): o que começa na mesma linha fica lado a lado, na altura do trecho, sem descer', () => {
+    const notas = notasDeTeste();
+    const ids = notas.map((nota) => nota.marca.id);
+    topoDoTrecho.set(ids[0] ?? '', 100);
+    topoDoTrecho.set(ids[1] ?? '', 104);
+    topoDoTrecho.set(ids[2] ?? '', 300);
+    for (const id of ids) alturaDaNota.set(id, 24);
+    const { container } = render(<MarginNotes notas={notas} artigo={artigoCom(ids)} ativa={null} fixada={null} recolhida />);
+    const transformacoes = [...container.querySelectorAll<HTMLElement>('.nota')].map((nota) => nota.style.transform);
+    expect(transformacoes).toEqual(['translateY(100px)', 'translate(30px, 100px)', 'translateY(300px)']);
   });
 
   test('a nota nunca empurra nem cobre o texto: fica em absoluto na própria coluna', () => {

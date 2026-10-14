@@ -4,12 +4,15 @@ import { Adicionar } from './Adicionar';
 import { ErroDaApi } from './api';
 import { lerTextoDoArquivo, type ServicosDaImportacao } from './importacao';
 import { escolherOpcao } from '../../tests/apoio-react';
+import { ProvedorDosRecursos } from '../recursos';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 const criado = (documento_id = 'novo') => Promise.resolve({ documento_id, job_id: 'job' });
 const pronto = (extra: object = {}) => ({ id: 'doc', versao_id: 'versao', estado: 'pronto' as const, detalhe: null, formato: 'pdf', texto_disponivel: true, ...extra });
 const fila = () => within(screen.getByRole('list', { name: 'Fila' }));
+/** Na aba Vídeo, o arquivo próprio fica atrás de um botão. */
+const abrirArquivoProprio = () => fireEvent.click(screen.getByRole('button', { name: /Tenho o arquivo do vídeo/ }));
 const escolher = (arquivos: File[]) => fireEvent.change(screen.getByLabelText('Arquivo'), { target: { files: arquivos } });
 
 function servicos(parciais: Partial<ServicosDaImportacao> = {}): Partial<ServicosDaImportacao> {
@@ -99,7 +102,8 @@ test('vídeo sem transcrição pede o JSON; com ele, envia a mídia, cria o text
   const enviarMidia = vi.fn(() => Promise.resolve({ sha256: 'a'.repeat(64), tipo: 'video' as const }));
   const enviarDocumento = vi.fn<ServicosDaImportacao['enviarDocumento']>(() => criado('video1'));
   const publicarMidia = vi.fn(() => Promise.resolve({}));
-  render(<Adicionar ir={vi.fn()} servicos={servicos({ enviarMidia, enviarDocumento, publicarMidia })} />);
+  render(<Adicionar ir={vi.fn()} aba="video" servicos={servicos({ enviarMidia, enviarDocumento, publicarMidia })} />);
+  abrirArquivoProprio();
   escolher([new File(['mp4'], 'aula.mp4', { type: 'video/mp4' })]);
   expect(fila().getByText('Falta a transcrição')).toBeDefined();
   expect(screen.queryByRole('button', { name: /Adicionar 1 arquivo/ })).toBeNull();
@@ -120,7 +124,8 @@ test('vídeo sem transcrição pede o JSON; com ele, envia a mídia, cria o text
 });
 
 test('soltar vídeo e transcrição juntos já forma o par; transcrição sozinha é recusada com motivo', () => {
-  render(<Adicionar ir={vi.fn()} servicos={servicos()} />);
+  render(<Adicionar ir={vi.fn()} aba="video" servicos={servicos()} />);
+  abrirArquivoProprio();
   escolher([new File(['a'], 'palestra.m4a'), new File([transcricao], 'palestra.json'), new File(['b'], 'aula.mp4'), new File(['c'], 'entrevista.mp3'), new File(['{}'], 'solta.json')]);
   expect(fila().getByText('Pronto para enviar, com palestra.json')).toBeDefined();
   expect(fila().getAllByText('Falta a transcrição')).toHaveLength(2);
@@ -129,7 +134,7 @@ test('soltar vídeo e transcrição juntos já forma o par; transcrição sozinh
 
 test('link do YouTube vai ao serviço; rota ausente (404) explica que ainda não há importação de vídeo', async () => {
   const importarYoutube = vi.fn(() => Promise.reject(new ErroDaApi(404, 'Not Found')));
-  render(<Adicionar ir={vi.fn()} servicos={servicos({ importarYoutube })} />);
+  render(<Adicionar ir={vi.fn()} aba="video" servicos={servicos({ importarYoutube })} />);
   fireEvent.change(screen.getByLabelText('Endereço'), { target: { value: 'https://youtu.be/abc' } });
   fireEvent.click(screen.getByRole('button', { name: 'Trazer' }));
   expect(await fila().findByText(/ainda não está disponível nesta versão/)).toBeDefined();
@@ -138,10 +143,10 @@ test('link do YouTube vai ao serviço; rota ausente (404) explica que ainda não
 
 test('outra página web aponta para a extensão; texto que não é link avisa', () => {
   const ir = vi.fn();
-  render(<Adicionar ir={ir} servicos={servicos()} />);
+  render(<Adicionar ir={ir} aba="video" servicos={servicos()} />);
   fireEvent.change(screen.getByLabelText('Endereço'), { target: { value: 'https://exemplo.com/artigo' } });
   fireEvent.click(screen.getByRole('button', { name: 'Trazer' }));
-  expect(screen.getByRole('alert').textContent).toMatch(/não busca páginas da internet sozinho/);
+  expect(screen.getByRole('alert').textContent).toMatch(/entram pela extensão do Margem/);
   fireEvent.click(screen.getByRole('link', { name: /Como instalar a extensão/ }));
   expect(ir).toHaveBeenCalledWith({ nome: 'ajuda', pagina: 'extensao' });
   fireEvent.change(screen.getByLabelText('Endereço'), { target: { value: 'qualquer coisa' } });
@@ -151,7 +156,7 @@ test('outra página web aponta para a extensão; texto que não é link avisa', 
 
 test('texto colado: título da primeira linha, poesia em "Mais opções", envio imediato', async () => {
   const enviarDocumento = vi.fn<ServicosDaImportacao['enviarDocumento']>(() => criado());
-  render(<Adicionar ir={vi.fn()} entradaInicial="colado" servicos={servicos({ enviarDocumento })} />);
+  render(<Adicionar ir={vi.fn()} aba="documento" modo="colar" servicos={servicos({ enviarDocumento })} />);
   const texto = screen.getByLabelText('Texto');
   expect(document.activeElement).toBe(texto);
   fireEvent.change(texto, { target: { value: 'Soneto\n\nVerso um' } });
@@ -167,23 +172,110 @@ test('texto colado: título da primeira linha, poesia em "Mais opções", envio 
   expect((texto as HTMLTextAreaElement).value).toBe('');
 });
 
-test('avançado: importa marcas de outro arquivo para um documento preparado', async () => {
-  const importarMarcas = vi.fn(() => Promise.resolve({ contagem: { total: 3, resolvidas: 1, reconciliadas: 1 } }));
-  const listarDocumentos = vi.fn(() => Promise.resolve({ documentos: [{ id: 'D1', titulo: 'Pronto', versao_id: 'V' }, { id: 'D2', titulo: 'Sem texto', versao_id: null }] }));
-  render(<Adicionar ir={vi.fn()} servicos={servicos({ importarMarcas, listarDocumentos })} />);
-  expect(screen.queryByText('Marcas de outro arquivo')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Avançado' }));
-  await screen.findByRole('combobox', { name: 'Documento' });
-  fireEvent.click(screen.getByRole('combobox', { name: 'Documento' }));
-  expect(screen.queryByRole('option', { name: 'Sem texto' })).toBeNull();
-  fireEvent.click(screen.getByRole('option', { name: 'Pronto' }));
-  fireEvent.change(screen.getByLabelText('Arquivo de marcas'), { target: { files: [new File(['{"marcas":[]}'], 'marcas.json')] } });
-  fireEvent.click(screen.getByRole('button', { name: 'Importar marcas' }));
-  expect(await screen.findByText('2 de 3 marcas entraram no documento. As outras não foram localizadas no texto.')).toBeDefined();
-  expect(importarMarcas).toHaveBeenCalledWith('D1', { marcas: [] });
+test('a página não fala de questão, Obsidian nem marcas antigas, e não há entrada do Horarium', () => {
+  for (const aba of ['documento', 'video', 'quadro'] as const) {
+    const { unmount } = render(<Adicionar ir={vi.fn()} aba={aba} servicos={servicos()} />);
+    expect(screen.queryByText(/quest[ãa]o/i)).toBeNull();
+    expect(screen.queryByText(/Obsidian/)).toBeNull();
+    expect(screen.queryByText(/marcas de outro arquivo|MarcasLegado|Avançado/i)).toBeNull();
+    expect(screen.queryByText(/Horarium/i)).toBeNull();
+    unmount();
+  }
 });
 
-test('não há entrada do Horarium na página', () => {
-  render(<Adicionar ir={vi.fn()} servicos={servicos()} />);
-  expect(screen.queryByText(/Horarium/i)).toBeNull();
+// ------------------------------------------------------------------ abas (V-D2)
+
+const PNG_1X1 = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0));
+const imagem = (nome = 'obra.png') => new File([PNG_1X1], nome, { type: 'image/png' });
+
+test('cada aba tem o seu aceite, escrito na tela, e as abas navegam pela rota', () => {
+  const ir = vi.fn();
+  const { unmount } = render(<Adicionar ir={ir} aba="documento" servicos={servicos()} />);
+  const aceite = screen.getByLabelText('Arquivo').getAttribute('accept') ?? '';
+  expect(aceite).toContain('.epub');
+  expect(aceite).not.toMatch(/video|image|\.json/);
+  expect(screen.getByText(/\.pdf · \.epub · \.md · \.txt/)).toBeDefined();
+  const abas = within(screen.getByRole('navigation', { name: 'O que adicionar' }));
+  expect(abas.getAllByRole('button').map((b) => b.textContent)).toEqual(['Documento', 'Vídeo', 'Quadro']);
+  expect(abas.getByRole('button', { name: 'Documento' }).getAttribute('aria-current')).toBe('page');
+  fireEvent.click(abas.getByRole('button', { name: 'Vídeo' }));
+  expect(ir).toHaveBeenCalledWith({ nome: 'adicionar', aba: 'video' });
+  unmount();
+  render(<Adicionar ir={ir} aba="video" servicos={servicos()} />);
+  abrirArquivoProprio();
+  const deVideo = screen.getByLabelText('Arquivo').getAttribute('accept') ?? '';
+  expect(deVideo).toContain('video/*');
+  expect(deVideo).toContain('.json');
+  expect(deVideo).not.toContain('.pdf');
+  expect(screen.getByText(/\.mp4 · \.mov/)).toBeDefined();
+  cleanup();
+  render(<Adicionar ir={ir} aba="quadro" servicos={servicos()} />);
+  expect(screen.getByLabelText('Imagem da obra').getAttribute('accept')).toMatch(/image\/jpeg.*image\/png.*image\/webp/);
+  expect(screen.getByText('JPEG · PNG · WebP · até 40 MB')).toBeDefined();
+});
+
+test('arquivo do tipo errado vai para a aba certa, com o atalho; nada é enviado sozinho', () => {
+  const ir = vi.fn();
+  const enviarDocumento = vi.fn(() => criado());
+  const adicionar = vi.fn();
+  render(<Adicionar ir={ir} aba="documento" servicos={servicos({ enviarDocumento })} operacoesDosQuadros={{ adicionar }} />);
+  escolher([new File(['%PDF-'], 'artigo.pdf', { type: 'application/pdf' }), new File(['mp4'], 'aula.mp4', { type: 'video/mp4' }), imagem()]);
+  expect(fila().getByText('artigo.pdf')).toBeDefined();
+  expect(fila().queryByText('aula.mp4')).toBeNull();
+  const aviso = within(screen.getByText(/1 arquivo foi para a aba Vídeo/).closest('p')!);
+  fireEvent.click(aviso.getByRole('button', { name: /Ir para Vídeo/ }));
+  expect(ir).toHaveBeenLastCalledWith({ nome: 'adicionar', aba: 'video' });
+  fireEvent.click(within(screen.getByText(/A imagem foi para a aba Quadro/).closest('p')!).getByRole('button', { name: /Ir para Quadro/ }));
+  expect(ir).toHaveBeenLastCalledWith({ nome: 'adicionar', aba: 'quadro' });
+  expect(enviarDocumento).not.toHaveBeenCalled();
+  expect(adicionar).not.toHaveBeenCalled();
+});
+
+test('a fila acompanha a troca de aba: o vídeo solto em Documento aparece em Vídeo', () => {
+  const { rerender } = render(<Adicionar ir={vi.fn()} aba="documento" servicos={servicos()} />);
+  escolher([new File(['mp4'], 'aula.mp4', { type: 'video/mp4' })]);
+  expect(screen.queryByRole('list', { name: 'Fila' })).toBeNull();
+  rerender(<Adicionar ir={vi.fn()} aba="video" servicos={servicos()} />);
+  expect(fila().getByText('aula.mp4')).toBeDefined();
+  expect(fila().getByText('Falta a transcrição')).toBeDefined();
+});
+
+test('imagem colada vai para a aba Quadro e espera a confirmação; só o botão envia', async () => {
+  const ir = vi.fn();
+  const enviarDocumento = vi.fn(() => criado());
+  const adicionar = vi.fn(() => Promise.resolve({ slug: 'obra', estado: 'na_fila' } as never));
+  const { rerender } = render(<Adicionar ir={ir} aba="documento" servicos={servicos({ enviarDocumento })} operacoesDosQuadros={{ adicionar }} />);
+  // Texto colado não é imagem: segue para onde estava.
+  fireEvent.paste(document.body, { clipboardData: { files: [], items: [], getData: () => 'texto' } });
+  expect(ir).not.toHaveBeenCalled();
+  fireEvent.paste(document.body, { clipboardData: { files: [imagem('image.png')], items: [] } });
+  expect(ir).toHaveBeenCalledWith({ nome: 'adicionar', aba: 'quadro' });
+  rerender(<Adicionar ir={ir} aba="quadro" servicos={servicos({ enviarDocumento })} operacoesDosQuadros={{ adicionar }} />);
+  expect(screen.getByText('print.png')).toBeDefined();
+  await new Promise((resolver) => setTimeout(resolver, 20));
+  expect(adicionar).not.toHaveBeenCalled();
+  expect(enviarDocumento).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'A aula de dança' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar obra' }));
+  await waitFor(() => expect(adicionar).toHaveBeenCalledTimes(1));
+  expect(((adicionar.mock.calls[0] as unknown as [FormData])[0]).get('titulo')).toBe('A aula de dança');
+  expect(await screen.findByText(/A obra entrou na fila de preparo/)).toBeDefined();
+  fireEvent.click(screen.getByRole('button', { name: 'Ver em Quadros' }));
+  expect(ir).toHaveBeenLastCalledWith({ nome: 'biblioteca', tipo: 'quadros' });
+});
+
+test('imagem solta no Início chega à aba Quadro já escolhida, sem envio', async () => {
+  const adicionar = vi.fn();
+  render(<Adicionar ir={vi.fn()} aba="quadro" arquivosIniciais={[imagem('degas.png')]} servicos={servicos()} operacoesDosQuadros={{ adicionar }} />);
+  expect(await screen.findByText('degas.png')).toBeDefined();
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Adicionar obra' }).disabled).toBe(false);
+  expect(adicionar).not.toHaveBeenCalled();
+});
+
+test('com os quadros desligados, não há aba Quadro e a imagem é recusada com o motivo', () => {
+  render(<ProvedorDosRecursos inicial={[]}><Adicionar ir={vi.fn()} aba="quadro" servicos={servicos()} /></ProvedorDosRecursos>);
+  const abas = within(screen.getByRole('navigation', { name: 'O que adicionar' }));
+  expect(abas.getAllByRole('button').map((b) => b.textContent)).toEqual(['Documento', 'Vídeo']);
+  escolher([imagem()]);
+  expect(fila().getByText(/quadros estão desligados/)).toBeDefined();
 });

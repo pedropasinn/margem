@@ -10,6 +10,12 @@ import type { CapturaDePdf, CapturaDeTexto, Configuracao, Enviado, ImportacaoWeb
 /** Onde o Margem instalado no próprio computador responde (Docker Compose, porta 8730). */
 export const SERVIDOR_PADRAO = 'http://localhost:8730';
 
+/**
+ * Portas em que a extensão procura o Margem deste computador (V-W9). O app de computador abre na 8730
+ * e, se ela estiver ocupada (outro programa, um Margem em Docker, um túnel), numa das seguintes.
+ */
+export const PORTAS_DO_MARGEM: readonly number[] = Array.from({ length: 10 }, (_, i) => 8730 + i);
+
 /** Hosts cobertos por `host_permissions` no manifesto (qualquer porta). */
 const HOSTS_LOCAIS = new Set(['localhost', '127.0.0.1']);
 
@@ -173,6 +179,10 @@ export async function enviarPdf(configuracao: Configuracao, captura: CapturaDePd
 
 export interface Conexao {
   versao: number;
+  /** Onde respondeu e com que identificação (V-W9), quando a extensão procurou pelas portas. */
+  servidor?: string;
+  instancia_id?: string | null;
+  outros?: number;
 }
 
 export async function testarConexao(configuracao: Configuracao): Promise<Conexao> {
@@ -185,4 +195,85 @@ export async function testarConexao(configuracao: Configuracao): Promise<Conexao
     throw new ErroDoServidor('O endereço respondeu, mas não parece ser o Margem.', 'nao_e_margem');
   }
   return { versao: corpo.importacao_web };
+}
+
+// ------------------------------------------------------------------ descoberta do Margem local (V-W9)
+
+/** Um Margem que respondeu numa das portas locais. */
+export interface MargemEncontrado {
+  servidor: string;
+  porta: number;
+  /** A identificação mostrada na checagem da instalação do Margem; `null` num Margem antigo. */
+  instancia_id: string | null;
+  app_de_computador: boolean;
+}
+
+/**
+ * O endereço configurado é o padrão local (localhost ou 127.0.0.1 numa das portas do Margem)? Só então
+ * a extensão procura o Margem pelas portas; um endereço escolhido à mão (outra porta, Tailscale) vale
+ * como está.
+ */
+export function procuraAutomatica(servidor: string): boolean {
+  try {
+    const url = new URL(servidor);
+    return url.protocol === 'http:' && HOSTS_LOCAIS.has(url.hostname) && url.pathname.replace(/\/+$/, '') === ''
+      && PORTAS_DO_MARGEM.includes(Number(url.port || '80'));
+  } catch {
+    return false;
+  }
+}
+
+/** `GET /api/saude` numa porta: quem responde como Margem (mesmo com o banco fora, 503). */
+async function sondar(host: string, porta: number, buscar: typeof fetch, prazoMs: number): Promise<MargemEncontrado | null> {
+  const servidor = `http://${host}:${String(porta)}`;
+  try {
+    const resposta = await buscar(`${servidor}/api/saude`, { credentials: 'omit', cache: 'no-store', signal: AbortSignal.timeout(prazoMs) });
+    const corpo = await resposta.json() as { servico?: unknown; instancia_id?: unknown; app_de_computador?: unknown; erro?: unknown; ok?: unknown };
+    const margem = corpo.servico === 'margem' || typeof corpo.ok === 'boolean'
+      || corpo.erro === 'origem_recusada' || corpo.erro === 'rota_fora_da_extensao' || corpo.erro === 'host_recusado';
+    if (!margem) return null;
+    return { servidor, porta, instancia_id: typeof corpo.instancia_id === 'string' ? corpo.instancia_id : null, app_de_computador: corpo.app_de_computador === true };
+  } catch {
+    return null;
+  }
+}
+
+/** Procura em paralelo nas portas 8730–8739 do host configurado. */
+export async function procurarMargem(servidor: string, buscar: typeof fetch = (...a) => fetch(...a), prazoMs = 1_500): Promise<MargemEncontrado[]> {
+  const host = new URL(servidor).hostname;
+  const achados = await Promise.all(PORTAS_DO_MARGEM.map((porta) => sondar(host, porta, buscar, prazoMs)));
+  return achados.filter((a): a is MargemEncontrado => a !== null);
+}
+
+/**
+ * Qual dos Margens achados usar: o da identificação que a extensão já conhece; senão o app de
+ * computador; senão o da menor porta.
+ */
+export function escolherMargem(achados: readonly MargemEncontrado[], conhecida: string | null): MargemEncontrado | null {
+  return (conhecida === null ? undefined : achados.find((a) => a.instancia_id === conhecida))
+    ?? achados.find((a) => a.app_de_computador) ?? achados[0] ?? null;
+}
+
+export interface Resolvido { configuracao: Configuracao; encontrado: MargemEncontrado | null; outros: number }
+
+/**
+ * A configuração com o endereço do Margem achado nas portas locais (quando a procura vale para o
+ * endereço configurado). Sem nenhum Margem respondendo, fica o configurado (o erro de rede explica).
+ */
+export async function resolverServidor(configuracao: Configuracao, conhecida: string | null, buscar?: typeof fetch): Promise<Resolvido> {
+  if (!procuraAutomatica(configuracao.servidor)) return { configuracao, encontrado: null, outros: 0 };
+  const achados = await procurarMargem(configuracao.servidor, buscar);
+  const escolhido = escolherMargem(achados, conhecida);
+  if (escolhido === null) return { configuracao, encontrado: null, outros: 0 };
+  return { configuracao: { ...configuracao, servidor: escolhido.servidor }, encontrado: escolhido, outros: achados.length - 1 };
+}
+
+/** O que a página de opções diz depois do teste: onde o Margem respondeu e com que identificação. */
+export function textoDaConexao(conexao: Conexao): string {
+  const base = `Conectado ao Margem (importação web v${String(conexao.versao)})`;
+  if (conexao.servidor === undefined) return `${base}.`;
+  const onde = conexao.servidor.replace(/^https?:\/\//, '');
+  const id = conexao.instancia_id ? `, identificação ${conexao.instancia_id}` : '';
+  const outros = (conexao.outros ?? 0) > 0 ? ` Há outro Margem respondendo neste computador; confira a identificação na checagem da instalação do Margem que você usa.` : '';
+  return `${base} em ${onde}${id}.${outros}`;
 }

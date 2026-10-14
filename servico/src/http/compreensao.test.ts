@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import type { Hono } from 'hono';
 import { afterEach, expect, test } from 'vitest';
 import {
-  validarApresentacao, validarConexaoV2, type ApresentacaoDoPlanoV1, type ExecucaoCompreensaoV1, type ModeloDoCapituloV1, type PlanoPedagogicoV1,
+  validarApresentacao, validarConexaoV2, validarConexaoV3, type ApresentacaoDoPlanoV1, type ExecucaoCompreensaoV1, type ModeloDoCapituloV1, type PlanoPedagogicoV1,
 } from '@margem/contratos';
 import { canonicoDeTeste, comBanco } from '../../testes/apoio.js';
 import { configurar, livro, rodarUm } from '../../testes/compreensao.js';
@@ -110,6 +110,10 @@ test('criar, preparar, acompanhar, ver relações, adotar, apresentar e trocar o
   const conexao = await comTransacao(banco, (cliente) => conexoesRepo.obter(cliente, conexao_id));
   expect(validarConexaoV2(conexao)).toBe(true);
   expect(conexao).toMatchObject({ autor: 'leitor', estado: 'aceita', relacao: 'prerequisito', justificativa: 'A conclusão usa a rigidez.' });
+  // Sem perda: a conexão guarda o tipo fino e a relação de onde veio (ConexaoV3).
+  const v3 = await comTransacao(banco, (cliente) => conexoesRepo.obterV3(cliente, conexao_id));
+  expect(validarConexaoV3(v3), JSON.stringify(validarConexaoV3.errors)).toBe(true);
+  expect(v3).toMatchObject({ versao: 3, relacao: 'prerequisito', relacao_semantica: 'pressupoe', origem_compreensao: { relacao_id: retrospectiva } });
   expect((await ler<Relacoes>(api, `/api/compreensoes/${compreensao.id}/capitulos/${cap1.secao_id}/relacoes`)).relacoes[0]?.conexao_id).toBe(conexao_id);
 
   // Apresentação: os três dispositivos, os mesmos passos.

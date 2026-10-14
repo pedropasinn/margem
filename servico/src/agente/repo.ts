@@ -79,6 +79,13 @@ export async function criarConversa(cliente: Transacao, titulo: string): Promise
   return id;
 }
 
+/** Só o título muda: renomear não reordena a lista (a data de atualização fica). */
+export async function renomearConversa(cliente: Transacao, id: Id, titulo: string): Promise<ConversaDoAgenteV1 | null> {
+  const { rows } = await cliente.query<LinhaDaConversa>(`UPDATE agente_conversa SET titulo=$2 WHERE id=$1 AND apagada_em IS NULL
+    RETURNING id, titulo, criada_em, atualizada_em`, [id, titulo]);
+  return rows[0] ? conversaDaLinha(rows[0]) : null;
+}
+
 export async function apagarConversa(cliente: Transacao, id: Id): Promise<boolean> {
   const { rowCount } = await cliente.query('UPDATE agente_conversa SET apagada_em=clock_timestamp() WHERE id=$1 AND apagada_em IS NULL', [id]);
   return (rowCount ?? 0) > 0;

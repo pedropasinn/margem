@@ -1,3 +1,4 @@
+import { aoPublicarVersao } from '../tipo-de-texto/identificar.js';
 import { interpretarJson, lerJsonLimitado, lerTextoLimitado, ORCAMENTOS } from '../entrada-json.js';
 import { reconciliarCanonizacao, finalizarArquivos } from './arquivos-canonizacao.js';
 /**
@@ -17,6 +18,8 @@ import { sha256 } from '../executor/artefato.js';
 import type { ExecucaoOk, ResultadoExecutor } from '../executor/tipos.js';
 import { falhou } from '../executor/tipos.js';
 import { ambienteSaneado } from '../executor/ambiente.js';
+import { comandoDoMotor } from '../plataforma/executaveis.js';
+import { encerrarArvore, opcoesDeProcesso } from '../plataforma/processos.js';
 import { comTransacao, type Transacao } from '../db/transacao.js';
 import * as documentos from '../repos/documentos.js';
 import { pastaDaTentativaDeCanonizacao, pastaDoDocumento, raizDoRepositorio } from '../dados.js';
@@ -37,9 +40,6 @@ export interface OpcoesDaCanonizacao {
   prazoMs?: number;
 }
 
-function python(raiz: string): string {
-  return join(raiz, 'motor/.venv/bin/python');
-}
 
 export interface SaidaDoMotor {
   estado: 'ok' | 'falhou';
@@ -50,7 +50,7 @@ export interface SaidaDoMotor {
   duracao_ms: number;
 }
 
-/** Roda `python -m margem_motor.ingest` e devolve o caminho do canônico. */
+/** Roda o motor (`margem-motor ingest` ou `python -m margem_motor.ingest`) e devolve o caminho do canônico. */
 export async function rodarMotor(
   raiz: string, entrada: string, formato: string, saida: string,
   extras: {
@@ -69,30 +69,31 @@ export async function rodarMotor(
   raiz = resolve(raiz);
   entrada = resolve(raiz, entrada);
   saida = resolve(raiz, saida);
-  const argumentos = ['-m', 'margem_motor.ingest', '--entrada', entrada, '--formato', formato, '--saida', saida];
+  const argumentos = ['--entrada', entrada, '--formato', formato, '--saida', saida];
   if (extras.titulo !== undefined && extras.titulo.trim() !== '') argumentos.push('--titulo', extras.titulo);
   if (extras.tituloReserva) argumentos.push('--titulo-reserva', extras.tituloReserva);
   if (extras.autor !== undefined && extras.autor !== null && extras.autor.trim() !== '') argumentos.push('--autor', extras.autor);
   if (extras.paginas) argumentos.push('--paginas', `${String(extras.paginas.inicio)}-${String(extras.paginas.fim)}`);
   if (extras.poesia === true) argumentos.push('--poesia');
   return new Promise<SaidaDoMotor>((resolver) => {
-    const processo = spawn(python(raiz), argumentos, {
-      cwd: join(raiz, 'motor'), env: ambienteSaneado(), stdio: ['ignore', 'ignore', 'pipe'],
+    const comando = comandoDoMotor('ingest', argumentos, { raiz });
+    const processo = spawn(comando.programa, comando.argumentos, {
+      cwd: comando.cwd, env: ambienteSaneado(), stdio: ['ignore', 'ignore', 'pipe'], ...opcoesDeProcesso(),
     });
     // Só a cauda do stderr: mensagem de erro sem despejar o texto do usuário no log.
     let erro = '';
     processo.stderr.setEncoding('utf8');
     processo.stderr.on('data', (pedaco: string) => { erro = `${erro}${pedaco}`.slice(-2_000); });
-    const prazo = setTimeout(() => { processo.kill('SIGKILL'); }, extras.prazoMs ?? PRAZO_CANONIZACAO_MS);
+    const prazo = setTimeout(() => { void encerrarArvore(processo, 'forcado'); }, extras.prazoMs ?? PRAZO_CANONIZACAO_MS);
     prazo.unref?.();
     let cancelado = false;
     let encerramento: ReturnType<typeof setTimeout> | undefined;
     const abortar = () => {
       cancelado = true;
-      processo.kill('SIGTERM');
+      void encerrarArvore(processo, 'suave');
       // Limite de encerramento já adotado pelo worker; não deixar subprocesso
       // que ignore SIGTERM ocupando a máquina até o prazo de canonização.
-      encerramento = setTimeout(() => { processo.kill('SIGKILL'); }, PRAZO_ENCERRAMENTO_MOTOR_MS);
+      encerramento = setTimeout(() => { void encerrarArvore(processo, 'forcado'); }, PRAZO_ENCERRAMENTO_MOTOR_MS);
       encerramento.unref();
     };
     const limpar = () => {
@@ -188,12 +189,18 @@ export async function publicarCanonizacao(
   const canonico = interpretarJson(texto, ORCAMENTOS.canonico) as CanonicoV1;
   await reconciliarCanonizacao(cliente, entrada.documento_id);
   const versao = await documentos.criarVersao(cliente, entrada.documento_id, canonico, opcoes);
+  // Documento ainda sem tipo de texto: o Codex o reconhece (job leve), para a leitura sair no modo certo.
+  await aoPublicarVersao(cliente, entrada.documento_id, versao.id, canonico);
   // EPUB e PDF sem título explícito: o título dos metadados substitui o de reserva (nome do arquivo).
   await cliente.query(`UPDATE documento SET
     titulo=CASE WHEN titulo=$2 THEN $3 ELSE titulo END, autor=coalesce(autor,$4)
     WHERE id=$1`, [entrada.documento_id, canonico.canonizacao.config?.titulo_reserva ?? null,
     canonico.documento.titulo, canonico.documento.autor ?? null]);
   await prepararManifestoDaVersao(origem, versao.id);
+  // Questão por imagem (J119): a resolução da página inteira nasce com a versão. Import dinâmico: o
+  // módulo da questão usa a resolução, que usa este arquivo.
+  const { resolverQuestaoPublicada } = await import('../questao/questao.js');
+  await resolverQuestaoPublicada(cliente, entrada.documento_id, versao.id);
   const destino = await finalizarArquivos(origem, entrada.documento_id, versao.id, tarefa.job.id);
   // Depois do renomeio o artefato mora na pasta definitiva; é esse caminho que fica no job.
   const artefato = join(destino, 'canonico.json');

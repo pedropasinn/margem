@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 5201 --strictPort",
-    "build": "tsc -b && vite build",
+    "build": "npm run typecheck && vite build",
     "preview": "vite preview --port 5201 --strictPort",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
     "capturar": "node scripts/capturar.mjs"
   },
   "dependencies": {

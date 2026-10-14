@@ -29,6 +29,11 @@ export interface OriginalNovo {
   poesia: boolean;
   /** PDF e EPUB sem título: o nome do arquivo fica como reserva até o canônico trazer o dos metadados. */
   nomeDoArquivo?: string;
+  /**
+   * Arquivos que acompanham o original (a questão por imagem, J119), gravados na pasta do documento
+   * antes de a transação confirmar: o worker nunca vê o job sem eles.
+   */
+  antesDeConfirmar?: (documentoId: Id) => Promise<void>;
 }
 
 export interface OriginalRegistrado {
@@ -45,7 +50,7 @@ export interface OriginalDuplicado {
 }
 
 export async function registrarOriginal(banco: pg.Pool, entrada: OriginalNovo): Promise<OriginalRegistrado | OriginalDuplicado> {
-  const { titulo, autor, formato, bytes, paginas, poesia, nomeDoArquivo } = entrada;
+  const { titulo, autor, formato, bytes, paginas, poesia, nomeDoArquivo, antesDeConfirmar } = entrada;
   const sha = sha256Hex(bytes);
   return comTransacao(banco, async (cliente) => {
     // Duplicado é o mesmo original com as mesmas opções: outra faixa de páginas ou poesia é outro instantâneo.
@@ -68,6 +73,7 @@ export async function registrarOriginal(banco: pg.Pool, entrada: OriginalNovo): 
       await writeFile(join(pastaDoDocumento(documento.id), 'importacao.json'),
         JSON.stringify({ titulo_reserva: documento.titulo }), { mode: 0o600 });
     }
+    if (antesDeConfirmar) await antesDeConfirmar(documento.id);
     await cliente.query('UPDATE documento SET origem_caminho=$2, paginas_inicio=$3, paginas_fim=$4, poesia=$5 WHERE id=$1',
       [documento.id, caminho, paginas?.inicio ?? null, paginas?.fim ?? null, poesia]);
     // A faixa e a poesia fazem parte da entrada: o mesmo original com outra opção é outro instantâneo.

@@ -4,8 +4,8 @@
  * `INTERVALO_DA_CONSULTA_MS`. Com a aba escondida, a consulta espera a volta.
  */
 import { useEffect, useReducer, useRef, useState } from 'react';
-import type { ExecucoesDoCodexV1 } from '@margem/contratos';
-import { anuncioDaMudanca, ESTADO_INICIAL, pareceLista, reduzirAvisos, type AcaoDosAvisos, type EstadoDosAvisos } from './execucoes';
+import type { ExecucoesDoCodexV2 } from '@margem/contratos';
+import { anuncioDaMudanca, ESTADO_INICIAL, normalizarLista, reduzirAvisos, type AcaoDosAvisos, type EstadoDosAvisos } from './execucoes';
 
 export const INTERVALO_DA_CONSULTA_MS = 4_000;
 
@@ -22,14 +22,14 @@ export function usarExecucoes(): { estado: EstadoDosAvisos; despachar: (acao: Ac
   useEffect(() => {
     let vivo = true;
     let consulta: ReturnType<typeof setInterval> | null = null;
-    const receber = (lista: ExecucoesDoCodexV1) => { if (vivo) despachar({ tipo: 'lista', lista, recebidaEm: Date.now() }); };
+    const receber = (lista: ExecucoesDoCodexV2) => { if (vivo) despachar({ tipo: 'lista', lista, recebidaEm: Date.now() }); };
     const consultar = async () => {
       if (document.visibilityState === 'hidden') return;
       try {
         const resposta = await fetch('/api/execucoes/ativas', { headers: { Accept: 'application/json' } });
         if (!resposta.ok) return;
-        const corpo: unknown = await resposta.json();
-        if (pareceLista(corpo)) receber(corpo);
+        const lista = normalizarLista(await resposta.json());
+        if (lista) receber(lista);
       } catch { /* sem rede: a próxima volta tenta de novo */ }
     };
     const consultarSempre = () => {
@@ -45,8 +45,8 @@ export function usarExecucoes(): { estado: EstadoDosAvisos; despachar: (acao: Ac
       fluxo.addEventListener('execucoes', (evento) => {
         pararConsulta();
         try {
-          const corpo: unknown = JSON.parse((evento as MessageEvent<string>).data);
-          if (pareceLista(corpo)) receber(corpo);
+          const lista = normalizarLista(JSON.parse((evento as MessageEvent<string>).data));
+          if (lista) receber(lista);
         } catch { /* evento torto: espera o próximo */ }
       });
       // O navegador reconecta sozinho; enquanto isso, a consulta cobre.

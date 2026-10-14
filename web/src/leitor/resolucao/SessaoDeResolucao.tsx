@@ -27,6 +27,8 @@ export interface FontesDaSessao {
   tentarDeNovo: typeof tentarDeNovo;
   /** Manda ao Codex um exercício pendente (vindo da descoberta do livro). */
   resolver?: typeof resolverExercicio;
+  /** O endereço da imagem do recorte, quando ela não vem da API (o site da página inicial). */
+  imagem?: (id: string) => string;
 }
 export const FONTES_DA_SESSAO: FontesDaSessao = { obter: obterResolucao, perguntar: perguntarNaResolucao, tentarDeNovo, resolver: resolverExercicio };
 const INTERVALO_MS = 2500;
@@ -53,7 +55,11 @@ function usarTelaLarga(): boolean {
   return larga;
 }
 
-export function SessaoDeResolucao({ id, aoFechar, fontes = FONTES_DA_SESSAO, intervaloMs = INTERVALO_MS }: { id: string; aoFechar: () => void; fontes?: FontesDaSessao; intervaloMs?: number }): ReactNode {
+export function SessaoDeResolucao({ id, aoFechar, fontes = FONTES_DA_SESSAO, intervaloMs = INTERVALO_MS, atalhosSoComFoco = false }: {
+  id: string; aoFechar: () => void; fontes?: FontesDaSessao; intervaloMs?: number;
+  /** Teclado só com o foco dentro da janela (o site embute a sessão numa página que rola). */
+  atalhosSoComFoco?: boolean;
+}): ReactNode {
   const [sessao, definirSessao] = useState<SessaoDaApi | null>(null);
   const [erro, definirErro] = useState<string | null>(null);
   const [pergunta, definirPergunta] = useState('');
@@ -185,16 +191,17 @@ export function SessaoDeResolucao({ id, aoFechar, fontes = FONTES_DA_SESSAO, int
   const seguir = useCallback(() => { if (itens) definirProgresso((atual) => atual && avancar(itens, atual)); }, [itens]);
   const voltar = useCallback(() => { definirProgresso((atual) => atual && recuar(atual)); }, []);
 
+  const dentro = useCallback((evento: KeyboardEvent) => !atalhosSoComFoco || (evento.target instanceof Node && !!janela.current?.contains(evento.target)), [atalhosSoComFoco]);
   // Esc fecha (na volta do evento: um menu aberto por cima fecha primeiro e o consome).
   useEffect(() => {
-    const teclar = (evento: KeyboardEvent) => { if (evento.key === 'Escape') aoFechar(); };
+    const teclar = (evento: KeyboardEvent) => { if (evento.key === 'Escape' && dentro(evento)) aoFechar(); };
     window.addEventListener('keydown', teclar);
     return () => window.removeEventListener('keydown', teclar);
-  }, [aoFechar]);
+  }, [aoFechar, dentro]);
   // → e Espaço avançam, ← recua: fora de campos de texto, de menus e de controles que usam as setas.
   useEffect(() => {
     const teclar = (evento: KeyboardEvent) => {
-      if (evento.defaultPrevented || evento.altKey || evento.ctrlKey || evento.metaKey || !itens || digitando(evento.target)) return;
+      if (evento.defaultPrevented || evento.altKey || evento.ctrlKey || evento.metaKey || !itens || digitando(evento.target) || !dentro(evento)) return;
       if (document.querySelector('.ui-veu, .ui-popover')) return;
       const alvo = evento.target instanceof Element ? evento.target : null;
       if (alvo?.closest('[role=radiogroup], [role=listbox], [role=combobox], [role=slider]')) return;
@@ -204,7 +211,7 @@ export function SessaoDeResolucao({ id, aoFechar, fontes = FONTES_DA_SESSAO, int
     };
     window.addEventListener('keydown', teclar, true);
     return () => window.removeEventListener('keydown', teclar, true);
-  }, [itens, seguir, voltar]);
+  }, [itens, seguir, voltar, dentro]);
 
   // O que acabou de aparecer entra na área visível do painel, sem pular.
   const chaveDoProgresso = progresso ? `${String(progresso.atual)}:${progresso.passos.join(',')}` : '';
@@ -229,12 +236,12 @@ export function SessaoDeResolucao({ id, aoFechar, fontes = FONTES_DA_SESSAO, int
       <span className="eyebrow">Resolução{origem?.tipo === 'recorte' ? ` · p. ${String(origem.pagina)}` : ''}</span>
       <div className="controles-da-janela">
         <SegmentedControl rotulo="Forma da janela" className="forma-da-janela" valor={forma} opcoes={opcoes} aoMudar={mudarForma} />
-        <IconButton ref={fechar} aria-label="Fechar resolução" onClick={aoFechar}>×</IconButton>
+        <IconButton ref={fechar} aria-label="Fechar resolução" onClick={aoFechar} icone="xis" />
       </div>
     </header>
     <div ref={corpo} className="corpo-da-resolucao">
       {erro && <p className="aviso-estudo" role="alert">{erro}</p>}
-      {origem?.tipo === 'recorte' && <ImagemDoRecorte id={id} />}
+      {origem?.tipo === 'recorte' && (fontes.imagem ? <img className="imagem-do-recorte" src={fontes.imagem(id)} alt="O exercício recortado da página" /> : <ImagemDoRecorte id={id} />)}
       {origem?.tipo === 'trecho' && <blockquote className="trecho-da-resolucao">{origem.ancora.citacao}</blockquote>}
       {sessao?.estado === 'resolvendo' && <div className="estado-da-resolucao pensando"><ThoughtLine label="Resolvendo o exercício…" collapsible={false} fontSize={15} color="var(--texto-1)" glyphColor="var(--accent)" /></div>}
       {sessao?.estado === 'pendente' && fontes.resolver && <p className="estado-da-resolucao">Este exercício está na lista do livro e ainda não foi ao Codex.

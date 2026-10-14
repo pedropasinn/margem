@@ -1,0 +1,134 @@
+/*
+ * Página inicial (J121): cinco partes com o mesmo ritmo. Títulos menores que os de antes, um parágrafo
+ * curto, e a superfície do produto logo em seguida. Destaque por fundo, borda completa ou selo; nunca
+ * faixa lateral.
+ */
+.heroi-demo { width: min(1320px, 100% - 2 * var(--gutter)); margin: clamp(48px, 7vw, 88px) auto 0; }
+
+.secao { padding-block: clamp(64px, 8vw, 112px); }
+.titulo-de-secao { max-width: 860px; font-size: clamp(30px, 4.2vw, 52px); line-height: 1.05; }
+.texto-de-secao {
+  max-width: 640px; margin-top: 18px;
+  font: 400 clamp(17px, 1.5vw, 20px)/1.55 var(--sans); color: var(--texto-2); text-wrap: pretty;
+}
+
+/* Aprofundar: o texto e a captura real da seleção, lado a lado. */
+.aprofundar-grade { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
+.aprofundar-texto .link-seta { margin-top: 22px; }
+@media (max-width: 960px) { .aprofundar-grade { grid-template-columns: minmax(0, 1fr); } }
+
+/* O app real: três capturas (as mesmas do README), cada uma com uma linha de legenda. */
+.app-real { padding-top: 0; }
+.galeria-app { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(24px, 3vw, 40px); margin-top: clamp(32px, 5vw, 56px); }
+.galeria-app p { margin-top: 14px; font: 400 16px/1.5 var(--sans); color: var(--texto-2); text-wrap: pretty; }
+.galeria-app strong { color: var(--texto-1); font-weight: 600; }
+@media (max-width: 960px) { .galeria-app { grid-template-columns: minmax(0, 1fr); } }
+
+/* Outras formas de estudar: abas e o app embutido. */
+.estudar { padding-top: 0; }
+.abas {
+  display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 28px; padding: 4px;
+  border-radius: var(--r-pilula); background: var(--painel);
+}
+.abas [role="tab"] {
+  min-height: 40px; padding: 8px 18px; border: 0; border-radius: var(--r-pilula); background: none;
+  font: 600 15px/1.2 var(--sans); color: var(--texto-2); cursor: pointer;
+}
+.abas [role="tab"]:hover { color: var(--texto-1); }
+.abas [role="tab"][aria-selected="true"] { background: var(--bg); color: var(--texto-1); box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 0 0 1px var(--borda); }
+.estudar-texto { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; max-width: 760px; margin-top: 24px; }
+.estudar-texto > p:first-child { flex-basis: 100%; font: 400 clamp(17px, 1.5vw, 19px)/1.55 var(--sans); color: var(--texto-1); text-wrap: pretty; }
+.estudar-dica { font-size: 14.5px; color: var(--texto-3); }
+.estudar-demo { margin-top: 24px; min-height: 640px; }
+.estudar-demo-obsidian { min-height: 0; }
+.estudar-carregando { display: grid; place-content: center; height: 640px; border: 1px solid var(--borda); border-radius: var(--r-16); color: var(--texto-3); font-size: 14px; }
+.demo-app { height: 640px; }
+@media (max-width: 760px) {
+  .estudar-demo { min-height: 560px; }
+  .estudar-carregando, .demo-app { height: 560px; }
+}
+.estudar-videos { margin-top: 20px; color: var(--texto-3); font-size: 15px; }
+.estudar-videos a { color: var(--texto-2); }
+
+/* Exercícios: a página feita do print, à esquerda; o painel de resolução do app, à direita (ou embaixo). */
+.demo-do-exercicio { --fundo: var(--bg); }
+.exercicio-pagina {
+  position: absolute; inset: 0 460px 0 0; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: 28px 24px; overflow: auto; background: var(--bg-2);
+}
+.exercicio-origem { margin: 0; font-size: 13px; color: var(--texto-3); }
+.exercicio-folha { width: 100%; max-width: 560px; height: auto; border-radius: 4px; background: #fff; box-shadow: var(--sombra-folha); }
+@media (max-width: 899.98px) {
+  .exercicio-pagina { inset: 0; padding: 16px; }
+  .demo-do-exercicio .sessao-de-resolucao { height: 76%; }
+  /* A moldura é mais estreita que a tela: "onde está" vai para a linha de baixo, sem cobrir os botões. */
+  .demo-do-exercicio .avanco-da-resolucao { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 6px; padding-block: 8px; }
+  .demo-do-exercicio .grupos-do-avanco, .demo-do-exercicio .avanco-da-resolucao .onde-esta { grid-column: 1; justify-self: center; }
+}
+
+/* Obsidian: a nota como arquivo Markdown. */
+.demo-obsidian { margin: 0; border: 1px solid var(--borda); border-radius: var(--r-16); background: var(--bg); overflow: hidden; }
+.md-arquivo {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 12px 18px;
+  border-bottom: 1px solid var(--borda); background: var(--bg-2); font: 600 13px/1.3 var(--sans); color: var(--texto-2);
+}
+.md-itens { font-weight: 500; color: var(--texto-3); }
+.md-corpo {
+  max-height: 560px; margin: 0; padding: 18px 20px; overflow: auto;
+  font: 13px/1.6 ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; color: var(--texto-1);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.md-corpo code { padding: 0; background: none; font: inherit; }
+.md-propriedades { margin: 0; padding: 0; text-align: left; border: 0; background: none; font: inherit; color: var(--texto-3); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.md-propriedades:hover { color: var(--texto-1); }
+.md-meta, .md-discreto { color: var(--texto-3); }
+.md-titulo { font-weight: 700; }
+.md-callout { color: var(--accent-texto); font-weight: 600; }
+.md-citacao { color: var(--texto-2); }
+
+/* Biblioteca: formatos, a lista completa e a pasta local. */
+.formatos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 36px; }
+.formatos li {
+  display: grid; justify-items: start; align-content: start; gap: 2px; padding: 14px 16px;
+  border: 1px solid var(--borda); border-radius: var(--r-12); background: var(--bg);
+}
+.formatos svg { margin-bottom: 6px; color: var(--accent-texto); }
+.formatos strong { font: 650 15px/1.3 var(--sans); }
+.formatos span { font: 500 12.5px/1.4 ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; color: var(--texto-3); }
+@media (max-width: 1000px) { .formatos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .formatos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.todos-os-formatos { margin-top: 16px; }
+.todos-os-formatos > summary {
+  display: inline-flex; align-items: center; gap: 10px; padding: 8px 0; list-style: none; cursor: pointer;
+  font: 650 15px/1.3 var(--sans); color: var(--accent-texto);
+}
+.todos-os-formatos > summary::-webkit-details-marker { display: none; }
+.todos-os-formatos-corpo {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 32px; margin-top: 12px; padding: 24px;
+  border: 1px solid var(--borda); border-radius: var(--r-16); background: var(--bg);
+}
+.formatos-grupo h3 { font: 700 12.5px/1.2 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--texto-3); }
+.formatos-grupo dl { display: grid; gap: 12px; margin: 12px 0 0; }
+.formatos-grupo dt { font: 650 15px/1.35 var(--sans); }
+.formatos-grupo dt code { margin-left: 4px; font-size: 12.5px; color: var(--texto-2); }
+.formatos-grupo dd { margin: 2px 0 0; font-size: 14.5px; color: var(--texto-2); }
+.formatos-limites { grid-column: 1 / -1; padding-top: 16px; border-top: 1px solid var(--borda); font-size: 14.5px; color: var(--texto-3); }
+.formatos-limites a { color: var(--accent-texto); }
+@media (max-width: 900px) { .todos-os-formatos-corpo { grid-template-columns: minmax(0, 1fr); padding: 18px; } }
+
+.faixa-privada {
+  display: flex; align-items: center; gap: 16px; margin-top: 28px; padding: 16px 20px;
+  border: 1px solid var(--borda); border-radius: var(--r-16); background: var(--bg);
+}
+.faixa-privada-icone { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: var(--accent-suave); color: var(--accent-texto); }
+.faixa-privada p { flex: 1; font-size: 15px; color: var(--texto-2); }
+.faixa-privada strong { color: var(--texto-1); }
+.faixa-privada .link-seta { flex-shrink: 0; }
+@media (max-width: 760px) { .faixa-privada { flex-wrap: wrap; align-items: flex-start; } .faixa-privada p { flex-basis: calc(100% - 56px); } }
+
+/* Baixar: os sistemas e dois fatos (a assinatura com o lema vem logo abaixo, no rodapé). */
+.baixar-fatos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 40px; max-width: 1000px; margin-top: 32px; font-size: 15.5px; color: var(--texto-2); }
+.baixar-fatos strong { color: var(--texto-1); }
+.baixar-fatos a { color: var(--accent-texto); white-space: nowrap; }
+@media (max-width: 760px) { .baixar-fatos { grid-template-columns: minmax(0, 1fr); } }

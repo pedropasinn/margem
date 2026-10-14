@@ -1,0 +1,30 @@
+/*
+ * A casca mínima para os componentes do app (`web/src`) viverem dentro da página. O app conta com a
+ * janela inteira: barras, painéis e players em `position: fixed`. Dentro de `.app-embutido` (com
+ * `transform`), o "fixo" passa a ser relativo à moldura da demonstração, que tem altura própria.
+ *
+ * As regras abaixo (com `:where`, para não pesar mais que as classes do app) são as que esses
+ * componentes pressupõem, limitadas à moldura:
+ * - a base de `web/src/ui/componentes.css` (títulos, links, ícones, `.eyebrow`);
+ * - `.filtros` de `web/src/leitor/reader.css` (a superfície da barra do leitor), sem o `sticky`;
+ * - as margens do navegador em parágrafos e listas, que o `base.css` do site zera e o app não.
+ * O resto (botões, barra, painel, player, quadros, resolução) vem do CSS de cada componente.
+ */
+.app-embutido {
+  position: relative; transform: translateZ(0); overflow: hidden; isolation: isolate;
+  border: 1px solid var(--borda); border-radius: var(--r-16); background: var(--bg);
+  color: var(--texto-1); font: 400 15px/1.5 var(--sans); text-align: left;
+  -webkit-font-smoothing: antialiased; font-synthesis: none;
+}
+:where(.app-embutido) :is(h1, h2, h3) { margin: 0; color: var(--texto-1); font-family: var(--sans); font-weight: 700; letter-spacing: normal; text-wrap: balance; }
+:where(.app-embutido) h2 { font-size: 26px; line-height: 1.2; letter-spacing: -.2px; }
+:where(.app-embutido) h3 { font-size: 20px; line-height: 1.3; }
+:where(.app-embutido) a { color: var(--accent-texto); text-decoration: none; text-underline-offset: .2em; }
+:where(.app-embutido) a:hover { text-decoration: underline; }
+:where(.app-embutido) svg { display: inline-block; flex-shrink: 0; vertical-align: middle; }
+:where(.app-embutido) :is(button, a) svg { pointer-events: none; }
+:where(.app-embutido) .eyebrow { display: block; margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .48px; line-height: 1.4; text-transform: uppercase; color: var(--texto-3); }
+:where(.app-embutido) .filtros { display: flex; align-items: center; gap: 10px; padding-block: 8px; padding-inline: 24px; background: var(--surface-1); font: 13px var(--sans); }
+@media (max-width: 899.98px) { :where(.app-embutido) .filtros { gap: 4px; padding: 8px 12px; } }
+:where(.app-embutido) :is(p, ul, ol, blockquote, h4) { margin-block: 1em; }
+:where(.app-embutido) :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }

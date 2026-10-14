@@ -4,7 +4,8 @@
  *
  *   node --import tsx servico/src/ferramentas/gerar-quadro.ts <slug> [mais…] [--rotulo v2-…] [--sem-reparo] [--esforco medium] [--dossie-auto]
  *
- * Saída em `~/dados/margem/arte/obras/<slug>/geracoes/<rotulo>/`. Rodar de novo com o mesmo rótulo
+ * Saída em `<raiz da obra>/<slug>/geracoes/<rotulo>/` (`<dados>/quadros` ou, no acervo de desenvolvimento,
+ * `<dados>/arte/obras`). O app faz o mesmo pela fila (`arte/preparo.ts`, J118). Rodar de novo com o mesmo rótulo
  * retoma: etapas com resposta em `brutos/` não chamam o Codex outra vez. Várias obras rodam em
  * sequência com o mesmo rótulo; cota esgotada para o lote (as seguintes ficam para a retomada).
  * `--dossie-auto` usa `dossie-auto.json` (buscar antes com buscar-dossie.ts) em vez da referência curada.

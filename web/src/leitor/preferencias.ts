@@ -2,7 +2,8 @@ export const CORES_DO_METODO = { tese: '#ffd926', conceito: '#59d675', justifica
 export const CORES_DE_CONTRASTE = { tese: '#e8b000', conceito: '#009e73', justificativa: '#0072b2' };
 export interface Preferencias {
   zoomPdf: 'largura' | number;
-  nivelDeAtencao: 0 | 1 | 2 | 3;
+  /** O leitor abre com todas as marcas à vista (padrão) ou com elas ocultas, à espera do botão "Marcas". */
+  marcasAoAbrir: boolean;
   coresPersonalizadas: Record<string, string>;
   /** Grifo: faixa com a linha de base; marca-texto: só a faixa; sublinhado: só a linha. */
   estilo: 'grifo' | 'marca_texto' | 'sublinhado' | 'margem';
@@ -26,8 +27,7 @@ export interface Preferencias {
   margem: 'mostrar' | 'recolher';
 }
 export const APARENCIA_PADRAO: Preferencias = {
-  // Estudo: estruturais e importantes. O 3 (Aprofundar) acrescenta os periféricos e as dificuldades.
-  zoomPdf: 'largura', nivelDeAtencao: 2, coresPersonalizadas: {},
+  zoomPdf: 'largura', marcasAoAbrir: true, coresPersonalizadas: {},
   estilo: 'grifo', intensidade: .3, traco: 'regua', rugosidade: .55, animacao: true,
   cores: CORES_DO_METODO, tamanho: 22, entrelinha: 'normal', medida: 68, tema: 'sistema', margem: 'recolher',
   alinhamento: 'justificado', espacamento: 'normal', atalhosDeLetra: true,
@@ -66,7 +66,8 @@ export function validarPreferencias(valor: unknown): Preferencias {
   }
   return {
     zoomPdf: typeof v['zoomPdf'] === 'number' && Number.isFinite(v['zoomPdf']) ? Math.max(.25, Math.min(3, v['zoomPdf'])) : 'largura',
-    nivelDeAtencao: escolher('nivelDeAtencao', [0, 1, 2, 3], 2), coresPersonalizadas,
+    // O antigo nível de atenção (0 a 3) não vale mais: todas as marcas, salvo a escolha explícita de abrir sem elas.
+    marcasAoAbrir: typeof v['marcasAoAbrir'] === 'boolean' ? v['marcasAoAbrir'] : true, coresPersonalizadas,
     // Na versão 3 o grifo virou o padrão: o que foi guardado antes dela com o marca-texto (o padrão de então)
     // passa para o grifo. Sem versão é o estado em memória, já atual.
     estilo: typeof v['versao'] === 'number' && v['versao'] < 3 && v['estilo'] === 'marca_texto' ? 'grifo'

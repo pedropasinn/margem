@@ -8,6 +8,7 @@ import { recuperarPublicacoes } from './arquivos-canonizacao.js';
  * (ver `servico/src/executor/ambiente.ts`).
  */
 import { pool } from '../db/conexao.js';
+import { comTransacao } from '../db/transacao.js';
 import { manipuladoresDasNoticias } from '../noticias/pipeline.js';
 import { pedirEdicao } from '../noticias/repositorio.js';
 import { join } from 'node:path';
@@ -16,6 +17,8 @@ import { manipuladoresDaRevisao } from '../notas/revisar.js';
 import { TIPO_RESPONDER, manipuladorResponder, responderFalso, type Responder } from '../conversa/responder.js';
 import { responderCodex } from '../conversa/responder-codex.js';
 import { executorAuditado, raizDaAuditoria } from '../executor/auditoria.js';
+import { executorComModelos } from '../modelos/executor.js';
+import { lerEscolhas } from '../modelos/preferencias.js';
 import type { Executor } from '../executor/tipos.js';
 import { manipuladorCanonizar, TIPO_CANONIZAR } from './canonizar.js';
 import { manipuladorCanonizarRevisao, TIPO_CANONIZAR_REVISAO } from '../midia/revisao.js';
@@ -30,16 +33,23 @@ import { manipuladoresDoEsquema } from '../esquema/manipuladores.js';
 import { esforcoDosFlashcards, manipuladoresDosFlashcards } from '../flashcards/manipuladores.js';
 import { manipuladoresDaVisita } from '../visita/manipuladores.js';
 import { manipuladoresDosConceitos } from '../midia/conceitos.js';
+import { esforcoDaLimpeza, manipuladoresDaLimpeza } from '../midia/limpeza-da-transcricao.js';
+import { seguirAnaliseDoVideo } from '../midia/analise-do-video.js';
 import { manipuladoresDaLeituraComentada } from '../leitura-comentada/manipuladores.js';
 import { escolherProvedorDeVoz, manipuladoresDaNarracao } from '../audio/narracao.js';
 import { FilaPostgres } from './fila-postgres.js';
 import type { FilaDeJobs } from './fila.js';
 import { manipuladoresDaLeitura } from './manipuladores-leitura.js';
 import { manipuladoresDaCompreensao } from '../compreensao/manipuladores.js';
+import { comecarLeituraPedida, seguirSemTipo } from '../compreensao/preparacao.js';
+import { esforcoDoTipo, manipuladoresDoTipo } from '../tipo-de-texto/identificar.js';
+import { manipuladoresDosQuadros } from '../arte/preparo.js';
 import { SLOTS_PADRAO } from './slots.js';
 import { recursosDoAmbiente } from '../recursos.js';
 import { Worker } from './worker.js';
+import { ouvinteDoPool } from '../http/ouvinte.js';
 import type { Manipulador } from './worker.js';
+import { aoPedirParada, ehPontoDeEntrada } from '../plataforma/processos.js';
 
 function inteiroDoAmbiente(nome: string, padrao: number): number {
   const bruto = process.env[nome];
@@ -51,10 +61,14 @@ function inteiroDoAmbiente(nome: string, padrao: number): number {
 export function montarWorker(
   fila: FilaDeJobs,
   manipuladores: Record<string, Manipulador>,
+  esperarNovidade?: (limiteMs: number, sinal: AbortSignal) => Promise<unknown>,
 ): Worker {
   return new Worker({
     fila,
     manipuladores,
+    // Ocioso, o laço recua até 5 s e acorda com o aviso de job novo (V-W7).
+    intervaloMaximoMs: inteiroDoAmbiente('MARGEM_WORKER_OCIOSO_MS', 5_000),
+    ...(esperarNovidade ? { esperarNovidade } : {}),
     slots: inteiroDoAmbiente('MARGEM_SLOTS', SLOTS_PADRAO),
     heartbeatMs: inteiroDoAmbiente('MARGEM_HEARTBEAT_MS', 30_000),
     prazoEncerramentoMs: inteiroDoAmbiente('MARGEM_PRAZO_ENCERRAMENTO_MS', 30_000),
@@ -92,14 +106,26 @@ export function todosOsManipuladores(
   const base = baseDosArtefatos(ambiente);
   const compreensao = configuracaoDaCompreensao({ banco, executor }, ambiente);
   // Notícias só com o recurso ligado (J102): sem manipulador, o worker nem reserva esses jobs.
-  const noticias = recursosDoAmbiente(ambiente).has('noticias')
+  const recursos = recursosDoAmbiente(ambiente);
+  const noticias = recursos.has('noticias')
     ? manipuladoresDasNoticias({ banco, executor, modelo: compreensao.modelo, esforco: compreensao.esforcoDoPlano ?? compreensao.esforco })
+    : {};
+  // Quadros da pessoa (J118), ligados por padrão: a imagem enviada vira análise guiada (Codex) e, com voz, narração.
+  const quadros = recursos.has('arte') && ambiente.MARGEM_ARTE !== '0'
+    ? manipuladoresDosQuadros({ banco, executor, esforco: esforcoDosVisuais(ambiente), criarProvedor: escolherProvedorDeVoz(ambiente) })
     : {};
   return {
     ...noticias,
+    ...quadros,
     [TIPO_CANONIZAR]: manipuladorCanonizar({ banco }),
     // Transcrição de vídeo revisada (J90): versão nova + mídia realinhada.
-    [TIPO_CANONIZAR_REVISAO]: manipuladorCanonizarRevisao({ banco }),
+    [TIPO_CANONIZAR_REVISAO]: manipuladorCanonizarRevisao({ banco, aoPublicar: (cliente, documentoId) => seguirAnaliseDoVideo(compreensao, cliente, documentoId) }),
+    // Transcrição de vídeo passada a limpo pelo Codex (J142), na análise do vídeo; a análise segue depois dela.
+    ...manipuladoresDaLimpeza({
+      banco, executor, modelo: compreensao.modelo, esforco: esforcoDaLimpeza(ambiente),
+      aoSeguirSemRevisao: (cliente, documentoId) => seguirAnaliseDoVideo(compreensao, cliente, documentoId),
+      ...(base === undefined ? {} : { diretorioArtefatos: join(base, 'limpezas') }),
+    }),
     // Vídeo do YouTube por link (J109): legendas do vídeo (ou transcritor local) e só o áudio; nunca o vídeo.
     [TIPO_IMPORTAR_YOUTUBE]: manipuladorImportarYoutube({ banco }),
     // PDF escaneado: transcrição por visão das páginas sem texto, com o esforço dos visuais (medium).
@@ -109,6 +135,12 @@ export function todosOsManipuladores(
     }),
     ...manipuladoresDaLeitura(configuracaoDaLeitura({ banco, executor })),
     ...manipuladoresDaCompreensao(compreensao),
+    // Tipo de texto (v0.1): reconhecido depois da canonização, com esforço `low`; um "Preparar leitura" que
+    // esperava por ele começa na publicação.
+    ...manipuladoresDoTipo({
+      banco, executor, modelo: compreensao.modelo, esforco: esforcoDoTipo(ambiente),
+      aoConhecerTipo: (cliente, documentoId, pedido) => comecarLeituraPedida(compreensao, cliente, documentoId, pedido),
+    }),
     // Resolução de exercícios (J34): mesmo modelo; resolver com o esforço das leituras, explicar com o do plano.
     ...manipuladoresDaResolucao({
       banco, executor, modelo: compreensao.modelo, esforco: compreensao.esforco,
@@ -136,7 +168,7 @@ export function todosOsManipuladores(
       banco, executor, modelo: compreensao.modelo, esforco: esforcoDaVisita(ambiente),
       ...(base === undefined ? {} : { diretorioArtefatos: join(base, 'visitas') }),
     }),
-    // Conceitos programados do vídeo (popups sobre a tela): esforço dos visuais (medium por padrão).
+    // Análise do vídeo (J142): partes por assunto e momentos sobre a tela; esforço dos visuais (medium por padrão).
     ...manipuladoresDosConceitos({
       banco, executor, modelo: compreensao.modelo, esforco: esforcoDosVisuais(ambiente),
       ...(base === undefined ? {} : { diretorioArtefatos: join(base, 'conceitos') }),
@@ -161,9 +193,15 @@ export function todosOsManipuladores(
 }
 
 export async function principal(): Promise<void> {
-  const executor = executorAuditado(await escolherExecutor());
+  // Por fora da auditoria: a escolha de modelo e esforço por categoria (Configurações → Modelos, V-T10)
+  // troca o pedido antes de ele ser registrado, a cada chamada (a mudança vale já no job seguinte).
+  const executor = executorComModelos(executorAuditado(await escolherExecutor()), () => lerEscolhas(pool));
   const fila = new FilaPostgres(pool, { concessaoMs: inteiroDoAmbiente('MARGEM_CONCESSAO_MS', 60_000) });
-  const worker = montarWorker(fila, todosOsManipuladores(pool, executor));
+  // Job novo acorda o laço na hora: `NOTIFY margem_evento` (todo enfileiramento grava um evento), numa
+  // conexão dedicada fora do pool; caída, o laço segue com o relógio até ela voltar.
+  const ouvinte = ouvinteDoPool(pool, { anotar: (evento) => { console.log(JSON.stringify({ evento: `ouvinte_${evento}`, em: new Date().toISOString() })); } });
+  await ouvinte.iniciar();
+  const worker = montarWorker(fila, todosOsManipuladores(pool, executor), (limiteMs, sinal) => ouvinte.esperar(limiteMs, sinal));
   let agendando = false;
   const comNoticias = recursosDoAmbiente().has('noticias');
   const agendarNoticias = async () => {
@@ -175,24 +213,36 @@ export async function principal(): Promise<void> {
   };
   // A agenda diária das Notícias só existe com o recurso ligado (J102).
   const agendaNoticias = comNoticias ? setInterval(() => { void agendarNoticias(); }, 60_000) : undefined;
-  for (const sinal of ['SIGTERM', 'SIGINT'] as const) {
-    process.on(sinal, () => {
-      console.log(JSON.stringify({ evento: 'parada_pedida', sinal, em: new Date().toISOString() }));
-      worker.pedirParada();
-    });
-  }
+  // V-T4: a leitura pedida que espera o tipo do texto além do prazo começa com o tipo padrão, mesmo sem a
+  // página aberta (a importação com o preparo automático, por exemplo).
+  const compreensao = configuracaoDaCompreensao({ banco: pool, executor });
+  let seguindo = false;
+  const prazoDoTipo = setInterval(() => {
+    if (seguindo) return;
+    seguindo = true;
+    void comTransacao(pool, (cliente) => seguirSemTipo(compreensao, cliente))
+      .then((ids) => { if (ids.length > 0) console.log(JSON.stringify({ evento: 'leitura_sem_tipo', documentos: ids, em: new Date().toISOString() })); },
+        () => { console.error(JSON.stringify({ evento: 'leitura_sem_tipo_falhou' })); })
+      .finally(() => { seguindo = false; });
+  }, 15_000);
+  prazoDoTipo.unref?.();
+  aoPedirParada((sinal) => {
+    console.log(JSON.stringify({ evento: 'parada_pedida', sinal, em: new Date().toISOString() }));
+    worker.pedirParada();
+  });
   try {
     await agendarNoticias();
     await recuperarPublicacoes(pool);
     await worker.rodar();
   } finally {
     clearInterval(agendaNoticias);
+    clearInterval(prazoDoTipo);
+    await ouvinte.encerrar();
     await pool.end();
   }
 }
 
-const caminho = process.argv[1] ?? '';
-if (caminho.endsWith('worker/main.ts') || caminho.endsWith('worker/main.js')) {
+if (ehPontoDeEntrada(['worker/main.ts', 'worker/main.js'])) {
   principal().catch((erro: unknown) => {
     console.error(erro instanceof Error ? erro.message : 'falha desconhecida no worker');
     process.exitCode = 1;

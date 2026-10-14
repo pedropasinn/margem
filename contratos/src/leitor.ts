@@ -7,10 +7,10 @@
  * As conversões V1 → V2 são puras e exatas; a volta (V2 → V1) não existe, porque nada novo grava V1.
  */
 import type {
-  ConexaoV1, ConexaoV2, ConversaV1, ConversaV2, LoteRevisaoV1, LoteRevisaoV2, ResolucaoV1, ResolucaoV2,
+  ConexaoV1, ConexaoV2, ConexaoV3, ConversaV1, ConversaV2, LoteRevisaoV1, LoteRevisaoV2, ResolucaoV1, ResolucaoV2,
 } from './tipos';
 import {
-  validarConexao, validarConexaoV2, validarConversa, validarConversaV2, validarLoteRevisao, validarLoteRevisaoV2,
+  validarConexao, validarConexaoV2, validarConexaoV3, validarConversa, validarConversaV2, validarLoteRevisao, validarLoteRevisaoV2,
   validarResolucao, validarResolucaoV2,
 } from './validadores';
 
@@ -50,4 +50,18 @@ export function lerResolucao(valor: unknown): ResolucaoV2 | null {
 export function lerLoteRevisao(valor: unknown): LoteRevisaoV2 | null {
   if (validarLoteRevisaoV2(valor)) return valor;
   return validarLoteRevisao(valor) ? loteRevisaoV1ParaV2(valor) : null;
+}
+
+/** V2 → V3: os mesmos campos, `versao: 3` e, se houver, o tipo fino e a origem da compreensão. */
+export function conexaoV2ParaV3(conexao: ConexaoV2, extras: Pick<ConexaoV3, 'relacao_semantica' | 'origem_compreensao'> = {}): ConexaoV3 {
+  const copia = { ...structuredClone(conexao), versao: 3 } as unknown as ConexaoV3;
+  if (extras.relacao_semantica !== undefined) copia.relacao_semantica = extras.relacao_semantica;
+  if (extras.origem_compreensao !== undefined) copia.origem_compreensao = { ...extras.origem_compreensao };
+  return copia;
+}
+/** Qualquer versão de conexão lida como V3 (as antigas sem o tipo fino). */
+export function lerConexaoV3(valor: unknown): ConexaoV3 | null {
+  if (validarConexaoV3(valor)) return valor;
+  const v2 = lerConexao(valor);
+  return v2 === null ? null : conexaoV2ParaV3(v2);
 }

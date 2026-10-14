@@ -214,13 +214,10 @@ try {
       await abrirOpcoes(pagina);
       await pagina.getByRole('combobox', { name: 'Camada de marcas' }).waitFor({ state: 'visible' });
     }
-    const atencao = pagina.getByRole('radiogroup', { name: 'Nível de atenção' });
-    for (const nivel of [0, 1, 2, 3]) {
-      await atencao.getByRole('radio').nth(nivel).click();
-      assert.equal(await atencao.locator('[data-preenchido=true]').count(), nivel + 1);
-      assert.equal(await atencao.getByRole('radio', { checked: true }).count(), 1);
-      await pagina.getByText(`Nível ${nivel} de 3`, { exact: false }).waitFor({ state: 'visible' });
-    }
+    // V-T3: sem níveis de atenção; "Marcas" esconde e mostra todas.
+    const marcas = pagina.getByRole('button', { name: 'Marcas' });
+    await marcas.click(); assert.equal(await marcas.getAttribute('aria-pressed'), 'false');
+    await marcas.click(); assert.equal(await marcas.getAttribute('aria-pressed'), 'true');
     if (tela === 'cel') await pagina.getByRole('button', { name: 'Fechar opções' }).click();
     await pagina.getByRole('button', { name: 'Aparência' }).click(); await captura(pagina, `06-aparencia-${sufixo}.png`);
     for (const [rotulo, tema] of [['Escuro', 'escuro'], ['Sépia', 'sepia'], ['Claro', 'claro']] as const) { await escolherOpcao(pagina, 'Tema', rotulo); assert.equal(await pagina.locator('html').getAttribute('data-tema'), tema); await regua(pagina); }

@@ -7,6 +7,7 @@
  * "nova geração sem abertura" preferida no J79). Este módulo não muda receita nem worker.
  */
 import { execFile } from 'node:child_process';
+import { ffprobe } from '../plataforma/executaveis.js';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { ulid } from 'ulid';
@@ -78,7 +79,7 @@ export async function importarAulaDaVisita(
 ): Promise<NarracaoDaVisitaV1> {
   const manifesto = lerManifestoDaAula(await lerJsonLimitado(join(pastaDaAula, 'manifest.json'), ORCAMENTOS.canonico));
   const caminho = join(pastaDaAula, 'aula.mp3');
-  const { stdout } = await executar('ffprobe', ['-v', 'error', '-show_entries', 'format=duration:stream=codec_name,sample_rate', '-of', 'json', caminho], { timeout: 60_000 });
+  const { stdout } = await executar(ffprobe(), ['-v', 'error', '-show_entries', 'format=duration:stream=codec_name,sample_rate', '-of', 'json', caminho], { timeout: 60_000, windowsHide: true });
   const sonda = objeto(JSON.parse(stdout), 'ffprobe');
   const faixa = Array.isArray(sonda.streams) && sonda.streams.length === 1 ? objeto(sonda.streams[0], 'faixa') : null;
   const duracao = Number(objeto(sonda.format, 'formato').duration);

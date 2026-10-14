@@ -1,0 +1,83 @@
+{
+  "versao": 1,
+  "id": "estatistica",
+  "revisao": 1,
+  "nome": "Estatística e probabilidade",
+  "descricao": "Ler textos de estatística e probabilidade distinguindo definições, suposições do modelo, resultados, métodos, interpretações e exemplos. Condições de validade, unidades e quantificadores fazem parte do enunciado; a interpretação correta de um número é tão importante quanto o cálculo.",
+  "funcoes": [
+    {
+      "chave": "definicao",
+      "rotulo": "Definição",
+      "pergunta": "O que exatamente está sendo definido?",
+      "descricao": "Definição de variável, distribuição, estimador ou medida. Ex.: “O erro padrão é o desvio padrão da distribuição amostral.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "suposicao",
+      "rotulo": "Suposição",
+      "pergunta": "Que hipótese do modelo ou condição de validade é assumida?",
+      "descricao": "Independência, normalidade, tamanho de amostra, ausência de viés. Ex.: “Suponha observações i.i.d.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "resultado",
+      "rotulo": "Resultado",
+      "pergunta": "Que teorema, propriedade ou estimativa é estabelecido?",
+      "descricao": "Resultado matemático ou empírico, com suas condições. Ex.: “A média amostral é não viesada.”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "metodo",
+      "rotulo": "Método",
+      "pergunta": "Que procedimento de estimação, teste ou cálculo é usado?",
+      "descricao": "Procedimento ou algoritmo. Ex.: “Estimamos por máxima verossimilhança.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "interpretacao",
+      "rotulo": "Interpretação",
+      "pergunta": "O que o número, o intervalo ou o teste significa, e o que não significa?",
+      "descricao": "Leitura correta (ou errada, se apontada) de um resultado. Ex.: “O p-valor não é a probabilidade da hipótese nula.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "exemplo",
+      "rotulo": "Exemplo",
+      "pergunta": "Que caso ou dado concreto ilustra a ideia?",
+      "descricao": "Exemplo numérico, simulação ou aplicação. Ex.: “Em 100 lançamentos, esperamos cerca de 50 caras.”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

@@ -8,14 +8,25 @@
  * navegador.
  */
 import { execFile } from 'node:child_process';
-import { join } from 'node:path';
 import type pg from 'pg';
 import type { Id } from '@margem/contratos';
 import { ambienteSaneado } from '../executor/ambiente.js';
 import { raizDoRepositorio } from '../dados.js';
+import { comandoDoMotor, conferirFerramentas, noAppDeDesktop, type SituacaoDoExecutavel } from '../plataforma/executaveis.js';
 import { verificarCodex, type EstadoDoCodex } from './codex.js';
+import { portaPublica } from '../http/ambiente.js';
+import { idDaInstancia } from '../instancia.js';
 
-export interface EstadoDoMotor { ok: boolean }
+export interface EstadoDoMotor {
+  ok: boolean;
+  /** `congelado`: o executável do app de desktop (`MARGEM_MOTOR`); `python`: o venv (J114). */
+  forma?: 'congelado' | 'python';
+  /** Por que não respondeu (só quando `ok` é falso). */
+  mensagem?: string;
+}
+
+/** Programas externos de que partes do app dependem (mídia, YouTube, Codex), sem afetar `pronto`. */
+export type FerramentasDaInstalacao = Record<'ffmpeg' | 'ffprobe' | 'yt_dlp' | 'codex', Omit<SituacaoDoExecutavel, 'caminho'>>;
 
 export interface EstadoDaInstalacao {
   versao: 1;
@@ -25,24 +36,62 @@ export interface EstadoDaInstalacao {
   codex: EstadoDoCodex & { executor: 'codex' | 'falso' };
   /** Há leitura esperando a cota da conta voltar; `volta_em` é a estimativa mais tardia anunciada. */
   cota: { esgotada: boolean; volta_em: string | null };
+  /** J114: cada programa externo, com a mensagem do que falta. Ausente se a verificação não foi pedida. */
+  ferramentas?: FerramentasDaInstalacao;
+  /**
+   * J113: avisos do app de computador sobre a instalação (ex.: o Codex roda no sandbox próprio porque o
+   * bwrap do sistema não funciona). Vêm de `MARGEM_AVISOS`, um por linha; ausente quando não há.
+   */
+  avisos?: string[];
+  /**
+   * V-D5: `desktop` quando a API roda dentro do app de computador, cuja janela de abertura já
+   * escolheu a pasta e conferiu o login do ChatGPT; a interface não refaz a checagem na primeira
+   * execução. Ausente nas outras instalações.
+   */
+  origem?: 'desktop';
+  /**
+   * V-W9: a identificação desta instalação e a porta da API. A extensão do navegador procura o Margem
+   * nas portas 8730–8739 e mostra a identificação de quem achou; a checagem mostra a mesma.
+   */
+  instancia: { id: string; porta: number };
   primeira_execucao: { concluida: boolean; concluida_em: string | null; exemplo_documento_id: Id | null };
   /** Banco, motor e Codex prontos para ler (o Codex logado, ou o executor falso). */
   pronto: boolean;
 }
 
-/** O motor importa (com as dependências do venv) num subprocesso curto e sem rede. */
+/**
+ * O motor importa (com as dependências do venv, ou o executável congelado responde a `verificar`)
+ * num subprocesso curto e sem rede.
+ */
 export function verificarMotor(raiz = raizDoRepositorio()): Promise<EstadoDoMotor> {
+  const comando = comandoDoMotor('verificar', [], { raiz });
+  const forma = comando.congelado ? 'congelado' : 'python';
   return new Promise((resolver) => {
-    execFile(join(raiz, 'motor/.venv/bin/python'), ['-c', 'import margem_motor.ingest'],
-      { cwd: join(raiz, 'motor'), env: ambienteSaneado(), timeout: 20_000 },
-      (erro) => { resolver({ ok: erro === null }); });
+    execFile(comando.programa, comando.argumentos,
+      { cwd: comando.cwd, env: ambienteSaneado(), timeout: 20_000, windowsHide: true },
+      (erro) => {
+        if (erro === null) { resolver({ ok: true, forma }); return; }
+        const ausente = (erro as NodeJS.ErrnoException).code === 'ENOENT';
+        resolver({ ok: false, forma, mensagem: ausente
+          ? `Motor ausente em ${comando.programa}${comando.congelado ? ' (MARGEM_MOTOR)' : ''}.`
+          : `O motor não respondeu (${comando.programa}).` });
+      });
   });
+}
+
+/** Situação dos programas externos, sem o caminho completo (a tela só precisa do que fazer). */
+export async function verificarFerramentas(): Promise<FerramentasDaInstalacao> {
+  const todas = await conferirFerramentas();
+  const resumo = (s: SituacaoDoExecutavel) => ({ ok: s.ok, origem: s.origem, ...(s.mensagem === undefined ? {} : { mensagem: s.mensagem }) });
+  return { ffmpeg: resumo(todas.ffmpeg), ffprobe: resumo(todas.ffprobe), yt_dlp: resumo(todas.yt_dlp), codex: resumo(todas.codex) };
 }
 
 export interface Verificadores {
   codex: () => Promise<EstadoDoCodex>;
   motor: () => Promise<EstadoDoMotor>;
   executor: () => 'codex' | 'falso';
+  /** Opcional: sem ele o estado não traz `ferramentas` (os testes antigos não passam). */
+  ferramentas?: () => Promise<FerramentasDaInstalacao>;
 }
 
 /**
@@ -67,6 +116,7 @@ export const VERIFICADORES_PADRAO: Verificadores = {
   codex: () => verificarCodex(),
   motor: () => verificarMotor(),
   executor: () => (process.env.MARGEM_EXECUTOR === 'falso' ? 'falso' : 'codex'),
+  ferramentas: () => verificarFerramentas(),
 };
 
 interface LinhaDoBanco {
@@ -90,18 +140,30 @@ async function lerDoBanco(banco: pg.Pool): Promise<LinhaDoBanco | null> {
   }
 }
 
+/** `MARGEM_AVISOS`: um aviso por linha, posto pelo app de computador ao subir o serviço. */
+export function avisosDoApp(ambiente: NodeJS.ProcessEnv = process.env): string[] {
+  return (ambiente.MARGEM_AVISOS ?? '').split(/\r?\n/u).map((linha) => linha.trim()).filter((linha) => linha !== '').slice(0, 10);
+}
+
 export async function lerEstadoDaInstalacao(
   banco: pg.Pool, verificadores: Verificadores,
 ): Promise<EstadoDaInstalacao> {
-  const [linha, motor, codex] = await Promise.all([lerDoBanco(banco), verificadores.motor(), verificadores.codex()]);
+  const [linha, motor, codex, ferramentas] = await Promise.all([
+    lerDoBanco(banco), verificadores.motor(), verificadores.codex(), verificadores.ferramentas?.().catch(() => undefined),
+  ]);
   const executor = verificadores.executor();
   const codexPronto = executor === 'falso' || (codex.encontrado && codex.compativel && codex.logado === true);
+  const avisos = avisosDoApp();
   return {
     versao: 1,
     banco: { ok: linha !== null },
     motor,
     codex: { ...codex, executor },
     cota: { esgotada: linha?.esgotada ?? false, volta_em: linha?.volta_em ?? null },
+    ...(ferramentas === undefined ? {} : { ferramentas }),
+    ...(avisos.length === 0 ? {} : { avisos }),
+    ...(noAppDeDesktop() ? { origem: 'desktop' as const } : {}),
+    instancia: { id: idDaInstancia(), porta: portaPublica() },
     primeira_execucao: {
       // Sem banco não dá para saber; a tela aparece, porque é ela que explica o que falta.
       concluida: linha?.concluida_em != null,

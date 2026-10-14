@@ -7,7 +7,7 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, expect, test } from 'vitest';
-import { FerramentaAusente, fonteYtDlp, transcritorDoAmbiente } from './fontes-do-youtube';
+import { FerramentaAusente, argumentosComunsDoYtDlp, fonteYtDlp, transcritorDoAmbiente } from './fontes-do-youtube';
 
 let pasta: string;
 beforeAll(async () => { pasta = await mkdtemp(join(tmpdir(), 'margem-j109-portas-')); });
@@ -70,4 +70,11 @@ echo '{"motor":"faster-whisper small","idioma":"pt","palavras":[{"texto":"olá",
   const t = await transcritor.transcrever(audio, pasta, new AbortController().signal);
   expect(t).toEqual({ motor: 'faster-whisper small', idioma: 'pt', palavras: [
     { texto: 'olá', inicio_s: 0, fim_s: 0.4 }, { texto: 'duas', inicio_s: 0.5, fim_s: 1 }, { texto: 'palavras', inicio_s: 1, fim_s: 1.5 }] });
+});
+
+test('J114: no app de desktop o yt-dlp oficial usa o Node do serviço para os desafios de JavaScript', () => {
+  expect(argumentosComunsDoYtDlp({})).not.toContain('--js-runtimes');
+  const desktop = argumentosComunsDoYtDlp({ MARGEM_APP_DESKTOP: '1' }, 'C:\\Margem\\Margem.exe');
+  expect(desktop.slice(-2)).toEqual(['--js-runtimes', 'node:C:\\Margem\\Margem.exe']);
+  expect(desktop).toContain('--ignore-config');
 });

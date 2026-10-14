@@ -300,6 +300,21 @@ export type ConexaoV2 = Omit<ConexaoBase, 'versao'> & { versao: 2 } & (
   | { autor: 'ia'; estado: 'aceita' | 'rejeitada'; decidida_em: string }
   | { autor: 'leitor'; estado: 'aceita'; decidida_em: string }
 );
+/** De onde veio uma conexão adotada da compreensão: a relação semântica e o modelo do capítulo. */
+export interface OrigemDaCompreensao { modelo_id: Id; relacao_id: Id }
+/**
+ * V3 (v0.1): a V2 com `versao: 3` e o tipo fino da relação, sem perda. `relacao` continua a família
+ * (6, visível ao leitor); `relacao_semantica` é um dos 9 tipos da compreensão, sempre da família de
+ * `relacao` (`FAMILIA_DA_RELACAO_SEMANTICA`); `origem_compreensao` só com `relacao_semantica`. Uma V2
+ * lida como V3 tem os dois campos ausentes.
+ */
+export type ConexaoV3 = Omit<ConexaoBase, 'versao'> & {
+  versao: 3; relacao_semantica?: TipoRelacaoSemantica; origem_compreensao?: OrigemDaCompreensao;
+} & (
+  | { autor: 'ia'; estado: 'sugerida'; decidida_em?: never }
+  | { autor: 'ia'; estado: 'aceita' | 'rejeitada'; decidida_em: string }
+  | { autor: 'leitor'; estado: 'aceita'; decidida_em: string }
+);
 
 export type QuadPdf = [number, number, number, number, number, number, number, number];
 export interface PalavraGeometria extends Faixa { bloco_id: Id; pagina: number; quad: QuadPdf }
@@ -529,6 +544,42 @@ export interface MensagemDaResolucaoDoLeitorV2 { id: Id; autor: 'leitor'; texto:
 export interface ResolucaoV2 extends Omit<ResolucaoV1, 'versao' | 'mensagens'> {
   versao: 2;
   mensagens: (MensagemDaResolucaoDoLeitorV2 | MensagemDaResolucaoIaV1)[];
+}
+
+/**
+ * Modelo D (J138): a nota do leitor pertence ao grifo, uma por grifo, em texto simples e sem tipo.
+ * Guardada como anotação ligada à marca (mesmo id), é a nota do grifo para tudo o que é novo.
+ */
+export interface NotaDoGrifoV1 {
+  versao: 1;
+  id: Id;
+  marca_id: Id;
+  versao_id: Id;
+  texto: string;
+  revisao?: { autor: 'codex'; texto_anterior: string; motivo: string; em: string };
+  criada_em: string;
+  atualizada_em: string;
+  revisao_edicao: number;
+}
+export type OrigemDaDificuldade = 'codex' | 'leitor';
+export type EstadoDaDificuldade = 'sugerida' | 'confirmada' | 'descartada';
+/**
+ * Modelo D (J138): o sinal de dificuldade num trecho, à parte do grifo (não é cor, função nem etiqueta).
+ * Do Codex (`ModeloDoCapituloV1.dificuldades`, decidida pelo leitor) ou marcado pelo leitor (já confirmado).
+ */
+export interface DificuldadeV1 {
+  versao: 1;
+  id: Id;
+  versao_id: Id;
+  ancora: AncoraV1;
+  origem: OrigemDaDificuldade;
+  estado: EstadoDaDificuldade;
+  tipo?: TipoDificuldadeTextual;
+  descricao?: string;
+  marca_id?: Id;
+  codex?: { modelo_id: Id; dificuldade_id: Id };
+  criada_em: string;
+  atualizada_em: string;
 }
 
 /** Etiqueta do leitor (tag) sobre uma marca ou uma anotação da versão. O nome é livre; a unicidade ignora maiúsculas. */

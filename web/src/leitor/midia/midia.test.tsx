@@ -85,7 +85,8 @@ test('karaokê: a faixa da frase por linha e o bloco da palavra numa camada atr�
   // TEXTO1 tem 24 unidades: duas linhas de 12 → duas faixas; "isto" (8–12) fica numa linha só.
   expect(camada.querySelectorAll('.karaoke-faixa')).toHaveLength(2);
   expect(camada.querySelectorAll('.karaoke-palavra')).toHaveLength(1);
-  expect(camada.querySelector('.karaoke-filete')).not.toBeNull();
+  // Sem faixa lateral colorida (J142): o filete à esquerda do parágrafo saiu.
+  expect(camada.querySelector('.karaoke-filete')).toBeNull();
   expect(registro.get(REALCE_DA_PALAVRA)?.intervalos[0]?.toString()).toBe('isto');
   expect(capitulo.querySelector('p')!.outerHTML).toBe(antes);
   const faixas = [...camada.querySelectorAll('.karaoke-faixa')];

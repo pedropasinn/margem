@@ -4,24 +4,50 @@
  * (`publicado.json`) e as narrações (`audio/<rotulo>/`). Somente leitura: nada aqui escreve no acervo, a
  * não ser a miniatura em cache (`miniaturas.ts`).
  *
+ * Desde o J118 o Margem não distribui acervo: as obras são as que a pessoa adiciona pelo app, preparadas
+ * pelo worker em `<dados>/quadros/<slug>/` (`raizDoAcervo`). Sem `MARGEM_ARTE_DIR`, a pasta antiga
+ * `<dados>/arte/obras` (o acervo de desenvolvimento e o que o J110 instalava) continua sendo lida, só
+ * para leitura, depois da nova.
+ *
  * Cada arquivo é conferido ao ler (contrato + regras do núcleo + hash da imagem). Uma análise inválida
- * fica de fora com um aviso no log; uma obra sem nenhuma análise válida também. As fixtures do J94
- * (`fixtures/arte/`) entram quando o acervo não tem a obra de mesmo slug.
+ * fica de fora com um aviso no log; uma obra sem nenhuma análise válida também. Uma obra ainda em
+ * preparo (`preparo.json` na pasta, sem análise) fica de fora em silêncio. As fixtures do J94
+ * (`fixtures/arte/`) entram quando nenhuma raiz tem a obra de mesmo slug.
  */
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AnaliseCurtaDaObraV1, ModeloDaObraV1 } from '@margem/contratos';
 import { validarAnaliseCurtaDaObra, validarModeloDaObra } from '../../../contratos/src/validadores.js';
 import { conferirAnaliseCurta, conferirModeloDaObra } from '../../../core/src/arte.js';
 import { raizDeDados } from '../dados.js';
+import { decodificarEmCinza, distanciaPerceptual, LIMIAR_MESMA_OBRA, type Cinza } from './semelhanca.js';
 
-/** Raiz do acervo: `MARGEM_ARTE_DIR`, senão `<dados>/arte/obras` (`~/dados/margem/arte/obras`). */
-export function raizDoAcervo(): string {
-  const bruto = process.env.MARGEM_ARTE_DIR;
-  return bruto !== undefined && bruto.trim() !== '' ? bruto : join(raizDeDados(), 'arte/obras');
+/**
+ * Raiz das obras da pessoa (onde o app grava as que ela adiciona): `MARGEM_ARTE_DIR`, senão
+ * `<dados>/quadros` (na instalação de desktop, dentro da pasta da biblioteca).
+ */
+export function raizDoAcervo(ambiente: NodeJS.ProcessEnv = process.env): string {
+  const bruto = ambiente.MARGEM_ARTE_DIR;
+  return bruto !== undefined && bruto.trim() !== '' ? resolve(bruto) : join(raizDeDados(), 'quadros');
+}
+
+/** A pasta do acervo antigo (`<dados>/arte/obras`), lida só para leitura depois da raiz da pessoa. */
+export function raizAntiga(): string {
+  return join(raizDeDados(), 'arte/obras');
+}
+
+/**
+ * As raízes lidas, em ordem de precedência: a da pessoa e, se existir, a antiga. Com `MARGEM_ARTE_DIR`
+ * explícita, só ela (quem escolhe a pasta escolhe tudo o que se lê).
+ */
+export function raizesDeLeitura(ambiente: NodeJS.ProcessEnv = process.env): string[] {
+  const principal = raizDoAcervo(ambiente);
+  if ((ambiente.MARGEM_ARTE_DIR ?? '').trim() !== '') return [principal];
+  const antiga = raizAntiga();
+  return antiga !== principal && existsSync(antiga) ? [principal, antiga] : [principal];
 }
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,79}$/;
@@ -211,7 +237,9 @@ export async function lerObraDoAcervo(raiz: string, slug: string, aviso: Aviso =
   if (!ehSlug(slug)) return null;
   const pasta = join(raiz, slug);
   const imagem = join(pasta, 'imagem.jpg');
-  if (!existsSync(imagem)) { aviso(`${slug}: imagem.jpg ausente`); return null; }
+  // Obra que a pessoa acabou de adicionar (J118): ainda em preparo, sem aviso.
+  const emPreparo = existsSync(join(pasta, 'preparo.json'));
+  if (!existsSync(imagem)) { if (!emPreparo) aviso(`${slug}: imagem.jpg ausente`); return null; }
   const sha = await shaDoArquivo(imagem);
   let info: InfoDaImagem | null = null;
   if (existsSync(join(pasta, 'imagem.json'))) {
@@ -230,7 +258,7 @@ export async function lerObraDoAcervo(raiz: string, slug: string, aviso: Aviso =
     candidatas.push(lerAnalise(slug, rotulo, 'geracao', { modelo: join(base, 'modelo.json'), curta: join(base, 'curta.json') }, sha, aviso));
   }
   const analises = (await Promise.all(candidatas)).filter((a): a is Omit<AnaliseNoAcervo, 'audio'> => a !== null).map((a) => ({ ...a, audio: null as string | null }));
-  if (!analises.length) { aviso(`${slug}: nenhuma análise válida; a obra fica fora da lista`); return null; }
+  if (!analises.length) { if (!emPreparo) aviso(`${slug}: nenhuma análise válida; a obra fica fora da lista`); return null; }
   const obra: ObraNoAcervo = {
     slug, origem: 'acervo', pasta, imagem, info, analises, publicada: '',
     // `baixado_em` vem de um arquivo escrito à mão ou por script: só vale se for uma data de verdade
@@ -262,39 +290,120 @@ async function escolherPublicada(obra: ObraNoAcervo, aviso: Aviso): Promise<stri
 }
 
 const FIXTURES = ['educacao', 'tolo'];
+const daRaiz = (relativo: string): string => fileURLToPath(new URL(`../../../${relativo}`, import.meta.url));
+
+/**
+ * A imagem de uma obra de exemplo: `web/public/arte` no repositório; no app de computador, que leva
+ * `web/dist` e não `web/public` (B-04), a cópia que o build do web pôs em `web/dist/arte`.
+ */
+export function imagemDaFixture(nome: string): string | null {
+  for (const relativo of [`web/public/arte/${nome}.jpg`, `web/dist/arte/${nome}.jpg`]) {
+    const caminho = daRaiz(relativo);
+    if (existsSync(caminho)) return caminho;
+  }
+  return null;
+}
+
+/** Uma obra de exemplo reconhecida pela imagem: identidade e o arquivo do Commons de onde veio a reprodução. */
+export interface ObraDeExemploReconhecida { slug: string; titulo: string; artista: string; ano: string | null; arquivo_commons: string | null; distancia: number }
+
+async function identidadeDaFixture(nome: string, distancia: number): Promise<ObraDeExemploReconhecida | null> {
+  try {
+    const modelo = await lerJson(daRaiz(`fixtures/arte/${nome}.modelo.json`));
+    if (!validarModeloDaObra(modelo)) return null;
+    const { titulo, artista, data } = modelo.identidade;
+    // A reprodução da obra de exemplo veio do Commons; a página do arquivo é a porta do dossiê (V-T2).
+    const commons = modelo.fontes.map((f) => /commons\.wikimedia\.org\/wiki\/(File:[^?#]+)/u.exec(f.url)?.[1]).find((t) => t !== undefined);
+    return { slug: nome, titulo, artista, ano: /\d{4}/u.exec(data)?.[0] ?? null, arquivo_commons: commons ? decodeURIComponent(commons).replaceAll('_', ' ') : null, distancia };
+  } catch { return null; }
+}
+
+/** Título, artista e ano de uma obra de exemplo do Margem cuja imagem tem este SHA-256 (V-W5), ou `null`. */
+export async function obraDeExemploPelaImagem(shas: readonly string[]): Promise<ObraDeExemploReconhecida | null> {
+  for (const nome of FIXTURES) {
+    const imagem = imagemDaFixture(nome);
+    if (imagem === null || !shas.includes(await shaDoArquivo(imagem))) continue;
+    const obra = await identidadeDaFixture(nome, 0);
+    if (obra) return obra;
+  }
+  return null;
+}
+
+const cinzaDasFixtures = new Map<string, Promise<Cinza>>();
+
+/**
+ * A mesma obra de exemplo, mas em outra cópia (V-T2): WebP, reduzida, recortada, com outra cor. Compara
+ * pelo pHash com tolerância a recorte (`semelhanca.ts`); a mais próxima abaixo do limiar, ou `null`.
+ */
+export async function obraDeExemploPorSemelhanca(caminho: string): Promise<ObraDeExemploReconhecida | null> {
+  const enviada = await decodificarEmCinza(caminho);
+  let melhor: { nome: string; distancia: number } | null = null;
+  for (const nome of FIXTURES) {
+    const imagem = imagemDaFixture(nome);
+    if (imagem === null) continue;
+    let referencia = cinzaDasFixtures.get(imagem);
+    if (!referencia) { referencia = decodificarEmCinza(imagem); cinzaDasFixtures.set(imagem, referencia); }
+    let cinza: Cinza;
+    try { cinza = await referencia; } catch { cinzaDasFixtures.delete(imagem); continue; }
+    const distancia = distanciaPerceptual(enviada, cinza);
+    if (distancia <= LIMIAR_MESMA_OBRA && (!melhor || distancia < melhor.distancia)) melhor = { nome, distancia };
+  }
+  return melhor ? identidadeDaFixture(melhor.nome, melhor.distancia) : null;
+}
+
+/** Todos os lugares em que a imagem da obra de exemplo pode estar (V-D4). */
+export function imagensDaFixture(nome: string): string[] {
+  return [`web/public/arte/${nome}.jpg`, `web/dist/arte/${nome}.jpg`].map(daRaiz);
+}
+
 async function lerFixture(nome: string, aviso: Aviso): Promise<ObraNoAcervo | null> {
-  const caminho = (relativo: string): string => fileURLToPath(new URL(`../../../${relativo}`, import.meta.url));
-  const imagem = caminho(`web/public/arte/${nome}.jpg`);
-  if (!existsSync(imagem)) return null;
+  const caminho = daRaiz;
+  const imagem = imagemDaFixture(nome);
+  if (imagem === null) return null;
   const sha = await shaDoArquivo(imagem);
   const analise = await lerAnalise(nome, 'esperado', 'esperado', { modelo: caminho(`fixtures/arte/${nome}.modelo.json`), curta: caminho(`fixtures/arte/${nome}.curta.json`) }, sha, aviso);
   if (!analise) return null;
   return { slug: nome, origem: 'fixture', pasta: null, imagem, info: null, analises: [{ ...analise, audio: null }], publicada: 'esperado', adicionado_em: (await stat(imagem)).mtime.toISOString() };
 }
 
-export interface OpcoesDoAcervo { raiz?: string; fixtures?: boolean; aviso?: Aviso }
+export interface OpcoesDoAcervo {
+  /** Uma raiz só (testes e ferramentas); sem ela, `raizesDeLeitura()`. */
+  raiz?: string;
+  fixtures?: boolean;
+  aviso?: Aviso;
+}
 
-/** Todas as obras: as do acervo e, onde o acervo não tem o slug, as fixtures do J94. Ordem por título. */
+const raizesDas = (opcoes: OpcoesDoAcervo): string[] => (opcoes.raiz !== undefined ? [opcoes.raiz] : raizesDeLeitura());
+
+/** Todas as obras: as das raízes e, onde nenhuma tem o slug, as fixtures do J94. Ordem por título. */
 export async function lerAcervo(opcoes: OpcoesDoAcervo = {}): Promise<ObraNoAcervo[]> {
-  const raiz = opcoes.raiz ?? raizDoAcervo();
   const aviso = opcoes.aviso ?? avisoPadrao;
-  const slugs = existsSync(raiz) ? (await readdir(raiz, { withFileTypes: true })).filter((d) => d.isDirectory() && ehSlug(d.name)).map((d) => d.name) : [];
-  // Uma obra com erro de disco (imagem ilegível, `geracoes` que é arquivo) fica de fora com aviso; não derruba a lista.
-  const doAcervo = (await Promise.all(slugs.map((slug) => lerObraDoAcervo(raiz, slug, aviso).catch((erro: unknown) => {
-    aviso(`${slug}: ${erro instanceof Error ? erro.message : String(erro)}`);
-    return null;
-  })))).filter((o): o is ObraNoAcervo => o !== null);
-  const presentes = new Set(slugs);
+  const presentes = new Set<string>();
+  const pedidos: Promise<ObraNoAcervo | null>[] = [];
+  for (const raiz of raizesDas(opcoes)) {
+    const slugs = existsSync(raiz) ? (await readdir(raiz, { withFileTypes: true })).filter((d) => d.isDirectory() && ehSlug(d.name)).map((d) => d.name) : [];
+    for (const slug of slugs) {
+      // A primeira raiz que tem a pasta vence (a da pessoa antes da antiga).
+      if (presentes.has(slug)) continue;
+      presentes.add(slug);
+      // Uma obra com erro de disco (imagem ilegível, `geracoes` que é arquivo) fica de fora com aviso; não derruba a lista.
+      pedidos.push(lerObraDoAcervo(raiz, slug, aviso).catch((erro: unknown) => {
+        aviso(`${slug}: ${erro instanceof Error ? erro.message : String(erro)}`);
+        return null;
+      }));
+    }
+  }
+  const doAcervo = (await Promise.all(pedidos)).filter((o): o is ObraNoAcervo => o !== null);
   const fixtures = opcoes.fixtures === false ? [] : (await Promise.all(FIXTURES.filter((n) => !presentes.has(n)).map((n) => lerFixture(n, aviso)))).filter((o): o is ObraNoAcervo => o !== null);
   return [...doAcervo, ...fixtures].sort((a, b) => (a.analises[0]!.modelo.identidade.titulo).localeCompare(b.analises[0]!.modelo.identidade.titulo, 'pt-BR'));
 }
 
-/** Uma obra pelo slug (acervo primeiro, depois a fixture). */
+/** Uma obra pelo slug (as raízes primeiro, depois a fixture). */
 export async function lerObra(slug: string, opcoes: OpcoesDoAcervo = {}): Promise<ObraNoAcervo | null> {
   if (!ehSlug(slug)) return null;
-  const raiz = opcoes.raiz ?? raizDoAcervo();
   const aviso = opcoes.aviso ?? avisoPadrao;
-  if (existsSync(join(raiz, slug))) return lerObraDoAcervo(raiz, slug, aviso);
+  const raiz = raizesDas(opcoes).find((r) => existsSync(join(r, slug)));
+  if (raiz !== undefined) return lerObraDoAcervo(raiz, slug, aviso);
   if (opcoes.fixtures === false || !FIXTURES.includes(slug)) return null;
   return lerFixture(slug, aviso);
 }

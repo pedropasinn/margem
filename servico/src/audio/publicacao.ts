@@ -1,11 +1,12 @@
 import { isDeepStrictEqual } from 'node:util';
 import { createHash, randomUUID } from 'node:crypto';
 import { createReadStream, constants } from 'node:fs';
-import { copyFile, mkdir, stat, link, rm, open } from 'node:fs/promises';
+import { copyFile, mkdir, stat, link, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { contratoAudio, contratoAudioV2, type AudioNarrado } from '@margem/contratos';
 import { conferirAudioNoCanonico } from '@margem/core';
 import { raizDeDados } from '../dados';
+import { sincronizarArquivo, sincronizarPasta } from '../plataforma/disco.js';
 import { conferirOrcamento, ORCAMENTOS } from '../entrada-json';
 import { obterVersao } from '../repos/documentos';
 import type { Transacao } from '../db/transacao';
@@ -29,13 +30,11 @@ export async function prepararArquivoAudio(origem: string): Promise<string> {
   try {
     await copyFile(origem, temporario, constants.COPYFILE_EXCL);
     if (await hashDoArquivo(temporario) !== hash) throw new Error('Áudio alterado durante a cópia.');
-    const arquivo = await open(temporario, 'r');
-    try { await arquivo.sync(); } finally { await arquivo.close(); }
+    await sincronizarArquivo(temporario);
     try { await link(temporario, destino); }
     catch (erro) { if (!(erro instanceof Error && 'code' in erro && erro.code === 'EEXIST')) throw erro; }
     if (await hashDoArquivo(destino) !== hash) throw new Error('Arquivo de áudio adulterado.');
-    const pasta = await open(join(raizDeDados(), 'audio'), 'r');
-    try { await pasta.sync(); } finally { await pasta.close(); }
+    await sincronizarPasta(join(raizDeDados(), 'audio'));
   } finally { await rm(temporario, { force: true }); }
   return hash;
 }

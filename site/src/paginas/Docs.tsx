@@ -39,7 +39,7 @@ function Indice(): ReactNode {
   return (
     <>
       <h1>Documentação</h1>
-      <p className="docs-resumo">Tudo para instalar, usar e manter o {CONFIG.nome} no seu computador.</p>
+      <p className="docs-resumo">Tudo para instalar, usar e manter o {CONFIG.nome}, o seu assistente de estudos, no seu computador.</p>
       {GRUPOS.map((grupo) => (
         <section key={grupo} className="docs-indice-grupo" aria-label={grupo}>
           <h2>{grupo}</h2>
@@ -85,7 +85,7 @@ export function PaginaDeDocs({ slug }: { slug: string | null }): ReactNode {
   return (
     <>
       <a className="pular" href="#conteudo">Pular para o conteúdo</a>
-      <Cabecalho secao="docs" />
+      <Cabecalho secao={slug === 'obsidian' ? 'obsidian' : 'docs'} />
       <div className="container docs-grade">
         <Navegacao atual={slug} />
         <main id="conteudo" className="docs-artigo">

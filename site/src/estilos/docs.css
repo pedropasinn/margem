@@ -38,6 +38,7 @@
 .docs-corpo { margin-top: 36px; }
 .docs-corpo > * + * { margin-top: 16px; }
 .docs-corpo h2 { margin-top: 48px; font-size: 26px; line-height: 1.2; letter-spacing: -.02em; scroll-margin-top: 96px; }
+.docs-corpo h3 { margin-top: 32px; scroll-margin-top: 96px; }
 .docs-corpo p, .docs-corpo li { font: 400 17px/1.65 var(--sans); color: var(--texto-2); }
 .docs-corpo strong { color: var(--texto-1); font-weight: 650; }
 .docs-corpo a { color: var(--accent-texto); overflow-wrap: anywhere; }
@@ -99,3 +100,10 @@
 .versao-grupo h3 { font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); }
 .versao-grupo ul { display: grid; gap: 8px; margin-top: 12px; padding-left: 22px; }
 .versao-grupo li { font-size: 16.5px; line-height: 1.55; color: var(--texto-2); }
+
+/* Tabela da documentação: rola de lado dentro da própria caixa no celular, nunca a página. */
+.tabela-doc { max-width: 100%; overflow-x: auto; border: 1px solid var(--borda); border-radius: var(--r-12); }
+.tabela-doc table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tabela-doc th, .tabela-doc td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--borda); }
+.tabela-doc th { font: 700 13px/1.3 var(--sans); color: var(--texto-2); background: var(--bg-2); }
+.tabela-doc tr:last-child td { border-bottom: 0; }

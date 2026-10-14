@@ -136,8 +136,7 @@
 /* Uma ponte invisível entre a nota e a prévia: o mouse passa de uma para a outra sem a prévia sumir. */
 .nota-do-exercicio .previa-do-exercicio::before { content: ''; position: absolute; left: 0; right: 0; top: -10px; height: 10px; }
 .nota-do-exercicio[data-estado="falhou"] .previa-do-exercicio { border-color: var(--borda-hover); border-style: dashed; }
-.enunciado-da-previa { margin: 0; font: 15px/1.45 var(--serif); white-space: pre-wrap; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
-.linha-da-previa { margin: 0; color: var(--texto-2); font-size: 13px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.linha-da-previa { margin: 0; color: var(--texto-1); font-size: 14px; line-height: 1.45; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden; }
 .linha-da-previa .eyebrow { margin-right: 6px; }
 .acoes-do-exercicio { display: flex; gap: 2px; margin: 2px 0 0 calc(22px + .5rem - 8px); }
 .acoes-do-exercicio button { padding: 2px 8px; border: 0; border-radius: 999px; background: none; color: var(--texto-2); font: 600 13px var(--sans); cursor: pointer; }
@@ -145,6 +144,7 @@
 .acoes-do-exercicio button:disabled { opacity: .45; cursor: default; }
 /* Sem margem à vista: só o número, encostado no canto de cima do retângulo, na folha branca; a prévia abre para a esquerda. */
 .nota-do-exercicio[data-lugar="pagina"] { transform: translate(10px, -4px); }
+.nota-do-exercicio[data-lugar="pagina"][data-dentro] { transform: translate(calc(-100% - 8px), 8px); }
 .nota-do-exercicio[data-lugar="pagina"] .nota-rotulo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .nota-do-exercicio[data-lugar="pagina"] .numero-do-exercicio { margin: 0; background: #fff; border-color: #456dff; color: #2f4fd6; }
 .nota-do-exercicio[data-lugar="pagina"][data-estado="falhou"] .numero-do-exercicio { border-color: #0006; color: #000a; }

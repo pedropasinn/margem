@@ -362,3 +362,12 @@ html.com-leitura-guiada .margem { display: none; }
 
 .ponta-avulsa { pointer-events: auto; transform: none; animation: none; }
 .ponta-avulsa .orb-relacao { animation: none; }
+/* Fixada pelo clique, a relação da leitura recebe o mouse: "Adotar como minha conexão" (v0.1). */
+.popover-braquete.fixado { pointer-events: auto; }
+.adocao-da-relacao { margin-top: 10px; }
+.adocao-da-relacao p { margin: 6px 0 0; font: 400 13px/18px var(--sans); color: var(--texto-3); }
+.adocao-da-relacao.feita { margin: 10px 0 0; font: 400 13px/18px var(--sans); color: var(--texto-3); }
+.adocao-da-relacao { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.adocao-da-relacao > p { flex-basis: 100%; }
+.adocao-da-relacao.feita > p { flex-basis: auto; margin: 0; }
+.pontas-da-folha .adocao-da-relacao { padding: 0 12px 10px; }

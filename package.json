@@ -23,6 +23,7 @@
     "pree2e": "npm run build --workspace @margem/web",
     "e2e": "node --import tsx tests/e2e/resiliencia.ts",
     "auditar": "node --import tsx servico/src/ferramentas/auditar.ts",
+    "sondar-schemas": "node --import tsx servico/src/ferramentas/sondar-schemas.ts",
     "avaliar": "node --import tsx servico/src/ferramentas/avaliar.ts",
     "test": "vitest run",
     "lint": "eslint .",
@@ -31,9 +32,7 @@
     "preparar-visita": "node --import tsx servico/src/ferramentas/preparar-visita.ts",
     "preparar-leitura-comentada": "node --import tsx servico/src/ferramentas/preparar-leitura-comentada.ts",
     "narrar-leitura-comentada": "node --import tsx servico/src/ferramentas/narrar-leitura-comentada.ts",
-    "exemplo-obsidian": "node --import tsx servico/src/ferramentas/exemplo-obsidian.ts",
-    "arte:empacotar": "node --import tsx servico/src/ferramentas/empacotar-acervo.ts",
-    "arte:instalar": "node --import tsx servico/src/ferramentas/instalar-acervo.ts"
+    "exemplo-obsidian": "node --import tsx servico/src/ferramentas/exemplo-obsidian.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",

@@ -3,7 +3,9 @@
  * o áudio; nunca o vídeo) e um transcritor local opcional. As duas portas são interfaces para os testes
  * usarem falsos, sem rede.
  *
- * - `MARGEM_YT_DLP`: caminho do yt-dlp (padrão: `yt-dlp` do PATH).
+ * - `MARGEM_YT_DLP`: caminho do yt-dlp (padrão: `yt-dlp` do PATH). No app de desktop (J114) é o binário
+ *   oficial dos recursos, e os desafios de JavaScript do YouTube usam o próprio Node do serviço
+ *   (`--js-runtimes node:<process.execPath>`; com o Electron como Node, `ELECTRON_RUN_AS_NODE` vai junto).
  * - `MARGEM_TRANSCRITOR`: executável que recebe `<áudio> <saída.json>` e escreve
  *   `{ "motor": "...", "idioma": "pt", "palavras": [{ "texto", "inicio_s", "fim_s" }] }`
  *   (ex.: `tools/midia/transcrever_local.py`, com faster-whisper). Sem ele, vídeo sem legenda fica sem transcrição.
@@ -14,10 +16,14 @@ import { join } from 'node:path';
 import type { PalavraTranscrita } from '@margem/core';
 import { urlDeAssistirNoYoutube } from '@margem/core/youtube';
 import { ambienteSaneado } from '../executor/ambiente';
+import { noAppDeDesktop, ytDlp } from '../plataforma/executaveis.js';
+import { guardarMiniaturaDoYoutube } from './miniatura-do-video';
 import { metadadosDoYtDlp, type EscolhaDaLegenda, type MetadadosDoYoutube } from './youtube';
 
 export interface FonteDoYoutube {
   metadados(videoId: string, sinal: AbortSignal): Promise<MetadadosDoYoutube>;
+  /** Guarda a miniatura do vídeo na pasta do documento (J133); opcional (os falsos dos testes não têm). */
+  miniatura?(documentoId: string, videoId: string, sinal: AbortSignal): Promise<string | null>;
   /** Baixa só a legenda escolhida, em json3; devolve o conteúdo já interpretado. */
   legenda(videoId: string, escolha: EscolhaDaLegenda, pasta: string, sinal: AbortSignal): Promise<unknown>;
   /** Baixa só o áudio (nunca o vídeo); devolve o caminho do arquivo. */
@@ -38,8 +44,8 @@ const PRAZO_TRANSCRICAO_MS = 4 * 3_600_000;
 function rodar(programa: string, argumentos: string[], opcoes: { prazoMs: number; sinal: AbortSignal; ambiente?: Record<string, string> }): Promise<string> {
   return new Promise((resolver, rejeitar) => {
     execFile(programa, argumentos, {
-      timeout: opcoes.prazoMs, signal: opcoes.sinal, maxBuffer: 64 * 1024 * 1024, encoding: 'utf8',
-      env: opcoes.ambiente ?? { ...ambienteSaneado(), PYTHONIOENCODING: 'utf-8' },
+      timeout: opcoes.prazoMs, signal: opcoes.sinal, maxBuffer: 64 * 1024 * 1024, encoding: 'utf8', windowsHide: true,
+      env: opcoes.ambiente ?? { ...ambienteSaneado(), PYTHONIOENCODING: 'utf-8', ...electronComoNode() },
     }, (erro, stdout, stderr) => {
       if (erro) {
         if ('code' in erro && erro.code === 'ENOENT') { rejeitar(new FerramentaAusente(`${programa} não está instalado.`)); return; }
@@ -59,10 +65,22 @@ async function arquivoComPrefixo(pasta: string, prefixo: string, sufixo = ''): P
   return join(pasta, nome);
 }
 
+/** O Electron só se comporta como Node com `ELECTRON_RUN_AS_NODE`; repassada se o serviço roda assim. */
+function electronComoNode(): Record<string, string> {
+  return process.env.ELECTRON_RUN_AS_NODE === '1' ? { ELECTRON_RUN_AS_NODE: '1' } : {};
+}
+
+/** Argumentos comuns; no app de desktop, o Node do serviço resolve os desafios de JavaScript. */
+export function argumentosComunsDoYtDlp(ambiente: NodeJS.ProcessEnv = process.env, node = process.execPath): string[] {
+  return ['--no-playlist', '--no-warnings', '--no-progress', '--ignore-config',
+    ...(noAppDeDesktop(ambiente) ? ['--js-runtimes', `node:${node}`] : [])];
+}
+
 /** O yt-dlp de verdade. Toda chamada leva `--no-playlist` e a URL canônica montada do id (nunca a do usuário). */
-export function fonteYtDlp(programa = process.env.MARGEM_YT_DLP ?? 'yt-dlp'): FonteDoYoutube {
-  const comum = ['--no-playlist', '--no-warnings', '--no-progress', '--ignore-config'];
+export function fonteYtDlp(programa = ytDlp()): FonteDoYoutube {
+  const comum = argumentosComunsDoYtDlp();
   return {
+    miniatura: (documentoId, videoId, sinal) => guardarMiniaturaDoYoutube(documentoId, videoId, fetch, sinal),
     async metadados(videoId, sinal) {
       const saida = await rodar(programa, [...comum, '--skip-download', '-J', urlDeAssistirNoYoutube(videoId)], { prazoMs: PRAZO_METADADOS_MS, sinal });
       return metadadosDoYtDlp(JSON.parse(saida), videoId);

@@ -9,7 +9,9 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
+import { comExtensao } from '../plataforma/executaveis.js';
+import { encerrarArvore, opcoesDeProcesso } from '../plataforma/processos.js';
 import { montarTex, type DocumentoDoTex, type ExercicioParaExportar } from './latex.js';
 
 export class LatexIndisponivel extends Error {}
@@ -17,9 +19,9 @@ export class LatexIndisponivel extends Error {}
 export function binarioDoTectonic(): string | null {
   const escolhido = process.env.MARGEM_TECTONIC?.trim();
   if (escolhido) return existsSync(escolhido) ? escolhido : null;
-  const local = join(homedir(), '.local/bin/tectonic');
+  const local = join(homedir(), '.local', 'bin', comExtensao('tectonic'));
   if (existsSync(local)) return local;
-  const caminhos = (process.env.PATH ?? '').split(':').map((pasta) => join(pasta, 'tectonic'));
+  const caminhos = (process.env.PATH ?? '').split(delimiter).filter((pasta) => pasta !== '').map((pasta) => join(pasta, comExtensao('tectonic')));
   return caminhos.find((caminho) => existsSync(caminho)) ?? null;
 }
 
@@ -30,12 +32,12 @@ async function compilarUmaVez(binario: string, tex: string, prazoMs: number): Pr
   try {
     await writeFile(join(pasta, 'exercicios.tex'), tex, 'utf8');
     const log = await new Promise<{ codigo: number | null; texto: string }>((resolver, rejeitar) => {
-      const processo = spawn(binario, ['-X', 'compile', '--untrusted', 'exercicios.tex'], { cwd: pasta, stdio: ['ignore', 'pipe', 'pipe'] });
+      const processo = spawn(binario, ['-X', 'compile', '--untrusted', 'exercicios.tex'], { cwd: pasta, stdio: ['ignore', 'pipe', 'pipe'], ...opcoesDeProcesso() });
       let texto = '';
       const juntar = (pedaco: Buffer) => { texto = (texto + pedaco.toString()).slice(-60_000); };
       processo.stdout.on('data', juntar);
       processo.stderr.on('data', juntar);
-      const relogio = setTimeout(() => processo.kill('SIGKILL'), prazoMs);
+      const relogio = setTimeout(() => { void encerrarArvore(processo, 'forcado'); }, prazoMs);
       processo.on('error', (erro) => { clearTimeout(relogio); rejeitar(erro); });
       processo.on('close', (codigo) => { clearTimeout(relogio); resolver({ codigo, texto }); });
     });

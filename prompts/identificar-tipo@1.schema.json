@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/identificar-tipo@1.schema.json",
+  "title": "Tipo de texto de um documento, versão 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tipo_id",
+    "confianca",
+    "justificativa",
+    "alternativas"
+  ],
+  "properties": {
+    "tipo_id": {
+      "type": "string",
+      "enum": [
+        "conto",
+        "romance",
+        "poesia",
+        "teatro",
+        "cronica",
+        "critica_literaria",
+        "tratado_filosofico",
+        "dialogo_filosofico",
+        "classico_comentado",
+        "escritura",
+        "magisterio",
+        "teologia",
+        "espiritualidade",
+        "economia_empirica",
+        "economia_teorica",
+        "politica_economica",
+        "comunicado_monetario",
+        "matematica",
+        "estatistica",
+        "computacao",
+        "artigo_computacao",
+        "artigo_cientifico",
+        "historiografia",
+        "fonte_historica",
+        "noticia",
+        "analise_jornalistica",
+        "opiniao",
+        "email",
+        "carta",
+        "didatico",
+        "lei",
+        "decisao_judicial",
+        "outro"
+      ]
+    },
+    "confianca": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "media",
+        "baixa"
+      ]
+    },
+    "justificativa": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "\\S"
+    },
+    "alternativas": {
+      "type": "array",
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "conto",
+          "romance",
+          "poesia",
+          "teatro",
+          "cronica",
+          "critica_literaria",
+          "tratado_filosofico",
+          "dialogo_filosofico",
+          "classico_comentado",
+          "escritura",
+          "magisterio",
+          "teologia",
+          "espiritualidade",
+          "economia_empirica",
+          "economia_teorica",
+          "politica_economica",
+          "comunicado_monetario",
+          "matematica",
+          "estatistica",
+          "computacao",
+          "artigo_computacao",
+          "artigo_cientifico",
+          "historiografia",
+          "fonte_historica",
+          "noticia",
+          "analise_jornalistica",
+          "opiniao",
+          "email",
+          "carta",
+          "didatico",
+          "lei",
+          "decisao_judicial",
+          "outro"
+        ]
+      }
+    }
+  }
+}

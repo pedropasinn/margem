@@ -1,11 +1,82 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": false,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "jsx": "react-jsx",
+    "noImplicitOverride": true,
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@app/*": [
+        "../web/src/*"
+      ],
+      "@margem/core": [
+        "../core/src/index.ts"
+      ],
+      "@margem/core/audio": [
+        "../core/src/audio.ts"
+      ],
+      "@margem/core/midia": [
+        "../core/src/midia.ts"
+      ],
+      "@margem/core/segmentos": [
+        "../core/src/segmentos.ts"
+      ],
+      "@margem/core/eink": [
+        "../core/src/eink.ts"
+      ],
+      "@margem/core/fluxograma": [
+        "../core/src/fluxograma.ts"
+      ],
+      "@margem/core/visita": [
+        "../core/src/visita.ts"
+      ],
+      "@margem/core/leitura-comentada": [
+        "../core/src/leitura-comentada.ts"
+      ],
+      "@margem/core/karaoke": [
+        "../core/src/karaoke.ts"
+      ],
+      "@margem/core/youtube": [
+        "../core/src/youtube.ts"
+      ],
+      "@margem/contratos": [
+        "../contratos/src/index.ts"
+      ],
+      "@margem/contratos/texto": [
+        "../contratos/src/texto.ts"
+      ],
+      "@margem/contratos/regras": [
+        "../contratos/src/regras.ts"
+      ],
+      "@margem/contratos/sala": [
+        "../contratos/src/sala.ts"
+      ],
+      "@obsidian/exportar": [
+        "../servico/src/obsidian/exportar.ts"
+      ]
     },
-    {
-      "path": "./tsconfig.node.json"
-    }
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src",
+    "vite.config.ts"
   ]
 }

@@ -3,7 +3,7 @@
  * (fila, pensando, falhou), salvar o mapa no capítulo. O Mermaid é trocado por um esboço (o jsdom
  * não desenha SVG); a régua e a higienização dele têm testes próprios no J70.
  */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { ConversaDoAgenteV1, MensagemDoAgenteV1 } from '@margem/contratos';
 import { blocosDoMarkdown, Markdown } from './Markdown';
@@ -15,6 +15,7 @@ vi.mock('../leitor/visuais/DiagramaMermaid', () => ({
 }));
 // Importado depois do mock.
 const { Perguntar } = await import('./Perguntar');
+const { ConversasNaBarra, ProvedorDasConversas } = await import('./conversas');
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
@@ -93,7 +94,7 @@ describe('página Perguntar', () => {
     expect(screen.getByRole('heading', { name: 'Perguntar' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Faça um mapa do capítulo 3 deste livro' }));
     expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Sua pergunta' }).value).toBe('Faça um mapa do capítulo 3 deste livro');
-    fireEvent.click(screen.getByRole('button', { name: 'Perguntar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar pergunta' }));
     await waitFor(() => expect(ir).toHaveBeenCalledWith({ nome: 'perguntar', conversa_id: C }, true));
     expect(chamadas.some((c) => c.metodo === 'POST' && c.url === '/api/agente/conversas')).toBe(true);
     expect((await screen.findAllByText('Na fila do Codex…')).length).toBeGreaterThan(0);
@@ -109,7 +110,7 @@ describe('página Perguntar', () => {
     const ir = vi.fn();
     render(<Perguntar conversa_id={C} ir={ir} />);
     expect((await screen.findAllByText('Lendo a biblioteca…')).length).toBeGreaterThan(0);
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Perguntar' }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Enviar pergunta' }).disabled).toBe(true);
     fase = 1;
     const marca = await screen.findByRole('button', { name: 'Fonte 1: ir ao trecho' }, { timeout: 4000 });
     fireEvent.click(marca);
@@ -136,5 +137,78 @@ describe('página Perguntar', () => {
     expect(screen.getByText('[c1]')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     await waitFor(() => expect(chamadas.some((c) => c.metodo === 'POST' && c.url.endsWith('/repetir'))).toBe(true));
+  });
+});
+
+describe('Perguntar como chat (V-U1)', () => {
+  test('Enter envia, Shift+Enter quebra a linha; vazio não envia; a caixa fica em branco depois', async () => {
+    const chamadas = servidor({
+      'GET /api/agente/conversas': () => ({ conversas: [conversa] }),
+      [`GET /api/agente/conversas/${C}`]: () => ({ conversa, mensagens: [pergunta('respondida'), resposta] }),
+      [`POST /api/agente/conversas/${C}/mensagens`]: () => ({ conversa, mensagens: [pergunta('respondida'), resposta, pergunta('na_fila', { id: '01K0000000000000000000M009', texto: 'linha 1\nlinha 2' })] }),
+    });
+    render(<ProvedorDasConversas><Perguntar conversa_id={C} ir={vi.fn()} /></ProvedorDasConversas>);
+    await screen.findByRole('button', { name: 'Fonte 1: ir ao trecho' });
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Mapa do capítulo 3');
+    const caixa = screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Sua pergunta' });
+    fireEvent.keyDown(caixa, { key: 'Enter' });
+    expect(chamadas.some((c) => c.metodo === 'POST')).toBe(false);
+    fireEvent.change(caixa, { target: { value: 'linha 1' } });
+    expect(fireEvent.keyDown(caixa, { key: 'Enter', shiftKey: true })).toBe(true);
+    expect(chamadas.some((c) => c.metodo === 'POST')).toBe(false);
+    fireEvent.change(caixa, { target: { value: 'linha 1\nlinha 2' } });
+    expect(fireEvent.keyDown(caixa, { key: 'Enter' })).toBe(false);
+    await waitFor(() => expect(chamadas.some((c) => c.metodo === 'POST' && c.url === `/api/agente/conversas/${C}/mensagens`)).toBe(true));
+    await waitFor(() => expect(caixa.value).toBe(''));
+    expect((await screen.findAllByText('Na fila do Codex…')).length).toBeGreaterThan(0);
+  });
+
+  test('a lista de conversas não fica na página; sem a barra, o botão Conversas abre a gaveta com elas', async () => {
+    servidor({ 'GET /api/agente/conversas': () => ({ conversas: [conversa] }) });
+    const ir = vi.fn();
+    const { container, unmount } = render(<ProvedorDasConversas><Perguntar ir={ir} /></ProvedorDasConversas>);
+    expect(container.querySelector('.perguntar a[href^="/perguntar/"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Conversas' })).toBeNull();
+    unmount();
+    render(<ProvedorDasConversas><Perguntar ir={ir} barraVisivel={false} /></ProvedorDasConversas>);
+    fireEvent.click(screen.getByRole('button', { name: 'Conversas' }));
+    const gaveta = await screen.findByRole('dialog', { name: 'Conversas' });
+    fireEvent.click(await within(gaveta).findByRole('link', { name: 'Mapa do capítulo 3' }));
+    expect(ir).toHaveBeenCalledWith({ nome: 'perguntar', conversa_id: C }, undefined);
+    expect(screen.queryByRole('dialog', { name: 'Conversas' })).toBeNull();
+  });
+
+  test('na barra: Nova conversa, as recentes, renomear e apagar pelo "…"', async () => {
+    const outra: ConversaDoAgenteV1 = { ...conversa, id: '01K0000000000000000000C002', titulo: 'Outra conversa' };
+    const chamadas: { url: string; metodo: string; corpo?: string }[] = [];
+    vi.stubGlobal('fetch', vi.fn((url: string, inicio?: RequestInit) => {
+      const metodo = inicio?.method ?? 'GET';
+      chamadas.push({ url, metodo, ...(typeof inicio?.body === 'string' ? { corpo: inicio.body } : {}) });
+      const corpo = metodo === 'GET' ? { conversas: [conversa, outra] }
+        : metodo === 'PATCH' ? { conversa: { ...conversa, titulo: 'DAGs do Mixtape' } }
+          : { conversa_id: outra.id, apagada: true };
+      return Promise.resolve(new Response(JSON.stringify(corpo), { status: 200 }));
+    }));
+    const ir = vi.fn();
+    render(<ProvedorDasConversas><nav><ConversasNaBarra atual={C} ir={ir} /></nav></ProvedorDasConversas>);
+    expect((await screen.findByRole('link', { name: 'Mapa do capítulo 3' })).getAttribute('aria-current')).toBe('page');
+    fireEvent.click(screen.getByRole('link', { name: 'Nova conversa' }));
+    expect(ir).toHaveBeenLastCalledWith({ nome: 'perguntar' }, undefined);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Opções da conversa Mapa do capítulo 3' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Renomear' }));
+    const campo = screen.getByRole<HTMLInputElement>('textbox', { name: 'Nome da conversa' });
+    fireEvent.change(campo, { target: { value: '  DAGs   do Mixtape ' } });
+    fireEvent.submit(campo.closest('form')!);
+    await screen.findByRole('link', { name: 'DAGs do Mixtape' });
+    expect(chamadas.find((c) => c.metodo === 'PATCH')).toMatchObject({ url: `/api/agente/conversas/${C}`, corpo: JSON.stringify({ titulo: 'DAGs do Mixtape' }) });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Opções da conversa Outra conversa' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Apagar' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Apagar conversa' })).getByRole('button', { name: 'Apagar' }));
+    await waitFor(() => expect(screen.queryByRole('link', { name: 'Outra conversa' })).toBeNull());
+    expect(chamadas.find((c) => c.metodo === 'DELETE')?.url).toBe(`/api/agente/conversas/${outra.id}`);
+    // Apagar a outra não tira quem lê da conversa atual.
+    expect(ir).toHaveBeenCalledTimes(1);
   });
 });

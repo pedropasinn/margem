@@ -121,11 +121,14 @@ test('recortar, resolver passo a passo e perguntar sobre a resolução', async (
   const lista = await ler<{ resolucoes: { resolucao: ResolucaoV2; estado: string }[] }>(api, url);
   expect(lista.resolucoes.map((item) => [item.resolucao.origem.tipo, item.estado])).toEqual([['trecho', 'resolvendo'], ['recorte', 'pronta']]);
 
-  // Remover: a que está resolvendo é recusada; a pronta sai da lista; remover de novo dá 404.
+  // Remover: a pronta sai da lista; remover de novo dá 404. A que está resolvendo também sai (V-T8): o
+  // job do Codex é cancelado antes e nada dela fica.
   const { resolucao: doTrecho } = await trecho.json() as { resolucao: ResolucaoV2 };
-  expect((await escrever(api, 'DELETE', `/api/resolucoes/${doTrecho.id}`, undefined)).status).toBe(409);
   expect((await escrever(api, 'DELETE', `/api/resolucoes/${resolucao.id}`, undefined)).status).toBe(204);
   expect((await escrever(api, 'DELETE', `/api/resolucoes/${resolucao.id}`, undefined)).status).toBe(404);
   const depois = await ler<{ resolucoes: { resolucao: ResolucaoV2 }[] }>(api, url);
   expect(depois.resolucoes.map((item) => item.resolucao.id)).toEqual([doTrecho.id]);
+  expect((await escrever(api, 'DELETE', `/api/resolucoes/${doTrecho.id}`, undefined)).status).toBe(204);
+  expect((await ler<{ resolucoes: unknown[] }>(api, url)).resolucoes).toEqual([]);
+  expect((await banco.query("SELECT 1 FROM job WHERE dedup_key=$1 AND estado IN ('fila','reservado','adiado')", [`resolver:${doTrecho.id}`])).rowCount).toBe(0);
 }));

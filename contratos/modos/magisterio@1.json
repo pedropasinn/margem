@@ -1,0 +1,83 @@
+{
+  "versao": 1,
+  "id": "magisterio",
+  "revisao": 1,
+  "nome": "Documento da Igreja",
+  "descricao": "Ler encíclicas, exortações, catecismo e documentos conciliares distinguindo o que se ensina, em que se apoia, as distinções que o precisam, o juízo sobre a situação presente, as orientações e o grau de autoridade com que cada coisa é dita.",
+  "funcoes": [
+    {
+      "chave": "ensinamento",
+      "rotulo": "Ensinamento",
+      "pergunta": "O que o documento ensina como doutrina de fé ou de moral?",
+      "descricao": "Afirmação doutrinal do próprio documento. Ex.: “A dignidade da pessoa humana funda-se na sua criação à imagem de Deus.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "fundamento",
+      "rotulo": "Fundamento",
+      "pergunta": "Em que Escritura, Tradição ou documento anterior o ensinamento se apoia?",
+      "descricao": "Fonte invocada pelo texto, atribuída a quem a disse. Ex.: “Como ensinava São João Paulo II…”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "distincao",
+      "rotulo": "Distinção",
+      "pergunta": "Que distinção ou definição precisa o ensinamento?",
+      "descricao": "Definição ou distinção que delimita o alcance. Ex.: “Não se trata de tolerância, mas de reconhecimento.”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "juizo",
+      "rotulo": "Juízo sobre a situação",
+      "pergunta": "Que leitura da realidade presente o documento faz?",
+      "descricao": "Diagnóstico de época, cultura ou sociedade. Ex.: “A cultura do descarte atinge sobretudo os mais pobres.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "orientacao",
+      "rotulo": "Orientação",
+      "pergunta": "O que o documento pede ou recomenda, e a quem?",
+      "descricao": "Exortação, norma pastoral ou pedido dirigido a fiéis, pastores ou governantes. Ex.: “Peço às comunidades que…”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "autoridade",
+      "rotulo": "Grau de autoridade",
+      "pergunta": "Com que força o texto afirma: define, ensina, exorta ou sugere?",
+      "descricao": "Marca do peso da afirmação (definimos, ensinamos, exortamos, parece oportuno). Ex.: “declaramos e definimos”.",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

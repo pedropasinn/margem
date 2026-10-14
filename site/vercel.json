@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/atualizacoes/:arquivo*",
+      "destination": "https://github.com/pedropasinn/margem/releases/latest/download/:arquivo*",
+      "statusCode": 302
+    }
+  ]
+}

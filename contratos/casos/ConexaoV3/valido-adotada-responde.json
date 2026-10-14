@@ -1,0 +1,29 @@
+{
+  "versao": 3,
+  "id": "00000000000000000000000093",
+  "origem": {
+    "versao_id": "00000000000000000000000020",
+    "bloco_id": "00000000000000000000000001",
+    "inicio_utf16": 3,
+    "fim_utf16": 5,
+    "citacao": "🧭",
+    "prefixo": "Um ",
+    "sufixo": ", café e ﬁ."
+  },
+  "destino": {
+    "tipo": "nota_externa",
+    "caminho": "Zettel/Bússola e orientação.md",
+    "titulo": "Bússola e orientação"
+  },
+  "relacao": "tensao",
+  "justificativa": "A bússola aqui orienta; lá, desorienta.",
+  "autor": "leitor",
+  "estado": "aceita",
+  "criada_em": "2026-09-23T12:00:00Z",
+  "decidida_em": "2026-09-23T12:00:00Z",
+  "relacao_semantica": "responde",
+  "origem_compreensao": {
+    "modelo_id": "01K00000000000000000000M01",
+    "relacao_id": "01K00000000000000000000R01"
+  }
+}

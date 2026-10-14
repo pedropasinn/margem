@@ -33,6 +33,20 @@ function lerPergunta(bruto: unknown): string {
   return pergunta.trim();
 }
 
+export const TITULO_MAXIMO = 200;
+
+/** Corpo de PATCH da conversa: só `titulo`, numa linha, de 1 a 200 caracteres. */
+function lerTitulo(bruto: unknown): string {
+  if (typeof bruto !== 'object' || bruto === null || Array.isArray(bruto)) throw new ErroDaApi(400, 'corpo_invalido', 'O corpo precisa ser um objeto JSON.');
+  const desconhecidas = Object.keys(bruto).filter((chave) => chave !== 'titulo');
+  if (desconhecidas.length > 0) throw new ErroDaApi(400, 'campo_desconhecido', `Campos desconhecidos: ${desconhecidas.join(', ')}.`);
+  const { titulo } = bruto as { titulo?: unknown };
+  const linha = typeof titulo === 'string' ? titulo.replace(/\s+/gu, ' ').trim() : '';
+  if (linha === '') throw new ErroDaApi(400, 'titulo_vazio', 'Escreva o nome da conversa.');
+  if (linha.length > TITULO_MAXIMO) throw new ErroDaApi(400, 'titulo_longo', `O nome passa de ${String(TITULO_MAXIMO)} caracteres.`);
+  return linha;
+}
+
 /** Título da conversa: a primeira pergunta, numa linha, cortada numa palavra. */
 export function tituloDaPergunta(pergunta: string): string {
   const linha = pergunta.replace(/\s+/gu, ' ').trim();
@@ -73,6 +87,15 @@ export function registrarRotasDoAgente(api: Hono, apoio: ApoioDoAgente): void {
   api.get('/api/agente/conversas/:id', async (c) => {
     const id = exigirUlid(c.req.param('id'), 'conversa');
     return c.json(await comTransacao(banco, (cliente) => fio(cliente, id)));
+  });
+
+  // Renomear (V-U1): o leitor dá outro nome à conversa na barra lateral.
+  api.patch('/api/agente/conversas/:id', async (c) => {
+    const id = exigirUlid(c.req.param('id'), 'conversa');
+    const titulo = lerTitulo(await corpoJson(c));
+    const conversa = await comTransacao(banco, (cliente) => agenteRepo.renomearConversa(cliente, id, titulo));
+    if (!conversa) throw new ErroDaApi(404, 'conversa_inexistente');
+    return c.json({ conversa });
   });
 
   api.delete('/api/agente/conversas/:id', async (c) => {

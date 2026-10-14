@@ -107,6 +107,8 @@ export const CHAVES = {
   video: 'margem:midia:video',
   largura: 'margem:midia:largura-video',
   legendas: 'margem:midia:legendas-dos-grifos',
+  /** J142: o vídeo à esquerda ou à direita do texto. */
+  lado: 'margem:midia:lado-do-video',
   posicao: (id: Id) => `margem:midia:posicao:${id}`,
 } as const;
 

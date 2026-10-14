@@ -87,6 +87,8 @@
 @keyframes cartao-abrir { from { opacity: 0; scale: .7; } to { opacity: 1; scale: 1; } }
 .cabeca-do-cartao { display: flex; align-items: center; gap: 10px; }
 .titulo-do-conceito { margin: 0; font: 700 14px/1.3 var(--sans); }
+/* J142: o tipo do momento (Conceito, Dado, Contexto, Pergunta), um chip discreto antes do título. */
+.tipo-do-momento { display: inline-block; margin-right: 2px; padding: 0 7px; border: 1px solid var(--borda); border-radius: 999px; font: 600 10px/16px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); vertical-align: 1px; }
 .cartao-do-conceito > p { margin: 8px 0 0; color: var(--texto-2); }
 .cartao-do-conceito blockquote { margin: 10px 0 0; color: var(--texto-3); font: italic 14px/1.45 var(--serif); }
 .acoes-do-conceito { display: flex; gap: 6px; margin-top: 12px; }

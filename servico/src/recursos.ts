@@ -15,11 +15,11 @@
  * - `audio-colab`: a GERAÇÃO de voz pelo pipeline pessoal (fábrica auto-colab, OmniVoice, voz clonada):
  *   `narrar-visita`, `narrar-leitura-comentada`, `importar-audio`. Tocar áudio já publicado
  *   (`/api/audios/*`, `/api/narracoes-*`) não depende dela: outro provedor (J106) publica no mesmo lugar.
- * - `arte` (ligado por padrão): o acervo de quadros (`/api/arte*`, `/quadros`). Fica ligada mesmo sem
- *   acervo em disco (`MARGEM_ARTE_DIR`, padrão `<MARGEM_DADOS>/arte/obras`; `recursosEfetivos` em
- *   `http/app.ts` não confere a pasta, J110): as rotas mostram as obras de exemplo do repositório
- *   (`MARGEM_ARTE_FIXTURES=0` as tira) e `GET /api/arte` diz em `acervo` que nada foi instalado e como
- *   baixar o pacote, que a tela Quadros mostra como estado vazio. `MARGEM_ARTE=0` desliga, como `-arte`.
+ * - `arte` (ligado por padrão): Quadros (`/api/arte*`, `/quadros`). O Margem não distribui acervo (J118):
+ *   a pessoa adiciona as imagens das obras e o worker prepara a análise (job `preparar_quadro`), em
+ *   `MARGEM_ARTE_DIR` (padrão `<MARGEM_DADOS>/quadros`; `<MARGEM_DADOS>/arte/obras`, se existir, é lido
+ *   também). Sem nenhuma obra, a tela Quadros convida a adicionar a primeira; as obras de exemplo do
+ *   repositório aparecem (`MARGEM_ARTE_FIXTURES=0` as tira). `MARGEM_ARTE=0` desliga, como `-arte`.
  * - `sala`: salas de teste do beta (`/api/salas*`) e o processo do portão.
  * - `horarium` (J102b): a importação de sessões do Horarium (`POST /api/importar/horarium`). O importador
  *   de marcas legadas (`/api/documentos/:id/importar-legado`) é genérico e não depende dela.

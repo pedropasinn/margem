@@ -13,7 +13,9 @@ import { afterEach, beforeEach, expect, test } from 'vitest';
 import type { ChildProcess, SpawnOptions, spawn } from 'node:child_process';
 import { executarCodex } from './codex.js';
 import { FLAGS_NECESSARIAS, type Capacidades } from './capacidades.js';
-import { confinamentoPadrao, montarConfinamento, modeloDoUsuario, MOTOR_PADRAO, type Confinamento } from './confinamento.js';
+import {
+  ambienteNativo, argumentosNativos, confinamentoPadrao, montarConfinamento, modeloDoUsuario, MOTOR_PADRAO, PERFIL_DO_MARGEM, politicaNativa, type Confinamento,
+} from './confinamento.js';
 import { pngDeTeste } from './fake.js';
 
 const SESSAO = '01a0eac1-3876-75e2-ab56-b4081137959f';
@@ -214,4 +216,106 @@ test('anexos só de leitura (a biblioteca do agente) entram como --ro-bind dentr
   const gravaveis = lista.flatMap((item, i) => (item === '--bind' ? [lista[i + 1]] : []));
   expect(gravaveis).toEqual(['/tmp/margem-casa-y', '/tmp/margem-job-x']);
   expect(lista.at(-1)).toBe('/opt/codex/0.1/bin/codex');
+});
+
+// ------------------------------------------------------------------ J114: modo nativo (macOS, Windows)
+
+test('confinamento padrão por sistema: bwrap no Linux, sandbox do próprio Codex no macOS e no Windows', () => {
+  expect(confinamentoPadrao({}, 'codex', 'linux')).toMatchObject({ tipo: 'bwrap', bwrap: '/usr/bin/bwrap', motor: MOTOR_PADRAO });
+  expect(confinamentoPadrao({ MARGEM_CODEX_MOTOR: '/r/codex' }, 'codex', 'darwin')).toMatchObject({ tipo: 'nativo', motor: '/r/codex', politica: 'perfil' });
+  expect(confinamentoPadrao({ MARGEM_CODEX_MOTOR: 'C:\\r\\codex.exe' }, 'codex', 'win32')).toMatchObject({ tipo: 'nativo', politica: 'somente-leitura', sandboxDoWindows: 'unelevated' });
+  // Escolhas explícitas; valor desconhecido é erro, nunca um isolamento mais fraco em silêncio.
+  expect(confinamentoPadrao({ MARGEM_CONFINAMENTO: 'nativo', MARGEM_BWRAP: '/opt/bwrap' }, 'codex', 'linux')).toMatchObject({ tipo: 'nativo', bwrap: '/opt/bwrap', politica: 'perfil' });
+  expect(confinamentoPadrao({ MARGEM_CODEX_SANDBOX: 'perfil', MARGEM_WINDOWS_SANDBOX: 'mxc' }, 'codex', 'win32')).toMatchObject({ politica: 'perfil', sandboxDoWindows: 'mxc' });
+  expect(() => confinamentoPadrao({ MARGEM_CONFINAMENTO: 'nenhum' }, 'codex', 'linux')).toThrow(/MARGEM_CONFINAMENTO/u);
+  expect(() => confinamentoPadrao({ MARGEM_WINDOWS_SANDBOX: 'desligado' }, 'codex', 'win32')).toThrow(/MARGEM_WINDOWS_SANDBOX/u);
+});
+
+test('política nativa: perfil nega a raiz e só lê o diretório e os anexos, sem rede; Windows escolhe o sandbox', () => {
+  const perfil = politicaNativa({ politica: 'perfil', plataforma: 'darwin', sandboxDoWindows: 'unelevated', diretorio: '/private/var/margem-job-x', leituras: ['/dados/biblioteca'] });
+  expect(perfil.topo).toEqual([`default_permissions = "${PERFIL_DO_MARGEM}"`]);
+  const texto = perfil.tabelas.join('\n');
+  expect(texto).toContain('":root" = "deny"');
+  expect(texto).toContain('":minimal" = "read"');
+  expect(texto).toContain('"/private/var/margem-job-x" = "read"');
+  expect(texto).toContain('"/dados/biblioteca" = "read"');
+  expect(texto).toMatch(/\[permissions\.margem-leitura\.network\]\nenabled = false/u);
+  expect(texto).not.toMatch(/= "write"/u);
+  expect(texto).not.toContain('[windows]');
+  const windows = politicaNativa({ politica: 'somente-leitura', plataforma: 'win32', sandboxDoWindows: 'unelevated', diretorio: 'C:\\T\\margem-job-x', leituras: [] });
+  expect(windows).toEqual({ topo: [], tabelas: ['[windows]', 'sandbox = "unelevated"'] });
+  // Caminho do Windows escapado como cadeia TOML.
+  const comBarra = politicaNativa({ politica: 'perfil', plataforma: 'win32', sandboxDoWindows: 'elevated', diretorio: 'C:\\T\\job', leituras: [] });
+  expect(comBarra.tabelas).toContain('"C:\\\\T\\\\job" = "read"');
+});
+
+test('com o perfil o --sandbox sai da linha; o prompt depois de -- fica intacto', () => {
+  const linha = ['exec', '--sandbox', 'read-only', '-C', '/d', '--', 'leia --sandbox'];
+  expect(argumentosNativos(linha, 'perfil')).toEqual(['exec', '-C', '/d', '--', 'leia --sandbox']);
+  expect(argumentosNativos(linha, 'somente-leitura')).toEqual(linha);
+});
+
+test('ambiente nativo: casa temporária como perfil, PATH só do sistema, nada do worker', () => {
+  const origem = { PATH: '/home/u/bin:/usr/bin', HOME: '/home/u', DATABASE_URL: 'postgres://x:senha@h/b', LANG: 'pt_BR.UTF-8', TMPDIR: '/var/folders/u' };
+  const mac = ambienteNativo('/T/casa', origem, 'darwin');
+  expect(mac).toEqual({ HOME: '/T/casa', CODEX_HOME: join('/T/casa', '.codex'), LANG: 'pt_BR.UTF-8', PATH: '/usr/bin:/bin:/usr/sbin:/sbin', TMPDIR: join('/T/casa', 'tmp') });
+  const windows = ambienteNativo('C:\\T\\casa', {
+    Path: 'C:\\Users\\u\\bin', SYSTEMROOT: 'C:\\Windows', USERPROFILE: 'C:\\Users\\u', APPDATA: 'C:\\Users\\u\\AppData\\Roaming',
+    PATHEXT: '.COM;.EXE', DATABASE_URL: 'postgres://x:senha@h/b', GITHUB_TOKEN: 'ghp_x',
+  }, 'win32');
+  expect(windows.SystemRoot).toBe('C:\\Windows');
+  expect(windows.USERPROFILE).toBe('C:\\T\\casa');
+  expect(windows.APPDATA).toBe(join('C:\\T\\casa', 'AppData', 'Roaming'));
+  expect(windows.TEMP).toBe(join('C:\\T\\casa', 'tmp'));
+  expect(windows.PATH).toContain(join('C:\\Windows', 'System32'));
+  expect(windows.PATH).not.toContain('Users');
+  expect(windows.PATHEXT).toBe('.COM;.EXE');
+  expect(JSON.stringify(windows)).not.toMatch(/senha|ghp_/u);
+});
+
+test('nativo: roda o motor direto, sem bwrap, cwd no diretório e a política no config.toml da casa', async () => {
+  const registro: Chamada[] = [];
+  let configuracao = '';
+  const anexo = join(base, 'biblioteca');
+  await mkdir(anexo);
+  await writeFile(join(anexo, 'livro.md'), '# livro');
+  const confinamento: Confinamento = { tipo: 'nativo', bwrap: join(base, 'nao-existe'), motor, plataforma: 'darwin', politica: 'perfil' };
+  let anexoVisto = '';
+  const resultado = await executarCodex({ ...await pedido(), anexos: [{ nome: 'biblioteca', origem: anexo }] }, {
+    capacidades: CAPACIDADES, confinamento,
+    gerar: spawnEncenado(registro, async (ambiente) => {
+      configuracao = await readFile(join(ambiente.CODEX_HOME ?? '', 'config.toml'), 'utf8');
+      anexoVisto = await readFile(join(registro[0]?.opcoes.cwd as string, 'biblioteca', 'livro.md'), 'utf8');
+    }),
+  });
+  expect(resultado.estado).toBe('ok');
+  const chamada = registro[0];
+  expect(chamada?.arquivo).toBe(motor);
+  expect(chamada?.argumentos[0]).toBe('exec');
+  expect(chamada?.argumentos).not.toContain('--sandbox');
+  expect(chamada?.argumentos.join(' ')).toContain('cli_auth_credentials_store="file"');
+  const ambiente = chamada?.opcoes.env as Record<string, string>;
+  expect(ambiente.HOME).toMatch(/margem-casa-/u);
+  expect(ambiente.PATH).toBe('/usr/bin:/bin:/usr/sbin:/sbin');
+  expect(JSON.stringify(ambiente)).not.toMatch(/senha|5435/u);
+  expect(chamada?.opcoes.cwd).toMatch(/margem-job-/u);
+  // A linha do modelo do usuário e a política; chaves de topo antes das tabelas.
+  const linhas = configuracao.split('\n');
+  expect(linhas.slice(0, 2)).toEqual([`default_permissions = "${PERFIL_DO_MARGEM}"`, 'model = "gpt-6-astra"']);
+  expect(configuracao).toContain('":root" = "deny"');
+  expect(configuracao).toContain(`${JSON.stringify(anexo)} = "read"`);
+  // A pasta da versão do Codex (o binário se reexecuta dentro do sandbox).
+  expect(configuracao).toContain(`${JSON.stringify(join(base, 'versao'))} = "read"`);
+  expect(anexoVisto).toBe('# livro');
+  expect(existsSync(ambiente.HOME ?? '')).toBe(false);
+});
+
+test('nativo sem o motor do Codex: falha fechada com a variável a corrigir', async () => {
+  const registro: Chamada[] = [];
+  const resultado = await executarCodex(await pedido(), {
+    capacidades: CAPACIDADES, confinamento: { tipo: 'nativo', bwrap: '', motor: join(base, 'nao-existe'), plataforma: 'darwin' }, gerar: spawnEncenado(registro),
+  });
+  expect(resultado).toMatchObject({ estado: 'falhou', codigo: 'cli_incompativel' });
+  expect(resultado.estado === 'falhou' ? resultado.mensagem : '').toContain('MARGEM_CODEX_MOTOR');
+  expect(registro).toEqual([]);
 });

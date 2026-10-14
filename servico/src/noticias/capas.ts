@@ -55,7 +55,12 @@ EDIÇÃO: ${JSON.stringify({ titulo: c.titulo, abertura: c.abertura, noticias: c
     if (typeof saida.descricao !== 'string' || !saida.descricao.trim()) throw new Error('Capa sem descrição.');
     const png = geracao.imagens?.at(-1);
     if (!png) return falhou('sem_imagem', 'O Codex terminou sem gerar a capa.', Date.now() - inicio);
-    const capa = conferirCapa({ ...await guardarImagem(png), descricao: saida.descricao.trim(), sha256_edicao: hash(JSON.stringify(c)) });
+    let guardada: Awaited<ReturnType<typeof guardarImagem>>;
+    try { guardada = await guardarImagem(png); } catch (erro) {
+      const causa = erro instanceof Error ? erro.message : 'erro desconhecido';
+      return falhou('publicacao', `A capa foi gerada, mas não pôde ser guardada: ${causa}`.slice(0, 800), Date.now() - inicio);
+    }
+    const capa = conferirCapa({ ...guardada, descricao: saida.descricao.trim(), sha256_edicao: hash(JSON.stringify(c)) });
     const artefato = join(pasta, `capa-${tarefa.job.id}-${tarefa.lease_token}.json`);
     const json = JSON.stringify(capa);
     await writeFile(artefato, json, { flag: 'wx', mode: 0o600 });

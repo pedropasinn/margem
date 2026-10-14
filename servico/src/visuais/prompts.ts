@@ -1,5 +1,5 @@
 /**
- * Prompts dos visuais ancorados (J70): `visual-imagem@2` e `visual-diagrama@2`, funções puras.
+ * Prompts dos visuais ancorados (J70): `visual-imagem@2` e `visual-diagrama@3` (J132: nós curtos e ramificados), funções puras.
  * O trecho literal, o contexto (livro, capítulo, modo) e o pedido do leitor vão cercados.
  */
 import type { Bloco, Id } from '@margem/contratos';
@@ -8,7 +8,7 @@ import {
 } from '../leitura/v2/prompt.js';
 
 export const VERSAO_PROMPT_IMAGEM = 'visual-imagem@2';
-export const VERSAO_PROMPT_DIAGRAMA = 'visual-diagrama@2';
+export const VERSAO_PROMPT_DIAGRAMA = 'visual-diagrama@3';
 
 export type AlvoDoPrompt = 'trecho' | 'bloco' | 'capitulo';
 

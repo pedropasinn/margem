@@ -42,7 +42,7 @@ test('comandos: busca sem acento por todas as palavras; vizinho e blocos navegá
   expect(blocosNavegaveis(capituloExemplo.blocos).every((bloco) => bloco.tipo !== 'capitulo' && bloco.tipo !== 'secao')).toBe(true);
 });
 
-test('↓ foca o primeiro parágrafo; H grifa, abre o balão na função, H de novo apaga; Z desfaz em sequência', async () => {
+test('↓ foca o primeiro parágrafo; H grifa e abre o balão com as cores, H de novo apaga; Z desfaz em sequência', async () => {
   const edicao = edicaoFalsa();
   const mudou = vi.fn();
   const { container } = render(<ReaderController snapshot={capituloExemplo} documento_id={DOCUMENTO} edicao={edicao} aoMudarMarcas={mudou} />);
@@ -54,13 +54,13 @@ test('↓ foca o primeiro parágrafo; H grifa, abre o balão na função, H de n
   await waitFor(() => expect(edicao.criados).toHaveLength(1));
   expect(edicao.criados[0]).toMatchObject({ bloco_id: primeiro!.id, inicio_utf16: 0, fim_utf16: primeiro!.texto.length, citacao: primeiro!.texto });
   expect(segundo).toBeDefined();
-  // O grifo novo abre o balão já na função (sem função: "Nenhuma").
+  // O grifo novo do H abre o balão, sem abrir as etiquetas sozinho.
   // (Sem geometria no jsdom o balão fica invisível; a busca é pelo DOM.)
-  await waitFor(() => expect(document.querySelector('.balao-da-marca [role="radio"][aria-checked="true"]')?.textContent).toBe('Nenhuma'));
-  expect(screen.getByRole('status').textContent).toContain('Grifo criado');
+  await waitFor(() => expect(document.querySelector('.balao-da-marca')).not.toBeNull());
+  expect(screen.queryByText(/Etiqueta livre/)).toBeNull();
+  expect(screen.getByText(/Grifo criado/)).toBeDefined();
   expect(container.querySelector('span[data-marcas~="G0000000000000000000000001"]')).not.toBeNull();
-  // Esc fecha o painel, depois o balão; H de novo no mesmo parágrafo apaga o grifo.
-  fireEvent.keyDown(window, { key: 'Escape' });
+  // Esc fecha o balão (não há painel aberto); H de novo no mesmo parágrafo apaga o grifo.
   fireEvent.keyDown(window, { key: 'Escape' });
   fireEvent.keyDown(window, { key: 'h' });
   await waitFor(() => expect(edicao.apagados).toEqual(['G0000000000000000000000001']));
@@ -75,17 +75,15 @@ test('↓ foca o primeiro parágrafo; H grifa, abre o balão na função, H de n
   expect(mudou).toHaveBeenCalled();
 });
 
-test('N grifa e abre as notas; a seleção vem antes do parágrafo', async () => {
+test('N grifa e abre o balão do grifo com o cursor na nota; a seleção vem antes do parágrafo', async () => {
   const edicao = edicaoFalsa();
-  const anotar = vi.fn();
   const [bloco] = blocosNavegaveis(capituloExemplo.blocos);
   const selecionada: AncoraV1 = { versao_id: capituloExemplo.versao_id, bloco_id: bloco!.id, inicio_utf16: 0, fim_utf16: 5, citacao: bloco!.texto.slice(0, 5), prefixo: '', sufixo: bloco!.texto.slice(5) };
   render(<ReaderController snapshot={capituloExemplo} documento_id={DOCUMENTO} edicao={edicao} selecaoAtual={() => selecionada}
-    acoesDoBalao={{ anotar, perguntar: vi.fn(), conectar: vi.fn() }} />);
+    acoesDoBalao={{ perguntar: vi.fn(), conectar: vi.fn() }} />);
   fireEvent.keyDown(window, { key: 'n' });
-  await waitFor(() => expect(anotar).toHaveBeenCalledOnce());
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Sua anotação' })));
   expect(edicao.criados).toEqual([selecionada]);
-  expect(anotar.mock.calls[0]?.[1]).toBe('G0000000000000000000000001');
 });
 
 test('sem parágrafo em foco nem seleção, H explica; digitando num campo, as letras não são atalhos', async () => {
@@ -125,7 +123,7 @@ test('[ esconde as braquetes (sem sumário), ] abre o painel do documento, M rec
   await waitFor(() => expect(raiz.dataset['margem']).not.toBe(margem));
 
   fireEvent.keyDown(window, { key: '?' });
-  expect(screen.getByRole('dialog', { name: 'Atalhos de teclado' }).textContent).toContain('Grifar e abrir as notas');
+  expect(screen.getByRole('dialog', { name: 'Atalhos de teclado' }).textContent).toContain('Grifar com nota (abre a nota do grifo)');
   const ajuda = screen.getByRole('dialog', { name: 'Atalhos de teclado' });
   expect(ajuda.querySelectorAll('.grupo-de-atalhos h3').length).toBe(8);
   expect(screen.getByText('Painel do documento (Info, Caderno, Estudo, Conversas)').nextElementSibling?.textContent).toBe(']');
@@ -154,39 +152,39 @@ test('[ esconde as braquetes (sem sumário), ] abre o painel do documento, M rec
   expect(screen.getAllByRole('option').map((opcao) => opcao.textContent)).toEqual(['Tema: Escuro']);
 });
 
-test('notas do grifo: a do Codex editável e com volta ao original; as do leitor, com pedido de revisão e o motivo dela', async () => {
+test('nota do grifo no painel do trecho: uma só, sem tipo; o comentário do Codex editável e com volta; o pedido de revisão e o motivo dele', async () => {
   const ancora: AncoraV1 = { versao_id: capituloExemplo.versao_id, bloco_id: 'B'.repeat(26), inicio_utf16: 0, fim_utf16: 4, citacao: 'Tudo', prefixo: '', sufixo: '' };
   const marca = { ...grifoDe(ancora, 'M'.repeat(26), 'tese'), origem: 'modelo', comentario: { tipo: 'LEITURA', rotulo: 'Tese', texto: 'Texto que eu reescrevi.' } } as unknown as MarcaDoLeitor;
-  const minha: AnotacaoV1 = { versao: 1, revisao_edicao: 1, id: 'A'.repeat(26), versao_id: ancora.versao_id, ancora, tipo: 'duvida', texto: 'Isto vale sempre?', marca_id: marca.id,
+  const minha: AnotacaoV1 = { versao: 1, revisao_edicao: 1, id: 'A'.repeat(26), versao_id: ancora.versao_id, ancora, tipo: 'nota', texto: 'Isto vale sempre?', marca_id: marca.id,
     criada_em: '2026-09-27T12:00:00.000Z', atualizada_em: '2026-09-27T12:05:00.000Z',
     revisao: { autor: 'codex', texto_anterior: 'vale sempre?', motivo: 'Formulei a pergunta inteira.', em: '2026-09-27T12:05:00.000Z' } };
   const chamadas: string[] = [];
   const fontes: FontesDasNotas = {
+    gravarNota: () => Promise.reject(new Error('não usado')), apagarNota: () => Promise.resolve({}),
     editarNotaDaMarca: (id, texto) => { chamadas.push(`nota ${id.slice(0, 1)} ${String(texto)}`); return Promise.resolve({}); },
-    editarAnotacao: (id, mudanca) => { chamadas.push(`anotacao ${mudanca.texto}`); return Promise.resolve({}); },
-    apagarAnotacao: () => Promise.resolve({}),
-    pedirRevisao: (id, instrucao) => { chamadas.push(`revisar ${String(instrucao)}`); return Promise.resolve({}); },
+    editarAnotacao: (_id, mudanca) => { chamadas.push(`anotacao ${mudanca.texto}`); return Promise.resolve({}); },
+    pedirRevisao: (_id, instrucao) => { chamadas.push(`revisar ${String(instrucao)}`); return Promise.resolve({}); },
   };
   const mudou = vi.fn();
-  render(<NotasDoGrifo marca={marca} anotacoes={[minha]} pendentes={[]} aoMudar={mudou} fontes={fontes}
+  render(<NotasDoGrifo marca={marca} nota={minha} pendente={false} aoMudar={mudou} fontes={fontes}
     comentarioDaIa={{ tipo: 'LEITURA', rotulo: 'Tese', texto: 'O que a IA escreveu.' }} />);
-  expect(screen.getByText(/editada por você/)).toBeDefined();
-  expect(screen.getByText('O que a IA escreveu.')).toBeDefined();
+  expect(screen.getByRole('textbox', { name: 'Sua anotação' })).toHaveProperty('value', 'Isto vale sempre?');
+  expect(screen.queryByText(/Dúvida/)).toBeNull();
+  expect(screen.getByText(/Assistente · Tese/)).toBeDefined();
+  expect(screen.getByText(/editado por você/)).toBeDefined();
   fireEvent.click(screen.getByRole('button', { name: 'Voltar ao original' }));
   await waitFor(() => expect(chamadas).toEqual(['nota M null']));
-  // A nota do leitor, revista pelo Codex: o motivo e o texto anterior, com volta.
-  expect(screen.getByText(/revista pelo Codex/)).toBeDefined();
   expect(screen.getByText('Formulei a pergunta inteira.')).toBeDefined();
   fireEvent.click(screen.getByRole('button', { name: 'Voltar ao meu texto' }));
   await waitFor(() => expect(chamadas).toContain('anotacao vale sempre?'));
-  fireEvent.click(screen.getByRole('button', { name: 'Pedir ao Codex' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Pedir ao Codex que revise' }));
   fireEvent.change(screen.getByLabelText(/O que pedir ao Codex/), { target: { value: 'mais curta' } });
   fireEvent.click(screen.getByRole('button', { name: 'Pedir revisão' }));
   await waitFor(() => expect(chamadas).toContain('revisar mais curta'));
   expect(mudou).toHaveBeenCalledTimes(3);
   cleanup();
   // Pendente: avisa e não deixa pedir de novo.
-  render(<NotasDoGrifo marca={marca} anotacoes={[minha]} pendentes={[minha.id]} aoMudar={mudou} fontes={fontes} />);
-  expect(screen.getByRole('status').textContent).toContain('O Codex está revisando');
-  expect(screen.getByRole('button', { name: 'Pedir ao Codex' }).hasAttribute('disabled')).toBe(true);
+  render(<NotasDoGrifo marca={marca} nota={minha} pendente aoMudar={mudou} fontes={fontes} />);
+  expect(screen.getAllByRole('status').some((s) => s.textContent?.includes('O Codex está revisando'))).toBe(true);
+  expect(screen.getByRole('button', { name: 'Pedir ao Codex que revise' }).hasAttribute('disabled')).toBe(true);
 });

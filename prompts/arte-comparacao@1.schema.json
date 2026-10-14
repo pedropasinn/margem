@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/arte-comparacao@1.schema.json",
+  "title": "Comparação da imagem enviada com a reprodução do Commons (V-T2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mesma_obra", "confianca", "justificativa"],
+  "properties": {
+    "mesma_obra": { "type": "boolean" },
+    "confianca": { "type": "string", "enum": ["alta", "media", "baixa"] },
+    "justificativa": { "type": "string", "minLength": 1, "maxLength": 800 }
+  }
+}

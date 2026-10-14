@@ -9,9 +9,11 @@ import { Inicio } from './Inicio';
 import { App } from './App';
 import { PainelDoItem } from './PainelDoItem';
 import { iconeDoDocumento, tipoDoDocumento } from './tipos';
-import { caminhoDaRota, rotaDoCaminho, type Rota } from './rotas';
+import { caminhoCanonico, caminhoDaRota, rotaDoCaminho, type Rota } from './rotas';
+import { categoriaDoDocumento, contadorDaCategoria, contarPorCategoria } from './categorias';
 import { fraseDoEstado, frasesDasMarcas } from './estado';
 import type { ArvoreDaVersao, DetalheDoDocumento, ItemDaBiblioteca, SnapshotDoCapitulo } from './tipos';
+import type { SituacaoDaPreparacao } from './api';
 
 beforeEach(() => { vi.stubGlobal('innerWidth', 1440); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -32,13 +34,22 @@ describe('roteamento por history', () => {
     const rotas: Rota[] = [
       { nome: 'inicio' },
       { nome: 'biblioteca' },
-      { nome: 'biblioteca', tipo: 'livros', aba: 'lendo' },
+      { nome: 'biblioteca', tipo: 'pdfs', aba: 'lendo' },
+      { nome: 'biblioteca', tipo: 'markdowns' },
       { nome: 'adicionar' },
       { nome: 'documento', documento_id: 'ABC' },
       { nome: 'leitura', documento_id: 'ABC' },
       { nome: 'leitura', documento_id: 'ABC', secao_id: 'S1' },
     ];
     for (const rota of rotas) expect(rotaDoCaminho(caminhoDaRota(rota))).toEqual(rota);
+  });
+
+  test('V-D1: o antigo filtro de livros cai em Todos e o endereço é trocado pelo canônico', () => {
+    expect(rotaDoCaminho('/biblioteca?tipo=livros')).toEqual({ nome: 'biblioteca' });
+    expect(rotaDoCaminho('/biblioteca?tipo=livros&aba=lendo')).toEqual({ nome: 'biblioteca', aba: 'lendo' });
+    expect(caminhoCanonico('/biblioteca?tipo=livros')).toBe('/biblioteca');
+    expect(caminhoCanonico('/biblioteca?tipo=epubs')).toBeNull();
+    expect(caminhoCanonico('/documentos/X')).toBeNull();
   });
 
   test('caminho desconhecido cai no Início', () => {
@@ -56,6 +67,9 @@ describe('estado do documento em palavras', () => {
     expect(fraseDoEstado(item({ estado: 'falhou', detalhe: 'processo' }))).toBe('falhou: processo');
     expect(fraseDoEstado(item({ estado: 'canonizando' }))).toBe('preparando o texto');
     expect(fraseDoEstado(item({ estado: 'transcrevendo' }))).toBe('transcrevendo as páginas');
+    // v0.1: a compreensão em andamento aparece na biblioteca, capítulo a capítulo.
+    expect(fraseDoEstado(item({ estado: 'preparando', detalhe: 'capítulo 2 de 9' }))).toBe('preparando · capítulo 2 de 9');
+    expect(fraseDoEstado(item({ estado: 'preparando' }))).toBe('preparando a leitura');
   });
 
   test('a contagem de marcas omite as funções zeradas (API anterior ao J107, só as de F1)', () => {
@@ -131,7 +145,25 @@ describe('lista da biblioteca', () => {
 
   test('biblioteca vazia convida a adicionar', async () => {
     render(<Lista ir={() => undefined} carregar={() => Promise.resolve({ documentos: [] })} />);
-    expect(await screen.findByText(/Nenhum texto ainda/)).toBeDefined();
+    expect(await screen.findByText(/Nenhum item ainda/)).toBeDefined();
+  });
+
+  test('V-T1: a ordenação mostra o ícone e a escolha (o cabeçalho estreito esconde só o texto); a biblioteca vazia leva aos Primeiros passos das Configurações', async () => {
+    const destinos: Rota[] = [];
+    const { unmount } = render(<Lista ir={() => undefined} carregar={() => Promise.resolve({ documentos: [item()] })} />);
+    await screen.findAllByText(item().titulo);
+    const ordem = screen.getByRole('combobox', { name: 'Ordenação' });
+    expect(ordem.querySelector('svg')).not.toBeNull();
+    expect(ordem.querySelector('.rotulo-da-ordem')?.textContent).toBe('Última leitura');
+    fireEvent.click(ordem);
+    fireEvent.click(screen.getByRole('option', { name: 'Título' }));
+    expect(ordem.querySelector('.rotulo-da-ordem')?.textContent).toBe('Título');
+    unmount();
+    render(<Lista ir={(r) => destinos.push(r)} carregar={() => Promise.resolve({ documentos: [] })} />);
+    const link = await screen.findByRole('link', { name: /Primeiros passos/ });
+    expect(link.getAttribute('href')).toBe('/configuracoes/primeiros-passos');
+    fireEvent.click(link);
+    expect(destinos).toEqual([{ nome: 'configuracoes', secao: 'primeiros-passos' }]);
   });
 });
 
@@ -148,14 +180,34 @@ describe('detalhe do documento', () => {
     };
   }
 
-  test('mostra limites da canonização e enfileira a preparação de marcas', async () => {
-    let pedidos = 0;
+  test('mostra limites da canonização; "Analisar" é o botão principal, abre a janela do que criar e mostra o estado', async () => {
+    const pedidos: boolean[] = [];
+    const itensPedidos: string[][] = [];
+    const opcao = (id: string, rotulo: string, disponivel = true, requer: string[] = []) => ({ id, rotulo, descricao: rotulo, disponivel, ao_importar: true, requer });
+    const CATALOGO = { padrao: { ao_importar: true, itens: ['grifos_relacoes'] }, itens: [
+      opcao('grifos_relacoes', 'Grifos e relações'), opcao('mapa', 'Mapa do capítulo', true, ['grifos_relacoes']), opcao('marcadores', 'Marcadores do PDF', false),
+    ] };
+    const situacao = (estado: SituacaoDaPreparacao['estado'], capitulos: SituacaoDaPreparacao['capitulos'] = []): SituacaoDaPreparacao => ({
+      documento_id: item().id, versao_id: item().versao_id, estado, tipo: null, itens: [], compreensao: estado === 'nao_preparada' ? null : { id: 'C', modo: { id: 'ficcao_narrativa', revisao: 1 } },
+      capitulos, erro: null,
+    });
     render(
       <Detalhe
         documento_id={item().id}
         ir={() => undefined}
         carregar={() => Promise.resolve(detalhe())}
-        preparar={() => { pedidos += 1; return Promise.resolve({ execucao_id: 'E', partes: 3 }); }}
+        capitulos={() => Promise.resolve({ capitulos: [{ id: 'S', titulo: 'Um apólogo' }], concluidos: [] })}
+        preparacao={{
+          situacao: () => Promise.resolve(situacao(pedidos.length === 0 ? 'nao_preparada' : 'preparando', pedidos.length === 0 ? []
+            : [{ secao_id: 'S', titulo: 'Um apólogo', estado: 'preparando', etapa: 'analisando', relacoes: null }])),
+          catalogo: () => Promise.resolve(CATALOGO),
+          preparar: (_id, todos, itens) => {
+            pedidos.push(todos === true);
+            itensPedidos.push([...(itens ?? [])]);
+            return Promise.resolve({ compreensao_id: 'C', criada: true, enfileirados: 1, devolvidos: 0, aguardando_tipo: false,
+              situacao: situacao('preparando', [{ secao_id: 'S', titulo: 'Um apólogo', estado: 'preparando', etapa: 'analisando', relacoes: null }]) });
+          },
+        }}
       />,
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Opções do documento' }));
@@ -163,13 +215,65 @@ describe('detalhe do documento', () => {
     expect(await screen.findByText(/Tabela sem grade/)).toBeDefined();
     expect(screen.getByText(/12 blocos/)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
-    fireEvent.click(screen.getByText('Preparar leitura'));
-    await act(async () => {
-      fireEvent.click(screen.getByText('Usar leitura padrão'));
-      await Promise.resolve();
-    });
-    await waitFor(() => { expect(screen.getByText(/enfileirada em 3/)).toBeDefined(); });
-    expect(pedidos).toBe(1);
+    // Nada de texto explicativo: o botão basta. "Analisar" vem à frente e é o primário; ler é secundário.
+    const analisar = await screen.findByRole('button', { name: 'Analisar' });
+    expect(screen.queryByText(/O Codex lê o texto/u)).toBeNull();
+    expect(analisar.className).toMatch(/ui-primario/u);
+    const ler = screen.getByRole('link', { name: 'Ler' });
+    expect(ler.className).toMatch(/ui-secundario/u);
+    expect(analisar.compareDocumentPosition(ler) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Notas, Exercícios e Flashcards são atalhos discretos (links), não botões do mesmo peso.
+    const atalhos = screen.getByRole('navigation', { name: 'Do documento' });
+    expect(within(atalhos).getAllByRole('link').map((link) => link.textContent?.trim())).toEqual(['Notas', 'Exercícios', 'Flashcards']);
+    expect(within(atalhos).getAllByRole('link').every((link) => !link.className.includes('ui-button'))).toBe(true);
+    // Nada de família, modo ou "leitura padrão": um botão só.
+    expect(screen.queryByText('Usar leitura padrão')).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Família do texto' })).toBeNull();
+    // O botão abre a janela: o que criar, com o padrão marcado (grifos e relações).
+    fireEvent.click(analisar);
+    const janela = await screen.findByRole('dialog', { name: 'Analisar' });
+    expect(await within(janela).findByRole('checkbox', { name: 'Grifos e relações' })).toHaveProperty('ariaChecked', 'true');
+    expect(within(janela).getByRole('checkbox', { name: /Marcadores do PDF/u }).hasAttribute('disabled')).toBe(true);
+    // Texto único: sem "capítulo" nos rótulos.
+    fireEvent.click(within(janela).getByRole('checkbox', { name: 'Mapa do texto' }));
+    expect(within(janela).queryByRole('switch', { name: /Todos os capítulos/u })).toBeNull();
+    await act(async () => { fireEvent.click(within(janela).getByRole('button', { name: 'Analisar' })); await Promise.resolve(); });
+    expect(await screen.findByText('Analisando o texto…')).toBeDefined();
+    expect(pedidos).toEqual([false]);
+    expect(itensPedidos).toEqual([['grifos_relacoes', 'mapa']]);
+    expect(screen.queryByRole('dialog', { name: 'Analisar' })).toBeNull();
+    // Em andamento, o botão principal diz e fica desabilitado.
+    expect(screen.getByRole('button', { name: 'Analisando…' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  test('"Analisar" chama a análise do tipo do documento: o vídeo tem a própria (ponto de extensão)', async () => {
+    const pedidas: string[] = [];
+    render(<Detalhe documento_id={item().id} ir={() => undefined}
+      carregar={() => Promise.resolve(detalhe({ midia: { tipo: 'video', duracao_s: 600 } } as Partial<DetalheDoDocumento>))}
+      capitulos={() => Promise.resolve({ capitulos: [{ id: 'S', titulo: 'Vídeo' }], concluidos: [] })}
+      preparacao={{ situacao: () => Promise.resolve(null as unknown as SituacaoDaPreparacao), preparar: () => Promise.reject(new Error('não usado')) }}
+      analisar={{ video: (documento) => { pedidas.push(documento.id); } }} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Analisar' }));
+    expect(pedidas).toEqual([item().id]);
+    expect(screen.queryByRole('dialog', { name: 'Analisar' })).toBeNull();
+  });
+
+  test('J142: a análise do vídeo que devolve promessa segura o botão e relê a situação no fim', async () => {
+    let consultas = 0;
+    let terminar: () => void = () => undefined;
+    render(<Detalhe documento_id={item().id} ir={() => undefined}
+      carregar={() => Promise.resolve(detalhe({ midia: { tipo: 'video', duracao_s: 600 } } as Partial<DetalheDoDocumento>))}
+      capitulos={() => Promise.resolve({ capitulos: [{ id: 'S', titulo: 'Vídeo' }], concluidos: [] })}
+      preparacao={{ situacao: () => { consultas += 1; return Promise.resolve(null as unknown as SituacaoDaPreparacao); }, preparar: () => Promise.reject(new Error('não usado')) }}
+      analisar={{ video: () => new Promise<void>((resolver) => { terminar = resolver; }) }} />);
+    const botao = await screen.findByRole('button', { name: 'Analisar' });
+    await waitFor(() => { expect(consultas).toBeGreaterThan(0); });
+    const antes = consultas;
+    fireEvent.click(botao);
+    expect(botao.hasAttribute('disabled')).toBe(true);
+    await act(async () => { terminar(); await Promise.resolve(); });
+    await waitFor(() => { expect(consultas).toBeGreaterThan(antes); });
+    expect(screen.getByRole('button', { name: 'Analisar' }).hasAttribute('disabled')).toBe(false);
   });
 
   test('J107: "Marcas por função" mostra as funções do modo econômico, não só o total', async () => {
@@ -457,16 +561,18 @@ describe('interações da nova biblioteca', () => {
     expect(screen.queryByRole('complementary')).toBeNull();
     expect(localStorage.getItem('margem:painel-biblioteca')).toBe('false');
   });
-  test('filtro de tipo usa a árvore e busca por autor preserva a navegação das abas', async () => {
+  test('filtro de tipo pelo formato do arquivo e busca por autor preserva a navegação das abas', async () => {
     simularArvore();
     const destinos: Rota[] = [];
-    render(<Lista rota={{ nome: 'biblioteca', tipo: 'livros' }} ir={(r) => destinos.push(r)} carregar={() => Promise.resolve({ documentos: [item(), item({ id: 'pdf', titulo: 'PDF recente', formato: 'pdf', autor: 'Ana' })] })} />);
+    render(<Lista rota={{ nome: 'biblioteca', tipo: 'pdfs' }} ir={(r) => destinos.push(r)} carregar={() => Promise.resolve({ documentos: [item(), item({ id: 'pdf', titulo: 'PDF recente', formato: 'pdf', autor: 'Ana' }), item({ id: 'pdf2', titulo: 'Outro PDF', formato: 'pdf' })] })} />);
     await screen.findByRole('link', { name: 'PDF recente' });
-    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Ana' } });
     expect(screen.queryByRole('link', { name: 'Livro de teste' })).toBeNull();
+    expect(screen.getByText('2 PDFs')).toBeDefined();
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Ana' } });
     expect(screen.getByRole('link', { name: 'PDF recente' })).toBeDefined();
+    expect(screen.getByText('1 PDF')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Não abertos' }));
-    expect(destinos.at(-1)).toEqual({ nome: 'biblioteca', tipo: 'livros', aba: 'novos' });
+    expect(destinos.at(-1)).toEqual({ nome: 'biblioteca', tipo: 'pdfs', aba: 'novos' });
   });
   test('vídeos aparecem como vídeo na linha e têm o próprio filtro', async () => {
     simularArvore();
@@ -475,17 +581,78 @@ describe('interações da nova biblioteca', () => {
     await screen.findByRole('link', { name: 'A jogada de mestre' });
     expect(screen.queryByRole('link', { name: 'Livro de teste' })).toBeNull();
     expect(screen.getByText('Vídeo · 22 min')).toBeDefined();
+    // A capa do vídeo é a miniatura dele, guardada pelo serviço (J133), não o título repetido.
+    const capa = screen.getByRole('link', { name: 'A jogada de mestre' }).closest('.linha-documento')!.querySelector('.capa img');
+    expect(capa?.getAttribute('src')).toBe('/api/documentos/video/miniatura');
+    expect(screen.getByText('1 vídeo')).toBeDefined();
   });
-  test('textos: vídeos e PDFs sem capítulos ficam fora, mesmo com um capítulo só', async () => {
+  test('textos: TXT e texto colado; vídeo (txt com mídia), Markdown e PDF ficam fora', async () => {
     vi.stubGlobal('fetch', vi.fn((caminho: string) => Promise.resolve(new Response(JSON.stringify(caminho.endsWith('/secoes')
       ? { capitulos: [{ id: 'um', titulo: 'Um' }] } : { progresso: null })))));
-    const texto = item({ id: 'texto', titulo: 'Soneto', formato: 'md' });
+    const txt = item({ id: 'txt', titulo: 'Notas soltas', formato: 'txt' });
+    const colado = item({ id: 'colado', titulo: 'Soneto', formato: 'colado' });
+    const md = item({ id: 'md', titulo: 'Artigo da web', formato: 'md' });
     const video = item({ id: 'video', titulo: 'A jogada de mestre', formato: 'txt', midia: { tipo: 'video', duracao_s: 1290, fonte_url: null } });
     const pdf = item({ id: 'pdf', titulo: 'Análise escaneada', formato: 'pdf' });
-    render(<Lista rota={{ nome: 'biblioteca', tipo: 'textos' }} ir={() => undefined} carregar={() => Promise.resolve({ documentos: [texto, video, pdf] })} />);
+    render(<Lista rota={{ nome: 'biblioteca', tipo: 'textos' }} ir={() => undefined} carregar={() => Promise.resolve({ documentos: [txt, colado, md, video, pdf] })} />);
     await screen.findByRole('link', { name: 'Soneto' });
+    expect(screen.getByRole('link', { name: 'Notas soltas' })).toBeDefined();
+    expect(screen.queryByRole('link', { name: 'Artigo da web' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'A jogada de mestre' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Análise escaneada' })).toBeNull();
+    expect(screen.getByText('2 textos')).toBeDefined();
+  });
+
+  test('V-D1: as categorias não se sobrepõem, a soma bate com Todos e nada pede a árvore para classificar', async () => {
+    const buscas = vi.fn((caminho: string) => Promise.resolve(new Response(JSON.stringify(caminho.endsWith('/secoes') ? { capitulos: [] } : { progresso: null }))));
+    vi.stubGlobal('fetch', buscas);
+    const documentos = [
+      item({ id: 'pdf-livro', titulo: 'Tratado', formato: 'pdf', capitulos_total: 14 }),
+      item({ id: 'pdf-curto', titulo: 'Artigo', formato: 'pdf', capitulos_total: 1 }),
+      item({ id: 'md-capitulos', titulo: 'Engenharia de Software', formato: 'md', capitulos_total: 9 }),
+      item({ id: 'epub-unico', titulo: 'Conto', formato: 'epub', capitulos_total: 1 }),
+      item({ id: 'txt', titulo: 'Notas', formato: 'txt', capitulos_total: 1 }),
+      item({ id: 'colado', titulo: 'Poema', formato: 'colado', capitulos_total: 1 }),
+      item({ id: 'video', titulo: 'Aula', formato: 'txt', capitulos_total: 1, midia: { tipo: 'video', duracao_s: 600, fonte_url: null } }),
+      item({ id: 'audio', titulo: 'Podcast', formato: 'txt', capitulos_total: 1, midia: { tipo: 'audio', duracao_s: 600, fonte_url: null } }),
+      item({ id: 'sem-versao', titulo: 'Ainda preparando', formato: 'epub', versao_id: null, texto_disponivel: false, estado: 'canonizando', capitulos_total: null }),
+    ];
+    const contagem = contarPorCategoria(documentos);
+    expect(contagem).toEqual({ pdfs: 2, epubs: 2, textos: 2, markdowns: 1, videos: 2, quadros: 0 });
+    expect(Object.values(contagem).reduce((a, b) => a + b, 0)).toBe(documentos.length);
+    expect(categoriaDoDocumento({ formato: 'pdf_foto', midia: null })).toBe('pdfs');
+    const vistos: string[] = [];
+    for (const tipo of ['pdfs', 'epubs', 'textos', 'markdowns', 'videos'] as const) {
+      const { container, unmount } = render(<Lista rota={{ nome: 'biblioteca', tipo }} ir={() => undefined} carregar={() => Promise.resolve({ documentos })} />);
+      await waitFor(() => expect(container.querySelectorAll('[data-linha]').length).toBe(contagem[tipo]));
+      vistos.push(...[...container.querySelectorAll('.linha-documento .titulo')].map((a) => a.textContent ?? ''));
+      unmount();
+    }
+    expect(vistos.sort()).toEqual(documentos.map((d) => d.titulo).sort());
+    // O painel pede só a árvore do item aberto; a classificação, nenhuma.
+    expect(buscas.mock.calls.filter(([caminho]) => caminho.endsWith('/secoes')).length).toBeLessThanOrEqual(5);
+    render(<Lista rota={{ nome: 'biblioteca', tipo: 'pdfs' }} ir={() => undefined} carregar={() => Promise.resolve({ documentos })} />);
+    expect((await screen.findAllByText('0 de 14 capítulos')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('PDF · Livro')).toHaveLength(1);
+  });
+
+  test('V-D1: Quadros só tem as abas Todos e Não abertos', async () => {
+    render(<Lista rota={{ nome: 'biblioteca', tipo: 'quadros' }} ir={() => undefined} carregar={() => Promise.resolve({ documentos: [] })} carregarQuadros={() => Promise.resolve({ obras: [], preparando: [] })} />);
+    await screen.findByText('Nenhum quadro ainda.');
+    const abas = within(screen.getByRole('navigation', { name: 'Filtrar biblioteca' }));
+    expect(abas.getAllByRole('button').map((b) => b.textContent)).toEqual(['Todos', 'Não abertos']);
+    expect(screen.getByText('0 quadros')).toBeDefined();
+  });
+
+  test('V-D1: o contador fala o nome da categoria', () => {
+    expect(contadorDaCategoria(47, 'pdfs')).toBe('47 PDFs');
+    expect(contadorDaCategoria(1, 'epubs')).toBe('1 EPUB');
+    expect(contadorDaCategoria(25, 'markdowns')).toBe('25 Markdowns');
+    expect(contadorDaCategoria(20, 'videos', ['video', 'video'])).toBe('20 vídeos');
+    expect(contadorDaCategoria(1, 'videos', ['audio'])).toBe('1 áudio');
+    expect(contadorDaCategoria(2, 'videos', ['video', 'audio'])).toBe('2 vídeos e áudios');
+    expect(contadorDaCategoria(138, 'quadros')).toBe('138 quadros');
+    expect(contadorDaCategoria(238, null)).toBe('238 itens');
   });
   test('ação rápida arquiva e atualiza os documentos', async () => {
     simularArvore();
@@ -493,7 +660,7 @@ describe('interações da nova biblioteca', () => {
     render(<Lista ir={() => undefined} carregar={carregar} />);
     const lista = within(screen.getByRole('region', { name: 'Biblioteca' }));
     fireEvent.click(await lista.findByRole('button', { name: 'Arquivar' }));
-    await screen.findByText('Nenhum texto ainda.');
+    await screen.findByText('Nenhum item ainda.');
     expect(carregar).toHaveBeenCalledTimes(2);
     const chamada = vi.mocked(fetch).mock.calls.find(([url]) => url === `/api/documentos/${item().id}/arquivar`);
     expect(chamada?.[1]).toMatchObject({ method: 'POST', body: '{}', headers: { 'X-Margem': '1' } });
@@ -512,7 +679,7 @@ describe('interações da nova biblioteca', () => {
 });
 
 
-test('casca lembra o recolhimento e Buscar abre a biblioteca com foco no campo', async () => {
+test('casca lembra o recolhimento; a busca fica na Biblioteca (/ põe o foco no campo)', async () => {
   localStorage.clear();
   window.history.replaceState(null, '', '/');
   vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify({ documentos: [] })))));
@@ -523,7 +690,14 @@ test('casca lembra o recolhimento e Buscar abre a biblioteca com foco no campo',
   expect(screen.getByRole('button', { name: 'Abrir barra lateral' })).toBeDefined();
   fireEvent.keyDown(window, { key: '[' });
   expect(screen.getByRole('button', { name: 'Recolher barra lateral' })).toBeDefined();
-  fireEvent.click(screen.getByRole('link', { name: 'Buscar' }));
+  // V-U3: Buscar saiu da barra (a busca mora na Biblioteca). V-T1: Primeiros passos fica dentro de Configurações, não na barra.
+  expect(screen.queryByRole('link', { name: 'Buscar' })).toBeNull();
+  const rodape = document.querySelector<HTMLElement>('.barra-lateral .barra-inferior')!;
+  expect(within(rodape).getByRole('link', { name: 'Configurações' })).toBeDefined();
+  expect(within(document.querySelector<HTMLElement>('.barra-lateral')!).queryByRole('link', { name: 'Primeiros passos' })).toBeNull();
+  fireEvent.click(within(document.querySelector<HTMLElement>('.barra-lateral')!).getByRole('link', { name: 'Biblioteca' }));
+  await screen.findByRole('searchbox');
+  fireEvent.keyDown(window, { key: '/' });
   await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('searchbox')));
   expect(window.location.pathname).toBe('/biblioteca');
   fireEvent.keyDown(document.activeElement!, { key: '[' });
@@ -582,6 +756,34 @@ describe('acabamento da casca e do painel', () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('searchbox')));
     fireEvent.keyDown(document.activeElement!, { key: '?' });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  test('D-06: com a barra lateral aberta o título é estático; no celular, é o seletor de tipo', async () => {
+    window.history.replaceState(null, '', '/biblioteca?tipo=pdfs');
+    localStorage.setItem('margem:barra-lateral', 'true');
+    const { unmount } = render(<App />);
+    await screen.findByRole('searchbox');
+    expect(within(screen.getByRole('heading', { level: 1 })).queryByRole('combobox')).toBeNull();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('PDFs');
+    unmount();
+    vi.stubGlobal('innerWidth', 390);
+    render(<App />);
+    await screen.findByRole('searchbox');
+    expect(within(screen.getByRole('heading', { level: 1 })).getByRole('combobox', { name: 'Tipo de documento' })).toBeDefined();
+  });
+
+  test('D-18: no celular, a barra de baixo tem cinco itens e "Mais" leva a Notas e Flashcards', async () => {
+    vi.stubGlobal('innerWidth', 390);
+    const { container } = render(<App />);
+    await screen.findByRole('heading', { name: 'Início' });
+    const barra = within(container.querySelector<HTMLElement>('.bottomnav')!);
+    expect([...container.querySelectorAll('.bottomnav > .bottomnav-item')].map((item) => item.textContent)).toEqual(['Início', 'Biblioteca', 'Adicionar', 'Perguntar', 'Mais']);
+    fireEvent.click(barra.getByRole('button', { name: 'Mais' }));
+    const mais = within(screen.getByRole('dialog', { name: 'Mais' }));
+    fireEvent.click(mais.getByRole('link', { name: 'Notas' }));
+    expect(window.location.pathname).toBe('/notas');
+    expect(screen.queryByRole('dialog', { name: 'Mais' })).toBeNull();
+    expect(barra.getByRole('button', { name: 'Mais' }).className).toContain('active');
   });
 
   test('busca do topo móvel abre a Biblioteca com foco', async () => {

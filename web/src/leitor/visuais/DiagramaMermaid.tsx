@@ -23,13 +23,24 @@ export const renderizarMermaid: Renderizador = async (id, codigo, escuro) => {
     securityLevel: 'strict',
     theme: escuro ? 'dark' : 'neutral',
     htmlLabels: false,
-    flowchart: { htmlLabels: false, useMaxWidth: false, curve: 'basis', padding: 12, nodeSpacing: 36, rankSpacing: 44 },
+    // Caixas mais largas e baixas (J132): o rótulo quebra em linhas de até 220 px, sem cortar.
+    flowchart: { htmlLabels: false, useMaxWidth: false, curve: 'basis', padding: 14, nodeSpacing: 32, rankSpacing: 40, wrappingWidth: 220 },
     fontFamily: '"Figtree Variable", system-ui, sans-serif',
-    fontSize: 15,
+    fontSize: 14,
   });
   const { svg } = await mermaid.render(id, codigo);
   return svg;
 };
+
+/**
+ * A orientação do desenho (J132): o código conferido é sempre `flowchart TD`; com poucos nós (até
+ * `NOS_NA_HORIZONTAL`), o desenho sai da esquerda para a direita, que cabe melhor no painel e na tela.
+ * Só o cabeçalho muda, depois da conferência.
+ */
+export const NOS_NA_HORIZONTAL = 5;
+export function orientarFluxograma(codigo: string, nos: number): string {
+  return nos <= NOS_NA_HORIZONTAL ? codigo.replace(/^(\s*)flowchart TD\b/u, '$1flowchart LR') : codigo;
+}
 
 /** O SVG higienizado como elemento pronto para `appendChild`; `null` se não sobrar um `<svg>`. */
 export function svgSeguro(svg: string, documento: Document = document): SVGSVGElement | null {
@@ -83,7 +94,7 @@ export function DiagramaMermaid({ id, codigo, nos, aoCitar, className = '', rend
     const conferencia = conferirFluxograma(codigo);
     if (!conferencia.ok) { definirErro(`Fluxograma recusado na linha ${String(conferencia.linha)}: ${conferencia.erro}.`); return; }
     contador += 1;
-    void renderizar(`mermaid-${id}-${String(contador)}`, codigo, temaEscuro()).then((texto) => {
+    void renderizar(`mermaid-${id}-${String(contador)}`, orientarFluxograma(codigo, conferencia.nos.length), temaEscuro()).then((texto) => {
       if (!vivo || !alvo) return;
       const svg = svgSeguro(texto);
       if (!svg) { definirErro('O desenho do fluxograma veio vazio.'); return; }

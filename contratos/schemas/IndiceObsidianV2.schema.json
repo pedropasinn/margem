@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/IndiceObsidianV2.schema.json",
+  "title": "Índice da exportação para o Obsidian, formato 2: uma nota por item, numa pasta por documento",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "url_base",
+    "marcas",
+    "incluir",
+    "notas"
+  ],
+  "properties": {
+    "versao": {
+      "const": 2
+    },
+    "url_base": {
+      "description": "Endereço absoluto do Margem usado nos links de volta, sem barra no fim.",
+      "type": "string",
+      "pattern": "^https?://[^\\s/?#]+(/[^\\s?#]*)?$",
+      "not": {
+        "pattern": "/$"
+      }
+    },
+    "marcas": {
+      "description": "minhas: grifos do leitor e marcas da IA que ele confirmou, mudou ou comentou; todas: também as marcas visíveis da leitura padrão.",
+      "type": "string",
+      "enum": [
+        "minhas",
+        "todas"
+      ]
+    },
+    "incluir": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "documento",
+          "grifo",
+          "anotacao",
+          "pergunta",
+          "relacao",
+          "flashcard",
+          "exercicio"
+        ]
+      }
+    },
+    "notas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "tipo",
+          "documento_id",
+          "caminho",
+          "sha256",
+          "atualizado_em"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "tipo": {
+            "enum": [
+              "documento",
+              "grifo",
+              "anotacao",
+              "pergunta",
+              "relacao",
+              "flashcard",
+              "exercicio"
+            ]
+          },
+          "documento_id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "caminho": {
+            "description": "Relativo à pasta da exportação, com / entre as partes; cada parte sem os caracteres que o Obsidian recusa e sem começar por ponto.",
+            "type": "string",
+            "maxLength": 700,
+            "pattern": "^(?!\\.)[^\\\\/:*?\"<>|#^\\[\\]]{1,200}(/(?!\\.)[^\\\\/:*?\"<>|#^\\[\\]]{1,200}){1,2}\\.md$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

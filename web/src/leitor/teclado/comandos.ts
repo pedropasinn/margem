@@ -43,9 +43,8 @@ export const ATALHOS: readonly GrupoDeAtalhos[] = [
   ] },
   { titulo: 'Marcas', atalhos: [
     { teclas: ['H'], descricao: 'Grifar o parágrafo em foco (ou a seleção); de novo, apaga' },
-    { teclas: ['N'], descricao: 'Grifar e abrir as notas' },
+    { teclas: ['N'], descricao: 'Grifar com nota (abre a nota do grifo)' },
     { teclas: ['T'], descricao: 'Função e dificuldades do grifo (com o balão aberto)' },
-    { teclas: ['A'], descricao: 'Anotar a seleção' },
     { teclas: ['P'], descricao: 'Perguntar sobre a seleção' },
     { teclas: ['Z'], descricao: 'Desfazer (várias vezes seguidas)' },
   ] },

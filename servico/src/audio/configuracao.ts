@@ -10,7 +10,8 @@
  *
  * A voz e o modelo não são segredos: ficam em `<MARGEM_DADOS>/configuracao/audio.json`.
  */
-import { chmod, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { renomearComRetentativa } from '../plataforma/disco.js';
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { raizDeDados } from '../dados';
@@ -35,7 +36,7 @@ async function gravarAtomico(caminho: string, pasta: string, conteudo: string, m
   try {
     await writeFile(temporario, conteudo, { mode: 0o600, flag: 'wx' });
     await chmod(temporario, 0o600);
-    await rename(temporario, caminho);
+    await renomearComRetentativa(temporario, caminho);
   } finally { await rm(temporario, { force: true }); }
 }
 

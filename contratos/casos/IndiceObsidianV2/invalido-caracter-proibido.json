@@ -1,0 +1,38 @@
+{
+  "versao": 2,
+  "url_base": "https://margem.exemplo.ts.net",
+  "marcas": "minhas",
+  "incluir": [
+    "documento",
+    "grifo",
+    "anotacao",
+    "pergunta",
+    "relacao"
+  ],
+  "notas": [
+    {
+      "id": "01K00000000000000000000D01",
+      "tipo": "documento",
+      "documento_id": "01K00000000000000000000D01",
+      "caminho": "Meditações/Meditações.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "atualizado_em": "2026-09-23T09:15:00.000Z"
+    },
+    {
+      "id": "01K00000000000000000000M01",
+      "tipo": "grifo",
+      "documento_id": "01K00000000000000000000D01",
+      "caminho": "Meditações/Grifos/a#b.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "atualizado_em": "2026-09-23T09:15:00.000Z"
+    },
+    {
+      "id": "01K00000000000000000000R01",
+      "tipo": "relacao",
+      "documento_id": "01K00000000000000000000D01",
+      "caminho": "Meditações/Relações/Tensão — Toda certeza → O cético · 0000r1.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "atualizado_em": "2026-09-23T09:15:00.000Z"
+    }
+  ]
+}

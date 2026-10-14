@@ -165,10 +165,15 @@ test('J107: modo econômico e modos misturados por capítulo, grifo do leitor, s
     expect(preferida.por_funcao.map((item) => `${String(item.quantidade)} ${item.rotulo}`)).toEqual(['2 Tese', '1 Conceito', '1 Sem função']);
     expect(comoMapa(preferida)).toEqual(await contagemDoLeitor(api, m));
 
-    // "Primeiro eu" sem nota no capítulo: as marcas da IA não aparecem no leitor nem na contagem.
+    // "Primeiro eu": no capítulo sem grifo nem nota do leitor, as marcas da IA não aparecem no leitor nem
+    // na contagem; no capítulo do grifo (J132: o grifo libera como a nota), aparecem.
     expect((await escrever(api, 'PUT', `/api/documentos/${m.documentoId}/preferencias`, { primeiro_eu: true })).status).toBe(200);
     const primeiroEu = await contagemDaBiblioteca(api, m.documentoId);
-    expect(primeiroEu.por_funcao).toEqual([{ funcao: 'nenhuma', rotulo: 'Sem função', quantidade: 1 }]);
+    expect(primeiroEu.por_funcao).toEqual([
+      { funcao: 'tese', rotulo: 'Tese', quantidade: 1 },
+      { funcao: 'conceito', rotulo: 'Conceito', quantidade: 1 },
+      { funcao: 'nenhuma', rotulo: 'Sem função', quantidade: 1 },
+    ]);
     expect(comoMapa(primeiroEu)).toEqual(await contagemDoLeitor(api, m));
   }));
 

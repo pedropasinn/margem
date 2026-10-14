@@ -21,15 +21,16 @@
 import { existsSync } from 'node:fs';
 import { copyFile, mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import type { AnaliseCurtaDaObraV1, ModeloDaObraV1 } from '@margem/contratos';
 import { validarAnaliseCurtaDaObra, validarModeloDaObra } from '../../../../contratos/src/validadores.js';
 import { conferirAnaliseCurta, conferirModeloDaObra, limitesDaRegiao } from '../../../../core/src/arte.js';
 import { prepararEntrada } from '../../executor/entrada.js';
-import type { Executor } from '../../executor/tipos.js';
-import { corpusPorFonte, lerObra, montarDossie, raizDoAcervo } from './acervo.js';
+import type { ExecucaoAdiada, ExecucaoFalhou, Executor } from '../../executor/tipos.js';
+import { corpusPorFonte, lerObra, montarDossie } from './acervo.js';
 import type { DossieDaObra, ObraDoAcervo } from './acervo.js';
 import { dossieEBaseAutomaticos } from './dossie-auto.js';
+import { dossieEBaseSoPelaImagem, LIMITE_SO_IMAGEM } from './dossie-imagem.js';
 import { avaliarGeracao, relatorioMarkdown } from './avaliacao.js';
 import { aplicarRevisao, conferirCandidato, conferirRoteiro, filtrarFinal, graves, normalizarForma, repararRoteiro, transportarPesquisa } from './conferencias.js';
 import type { CandidatoRevisado, Corte } from './conferencias.js';
@@ -54,8 +55,25 @@ export interface ConfiguracaoV2 {
   dimensoes?: (caminho: string) => Promise<Dimensoes>;
   agora?: () => number;
   avisar?: (mensagem: string) => void;
-  /** De onde vem o dossiê: da referência curada (padrão) ou de `dossie-auto.json` (ver dossie-auto.ts). */
-  dossie?: 'curado' | 'auto';
+  /**
+   * De onde vem o dossiê: da referência curada (padrão), de `dossie-auto.json` (ver dossie-auto.ts) ou,
+   * numa obra não identificada (V-W5), só da imagem (ver dossie-imagem.ts): só observação e inferência.
+   */
+  dossie?: 'curado' | 'auto' | 'imagem';
+  /** Só com `dossie: 'imagem'`: o palpite do Codex ao não reconhecer a obra, como apoio (não fonte). */
+  palpite?: string | null;
+  /** Cancela a chamada em curso (o job da fila foi cancelado ou o worker está parando). */
+  sinal?: AbortSignal;
+  /** Antes de cada chamada ao Codex (o job da fila mostra o progresso por aqui). */
+  aoChamar?: (etapa: EtapaV2) => void;
+}
+
+/** Uma chamada ao Codex não terminou bem (cota, prazo, cancelamento, resposta fora do formato). */
+export class EtapaNaoConcluida extends Error {
+  constructor(readonly etapa: EtapaV2, readonly resultado: ExecucaoFalhou | ExecucaoAdiada) {
+    super(`etapa_${etapa}_${resultado.estado}: ${resultado.mensagem}${resultado.estado === 'adiado' ? ` (volta ${resultado.not_before.toISOString()})` : ''}`);
+    this.name = 'EtapaNaoConcluida';
+  }
 }
 
 export interface RegistroDeEtapa {
@@ -72,7 +90,7 @@ export interface RegistroV2 {
   versao: typeof METODO_V2;
   slug: string;
   rotulo: string;
-  dossie: 'curado' | 'auto';
+  dossie: 'curado' | 'auto' | 'imagem';
   criado_em_ms: number;
   etapas: RegistroDeEtapa[];
   /** Chamadas ao Codex desta geração, somando as execuções anteriores retomadas (inclui as que falharam). */
@@ -106,7 +124,7 @@ function candidatoParaPrompt(c: ModeloCandidato | CandidatoRevisado) {
 }
 
 export async function gerarQuadroV2(slug: string, config: ConfiguracaoV2): Promise<ResultadoV2> {
-  const obra = await lerObra(slug, config.raiz ?? raizDoAcervo());
+  const obra = await lerObra(slug, config.raiz);
   const pasta = join(obra.pasta, 'geracoes', config.rotulo);
   for (const sub of ['brutos', 'imagens']) await mkdir(join(pasta, sub), { recursive: true });
   const avisar = config.avisar ?? (() => undefined);
@@ -120,7 +138,11 @@ export async function gerarQuadroV2(slug: string, config: ConfiguracaoV2): Promi
     diagnosticos: { candidato: [], cortes: [], roteiro: [], roteiro_reparo: null, roteiro_escolhido: 'primeiro', modelo: [], curta: [] },
   };
   const salvarRegistro = () => writeFile(caminhoRegistro, `${JSON.stringify(registro, null, 2)}\n`);
-  const automatico = config.dossie === 'auto' ? await dossieEBaseAutomaticos(obra) : null;
+  const soImagem = config.dossie === 'imagem';
+  const automatico = config.dossie === 'auto' ? await dossieEBaseAutomaticos(obra)
+    : soImagem ? await dossieEBaseSoPelaImagem(obra, config.palpite ?? null) : null;
+  // Obra não identificada: cada etapa com o Codex recebe também as regras do "só pela imagem".
+  const soPelaImagem = soImagem ? `\n\n${await lerPrompt('arte-so-imagem@1.md')}` : '';
   const dossie = automatico?.dossie ?? montarDossie(obra);
   const base = automatico?.base ?? obra.referencia!;
   const corpus = corpusPorFonte(dossie);
@@ -133,7 +155,7 @@ export async function gerarQuadroV2(slug: string, config: ConfiguracaoV2): Promi
 
   async function etapa<T>(nome: EtapaV2, metodo: string, schema: string, dados: unknown, imagens: string[]): Promise<T> {
     const bruto = join(pasta, 'brutos', `${nome}.json`);
-    const nomesImagens = imagens.map((c) => c.split('/').at(-1)!);
+    const nomesImagens = imagens.map((c) => basename(c));
     if (existsSync(bruto)) {
       const anteriorDaEtapa = anterior?.etapas.find((e) => e.etapa === nome);
       registro.etapas.push({ ...(anteriorDaEtapa ?? { modelo: null, esforco: null, duracao_ms: 0, sha256: null }), etapa: nome, estado: 'retomada', imagens: nomesImagens });
@@ -146,14 +168,18 @@ export async function gerarQuadroV2(slug: string, config: ConfiguracaoV2): Promi
     try {
       const esquema: unknown = JSON.parse(await readFile(new URL(schema, PROMPTS), 'utf8'));
       const entrada = await prepararEntrada(temporario, prompt, esquema);
-      for (const c of imagens) await copyFile(c, join(entrada.diretorioEntrada, c.split('/').at(-1)!));
+      for (const c of imagens) await copyFile(c, join(entrada.diretorioEntrada, basename(c)));
       avisar(`${slug}: ${nome} — chamando o Codex com ${String(imagens.length)} imagem(ns)…`);
-      const r = await config.executor({ ...entrada, imagens: nomesImagens, prazoMs: config.prazoMs ?? 900_000, ...(config.esforco ? { esforco: config.esforco } : {}), diretorioArtefatos: join(temporario, 'artefatos') });
+      config.aoChamar?.(nome);
+      const r = await config.executor({
+        ...entrada, imagens: nomesImagens, prazoMs: config.prazoMs ?? 900_000, ...(config.esforco ? { esforco: config.esforco } : {}),
+        ...(config.sinal ? { sinal: config.sinal } : {}), diretorioArtefatos: join(temporario, 'artefatos'),
+      });
       registro.chamadas += 1; registro.chamadas_nesta_execucao += 1;
       if (r.estado !== 'ok') {
         registro.duracao_chamadas_ms += r.duracao_ms;
         await salvarRegistro();
-        throw new Error(`etapa_${nome}_${r.estado}: ${r.mensagem}${r.estado === 'adiado' ? ` (volta ${r.not_before.toISOString()})` : ''}`);
+        throw new EtapaNaoConcluida(nome, r);
       }
       registro.duracao_chamadas_ms += r.duracao_ms;
       await rename(r.artefato, bruto).catch(async () => { await copyFile(r.artefato, bruto); });
@@ -176,7 +202,7 @@ export async function gerarQuadroV2(slug: string, config: ConfiguracaoV2): Promi
     { proporcao_largura_altura: Math.round((dim.largura / dim.altura) * 1000) / 1000 }, [visao, ...ladrilhos]);
 
   // 2. Modelo candidato.
-  const candidato = await etapa<ModeloCandidato>('modelo', await lerPrompt('arte-modelo@2.md'), 'arte-modelo@2.schema.json',
+  const candidato = await etapa<ModeloCandidato>('modelo', `${await lerPrompt('arte-modelo@2.md')}${soPelaImagem}`, 'arte-modelo@2.schema.json',
     { dossie: dossieParaPrompt(dossie), leitura: { ...leitura, objetos: leitura.objetos.map((o, i) => ({ indice: i, ...o })) } }, [visao, ...ladrilhos]);
   registro.diagnosticos.candidato = conferirCandidato(candidato, dossie, corpus, leitura);
 
@@ -191,15 +217,18 @@ export async function gerarQuadroV2(slug: string, config: ConfiguracaoV2): Promi
     recortes.push(await imagem(`recorte-R${String(i)}`, { recorte: recorteEmVolta(l), ladoMax: 1024, grade: true, caixas: [{ retangulo: l, rotulo: `R${String(i)} ${r.rotulo}` }] }));
     nomesRecortes.push(`R${String(i)}`);
   }
-  const revisao = await etapa<RevisaoDoModelo>('revisao', await lerPrompt('arte-revisao@2.md'), 'arte-revisao@2.schema.json',
+  const revisao = await etapa<RevisaoDoModelo>('revisao', `${await lerPrompt('arte-revisao@2.md')}${soPelaImagem}`, 'arte-revisao@2.schema.json',
     { dossie: dossieParaPrompt(dossie), candidato: candidatoParaPrompt(candidato), alertas: registro.diagnosticos.candidato, recortes: nomesRecortes }, [visaoCandidatas, ...recortes]);
   const revisado = aplicarRevisao(candidato, revisao);
-  const final = filtrarFinal(revisado.candidato, dossie, corpus);
+  const final = filtrarFinal(revisado.candidato, dossie, corpus, soImagem ? { soImagem: true } : {});
   registro.diagnosticos.cortes = [...revisado.cortes, ...final.cortes];
   const c = transportarPesquisa(final.candidato, dossie);
 
   const ids = criarIds(registro.criado_em_ms, `${slug}/${config.rotulo}`);
-  const { modelo, idsAfirmacoes, idsRegioes } = montarModelo(base, c, ids);
+  const montado = montarModelo(base, c, ids);
+  const { idsAfirmacoes, idsRegioes } = montado;
+  // Só pela imagem, o limite que vale é o da obra não identificada (não há "dossiê de fontes").
+  const modelo = soImagem ? { ...montado.modelo, limites: [LIMITE_SO_IMAGEM, ...c.limites] } : montado.modelo;
   if (!validarModeloDaObra(modelo)) throw new Error(`modelo_fora_do_contrato: ${JSON.stringify(validarModeloDaObra.errors?.slice(0, 3))}`);
   registro.diagnosticos.modelo = conferirModeloDaObra(modelo);
 
@@ -212,7 +241,7 @@ export async function gerarQuadroV2(slug: string, config: ConfiguracaoV2): Promi
     tese: c.tese,
     outras_teses: c.teses.filter((t) => t.texto !== c.tese.texto).map((t) => t.texto),
   };
-  const metodoRoteiro = await lerPrompt('arte-roteiro@2.md');
+  const metodoRoteiro = `${await lerPrompt('arte-roteiro@2.md')}${soPelaImagem}`;
   let roteiro = repararRoteiro(await etapa<RoteiroCandidato>('roteiro', metodoRoteiro, 'arte-roteiro@2.schema.json', dadosRoteiro, [visaoFinais]), c);
   registro.diagnosticos.roteiro = conferirRoteiro(roteiro, c);
   const reparoJaFeito = existsSync(join(pasta, 'brutos', 'roteiro-reparo.json'));
@@ -243,6 +272,6 @@ export async function escreverAvaliacao(obra: ObraDoAcervo, pasta: string, model
   const esperada = existsSync(caminhoEsperada) ? JSON.parse(await readFile(caminhoEsperada, 'utf8')) as AnaliseCurtaDaObraV1 : null;
   const avaliacao = avaliarGeracao({ esperado: obra.referencia ? { modelo: obra.referencia, curta: esperada } : null, gerado: { modelo, curta }, registro });
   await writeFile(join(pasta, 'avaliacao.json'), `${JSON.stringify(avaliacao, null, 2)}\n`);
-  await writeFile(join(pasta, 'avaliacao.md'), relatorioMarkdown(obra.slug, pasta.split('/').at(-1)!, avaliacao, { modelo, curta }, esperada, registro));
+  await writeFile(join(pasta, 'avaliacao.md'), relatorioMarkdown(obra.slug, basename(pasta), avaliacao, { modelo, curta }, esperada, registro));
 }
 

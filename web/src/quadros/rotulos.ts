@@ -13,8 +13,14 @@ export const ROTULO_DO_TEMA: Record<TemaDaObra, string> = {
 };
 export const ROTULO_DA_CATEGORIA: Record<FonteDaObra['categoria'], string> = {
   instituicao_proprietaria: 'Instituição proprietária', museu: 'Museu', catalogo: 'Catálogo', academica: 'Acadêmica', arquivo: 'Arquivo',
-  leilao: 'Leilão', google_arts: 'Google Arts & Culture', secundaria: 'Secundária', popular: 'Popular',
+  leilao: 'Leilão', google_arts: 'Google Arts & Culture', secundaria: 'Secundária', popular: 'Popular', imagem_enviada: 'Imagem enviada',
 };
+
+/** Só fontes públicas viram link; a imagem enviada (`margem:quadros/…`, V-W5) é a própria obra na tela. */
+export const linkDaFonte = (fonte: Pick<FonteDaObra, 'url'>): string | null => (fonte.url.startsWith('https://') ? fonte.url : null);
+
+/** Como a confiança do palpite aparece na tela. */
+export const CONFIANCA_DO_PALPITE: Record<'alta' | 'media' | 'baixa', string> = { alta: 'confiança alta', media: 'confiança média', baixa: 'confiança baixa' };
 const ORDEM_DOS_TEMAS = Object.keys(ROTULO_DO_TEMA) as TemaDaObra[];
 
 export interface GrupoDeAfirmacoes { chave: string; titulo: string; afirmacoes: AfirmacaoDaObra[] }

@@ -347,7 +347,7 @@ const midia: MidiaV1 = {
 };
 const snapshot = { versao_id: V, secao: { id: 'S', nivel: 1, titulo: 'T', ordem: 0, bloco_inicio: B1, bloco_fim: B1 }, blocos: [{ id: B1, tipo: 'paragrafo', texto: TEXTO }], marcas: [marca], assets: {} } as unknown as SnapshotCapitulo;
 
-test('player: "Só o vídeo" mostra a legenda do grifo, que liga e desliga; "Preparar conceitos do vídeo" pede ao serviço', async () => {
+test('player: "Só o vídeo" mostra a legenda do grifo, que liga e desliga; "Preparar partes e momentos" pede ao serviço', async () => {
   const chamadas: string[] = [];
   let pronto = false;
   vi.stubGlobal('fetch', (url: string, inicio?: RequestInit) => {
@@ -375,7 +375,7 @@ test('player: "Só o vídeo" mostra a legenda do grifo, que liga e desliga; "Pre
   expect(document.querySelector('.legenda-dos-grifos')).toBeNull();
 
   fireEvent.click(screen.getByRole('button', { name: /^Velocidade/u }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Preparar conceitos do vídeo' }));
-  expect(await screen.findByText('1 conceito programado.')).toBeTruthy();
+  fireEvent.click(await screen.findByRole('button', { name: 'Preparar partes e momentos' }));
+  expect(await screen.findByText('1 momento.')).toBeTruthy();
   expect(chamadas).toContain(`POST /api/midias/${midia.id}/conceitos`);
 });

@@ -22,6 +22,7 @@ export default defineWorkspace(
         '@margem/core': nucleo,
         '@margem/contratos/texto': new URL('./contratos/src/texto.ts', import.meta.url).pathname,
         '@margem/contratos/sala': new URL('./contratos/src/sala.ts', import.meta.url).pathname,
+        '@margem/contratos/grifo': new URL('./contratos/src/grifo.ts', import.meta.url).pathname,
         '@margem/contratos/regras': regrasDosContratos,
         '@margem/contratos': contratos,
       },

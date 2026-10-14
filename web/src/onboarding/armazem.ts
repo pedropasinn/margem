@@ -5,7 +5,7 @@
  * (`margem:aparencia`, `margem:barra-lateral`…). O onboarding segue o mesmo caminho, com duas
  * diferenças pensadas para o beta com contas:
  *
- * - a chave carrega a versão do formato **e** o usuário: `margem:onboarding:v1:<usuario>`. Enquanto
+ * - a chave carrega a versão do formato **e** o usuário: `margem:onboarding:v2:<usuario>`. Enquanto
  *   não houver contas, o usuário é `local`; quando houver, `usuarioAtual()` passa a devolver o id da
  *   conta e cada pessoa no mesmo navegador tem o seu progresso;
  * - quem lê e grava é um `ArmazemDoOnboarding`, não o componente. Um armazém do servidor
@@ -24,8 +24,8 @@ export function usuarioAtual(): string {
   return 'local';
 }
 
-export function chaveDoOnboarding(usuario: string): string {
-  return `margem:onboarding:v${String(VERSAO_DO_ONBOARDING)}:${usuario}`;
+export function chaveDoOnboarding(usuario: string, versao: number = VERSAO_DO_ONBOARDING): string {
+  return `margem:onboarding:v${String(versao)}:${usuario}`;
 }
 
 /** Armazém no `localStorage`. Sem storage (modo privado restrito), vale o estado desta sessão. */
@@ -34,7 +34,8 @@ export function armazemLocal(usuario = usuarioAtual(), armazenamento: () => Stor
   return {
     ler() {
       try {
-        const bruto = armazenamento().getItem(chave);
+        // Sem o da versão atual, o da versão 1 (migrado por `validarOnboarding`); gravar já usa a chave nova.
+        const bruto = armazenamento().getItem(chave) ?? armazenamento().getItem(chaveDoOnboarding(usuario, 1));
         return bruto === null ? null : validarOnboarding(JSON.parse(bruto));
       } catch { return null; }
     },

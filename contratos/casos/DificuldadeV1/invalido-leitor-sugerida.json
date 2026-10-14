@@ -1,0 +1,18 @@
+{
+  "versao": 1,
+  "id": "00000000000000000000000070",
+  "versao_id": "00000000000000000000000020",
+  "ancora": {
+    "versao_id": "00000000000000000000000020",
+    "bloco_id": "00000000000000000000000001",
+    "inicio_utf16": 4,
+    "fim_utf16": 9,
+    "citacao": "texto",
+    "prefixo": "Um ",
+    "sufixo": " difícil"
+  },
+  "origem": "leitor",
+  "estado": "sugerida",
+  "criada_em": "2026-10-14T12:00:00Z",
+  "atualizada_em": "2026-10-14T12:00:00Z"
+}

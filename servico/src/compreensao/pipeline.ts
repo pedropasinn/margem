@@ -1,6 +1,7 @@
 import { modeloDoPrompt } from '../leitura/protocolos.js';
 import { lerJsonLimitado, ORCAMENTOS } from '../entrada-json.js';
 import { bloquearCapitulo, publicarModeloDoCapitulo } from './publicacao-modelo.js';
+import { aoCapituloPronto } from './itens.js';
 /**
  * Pipeline da compreensão do capítulo (J29/J30, `docs/desenho/10-MODELO-DO-CAPITULO.md` §5):
  *
@@ -132,31 +133,36 @@ export class SemCapitulos extends Error {
 
 /** Execução de compreensão do documento: o plano de partes inteiro, sem nenhum job ainda. */
 export async function iniciarCompreensao(config: ConfiguracaoDaCompreensao, versaoId: Id, modo: ModoDeLeituraV1): Promise<ExecucaoCompreensaoV1> {
-  return comTransacao(config.banco, async (cliente) => {
-    const versao = await obterVersao(cliente, versaoId);
-    if (!versao.canonico.secoes.some((secao) => secao.nivel === 1)) throw new SemCapitulos();
-    const execucaoId = novoId(config);
-    const plano = planejarLeitura(versao.canonico, {
-      execucao_id: execucaoId,
-      versoes: { metodo_versao: repo.METODO_DA_COMPREENSAO, prompt_versao: PROMPTS_DA_COMPREENSAO.analise, schema_versao: 3 },
-      textos: {
-        metodo: JSON.stringify({ modo }),
-        prompt: modeloDoPrompt(PROMPTS_DA_COMPREENSAO.analise, modo),
-        schema: lerPrompt(`${PROMPTS_DA_COMPREENSAO.analise}.schema.json`),
-      },
-      tiposElegiveis: TIPOS_ELEGIVEIS_V2,
-      ...(config.tamanho_parte_tokens === undefined ? {} : { tamanho_parte_tokens: config.tamanho_parte_tokens }),
-      ...(config.novoId === undefined ? {} : { novoId: config.novoId }),
-    });
-    const execucao: ExecucaoCompreensaoV1 = {
-      id: execucaoId, versao_id: versaoId, schema_versao: 3, modo: { id: modo.id, revisao: modo.revisao },
-      prompts: { ...PROMPTS_DA_COMPREENSAO }, executor: { modelo: config.modelo, esforco: config.esforco },
-      tamanho_parte_tokens: config.tamanho_parte_tokens ?? 45_000, plano_partes: plano.partes.map((parte) => parte.id),
-      criada_em: agora(config).toISOString(),
-    };
-    await repo.criarExecucao(cliente, execucao, plano.partes.map((parte) => ({ ...parte, secao_id: plano.capituloDaParte.get(parte.ordem) ?? null })));
-    return execucao;
+  return comTransacao(config.banco, (cliente) => iniciarCompreensaoNa(config, cliente, versaoId, modo));
+}
+
+/** O mesmo que `iniciarCompreensao`, dentro de uma transação já aberta (a preparação do documento). */
+export async function iniciarCompreensaoNa(
+  config: ConfiguracaoDaCompreensao, cliente: Transacao, versaoId: Id, modo: ModoDeLeituraV1,
+): Promise<ExecucaoCompreensaoV1> {
+  const versao = await obterVersao(cliente, versaoId);
+  if (!versao.canonico.secoes.some((secao) => secao.nivel === 1)) throw new SemCapitulos();
+  const execucaoId = novoId(config);
+  const plano = planejarLeitura(versao.canonico, {
+    execucao_id: execucaoId,
+    versoes: { metodo_versao: repo.METODO_DA_COMPREENSAO, prompt_versao: PROMPTS_DA_COMPREENSAO.analise, schema_versao: 3 },
+    textos: {
+      metodo: JSON.stringify({ modo }),
+      prompt: modeloDoPrompt(PROMPTS_DA_COMPREENSAO.analise, modo),
+      schema: lerPrompt(`${PROMPTS_DA_COMPREENSAO.analise}.schema.json`),
+    },
+    tiposElegiveis: TIPOS_ELEGIVEIS_V2,
+    ...(config.tamanho_parte_tokens === undefined ? {} : { tamanho_parte_tokens: config.tamanho_parte_tokens }),
+    ...(config.novoId === undefined ? {} : { novoId: config.novoId }),
   });
+  const execucao: ExecucaoCompreensaoV1 = {
+    id: execucaoId, versao_id: versaoId, schema_versao: 3, modo: { id: modo.id, revisao: modo.revisao },
+    prompts: { ...PROMPTS_DA_COMPREENSAO }, executor: { modelo: config.modelo, esforco: config.esforco },
+    tamanho_parte_tokens: config.tamanho_parte_tokens ?? 45_000, plano_partes: plano.partes.map((parte) => parte.id),
+    criada_em: agora(config).toISOString(),
+  };
+  await repo.criarExecucao(cliente, execucao, plano.partes.map((parte) => ({ ...parte, secao_id: plano.capituloDaParte.get(parte.ordem) ?? null })));
+  return execucao;
 }
 
 async function exigirExecucao(cliente: Transacao, execucaoId: Id): Promise<ExecucaoCompreensaoV1> {
@@ -173,36 +179,60 @@ export async function capitulosDaExecucao(cliente: Transacao, execucaoId: Id): P
   return vistos;
 }
 
-export interface PedidoDePreparacao { prioridade?: number; prefetch?: boolean }
+export interface PedidoDePreparacao {
+  prioridade?: number;
+  prefetch?: boolean;
+  /** "Tentar de novo": devolve à fila os jobs do capítulo que falharam ou foram cancelados antes de avançar. */
+  tentarDeNovo?: boolean;
+}
 
 /**
  * Pede a preparação do capítulo (e, com `prefetch`, a do seguinte em prioridade menor) e enfileira o
- * que falta. Chamado de novo, sobe a prioridade; falhas/cancelamentos exigem reenfileirar explicitamente.
+ * que falta. Chamado de novo, sobe a prioridade. Falhas e cancelamentos só voltam à fila com
+ * `tentarDeNovo` (o botão "Tentar de novo"); sem ele, um job que falhou continua falho.
  */
 export async function prepararCapitulo(
   config: ConfiguracaoDaCompreensao, execucaoId: Id, secaoId: Id, pedido: PedidoDePreparacao = {},
 ): Promise<{ enfileirados: Id[]; seguinte: Id | null }> {
-  return comTransacao(config.banco, async (cliente) => {
-    const capitulos = await capitulosDaExecucao(cliente, execucaoId);
-    if (!capitulos.includes(secaoId)) throw new Error('O capítulo não tem partes nesta execução.');
-    const enfileirados = await pedirEAvancar(config, cliente, execucaoId, secaoId, pedido.prioridade ?? jobsRepo.PRIORIDADE.capitulo_aberto);
-    let seguinte: Id | null = null;
-    if (pedido.prefetch) {
-      // Os seguintes, cada um um pouco abaixo do anterior: o mais próximo sai primeiro.
-      const profundidade = config.profundidadeDoPrefetch ?? 1;
-      const aberto = capitulos.indexOf(secaoId);
-      for (let distancia = 1; distancia <= profundidade; distancia++) {
-        const proximo = capitulos[aberto + distancia];
-        if (proximo === undefined) break;
-        seguinte ??= proximo;
-        enfileirados.push(...await pedirEAvancar(config, cliente, execucaoId, proximo, Math.max(0, jobsRepo.PRIORIDADE.proximo_provavel - (distancia - 1) * 5)));
-      }
-    }
-    return { enfileirados, seguinte };
-  });
+  return comTransacao(config.banco, (cliente) => prepararCapituloNa(config, cliente, execucaoId, secaoId, pedido));
 }
 
-async function pedirEAvancar(config: ConfiguracaoDaCompreensao, cliente: Transacao, execucaoId: Id, secaoId: Id, prioridade: number): Promise<Id[]> {
+/** O mesmo que `prepararCapitulo`, dentro de uma transação já aberta. */
+export async function prepararCapituloNa(
+  config: ConfiguracaoDaCompreensao, cliente: Transacao, execucaoId: Id, secaoId: Id, pedido: PedidoDePreparacao = {},
+): Promise<{ enfileirados: Id[]; seguinte: Id | null }> {
+  const capitulos = await capitulosDaExecucao(cliente, execucaoId);
+  if (!capitulos.includes(secaoId)) throw new Error('O capítulo não tem partes nesta execução.');
+  if (pedido.tentarDeNovo) await reenfileirarFalhas(cliente, execucaoId, secaoId);
+  const enfileirados = await pedirEAvancar(config, cliente, execucaoId, secaoId, pedido.prioridade ?? jobsRepo.PRIORIDADE.capitulo_aberto);
+  let seguinte: Id | null = null;
+  if (pedido.prefetch) {
+    // Os seguintes, cada um um pouco abaixo do anterior: o mais próximo sai primeiro.
+    const profundidade = config.profundidadeDoPrefetch ?? 1;
+    const aberto = capitulos.indexOf(secaoId);
+    for (let distancia = 1; distancia <= profundidade; distancia++) {
+      const proximo = capitulos[aberto + distancia];
+      if (proximo === undefined) break;
+      seguinte ??= proximo;
+      enfileirados.push(...await pedirEAvancar(config, cliente, execucaoId, proximo, Math.max(0, jobsRepo.PRIORIDADE.proximo_provavel - (distancia - 1) * 5)));
+    }
+  }
+  return { enfileirados, seguinte };
+}
+
+/** Devolve à fila os jobs do capítulo que falharam ou foram cancelados (tentativa nova, como `POST /api/jobs/:id/reenfileirar`). */
+export async function reenfileirarFalhas(cliente: Transacao, execucaoId: Id, secaoId: Id): Promise<Id[]> {
+  await bloquearCapitulo(cliente, execucaoId, secaoId);
+  const { jobs } = await estadoDoCapitulo(cliente, execucaoId, secaoId);
+  const devolvidos: Id[] = [];
+  for (const job of jobs) {
+    if (!jobsRepo.REENFILEIRAVEIS.includes(job.estado as jobsRepo.EstadoJob)) continue;
+    if (await jobsRepo.reenfileirarNa(cliente, job.id)) devolvidos.push(job.id);
+  }
+  return devolvidos;
+}
+
+export async function pedirEAvancar(config: ConfiguracaoDaCompreensao, cliente: Transacao, execucaoId: Id, secaoId: Id, prioridade: number): Promise<Id[]> {
   await bloquearCapitulo(cliente, execucaoId, secaoId);
   const vigente = await repo.pedirPreparacao(cliente, execucaoId, secaoId, prioridade);
   return avancar(config, cliente, execucaoId, secaoId, vigente);
@@ -673,5 +703,7 @@ export async function publicarPlano(
   await registrarEvento(cliente, jobId, 'plano_publicado', { secao_id: chave.secao_id, plano_id: persistido.id, passos: persistido.passos.length });
   const proveniencia = await registrarProveniencia(cliente, execucao.id, { papel: 'revisao', job_id: jobId, parte_id: null }, execucaoOk,
     config.esforcoDoPlano ?? config.esforco);
+  // Capítulo pronto: os itens marcados em "Preparar leitura" (flashcards, mapa, fluxograma) saem agora.
+  await aoCapituloPronto(cliente, execucao, chave.secao_id);
   return [...resolvido.diagnosticos.map(paraDiagnostico), ...(proveniencia ? [proveniencia] : [])];
 }

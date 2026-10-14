@@ -72,7 +72,9 @@ test('migração em banco vazio, reaplicação e dois migradores concorrentes', 
         { nome: '0009_etiqueta.sql' }, { nome: '0010_grifos_e_notas.sql' }, { nome: '0011_audio.sql' }, { nome: '0012_visuais.sql' }, { nome: '0013_midia.sql' },
         { nome: '0014_revisao_transcricao.sql' }, { nome: '0015_visita.sql' }, { nome: '0016_leitura_comentada.sql' }, { nome: '0017_anotacao_revisao.sql' },
         { nome: '0018_salas_de_teste.sql' }, { nome: '0019_etiquetas.sql' }, { nome: '0020_flashcards.sql' }, { nome: '0021_agente.sql' }, { nome: '0022_conceitos_do_video.sql' },
-        { nome: '0023_noticias.sql' }, { nome: '0024_noticia_capa.sql' }, { nome: '0025_leitor.sql' }, { nome: '0026_primeira_execucao.sql' }, { nome: '0028_video_youtube.sql' }]);
+        { nome: '0023_noticias.sql' }, { nome: '0024_noticia_capa.sql' }, { nome: '0025_leitor.sql' }, { nome: '0026_primeira_execucao.sql' }, { nome: '0028_video_youtube.sql' },
+        { nome: '0029_quadros_da_pessoa.sql' }, { nome: '0030_conexao_semantica.sql' }, { nome: '0031_tipo_de_texto.sql' }, { nome: '0032_modelo_d_grifos.sql' }, { nome: '0033_apagar.sql' },
+        { nome: '0034_analise_do_video.sql' }, { nome: '0035_central_de_notas.sql' }]);
     const tabelas = await banco.query<{ tablename: string }>("SELECT tablename FROM pg_tables WHERE schemaname='public'");
     expect(tabelas.rows.map(linha => linha.tablename)).toEqual(expect.arrayContaining([
       'documento','versao_texto','bloco','secao','asset','execucao_leitura','parte','marca','lote_revisao',

@@ -11,6 +11,8 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type { MidiaV1 } from '@margem/contratos';
 import { raizDeDados } from '../dados';
+import { sincronizarPasta } from '../plataforma/disco.js';
+import { ffprobe } from '../plataforma/executaveis.js';
 
 const executar = promisify(execFile);
 
@@ -66,8 +68,7 @@ export async function receberMidia(fluxo: ReadableStream<Uint8Array>, limite = l
     catch (erro) { if (!(erro instanceof Error && 'code' in erro && erro.code === 'EEXIST')) throw erro; }
     // O destino pode ter vindo de uma tentativa anterior: só vale se tiver os mesmos bytes.
     if ((await stat(destino)).size !== bytes || await hashDoArquivo(destino) !== sha256) throw new Error('Arquivo de mídia divergente do hash.');
-    const diretorio = await open(pasta, 'r');
-    try { await diretorio.sync(); } finally { await diretorio.close(); }
+    await sincronizarPasta(pasta);
     return { sha256, bytes };
   } finally {
     await arquivo.close().catch(() => undefined);
@@ -112,6 +113,6 @@ export function interpretarSonda(saida: SaidaDoFfprobe, bytes: number): SondaDaM
 
 export async function sondarMidia(caminho: string): Promise<SondaDaMidia> {
   const { size } = await stat(caminho);
-  const { stdout } = await executar('ffprobe', ['-v', 'error', '-show_entries', 'format=duration,format_name:stream=codec_type,codec_name,width,height:stream_disposition=attached_pic', '-of', 'json', caminho], { timeout: 60_000, maxBuffer: 1024 * 1024 });
+  const { stdout } = await executar(ffprobe(), ['-v', 'error', '-show_entries', 'format=duration,format_name:stream=codec_type,codec_name,width,height:stream_disposition=attached_pic', '-of', 'json', caminho], { timeout: 60_000, maxBuffer: 1024 * 1024, windowsHide: true });
   return interpretarSonda(JSON.parse(stdout) as SaidaDoFfprobe, size);
 }

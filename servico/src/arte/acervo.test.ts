@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { AnaliseCurtaDaObraV1 } from '@margem/contratos';
-import { conferirManifesto, lerAcervo, tituloDaAnalise } from './acervo';
+import { conferirManifesto, imagensDaFixture, lerAcervo, tituloDaAnalise } from './acervo';
 import { registrarRotasDeArte } from '../http/rotas-arte';
 
 const doRepo = (relativo: string): string => fileURLToPath(new URL(`../../../${relativo}`, import.meta.url));
@@ -55,6 +55,12 @@ beforeAll(async () => {
   await mkdir(join(raiz, 'em-curso'), { recursive: true });
 });
 afterAll(async () => { await rm(raiz, { recursive: true, force: true }); });
+
+describe('obras de exemplo no app de computador (V-D4, B-04)', () => {
+  it('a imagem da obra de exemplo vale também no build do web, que é o que o app leva', () => {
+    expect(imagensDaFixture('educacao')).toEqual([doRepo('web/public/arte/educacao.jpg'), doRepo('web/dist/arte/educacao.jpg')]);
+  });
+});
 
 describe('acervo de quadros', () => {
   it('lê obras válidas, recusa as inválidas com aviso e completa com as fixtures', async () => {

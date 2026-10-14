@@ -1,7 +1,7 @@
 /**
  * Execuções do Codex para os avisos da interface:
  *
- *   GET /api/execucoes/ativas    a lista atual (`ExecucoesDoCodexV1`)
+ *   GET /api/execucoes/ativas    a lista atual (`ExecucoesDoCodexV2`, com os avisos das concluídas)
  *   GET /api/execucoes/eventos   SSE: um evento `execucoes` com a lista inteira a cada mudança
  *
  * O fluxo acorda com o `NOTIFY margem_evento` (toda mudança de job grava um `evento_job`) ou, na
@@ -12,7 +12,7 @@
 import type { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type pg from 'pg';
-import { validarExecucoesDoCodex, type ExecucoesDoCodexV1 } from '@margem/contratos';
+import { validarExecucoesDoCodexV2, type ExecucoesDoCodexV2 } from '@margem/contratos';
 import { comTransacao } from '../db/transacao.js';
 import { listarExecucoes } from '../execucoes/ativas.js';
 import type { OuvinteDeEventos } from './ouvinte.js';
@@ -23,15 +23,15 @@ export interface ApoioDasExecucoes {
   intervaloMs: number;
 }
 
-async function lista(banco: pg.Pool): Promise<ExecucoesDoCodexV1> {
+async function lista(banco: pg.Pool): Promise<ExecucoesDoCodexV2> {
   const valor = await comTransacao(banco, (cliente) => listarExecucoes(cliente));
   // Projeção do próprio serviço: falhar aqui é defeito nosso, e o contrato não pode vazar torto.
-  if (!validarExecucoesDoCodex(valor)) throw new Error(`Lista de execuções fora do contrato: ${JSON.stringify(validarExecucoesDoCodex.errors)}`);
+  if (!validarExecucoesDoCodexV2(valor)) throw new Error(`Lista de execuções fora do contrato: ${JSON.stringify(validarExecucoesDoCodexV2.errors)}`);
   return valor;
 }
 
 /** O que muda a lista para quem vê: tudo menos o carimbo da geração. */
-function assinatura(valor: ExecucoesDoCodexV1): string {
+function assinatura(valor: ExecucoesDoCodexV2): string {
   return JSON.stringify([valor.execucoes, valor.omitidas]);
 }
 

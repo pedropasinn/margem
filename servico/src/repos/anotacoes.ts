@@ -30,17 +30,20 @@ export async function obter(cliente: Transacao, id: Id, travar = false): Promise
   return (await cliente.query<{ anotacao: AnotacaoV1 }>(`SELECT ${OBJETO} AS anotacao FROM anotacao a WHERE a.id=$1${travar ? ' FOR UPDATE' : ''}`, [id])).rows[0]?.anotacao ?? null;
 }
 
-/** Anotações da versão ancoradas nos blocos pedidos, na ordem de criação. */
+/**
+ * Anotações da versão ancoradas nos blocos pedidos, na ordem de criação. As fundidas na migração do
+ * modelo D (0032) ficam no banco, mas fora das listas: o texto delas está na nota do grifo.
+ */
 export async function listarNosBlocos(cliente: Transacao, versaoId: Id, blocos: readonly Id[]): Promise<AnotacaoV1[]> {
   return (await cliente.query<{ anotacao: AnotacaoV1 }>(`SELECT ${OBJETO} AS anotacao FROM anotacao a
-    WHERE a.versao_id=$1 AND a.bloco_id = ANY($2::text[]) ORDER BY a.criada_em, a.id`, [versaoId, [...blocos]])).rows
+    WHERE a.versao_id=$1 AND a.bloco_id = ANY($2::text[]) AND a.fundida_em IS NULL ORDER BY a.criada_em, a.id`, [versaoId, [...blocos]])).rows
     .map((linha) => linha.anotacao);
 }
 
 /** Todas as anotações da versão, na ordem de criação (exportação). */
 export async function listarDaVersao(cliente: Transacao, versaoId: Id): Promise<AnotacaoV1[]> {
   return (await cliente.query<{ anotacao: AnotacaoV1 }>(`SELECT ${OBJETO} AS anotacao FROM anotacao a
-    WHERE a.versao_id=$1 ORDER BY a.criada_em, a.id`, [versaoId])).rows.map((linha) => linha.anotacao);
+    WHERE a.versao_id=$1 AND a.fundida_em IS NULL ORDER BY a.criada_em, a.id`, [versaoId])).rows.map((linha) => linha.anotacao);
 }
 
 /** Contrato, âncora no bloco real da versão e marca (quando há) da mesma versão. */
@@ -58,6 +61,10 @@ async function conferir(cliente: Transacao, anotacao: AnotacaoV1): Promise<void>
 
 export async function criar(cliente: Transacao, anotacao: AnotacaoV1, chaveCliente?: string): Promise<AnotacaoV1> {
   await conferir(cliente, anotacao);
+  if (anotacao.marca_id !== undefined && await notaDoGrifo(cliente, anotacao.marca_id) !== null && (chaveCliente === undefined
+    || ((await cliente.query('SELECT 1 FROM anotacao WHERE chave_cliente=$1', [chaveCliente])).rowCount ?? 0) === 0)) {
+    throw new DadoRecusado('nota_do_grifo_existente', 'Este grifo já tem uma nota: edite a nota dele.');
+  }
   const a = anotacao.ancora;
   await cliente.query(`INSERT INTO anotacao (id,versao_id,bloco_id,inicio_utf16,fim_utf16,citacao,prefixo,sufixo,
       tipo,texto,fonte,marca_id,criada_em,atualizada_em,chave_cliente) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
@@ -128,4 +135,46 @@ export async function aplicarRevisao(cliente: Transacao, anotacaoId: Id, pedidoI
 /** Um pedido que falhou de vez sai, para o leitor poder pedir de novo. */
 export async function desistirDaRevisao(cliente: Transacao, anotacaoId: Id): Promise<void> {
   await cliente.query('UPDATE anotacao SET pedido_de_revisao=NULL WHERE id=$1', [anotacaoId]);
+}
+
+// ------------------------------------------------------------------ J138: a nota do grifo (modelo D)
+
+/** A nota do leitor sobre o grifo: a anotação ligada a ele (uma só, desde a 0032). */
+export async function notaDoGrifo(cliente: Transacao, marcaId: Id, travar = false): Promise<AnotacaoV1 | null> {
+  return (await cliente.query<{ anotacao: AnotacaoV1 }>(`SELECT ${OBJETO} AS anotacao FROM anotacao a
+    WHERE a.marca_id=$1 AND a.fundida_em IS NULL${travar ? ' FOR UPDATE' : ''}`, [marcaId])).rows[0]?.anotacao ?? null;
+}
+
+export class GrifoInexistente extends Error {
+  constructor() { super('O grifo não existe.'); this.name = 'GrifoInexistente'; }
+}
+
+/**
+ * Grava a nota do grifo: cria (texto simples, sem tipo, na âncora do grifo) ou troca o texto. `revisao`, quando
+ * vem, é a da nota que o leitor viu; diferente da gravada, a nota mudou em outro lugar (`AnotacaoObsoleta`).
+ */
+export async function gravarNotaDoGrifo(cliente: Transacao, entrada: { marca_id: Id; texto: string; revisao?: number; id: Id; agora: string }): Promise<AnotacaoV1> {
+  const marca = (await cliente.query<{ ancora: AnotacaoV1['ancora'] }>(`SELECT ${OBJETO_ANCORA()} AS ancora FROM marca WHERE id=$1 FOR UPDATE`, [entrada.marca_id])).rows[0];
+  if (!marca) throw new GrifoInexistente();
+  const atual = await notaDoGrifo(cliente, entrada.marca_id, true);
+  if (atual === null) {
+    return criar(cliente, { versao: 1, id: entrada.id, versao_id: marca.ancora.versao_id, ancora: marca.ancora, tipo: 'nota', texto: entrada.texto,
+      marca_id: entrada.marca_id, criada_em: entrada.agora, atualizada_em: entrada.agora, revisao_edicao: 1 });
+  }
+  if (entrada.revisao !== undefined && entrada.revisao !== atual.revisao_edicao) throw new AnotacaoObsoleta(atual);
+  if (atual.texto === entrada.texto) return atual;
+  const quando = Date.parse(entrada.agora) >= Date.parse(atual.criada_em) ? entrada.agora : atual.criada_em;
+  return atualizar(cliente, { ...atual, texto: entrada.texto, atualizada_em: quando });
+}
+
+/** Tira a nota do grifo (o grifo fica). */
+export async function apagarNotaDoGrifo(cliente: Transacao, marcaId: Id, revisao: number): Promise<boolean> {
+  const atual = await notaDoGrifo(cliente, marcaId, true);
+  if (!atual) return false;
+  return apagar(cliente, atual.id, revisao);
+}
+
+/** As notas dos grifos nos blocos pedidos (para o leitor), na ordem de criação. */
+export async function notasDosGrifosNosBlocos(cliente: Transacao, versaoId: Id, blocos: readonly Id[]): Promise<AnotacaoV1[]> {
+  return (await listarNosBlocos(cliente, versaoId, blocos)).filter((anotacao) => anotacao.marca_id !== undefined);
 }

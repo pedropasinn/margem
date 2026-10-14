@@ -6,8 +6,8 @@
  * O envio sai daqui, nunca do script na página: a página não vê o token nem o endereço do servidor.
  */
 import browser from 'webextension-polyfill';
-import { lerConfiguracao } from './configuracao';
-import { ErroDoServidor, definirVerificadorDeAcesso, enviarPdf, enviarTexto, padraoDeHost, testarConexao } from './servidor';
+import { gravarInstanciaConhecida, lerConfiguracao, lerInstanciaConhecida } from './configuracao';
+import { ErroDoServidor, definirVerificadorDeAcesso, enviarPdf, enviarTexto, padraoDeHost, resolverServidor, testarConexao, type Conexao } from './servidor';
 import type { Captura, CapturaDePdf, CapturaDeTexto, Configuracao, Enviado, Pedido, Resposta } from './tipos';
 
 // Com permissão de host o navegador não aplica CORS: falha de rede passa a significar Margem fechado.
@@ -126,8 +126,18 @@ async function bytesDoPdf(abaId: number, url: string): Promise<ArrayBuffer> {
   throw new ErroDeCaptura('Não foi possível baixar o PDF desta aba. Baixe o arquivo e envie pela biblioteca do Margem.');
 }
 
+/**
+ * O endereço padrão (localhost:8730) vira o do Margem achado nas portas 8730–8739 (V-W9): o app de
+ * computador abre na seguinte quando a 8730 está ocupada. A identificação achada fica guardada.
+ */
+async function comMargemLocal(configuracao: Configuracao): Promise<{ config: Configuracao; conexao: Pick<Conexao, 'servidor' | 'instancia_id' | 'outros'> }> {
+  const { configuracao: config, encontrado, outros } = await resolverServidor(configuracao, await lerInstanciaConhecida());
+  if (encontrado !== null) await gravarInstanciaConhecida(encontrado.instancia_id);
+  return { config, conexao: encontrado === null ? {} : { servidor: encontrado.servidor, instancia_id: encontrado.instancia_id, outros } };
+}
+
 async function enviar(captura: Captura, abaId: number | undefined, configuracao?: Configuracao): Promise<Enviado> {
-  const config = configuracao ?? await lerConfiguracao();
+  const { config } = await comMargemLocal(configuracao ?? await lerConfiguracao());
   if (captura.tipo === 'pdf') {
     if (abaId === undefined) throw new ErroDeCaptura('A aba do PDF não está mais aberta.');
     return enviarPdf(config, captura, await bytesDoPdf(abaId, captura.url));
@@ -158,7 +168,10 @@ browser.runtime.onMessage.addListener((mensagem: unknown, remetente: browser.Run
       if (mensagem.abrir) await browser.tabs.create({ url: resultado.endereco });
       return resultado;
     });
-    case 'testar': return responder(() => testarConexao(mensagem.configuracao));
+    case 'testar': return responder(async () => {
+      const { config, conexao } = await comMargemLocal(mensagem.configuracao);
+      return { ...await testarConexao(config), ...conexao };
+    });
     default: return undefined;
   }
 });

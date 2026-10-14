@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Margem</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="boas-vindas.css">
+</head>
+<body>
+  <!-- Sem barra de título do sistema (V-U5): esta faixa arrasta a janela; os botões nativos ficam sobre ela. -->
+  <div class="topo-da-janela" aria-hidden="true"></div>
+  <main class="abertura" aria-live="polite">
+    <header class="marca">
+      <h1>
+        <picture>
+          <source srcset="icones/assinatura-escuro.svg" media="(prefers-color-scheme: dark)">
+          <img src="icones/assinatura-claro.svg" alt="Margem" height="72">
+        </picture>
+      </h1>
+    </header>
+
+    <!-- Abrindo uma biblioteca já configurada -->
+    <section id="carregando" class="cartao" hidden>
+      <h2>Abrindo a biblioteca</h2>
+      <p class="etapa" id="etapa-carregando">Preparando…</p>
+      <div class="barra" role="progressbar" aria-label="Abrindo a biblioteca"><span></span></div>
+    </section>
+
+    <!-- Passo 1: a pasta -->
+    <section id="passo-pasta" class="cartao" hidden>
+      <p class="passo">Passo 1 de 2</p>
+      <h2>Onde fica a sua biblioteca?</h2>
+      <p class="texto">A biblioteca é uma pasta comum do seu computador. Os seus documentos, vídeos, quadros, marcas e
+        notas ficam nela, e você pode trocá-la depois pelo menu Arquivo.</p>
+      <div class="pasta">
+        <code id="caminho-da-pasta">…</code>
+        <button type="button" class="botao" id="escolher-pasta">Escolher outra…</button>
+      </div>
+      <p class="nota" id="nota-da-pasta"></p>
+      <div class="acoes">
+        <button type="button" class="botao primario" id="continuar-pasta">Continuar</button>
+      </div>
+    </section>
+
+    <!-- Passo 2: o ChatGPT -->
+    <section id="passo-login" class="cartao" hidden>
+      <p class="passo">Passo 2 de 2</p>
+      <h2>Entre com a sua conta do ChatGPT</h2>
+      <p class="texto">As marcas e explicações são feitas pelo Codex com a sua própria conta do ChatGPT. O login abre no
+        navegador e fica guardado só neste computador.</p>
+      <p class="estado" id="estado-login">Verificando…</p>
+      <div class="dispositivo" id="caixa-dispositivo" hidden>
+        <p class="texto">Na página de login (pode ser em outro aparelho), digite este código:</p>
+        <p class="codigo" id="codigo-dispositivo"></p>
+      </div>
+      <p class="nota" id="caixa-link" hidden>Se o navegador não abriu, <button type="button" class="link" id="abrir-link">abra a página de login</button>.</p>
+      <div class="acoes">
+        <button type="button" class="botao ghost" id="pular-login">Agora não</button>
+        <button type="button" class="botao" id="entrar-dispositivo">Usar um código</button>
+        <button type="button" class="botao primario" id="entrar">Entrar com o ChatGPT</button>
+      </div>
+    </section>
+
+    <!-- Fim -->
+    <section id="passo-fim" class="cartao" hidden>
+      <h2>Tudo pronto</h2>
+      <p class="texto" id="resumo-fim"></p>
+      <p class="texto">Depois, traga PDFs, EPUBs, textos, vídeos do YouTube e imagens de quadros pelo botão Adicionar ou
+        pelo menu Arquivo.</p>
+      <p class="etapa" id="etapa-fim" hidden></p>
+      <p class="erro" id="erro-fim" role="alert" hidden></p>
+      <div class="acoes">
+        <button type="button" class="botao ghost" id="voltar-fim">Voltar</button>
+        <button type="button" class="botao primario" id="abrir-biblioteca">Abrir a biblioteca</button>
+      </div>
+    </section>
+  </main>
+  <script src="janela.js"></script>
+</body>
+</html>

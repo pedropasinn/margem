@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/QuadroDaPessoaV1.schema.json",
+  "title": "Obra que a pessoa adicionou em Quadros, enquanto é preparada (J118)",
+  "description": "O Margem não distribui acervo: a pessoa envia a imagem e o worker prepara a análise guiada (imagem, identificação, dossiê de fontes públicas, análise v2 e, com voz configurada, narração). GET /api/arte devolve estas obras em `preparando` até ficarem prontas; POST /api/arte devolve a obra recém-criada. `erro` só existe quando a preparação falhou; `etapa` e `progresso` dizem onde ela está.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "slug",
+    "estado",
+    "etapa",
+    "progresso",
+    "identificacao",
+    "imagem",
+    "enviado_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,79}$"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "na_fila",
+        "preparando",
+        "pronto",
+        "falhou"
+      ]
+    },
+    "etapa": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "imagem",
+            "identificacao",
+            "dossie",
+            "analise",
+            "narracao"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "progresso": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "feitas",
+            "total"
+          ],
+          "properties": {
+            "feitas": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "identificacao": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "titulo",
+            "artista",
+            "ano",
+            "origem"
+          ],
+          "properties": {
+            "titulo": {
+              "$ref": "#/$defs/linha"
+            },
+            "artista": {
+              "$ref": "#/$defs/linha"
+            },
+            "ano": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40,
+                  "pattern": "^(?=[^\\r\\n]*\\S)[^\\r\\n\\u2028\\u2029]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "origem": {
+              "type": "string",
+              "enum": [
+                "pessoa",
+                "codex",
+                "acervo"
+              ]
+            },
+            "confianca": {
+              "type": "string",
+              "enum": [
+                "alta",
+                "media",
+                "baixa"
+              ]
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "palpite": {
+      "description": "V-W5: o que o Codex disse da obra quando não a reconheceu (a análise segue só pela imagem). É palpite, não identificação: a interface o mostra como tal e oferece informar título e artista.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "texto",
+        "titulo",
+        "artista",
+        "ano",
+        "confianca"
+      ],
+      "properties": {
+        "texto": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "titulo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/linha"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artista": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/linha"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ano": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^(?=[^\\r\\n]*\\S)[^\\r\\n\\u2028\\u2029]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confianca": {
+          "type": "string",
+          "enum": [
+            "alta",
+            "media",
+            "baixa"
+          ]
+        }
+      }
+    },
+    "imagem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formato",
+        "bytes"
+      ],
+      "properties": {
+        "formato": {
+          "type": "string",
+          "enum": [
+            "jpeg",
+            "png",
+            "webp"
+          ]
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "nome": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[^\\r\\n\\u2028\\u2029/\\\\]+$"
+        }
+      }
+    },
+    "enviado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "aviso": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "erro": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "codigo",
+        "mensagem"
+      ],
+      "properties": {
+        "codigo": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "mensagem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    }
+  },
+  "$defs": {
+    "linha": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^(?=[^\\r\\n]*\\S)[^\\r\\n\\u2028\\u2029]+$"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "versao": 3,
+  "id": "00000000000000000000000090",
+  "origem": {
+    "versao_id": "00000000000000000000000020",
+    "bloco_id": "00000000000000000000000001",
+    "inicio_utf16": 3,
+    "fim_utf16": 5,
+    "citacao": "🧭",
+    "prefixo": "Um ",
+    "sufixo": ", café e ﬁ."
+  },
+  "destino": {
+    "tipo": "trecho",
+    "ancora": {
+      "versao_id": "00000000000000000000000021",
+      "bloco_id": "00000000000000000000000009",
+      "inicio_utf16": 7,
+      "fim_utf16": 12,
+      "citacao": "café",
+      "prefixo": "Um 🧭, ",
+      "sufixo": " e ﬁ."
+    }
+  },
+  "relacao": "contraste",
+  "justificativa": "A bússola aqui orienta; lá, desorienta.",
+  "autor": "ia",
+  "estado": "sugerida",
+  "conversa_id": "00000000000000000000000070",
+  "criada_em": "2026-09-23T12:00:00Z"
+}

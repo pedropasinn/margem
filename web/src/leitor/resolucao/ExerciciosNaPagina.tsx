@@ -2,8 +2,8 @@
  * Os exercícios recortados continuam marcados na página do PDF. Cada resolução do documento com origem
  * num recorte desenha, na própria página, um retângulo à mão (o traço `caixa` do Marcador, fino, sem
  * fundo sobre o texto) e uma nota: na margem, se a margem de notas está à vista; senão, uma etiqueta
- * no canto do retângulo. Passar o mouse (ou o foco) na nota mostra a prévia (o enunciado e o estado ou
- * a primeira linha da resolução); o clique abre a resolução. Em andamento, "resolvendo…"; se falhou,
+ * no canto do retângulo. Passar o mouse (ou o foco) na nota mostra a prévia: só a ideia da resolução (o
+ * enunciado já está na página, ao lado) ou o estado; o clique abre a resolução. Em andamento, "resolvendo…"; se falhou,
  * o estado e as ações de tentar de novo e remover.
  *
  * O retângulo está em frações da página (o que o contrato guarda), então segue o zoom sozinho.
@@ -159,6 +159,9 @@ export function ExerciciosNaPagina({ documentoId, versaoId, aberta, versao = 0, 
   })}</>;
 }
 
+/** Espaço que a nota ocupa à direita do retângulo (deslocamento de 10 px + o círculo de 22 px). */
+const FOLGA_DA_NOTA_PX = 36;
+
 const ROTULO: Record<SessaoDaApi['estado'], string> = { pendente: 'A resolver', pronta: 'Exercício resolvido', resolvendo: 'Resolvendo…', respondendo: 'Respondendo…', falhou: 'Não deu certo' };
 
 function NotaDoExercicio({ sessao, numero, topo, folha, naMargem, ocupada, aoAbrir, aoRealcar, aoRemover, aoRefazer }: {
@@ -168,12 +171,14 @@ function NotaDoExercicio({ sessao, numero, topo, folha, naMargem, ocupada, aoAbr
   const { resolucao, estado } = sessao;
   const { retangulo } = resolucao.origem;
   const gerada = resolucao.resolucao;
-  const enunciado = gerada?.enunciado ?? (resolucao.texto_extraido.trim() || 'Exercício recortado');
   const primeira = gerada?.itens[0];
   const linha = estado === 'pronta' && primeira ? primeira.estrategia : estado === 'falhou' ? 'O Codex não conseguiu resolver desta vez.' : estado === 'pendente' ? 'Ainda não foi ao Codex: abra para pedir a resolução.' : estado === 'pronta' ? '' : 'O Codex está lendo o exercício e montando os passos.';
   // Na margem, na altura do topo do exercício; na página, no canto de cima à direita do retângulo.
   const estilo = naMargem ? { top: folha.topoNaMargem + topo } : { top: topo, left: (retangulo.x + retangulo.largura) * folha.largura };
-  return <div className="nota-do-exercicio" data-lugar={naMargem ? 'margem' : 'pagina'} data-estado={estado} style={estilo}
+  // Retângulo que encosta na borda direita da folha (a questão por imagem cobre a página inteira): a
+  // nota entra no canto, por dentro, em vez de sair da folha (e da tela, no celular).
+  const dentro = !naMargem && (1 - retangulo.x - retangulo.largura) * folha.largura < FOLGA_DA_NOTA_PX;
+  return <div className="nota-do-exercicio" data-lugar={naMargem ? 'margem' : 'pagina'} data-dentro={dentro ? '' : undefined} data-estado={estado} style={estilo}
     onPointerEnter={() => aoRealcar(resolucao.id)} onPointerLeave={() => aoRealcar(null)} onFocus={() => aoRealcar(resolucao.id)} onBlur={() => aoRealcar(null)}>
     <button type="button" className="abrir-exercicio" aria-label={`${ROTULO[estado]}: abrir a resolução do exercício da página ${String(resolucao.origem.pagina)}`}
       onClick={() => aoAbrir(resolucao.id)}>
@@ -181,11 +186,11 @@ function NotaDoExercicio({ sessao, numero, topo, folha, naMargem, ocupada, aoAbr
         ? <ThoughtLine label={ROTULO[estado]} collapsible={false} showTimer={false} fontSize={12} color="var(--texto-2)" glyphColor="var(--accent)" />
         : ROTULO[estado]}{numero > 1 ? ` · ${String(numero)}` : ''}</span></span>
     </button>
-    {/* A prévia: aparece com o mouse ou o foco; o clique na nota abre a resolução. Se falhou, as ações ficam na linha da nota. */}
-    <div className="previa-do-exercicio">
-      <p className="enunciado-da-previa"><TextoComMatematica texto={enunciado} /></p>
-      {linha && <p className="linha-da-previa">{estado === 'pronta' && <span className="eyebrow">Ideia</span>}<TextoComMatematica texto={linha} /></p>}
-    </div>
+    {/* A prévia: aparece com o mouse ou o foco; o clique na nota abre a resolução. O enunciado já está
+        na página, ao lado: a prévia mostra só a ideia (ou o estado). Se falhou, as ações ficam na linha da nota. */}
+    {linha && <div className="previa-do-exercicio">
+      <p className="linha-da-previa">{estado === 'pronta' && <span className="eyebrow">Ideia</span>}<TextoComMatematica texto={linha} /></p>
+    </div>}
     {estado === 'falhou' && <span className="acoes-do-exercicio">
       <button type="button" disabled={ocupada} onClick={() => aoRefazer(resolucao.id)}>Tentar de novo</button>
       <button type="button" disabled={ocupada} onClick={() => aoRemover(resolucao.id)}>Remover</button>

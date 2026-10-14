@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { ambienteSaneado } from './ambiente.js';
+import { codexCli } from '../plataforma/executaveis.js';
 
 /** Flags que o executor precisa encontrar em `codex exec --help` para montar o comando. */
 export const FLAGS_NECESSARIAS = [
@@ -32,7 +33,7 @@ const comandoPadrao: ExecutarComando = (arquivo, argumentos) =>
     execFile(
       arquivo,
       [...argumentos],
-      { env: ambienteSaneado(), timeout: 30_000, maxBuffer: 1024 * 1024 },
+      { env: ambienteSaneado(), timeout: 30_000, maxBuffer: 1024 * 1024, windowsHide: true },
       (erro, saidaPadrao, saidaErro) => {
         const saida = `${saidaPadrao}\n${saidaErro}`;
         const codigo = erro && typeof erro.code === 'number' ? erro.code : erro ? 1 : 0;
@@ -70,7 +71,7 @@ let cache: Promise<Capacidades> | undefined;
 export function detectarCapacidades(
   opcoes: { executarComando?: ExecutarComando; binario?: string; recarregar?: boolean } = {},
 ): Promise<Capacidades> {
-  const { executarComando = comandoPadrao, binario = 'codex', recarregar = false } = opcoes;
+  const { executarComando = comandoPadrao, binario = codexCli(), recarregar = false } = opcoes;
   if (cache && !recarregar && opcoes.executarComando === undefined) return cache;
   const promessa = (async (): Promise<Capacidades> => {
     const versao = await executarComando(binario, ['--version']);

@@ -5,7 +5,9 @@
 import { createHash } from 'node:crypto';
 import type { Hono } from 'hono';
 import { expect, test } from 'vitest';
-import { validarIndiceObsidian, type AncoraV1, type Bloco, type IndiceObsidianV1, type MarcaV2 } from '@margem/contratos';
+import {
+  validarIndiceObsidian, validarIndiceObsidianV2, type AncoraV1, type Bloco, type IndiceObsidianV1, type IndiceObsidianV2, type MarcaV2,
+} from '@margem/contratos';
 import { canonicoDeTeste, comBanco } from '../../testes/apoio.js';
 import { lerZip } from '../../testes/zip.js';
 import { comTransacao } from '../db/transacao.js';
@@ -116,4 +118,71 @@ test('exporta a nota do documento, o índice e o ZIP, determinísticos e só com
   expect(lerZip(zip).map(({ nome, conteudo }) => ({ nome, conteudo }))).toEqual([{ nome: 'Ensaio - sobre a dúvida.md', conteudo: nota }]);
   const zipDeNovo = new Uint8Array(await (await api.request(`/api/obsidian/exportacao.zip?base=${encodeURIComponent(BASE)}`)).arrayBuffer());
   expect(zipDeNovo).toEqual(zip);
+}));
+
+test('formato 2: índice por nota, notas de um documento e ZIP com pastas e manifesto', async () => comBanco('obsidian_v2', async (banco) => {
+  const canonico = canonicoDeTeste({ titulo: 'Ensaio: sobre a dúvida', blocos: [
+    { tipo: 'capitulo', texto: 'Primeiro' },
+    { tipo: 'paragrafo', texto: 'A razão comum basta para ver que a ordem do mundo pede explicação.' },
+    { tipo: 'capitulo', texto: 'Segundo' },
+    { tipo: 'paragrafo', texto: 'Toda *explicação* termina em algo que não se explica.' },
+  ], secoes: [{ nivel: 1, inicio: 0, fim: 1 }, { nivel: 1, inicio: 2, fim: 3 }] });
+  const { documentoId, versaoId } = await comTransacao(banco, async (cliente) => {
+    const documento = await documentos.criar(cliente, { ...canonico.documento, autor: 'Fulano', origem_caminho: 'ensaio.md' });
+    const versao = await documentos.criarVersao(cliente, documento.id, canonico);
+    return { documentoId: documento.id, versaoId: versao.id };
+  });
+  const api = criarApi({ banco, leitura: () => { throw new Error('Leitura não usada.'); }, intervaloEventosMs: 20 });
+  const [, primeiro, , segundo] = canonico.blocos;
+  const { marca } = await (await escrever(api, '/api/grifos', { ancora: ancora(versaoId, primeiro!, 'A razão comum basta'), funcao: 'tese' })).json() as { marca: MarcaV2 };
+  const outro = await (await escrever(api, '/api/grifos', { ancora: ancora(versaoId, segundo!, 'algo que não se explica'), funcao: 'conceito' })).json() as { marca: MarcaV2 };
+  expect((await escrever(api, '/api/anotacoes', { ancora: marca.ancora, tipo: 'duvida', texto: 'Basta *mesmo*?', marca_id: marca.id })).status).toBe(201);
+  expect((await escrever(api, '/api/conexoes', { origem: marca.ancora, destino: { tipo: 'trecho', ancora: outro.marca.ancora },
+    relacao: 'tensao', justificativa: 'Uma pede explicação, a outra **nega** que tudo se explique.' })).status).toBe(201);
+  expect((await escrever(api, '/api/dificuldades', { ancora: outro.marca.ancora, tipo: 'salto_argumentativo', marca_id: outro.marca.id })).status).toBe(201);
+
+  const indice = await (await api.request(`/api/obsidian/v2/indice?base=${encodeURIComponent(BASE)}`)).json() as IndiceObsidianV2;
+  expect(validarIndiceObsidianV2(indice), JSON.stringify(validarIndiceObsidianV2.errors)).toBe(true);
+  expect(indice.notas.map((nota) => [nota.tipo, nota.caminho.split('/').slice(0, -1).join('/')])).toEqual([
+    ['documento', 'Ensaio - sobre a dúvida'],
+    ['grifo', 'Ensaio - sobre a dúvida/Grifos'], ['grifo', 'Ensaio - sobre a dúvida/Grifos'],
+    ['relacao', 'Ensaio - sobre a dúvida/Relações'],
+  ]);
+  expect((await api.request(`/api/obsidian/v2/indice?incluir=grifo,pinguim`)).status).toBe(400);
+  const soGrifos = await (await api.request(`/api/obsidian/v2/indice?base=${encodeURIComponent(BASE)}&incluir=grifo`)).json() as IndiceObsidianV2;
+  expect(soGrifos.notas.map((nota) => nota.tipo)).toEqual(['documento', 'grifo', 'grifo']);
+
+  const doDocumento = await (await api.request(`/api/obsidian/v2/documentos/${documentoId}?base=${encodeURIComponent(BASE)}`)).json() as {
+    nome: string; notas: { id: string; caminho: string; conteudo: string; sha256: string }[];
+  };
+  expect(doDocumento.nome).toBe('Ensaio - sobre a dúvida');
+  expect(doDocumento.notas.map((nota) => [nota.caminho, nota.sha256])).toEqual(indice.notas.map((nota) => [nota.caminho, nota.sha256]));
+  const relacao = doDocumento.notas.find((nota) => nota.caminho.includes('/Relações/'))!.conteudo;
+  expect(relacao).toContain('> A razão comum basta\n^origem');
+  expect(relacao).toContain('> algo que não se explica\n^destino');
+  expect(relacao).toContain('Uma pede explicação, a outra **nega** que tudo se explique.');
+  // Modelo D: a nota do leitor mora na nota do grifo (sem tipo) e a dificuldade vem do sinal.
+  const tese = doDocumento.notas.find((nota) => nota.id === marca.id)!.conteudo;
+  expect(tese).toContain('## Sua nota\n\nBasta *mesmo*?');
+  expect(tese).not.toContain('anotacao_tipo');
+  const conceito = doDocumento.notas.find((nota) => nota.id === outro.marca.id)!.conteudo;
+  expect(conceito).toContain('  - "margem/dificuldade/salto_argumentativo"');
+  expect(conceito).toContain('- **Salto no argumento** · marcada por você');
+  expect(doDocumento.notas[0]!.conteudo).toContain('## Dificuldades');
+  expect((await api.request(`/api/obsidian/v2/documentos/${'0'.repeat(26)}`)).status).toBe(404);
+
+  // ZIP: Margem/<documento>/…, o manifesto e os mesmos bytes a cada pedido.
+  const zip = new Uint8Array(await (await api.request(`/api/obsidian/v2/exportacao.zip?base=${encodeURIComponent(BASE)}`)).arrayBuffer());
+  const lidos = lerZip(zip);
+  expect(lidos.map((arquivo) => arquivo.nome)).toEqual([...indice.notas.map((nota) => `Margem/${nota.caminho}`), 'Margem/.margem/manifesto.json']);
+  expect(JSON.parse(lidos.at(-1)!.conteudo)).toEqual(indice);
+  for (const nota of doDocumento.notas) expect(lidos.find((arquivo) => arquivo.nome === `Margem/${nota.caminho}`)?.conteudo).toBe(nota.conteudo);
+  expect(new Uint8Array(await (await api.request(`/api/obsidian/v2/exportacao.zip?base=${encodeURIComponent(BASE)}`)).arrayBuffer())).toEqual(zip);
+  const soEste = await api.request(`/api/obsidian/v2/exportacao.zip?base=${encodeURIComponent(BASE)}&documento=${documentoId}`);
+  expect(soEste.headers.get('content-disposition')).toContain(encodeURIComponent('Ensaio - sobre a dúvida.zip'));
+  expect((await api.request(`/api/obsidian/v2/exportacao.zip?documento=${'0'.repeat(26)}`)).status).toBe(404);
+
+  // As rotas da V1 continuam respondendo.
+  expect((await api.request(`/api/documentos/${documentoId}/obsidian.md`)).status).toBe(200);
+  expect((await api.request('/api/obsidian/indice')).status).toBe(200);
 }));

@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
 import { Comando } from '../componentes/Comando';
-import {
-  COMANDO_DE_INSTALACAO, COMANDO_DE_INSTALACAO_WINDOWS, COMANDO_DE_LOGIN, CONFIG, downloadEmPreparacao,
-} from '../config';
+import { CONFIG, INSTALADORES, REQUISITOS, downloadEmPreparacao } from '../config';
 
 const N = CONFIG.nome;
-const PASTA = CONFIG.pastaDeInstalacao;
-const PASTA_WIN = CONFIG.pastaDeInstalacaoWindows;
-const CMD = CONFIG.comando;
+
+/** Nome fixo do arquivo de um instalador (de `config.ts`). */
+const arquivo = (id: string): string => INSTALADORES.find((i) => i.id === id)?.arquivo ?? id;
 
 export type Grupo = 'Começar' | 'Integrações' | 'Manutenção' | 'Ajuda';
 
@@ -36,86 +34,70 @@ function Passos({ children }: { children: ReactNode }): ReactNode {
 const instalacao: PaginaDeDoc = {
   slug: 'instalacao',
   titulo: 'Instalação',
-  resumo: `Instale o ${N} no Linux, no macOS ou no Windows e entre com a sua conta do ChatGPT.`,
+  resumo: `Baixe o ${N} para o seu sistema, instale como qualquer app e passe pelo aviso de app sem assinatura.`,
   grupo: 'Começar',
   corpo: () => (
     <>
-      <p>O {N} roda no Docker, num pacote que traz o app, o banco de dados e o Codex. Você instala uma vez e abre no navegador, em <code>{CONFIG.enderecoLocal}</code>.</p>
+      <p>O {N} é um app de desktop com tudo dentro: o leitor, o banco de dados e o Codex. Não é preciso instalar mais nada nem usar o terminal. Baixe o instalador do seu sistema na <a href="/download/">página de download</a>.</p>
       <nav className="fichas-doc" aria-label="Escolha o sistema">
-        <a href="#linux">Linux</a><a href="#macos">macOS</a><a href="#windows">Windows</a><a href="#codex">Entrar no ChatGPT</a>
+        <a href="#windows">Windows</a><a href="#macos">macOS</a><a href="#linux">Linux</a><a href="#primeira-vez">Primeira vez</a>
       </nav>
+      {downloadEmPreparacao && <Nota titulo="Download em preparação"><p>O primeiro release ainda não foi publicado. Os passos abaixo valem quando os instaladores saírem.</p></Nota>}
 
       <h2 id="requisitos">Antes de começar</h2>
       <ul>
-        <li>Linux, macOS ou Windows 10/11, em {CONFIG.arquiteturas}.</li>
-        <li>Uns 5 GB livres em disco, mais o espaço dos seus livros (e uns 1 GB a mais se quiser o <a href="/docs/quadros/">acervo de quadros</a>).</li>
+        <li><strong>Windows:</strong> {REQUISITOS.windows}</li>
+        <li><strong>macOS:</strong> {REQUISITOS.macos}</li>
+        <li><strong>Linux:</strong> {REQUISITOS.linux}</li>
         <li>Uma conta do ChatGPT num plano que inclua o Codex.</li>
-        <li>Internet durante a instalação, para baixar o pacote.</li>
+        <li>Espaço em disco para o app (veja o tamanho de cada instalador na <a href="/download/">página de download</a>) e para os seus livros.</li>
       </ul>
-
-      <h2 id="linux">Linux</h2>
-      <Passos>
-        <li>
-          <p>Instale o Docker Engine com o plugin Compose, pelo guia oficial da sua distribuição. Confira se funcionou:</p>
-          <Comando>docker compose version</Comando>
-        </li>
-        <li>
-          <p>Para usar o Docker sem <code>sudo</code>, entre no grupo <code>docker</code> e saia e entre de novo na sessão:</p>
-          <Comando>sudo usermod -aG docker $USER</Comando>
-        </li>
-        <li>
-          <p>Baixe e rode o instalador. Ele fica em <code>instalar.sh</code>, para você ler antes, se quiser:</p>
-          <Comando>{COMANDO_DE_INSTALACAO}</Comando>
-        </li>
-        <li><p>Abra <code>{CONFIG.enderecoLocal}</code> no navegador e siga para <a href="#codex">Entrar no ChatGPT</a>.</p></li>
-      </Passos>
-
-      <h2 id="macos">macOS</h2>
-      <Passos>
-        <li><p>Instale o Docker Desktop para Mac (Apple Silicon ou Intel) e abra-o. Espere o ícone da baleia indicar que está rodando.</p></li>
-        <li>
-          <p>Abra o Terminal e rode o instalador:</p>
-          <Comando>{COMANDO_DE_INSTALACAO}</Comando>
-        </li>
-        <li><p>Abra <code>{CONFIG.enderecoLocal}</code> no navegador e siga para <a href="#codex">Entrar no ChatGPT</a>.</p></li>
-      </Passos>
 
       <h2 id="windows">Windows</h2>
       <Passos>
-        <li><p>Instale o Docker Desktop para Windows. Se ele pedir para ativar o WSL 2, aceite e reinicie o computador. Depois, abra o Docker Desktop e espere ele indicar que está rodando.</p></li>
+        <li><p>Baixe <code>{arquivo('windows')}</code> e abra o arquivo.</p></li>
         <li>
-          <p>Abra o PowerShell (não precisa ser como administrador) e rode o instalador:</p>
-          <Comando rotulo="PowerShell">{COMANDO_DE_INSTALACAO_WINDOWS}</Comando>
+          <p>Se aparecer a tela azul <strong>"O Windows protegeu o computador"</strong> (o SmartScreen), clique em <strong>Mais informações</strong> e depois em <strong>Executar assim mesmo</strong>.</p>
         </li>
-        <li><p>Abra <code>{CONFIG.enderecoLocal}</code> no navegador e siga para <a href="#codex">Entrar no ChatGPT</a>.</p></li>
+        <li><p>O instalador põe o {N} na sua conta do Windows, sem pedir senha de administrador, e cria um atalho no menu Iniciar.</p></li>
       </Passos>
-      <Nota titulo="Prefere o WSL?">
-        <p>Se você já usa uma distribuição Linux no WSL 2 com a integração do Docker Desktop ligada, pode seguir os passos do Linux dentro dela.</p>
+      <Nota tipo="aviso" titulo="Por que o Windows avisa">
+        <p>O {N} ainda não tem assinatura digital da Microsoft. O aviso aparece para todo app novo sem assinatura e some quando o app ganhar uma. O código é aberto: você pode conferir o que ele faz.</p>
       </Nota>
 
-      <h2 id="codex">Entrar no ChatGPT</h2>
-      <p>O {N} lê os seus textos pelo Codex, com a sua conta do ChatGPT. O login é feito uma vez, dentro do pacote instalado. O instalador cria o comando <code>{CMD}</code>; com ele:</p>
+      <h2 id="macos">macOS</h2>
+      <Nota titulo="Em breve">
+        <p>A primeira versão do {N} é para Windows e Linux. A versão para macOS está em preparação e aparece na <a href="/download/">página de download</a> quando sair.</p>
+      </Nota>
+
+      <h2 id="linux">Linux</h2>
+      <p>Há dois formatos. O <strong>AppImage</strong> roda em qualquer distribuição e se atualiza sozinho; o <strong>.deb</strong> instala pelo gerenciador de pacotes do Debian, do Ubuntu e derivados.</p>
+      <h3 id="appimage">AppImage</h3>
       <Passos>
+        <li><p>Baixe <code>{arquivo('linux-appimage')}</code> e guarde numa pasta que vai ficar (por exemplo, <code>~/Aplicativos</code>).</p></li>
         <li>
-          <p>Rode, de qualquer pasta:</p>
-          <Comando>{`${CMD} login`}</Comando>
-          <p>Sem o comando, o equivalente na pasta da instalação (<code>{PASTA}</code>; no Windows, <code>{PASTA_WIN}</code>) é:</p>
-          <Comando>{`cd ${PASTA}\n${COMANDO_DE_LOGIN}`}</Comando>
+          <p>Torne o arquivo executável: no gerenciador de arquivos, <strong>Propriedades → Permissões → Permitir executar como programa</strong>. Ou, no terminal:</p>
+          <Comando>{`chmod +x ${arquivo('linux-appimage')}`}</Comando>
         </li>
-        <li><p>O terminal mostra um endereço e um código. Abra o endereço no navegador, entre na sua conta do ChatGPT e digite o código.</p></li>
-        <li><p>Volte ao {N} e clique em <strong>Verificar de novo</strong> na tela de boas-vindas.</p></li>
+        <li><p>Dê dois cliques no arquivo para abrir.</p></li>
+      </Passos>
+      <Nota titulo="Se o AppImage não abrir">
+        <p>Algumas distribuições novas não trazem a biblioteca FUSE 2, que o AppImage usa. No Ubuntu 22.04 ou mais novo, instale o pacote <code>libfuse2</code> (no 24.04, <code>libfuse2t64</code>) ou use o <code>.deb</code>.</p>
+      </Nota>
+      <h3 id="deb">Pacote .deb</h3>
+      <Passos>
+        <li><p>Baixe <code>{arquivo('linux-deb')}</code> e abra com a central de programas da sua distribuição. Ou, no terminal, na pasta do download:</p>
+          <Comando>{`sudo apt install ./${arquivo('linux-deb')}`}</Comando>
+        </li>
+        <li><p>Abra o {N} pelo menu de aplicativos.</p></li>
       </Passos>
 
-      <h2 id="boas-vindas">A tela de boas-vindas</h2>
-      <p>Na primeira vez que você abre <code>{CONFIG.enderecoLocal}</code>, o {N} mostra a tela <strong>Boas-vindas ao {N}</strong>. Ela confere, item por item, o banco de dados, a preparação de textos, se o Codex está instalado e se está conectado à sua conta. O que faltar vem com o comando exato para resolver, com botão de copiar.</p>
-      <ul>
-        <li><strong>Abrir o exemplo já marcado</strong> abre um conto curto de domínio público, já com as marcas, para você ver o leitor antes de gastar cota.</li>
-        <li><strong>Concluir</strong> fecha a tela de vez. <strong>Depois</strong> só a esconde por agora.</li>
-      </ul>
-      <p>Depois de concluída, a mesma checagem continua em <strong>Primeiros passos</strong>, na barra lateral, e um aviso aparece no topo se o Codex sair da conta ou a cota acabar.</p>
-      <Nota titulo="O login fica no seu computador">
-        <p>As credenciais do Codex ficam guardadas na instalação, no seu computador. O {N} não as envia para lugar nenhum.</p>
-      </Nota>
+      <h2 id="primeira-vez">Primeira vez</h2>
+      <p>Ao abrir pela primeira vez, o {N} pede duas coisas:</p>
+      <Passos>
+        <li><p><strong>A pasta da biblioteca.</strong> Escolha onde os seus livros, marcas e notas vão morar, como o cofre do Obsidian. Pode ser uma pasta nova.</p></li>
+        <li><p><strong>Entrar no ChatGPT.</strong> O app abre o navegador na página de login da OpenAI. Entre com a sua conta e volte ao {N}: ele percebe sozinho que o login deu certo.</p></li>
+      </Passos>
       <p>Pronto. Continue em <a href="/docs/primeiros-passos/">Primeiros passos</a>.</p>
     </>
   ),
@@ -124,44 +106,47 @@ const instalacao: PaginaDeDoc = {
 const primeirosPassos: PaginaDeDoc = {
   slug: 'primeiros-passos',
   titulo: 'Primeiros passos',
-  resumo: 'Adicione um texto, prepare a leitura, leia com as marcas, anote, pergunte e conecte trechos.',
+  resumo: 'Escolha a pasta da biblioteca, entre no ChatGPT, adicione um texto e leia com as marcas.',
   grupo: 'Começar',
   corpo: () => (
     <>
-      <h2 id="adicionar">1. Adicione um texto</h2>
+      <p>O {N} é um assistente de estudos: para livros, artigos, poemas, vídeos e obras de arte, ele mostra o que cada trecho faz, como os trechos se ligam e o que vale perguntar. A ideia não é ler mais depressa, e sim entender melhor. Estes são os primeiros passos.</p>
+      <h2 id="pasta">1. Escolha a pasta da biblioteca</h2>
+      <p>Na primeira vez que abre, o {N} pergunta onde guardar a biblioteca. Tudo fica nessa pasta: os arquivos originais, o que é gerado a partir deles, o banco de dados com as marcas, as notas, as conversas e o progresso de leitura. Ela é sua: para fazer <a href="/docs/backup/">backup</a>, copie a pasta.</p>
+      <ul>
+        <li>Prefira uma pasta no disco do computador. Uma pasta sincronizada (OneDrive, iCloud, Dropbox) pode corromper o banco se a sincronização mexer nela com o app aberto.</li>
+        <li>Para trocar de pasta depois, use as <strong>Configurações</strong> do app.</li>
+      </ul>
+
+      <h2 id="chatgpt">2. Entre com a sua conta do ChatGPT</h2>
+      <p>O {N} lê os seus textos pelo Codex, com a sua conta do ChatGPT. O app abre o navegador na página de login da OpenAI; entre e volte ao app. O login fica guardado no seu computador e só é pedido de novo se você sair da conta.</p>
+      <p>Na tela de boas-vindas, <strong>Abrir o exemplo já marcado</strong> abre um conto curto de domínio público, já com as marcas, para você ver o leitor antes de gastar cota.</p>
+
+      <h2 id="adicionar">3. Adicione um texto</h2>
       <p>Clique em <strong>+</strong> na barra lateral (a página <strong>Adicionar à biblioteca</strong>) e solte os arquivos na área tracejada: PDF, EPUB, Markdown, TXT, vídeo ou áudio, vários de uma vez. Também dá para colar um texto ou um link do YouTube. Os detalhes estão em <a href="/docs/importar/">Adicionar textos e vídeos</a>.</p>
       <p>O PDF aparece como o original. O texto é extraído por trás, invisível, só para marcar e buscar.</p>
 
-      <h2 id="preparar">2. Prepare a leitura</h2>
-      <p>No documento, escolha o <strong>modo de leitura</strong> que combina com o texto: argumentativo, filosófico, econômico, literário, matemático, jornalístico, jurídico e outros. Depois, <strong>Preparar leitura</strong>.</p>
-      <p>A preparação roda no seu computador e usa o Codex com a sua conta. Um capítulo leva alguns minutos. Você pode ler enquanto isso; as marcas aparecem quando ficam prontas.</p>
+      <h2 id="preparar">4. Analise o texto</h2>
+      <p>Na página do documento, clique em <strong>Analisar</strong>. O Codex reconhece o tipo de texto (conto, poema, ensaio, artigo científico, texto de filosofia, de economia, de direito e outros) e lê com o modo de leitura certo para ele; se quiser, troque o tipo antes. Ele grifa os trechos que importam, diz a função de cada um, liga os trechos entre si e aponta as passagens difíceis.</p>
+      <p>A preparação roda no seu computador e usa o Codex com a sua conta. Um capítulo leva alguns minutos. Você pode ler enquanto isso; as marcas aparecem quando ficam prontas. O app precisa ficar aberto (pode estar minimizado) para a preparação andar.</p>
 
-      <h2 id="ler">3. Leia com as marcas</h2>
+      <h2 id="ler">5. Leia com as marcas</h2>
       <ul>
-        <li><strong>Atenção:</strong> quatro níveis, de <em>Texto puro</em> (sem marcas) a <em>Aprofundar</em>. Comece pelo <em>Esqueleto</em> para ver só o essencial.</li>
+        <li><strong>Comentários na margem:</strong> cada grifo do Codex tem um comentário curto, que abre na margem, ao lado do trecho.</li>
+        <li><strong>Marcas:</strong> o botão <strong>Marcas</strong> mostra ou esconde os grifos, para ler o texto limpo.</li>
         <li><strong>Estilo:</strong> marca-texto ou sublinhado.</li>
-        <li><strong>Notas na margem:</strong> passe o cursor sobre uma marca para ver a nota.</li>
-        <li><strong>Primeiro eu:</strong> no painel de informações, faz as marcas da IA esperarem a sua primeira anotação no capítulo.</li>
       </ul>
 
-      <h2 id="marcar">4. Grife e anote</h2>
-      <p>Selecione um trecho. Na barra que aparece, <strong>Grifar</strong> marca o trecho; <strong>Anotar</strong> abre uma nota presa a ele. As suas notas ficam na mesma margem das notas da IA.</p>
-
-      <h2 id="perguntar">5. Pergunte ao texto</h2>
-      <p>Selecione um trecho e clique em <strong>Perguntar</strong>. A resposta cita os parágrafos em que se apoia e fica guardada junto do trecho.</p>
-
-      <h2 id="conectar">6. Conecte trechos</h2>
-      <p>Selecione um trecho, clique em <strong>Conectar</strong> e escolha outro trecho, do mesmo texto ou de outro. As conexões aparecem nos dois lados.</p>
+      <h2 id="marcar">6. Grife, pergunte e conecte</h2>
+      <p>Quando o capítulo é compreendido, as relações entre os trechos aparecem à esquerda do texto; veja <a href="/docs/relacoes/">Grifos e relações</a>.</p>
+      <p>Selecione um trecho. Na barra que aparece, <strong>Grifar</strong> marca o trecho e abre o balão do grifo: escolha a função (as do modo do texto, ou as de outros modos em <strong>Outros olhares</strong>) e escreva a sua nota, que vive dentro do grifo e se salva sozinha. <strong>Perguntar</strong> faz uma pergunta ao trecho, e a resposta cita os parágrafos em que se apoia. <strong>Conectar</strong> liga o trecho a outro, do mesmo texto ou de outro.</p>
+      <p>Tudo isso fica reunido em <strong>Notas</strong>, a central do que você e o Codex fizeram nos textos, com busca, filtros e exportação. E <strong>Perguntar</strong>, na barra lateral, abre uma conversa sobre a biblioteca inteira, com as citações de onde vem cada resposta.</p>
 
       <h2 id="retomar">7. Retome de onde parou</h2>
       <p>O {N} guarda a posição de cada documento. A página inicial da biblioteca mostra o que está em andamento.</p>
 
       <h2 id="quadros">8. Quadros</h2>
-      <p>Na biblioteca, <strong>Quadros</strong> abre obras de arte em domínio público com análise guiada. Veja <a href="/docs/quadros/">Quadros</a> para baixar o acervo.</p>
-
-      <Nota titulo="Abrir como aplicativo">
-        <p>No Chrome ou no Edge, abra <code>{CONFIG.enderecoLocal}</code> e use o ícone de instalar na barra de endereço. O {N} passa a abrir numa janela própria.</p>
-      </Nota>
+      <p>Em <strong>Adicionar → Quadro</strong>, envie a imagem de uma obra de arte: o {N} identifica a obra e prepara uma análise guiada. Veja <a href="/docs/quadros/">Quadros</a>.</p>
     </>
   ),
 };
@@ -173,7 +158,28 @@ const importar: PaginaDeDoc = {
   grupo: 'Começar',
   corpo: () => (
     <>
-      <p>Tudo entra pela página <strong>Adicionar à biblioteca</strong> (o <strong>+</strong> da barra lateral). Ela tem uma área para soltar arquivos, um campo de link, um de texto colado e, recolhido, o <strong>Avançado</strong>.</p>
+      <p>Tudo entra pela página <strong>Adicionar</strong> (o <strong>+</strong> da barra lateral), em três abas: <strong>Documento</strong> (arquivos, texto colado e, recolhido, o <strong>Avançado</strong>), <strong>Vídeo</strong> (link do YouTube, ou vídeo e áudio seus) e <strong>Quadro</strong> (a imagem de uma obra de arte).</p>
+
+      <h2 id="tipos">O que dá para adicionar</h2>
+      <div className="tabela-doc">
+        <table>
+          <thead><tr><th>Tipo</th><th>Arquivos ou origem</th><th>Por onde</th></tr></thead>
+          <tbody>
+            <tr><td>PDF</td><td><code>.pdf</code>, inclusive escaneado</td><td>Área de soltar</td></tr>
+            <tr><td>Livro digital</td><td><code>.epub</code></td><td>Área de soltar</td></tr>
+            <tr><td>Texto</td><td><code>.md</code>, <code>.markdown</code>, <code>.txt</code></td><td>Área de soltar</td></tr>
+            <tr><td>Texto colado</td><td>Qualquer texto</td><td>Colar texto</td></tr>
+            <tr><td>Página da web</td><td>Artigo, post, notícia ou PDF aberto no navegador</td><td><a href="/docs/extensao/">Extensão</a></td></tr>
+            <tr><td>Vídeo do YouTube</td><td>Link de um vídeo (não playlist nem canal)</td><td>Link</td></tr>
+            <tr><td>Vídeo seu</td><td><code>.mp4</code>, <code>.m4v</code>, <code>.mov</code>, <code>.webm</code>, <code>.mkv</code> + transcrição <code>.json</code></td><td>Área de soltar</td></tr>
+            <tr><td>Áudio seu</td><td><code>.mp3</code>, <code>.m4a</code>, <code>.aac</code>, <code>.ogg</code>, <code>.oga</code>, <code>.opus</code> + transcrição <code>.json</code></td><td>Área de soltar</td></tr>
+            <tr><td>Marcas de outro arquivo</td><td><code>.json</code> do {N}</td><td>Avançado</td></tr>
+            <tr><td>Print de questão</td><td><code>.png</code>, <code>.jpg</code></td><td>Colar com <kbd>Ctrl</kbd>+<kbd>V</kbd> (veja <a href="/docs/questoes/">Resolver questões</a>)</td></tr>
+            <tr><td>Obra de arte</td><td>Imagem da obra</td><td>Aba <a href="/docs/quadros/">Quadro</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Uma questão colada como print vira uma página e a resolução começa sozinha; veja <a href="/docs/questoes/">Resolver questões</a>.</p>
 
       <h2 id="arquivos">Arquivos</h2>
       <p>Arraste para a área <strong>Solte arquivos aqui</strong> ou use <strong>Escolher arquivos</strong>. Pode soltar vários de uma vez; o {N} reconhece cada um pela extensão:</p>
@@ -196,7 +202,7 @@ const importar: PaginaDeDoc = {
         <li>O {N} guarda só o áudio, para a sincronia com o texto e para ouvir quando o vídeo não pode ser incorporado.</li>
         <li>Se o dono do vídeo não deixa tocar fora do YouTube, o leitor mostra <strong>Assistir no YouTube</strong> e <strong>Ouvir o áudio local</strong>.</li>
         <li>Sem legendas, o vídeo entra "sem transcrição": toca assim mesmo, sem o texto.</li>
-        <li>A busca no YouTube usa o <code>yt-dlp</code>, que já vem dentro da instalação. Playlists e canais não são aceitos, só vídeos.</li>
+        <li>A busca no YouTube usa o <code>yt-dlp</code>, que já vem dentro do app. Playlists e canais não são aceitos, só vídeos.</li>
       </ul>
       <p>Artigos e outras páginas da web entram pela <a href="/docs/extensao/">extensão do navegador</a>.</p>
 
@@ -225,27 +231,127 @@ const importar: PaginaDeDoc = {
 const quadros: PaginaDeDoc = {
   slug: 'quadros',
   titulo: 'Quadros',
-  resumo: 'Obras de arte em domínio público com análise guiada: o que é e como baixar o acervo.',
+  resumo: 'Adicione imagens de obras de arte e leia cada uma com uma análise guiada.',
   grupo: 'Começar',
   corpo: () => (
     <>
-      <p><strong>Quadros</strong> é a parte da biblioteca com obras de arte: pinturas e algumas esculturas, em reproduções de domínio público ou com licença livre. Cada quadro abre em tela cheia, com zoom, regiões destacadas na própria imagem e uma análise guiada que explica o que olhar e por quê, separando o que é documentado do que é interpretação.</p>
+      <p><strong>Quadros</strong> é a parte da biblioteca para obras de arte. Você traz as imagens das obras que quer estudar, e o {N} prepara para cada uma uma análise guiada: o que olhar, onde e por quê, separando o que é documentado do que é interpretação. O {N} traz duas obras de exemplo; o resto da coleção é a sua.</p>
 
-      <h2 id="baixar">Baixar o acervo</h2>
-      <p>O acervo vem num pacote à parte, para a instalação não carregar meio gigabyte que nem todo mundo quer: cerca de 137 obras, uns 490 MB. Antes de instalar, Quadros mostra duas obras de exemplo e a mensagem "Nenhum quadro ainda.", com o botão <strong>Baixar o acervo de quadros</strong> e o comando para instalar.</p>
-      <p>Para baixar e instalar de uma vez:</p>
-      <Comando>{`${CMD} arte instalar`}</Comando>
-      <p>Se você baixou o pacote pelo navegador (o arquivo <code>acervo-de-quadros-&lt;versão&gt;.tar.gz</code>, na <a href={CONFIG.urlDoRelease}>página do release</a>), passe o caminho dele:</p>
-      <Comando>{`${CMD} arte instalar ~/Downloads/acervo-de-quadros-<versão>.tar.gz`}</Comando>
-      {downloadEmPreparacao && <Nota titulo="Pacote em preparação"><p>O primeiro release ainda não foi publicado. Até lá, o botão aparece indisponível e o comando sem arquivo avisa que o pacote não existe.</p></Nota>}
-      <p>O instalador confere o pacote inteiro antes de mexer em qualquer coisa: o SHA-256 de cada arquivo e a licença de cada obra. Rodar de novo não muda nada, e uma obra que você mesmo tenha posto no acervo nunca é sobrescrita. Recarregue a página no fim.</p>
-      <p>As obras ficam no volume de dados da instalação: entram no <a href="/docs/manutencao/#backup">backup</a> e continuam depois de atualizar.</p>
+      <h2 id="adicionar">Adicionar uma obra</h2>
+      <Passos>
+        <li><p>Abra <strong>Adicionar</strong> e escolha a aba <strong>Quadro</strong>.</p></li>
+        <li><p>Envie a imagem da obra (JPEG, PNG ou WebP). Se souber, preencha o <strong>título</strong> e o <strong>artista</strong>: ajudam a achar a obra certa.</p></li>
+        <li><p>O {N} identifica a obra (título, artista e data) em fontes abertas, como o Wikidata, a Wikipédia e o Wikimedia Commons, e prepara a análise pelo Codex, com a sua conta. Se não reconhecer a obra, a análise segue só pela imagem e diz isso.</p></li>
+      </Passos>
+      <p>Use imagens que você tem o direito de usar: fotos suas, reproduções em domínio público ou com licença livre. As imagens ficam na pasta da biblioteca, entram no <a href="/docs/backup/">backup</a> e não saem do seu computador, a não ser o que o Codex precisa ler para a análise.</p>
 
-      <h2 id="creditos">Créditos e licenças</h2>
-      <p>Só entram obras cuja reprodução pode ser redistribuída: domínio público, CC0, ou CC BY e CC BY-SA com o autor da fotografia identificado. Cada quadro mostra a <strong>Licença</strong> e o <strong>Crédito</strong> da imagem no painel ao lado, com o link da fonte (quase sempre o Wikimedia Commons). O pacote traz também a lista completa de créditos, que fica na instalação em <code>/dados/arte/obras/.pacote/CREDITOS.md</code>.</p>
+      <h2 id="ler">Ler um quadro</h2>
+      <ul>
+        <li><strong>Palco:</strong> a obra inteira, com zoom pela roda, pela pinça ou pelos botões, e arrasto para andar por ela.</li>
+        <li><strong>Regiões:</strong> as partes da obra de que a análise fala aparecem desenhadas sobre a imagem; passar o cursor numa delas a acende.</li>
+        <li><strong>Painel:</strong> as abas <strong>Info</strong> (a obra, onde está, a imagem), <strong>Análise</strong> (as afirmações por tema, como composição, técnica, iconografia e contexto, cada uma com o tipo, de fato documentado a inferência da IA, e o grau de confiança) e <strong>Fontes</strong> (de onde veio cada informação).</li>
+        <li><strong>Percorrer</strong> (tecla <kbd>P</kbd>): a câmera vai de afirmação em afirmação, enquadra as regiões dela e mostra o texto ao lado.</li>
+        <li><strong>Análise curta</strong> (<kbd>Espaço</kbd>): um passeio pela obra com a legenda acendendo palavra por palavra e, quando há narração, em voz.</li>
+      </ul>
+    </>
+  ),
+};
 
-      <Nota titulo="Para desligar">
-        <p>Quem não quiser a área de Quadros pode tirá-la com <code>MARGEM_RECURSOS=-arte</code> no arquivo <code>.env</code> da pasta da instalação, seguido de <code>{`${CMD} iniciar`}</code>.</p>
+const relacoes: PaginaDeDoc = {
+  slug: 'relacoes',
+  titulo: 'Grifos e relações',
+  resumo: 'Os grifos por função, a nota na margem e as relações entre os trechos, desenhadas à esquerda do texto.',
+  grupo: 'Começar',
+  corpo: () => (
+    <>
+      <h2 id="grifos">Grifos</h2>
+      <p>Cada grifo tem um modo de leitura e uma função dentro dele: tese e objeção num ensaio, voz narrativa e virada num conto, imagem e ritmo num poema. A cor vem da função. O texto nunca muda de fonte nem de peso: o grifo é desenhado por trás das letras. Na margem fica o número do grifo; clique nele para abrir o comentário do Codex.</p>
+      <p>Clique num grifo para abrir o balão: as funções do modo do texto, as dos outros modos em <strong>Outros olhares</strong>, a sua nota (que vive dentro do grifo) e <strong>Perguntar</strong>. Os grifos do Codex também se corrigem ou se apagam ali; apagar sempre pede confirmação.</p>
+      <ul>
+        <li><strong>Marcas:</strong> o botão <strong>Marcas</strong> mostra ou esconde os grifos.</li>
+        <li><strong>Estilo:</strong> grifo (faixa com a linha de base, o padrão), marca-texto, sublinhado ou só na margem; traço de régua ou à mão; e a intensidade, em <strong>Aa</strong>.</li>
+      </ul>
+
+      <h2 id="relacoes">Relações entre os trechos</h2>
+      <p>Quando você clica em <strong>Analisar</strong> na página do documento, o {N} lê o capítulo como um todo e liga os trechos que conversam entre si. Cada relação aparece à esquerda do texto como uma chave de uma cor: um colchete em cada trecho e uma linha que os une, com um círculo no meio.</p>
+      <ul>
+        <li>Pare o cursor no círculo: a relação acende, os dois trechos ficam em destaque, o resto esmaece e um cartão diz o que a relação é (<em>sustenta</em>, <em>desenvolve</em>, <em>pressupõe</em>, <em>contrasta com</em>, <em>exemplifica</em>, <em>retoma</em>, <em>responde a</em>, <em>tensiona</em>, <em>ecoa</em>) e por quê.</li>
+        <li>Se os dois trechos estão longe, o texto entre eles se recolhe para eles ficarem lado a lado; no PDF, uma janela mostra um em cima do outro.</li>
+        <li>Em <strong>Aa</strong>, as relações aparecem como chaves ou como bolinhas; <kbd>[</kbd> esconde e mostra.</li>
+      </ul>
+
+      <h2 id="conexoes">Suas conexões</h2>
+      <p>Selecione um trecho e clique em <strong>Conectar</strong> para ligar a outro trecho, a outro documento da biblioteca ou a uma nota externa. Escolha a relação (<em>Semelhança</em>, <em>Contraste</em>, <em>Tensão</em>, <em>Pré-requisito</em>, <em>Desenvolve</em>, <em>Exemplo</em>) e escreva o que conecta os dois. Conexões sugeridas pela IA podem ser aceitas ou rejeitadas. Todas vão para o <a href="/docs/obsidian/">Obsidian</a>.</p>
+    </>
+  ),
+};
+
+const videos: PaginaDeDoc = {
+  slug: 'videos',
+  titulo: 'Vídeos',
+  resumo: 'Vídeos do YouTube no player oficial, com a transcrição marcada e a palavra falada acesa no texto.',
+  grupo: 'Começar',
+  corpo: () => (
+    <>
+      <p>Um vídeo do YouTube entra pelo link (veja <a href="/docs/importar/#youtube">Adicionar textos e vídeos</a>). O {N} monta o texto com as legendas do próprio vídeo, e esse texto é um documento como os outros: dá para preparar a leitura, grifar, anotar, perguntar e conectar.</p>
+
+      <h2 id="analisar">Analisar um vídeo</h2>
+      <p>Na página do vídeo, <strong>Analisar</strong> faz a análise própria do vídeo: a transcrição é passada a limpo (pontuação e maiúsculas, sem perder o tempo de cada palavra), o Codex grifa e liga os trechos como num texto, divide o vídeo em <strong>partes</strong> por assunto e escolhe alguns <strong>momentos</strong> (um conceito, um dado, um contexto, uma pergunta) que aparecem sobre o vídeo no instante certo.</p>
+
+      <h2 id="assistir">Assistir</h2>
+      <ul>
+        <li>O vídeo toca no <strong>player oficial do YouTube</strong>, embutido ao lado do texto (no celular, acima). Cada reprodução conta para o canal, como no YouTube.</li>
+        <li>A palavra falada acende no texto, e a página acompanha a fala. Se você rolar para outro lugar, <strong>Voltar ao trecho atual</strong> traz de volta.</li>
+        <li>Clique numa palavra e o vídeo vai até ali.</li>
+        <li>Ao lado do vídeo, as <strong>partes</strong> e os <strong>momentos</strong>, clicáveis; um momento abre um cartão curto com a explicação e <strong>Ir ao trecho</strong>.</li>
+        <li>Barra do player: tocar e pausar, voltar e avançar 10 segundos, velocidade, capítulos e o tempo que falta.</li>
+        <li>Teclado: <kbd>Espaço</kbd> ou <kbd>K</kbd> toca e pausa; <kbd>←</kbd> e <kbd>→</kbd> ou <kbd>J</kbd> e <kbd>L</kbd> voltam e avançam.</li>
+      </ul>
+      <Nota titulo="Quando o vídeo não pode ser incorporado">
+        <p>Se o dono do vídeo não deixa tocar fora do YouTube, o leitor oferece <strong>Assistir no YouTube</strong> e, quando há, <strong>Ouvir o áudio local</strong>, que continua acendendo o texto.</p>
+      </Nota>
+
+      <h2 id="seus">Vídeo e áudio seus</h2>
+      <p>Um vídeo ou áudio seu, com a transcrição em <code>.json</code>, toca do mesmo jeito, com o texto alinhado palavra por palavra. Veja <a href="/docs/importar/#midia">Vídeo e áudio próprios</a>.</p>
+    </>
+  ),
+};
+
+const questoes: PaginaDeDoc = {
+  slug: 'questoes',
+  titulo: 'Resolver questões',
+  resumo: 'Cole o print de uma questão, ou recorte-a na página do PDF, e receba a resolução passo a passo, com a matemática bem escrita.',
+  grupo: 'Começar',
+  corpo: () => (
+    <>
+      <p>O {N} resolve exercícios de livros, listas e provas: matemática, física, economia, o que vier. A resolução vem em passos, para você acompanhar e conferir, não só a resposta.</p>
+
+      <h2 id="print">Resolver a partir de um print</h2>
+      <Passos>
+        <li><p>Tire o print da questão (ou uma foto) e cole com <kbd>Ctrl</kbd>+<kbd>V</kbd> (<kbd>Cmd</kbd>+<kbd>V</kbd> no Mac) no Início, na Biblioteca ou em <strong>Adicionar</strong>. Também dá para arrastar o arquivo ou usar <strong>Resolver questão → Escolher imagem</strong>. Aceita PNG e JPEG; outros formatos que o navegador abre são convertidos na hora.</p></li>
+        <li><p>A questão entra na biblioteca como "Questão de" e a data, e o {N} abre a resolução sozinho quando ela fica pronta. O mesmo print colado de novo abre a questão que já estava lá.</p></li>
+      </Passos>
+
+      <h2 id="recortar">Resolver uma questão num PDF</h2>
+      <Passos>
+        <li><p>Abra o PDF em que a questão está. Pode ser escaneado: o Codex lê a imagem.</p></li>
+        <li><p>No leitor, use <strong>Resolver exercício</strong> (no menu do documento ou com <kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>S</kbd>) e arraste um retângulo sobre a questão, como num print. Ajuste pelas alças e clique em <strong>Resolver</strong>.</p></li>
+        <li><p>O retângulo fica desenhado na página e, na margem, a nota mostra <strong>Resolvendo…</strong>; depois, <strong>Exercício resolvido</strong>. Passe o cursor na nota para ver o enunciado e a ideia; clique para abrir.</p></li>
+      </Passos>
+      <p>Num texto que não é PDF, selecione a questão e clique em <strong>Resolver</strong> na barra da seleção.</p>
+
+      <h2 id="ler">Ler a resolução</h2>
+      <ul>
+        <li>Para cada item: a <strong>ideia</strong>, os <strong>passos</strong> com as contas destacadas, a <strong>resposta</strong> e a <strong>conferência</strong>.</li>
+        <li><strong>Próximo passo</strong> mostra um passo de cada vez, para você tentar antes; <strong>Mostrar todos</strong> e <strong>Ver a resposta</strong> pulam.</li>
+        <li>Não entendeu um passo? Pergunte no campo embaixo: a resposta continua presa à questão.</li>
+        <li>A janela pode ficar ao lado, flutuante ou em tela cheia.</li>
+      </ul>
+
+      <h2 id="livro">Um livro inteiro</h2>
+      <p><strong>Exercícios resolvidos</strong> lista as resoluções do documento. A <strong>Página de exercícios</strong> acha os exercícios do livro, resolve em lotes pequenos (a cota é finita) e exporta tudo em LaTeX e PDF.</p>
+      <Nota tipo="aviso" titulo="Confira">
+        <p>A resolução é feita por IA e pode errar. A conferência no fim de cada item ajuda; para nota de prova, confira os passos.</p>
       </Nota>
     </>
   ),
@@ -283,9 +389,9 @@ const extensao: PaginaDeDoc = {
       </Passos>
 
       <h2 id="servidor">Servidor</h2>
-      <p>O servidor padrão é <code>{CONFIG.enderecoLocal}</code>, o endereço da sua instalação. Só mude se você trocou a porta.</p>
+      <p>A extensão fala com o app de desktop no seu computador, em <code>{CONFIG.enderecoLocal}</code>. É o endereço padrão: não precisa mudar. O {N} precisa estar aberto (pode estar minimizado) para receber o que você envia.</p>
       <Nota tipo="aviso" titulo="Se o teste de conexão falhar">
-        <p>A instalação precisa conhecer a origem da extensão. A página de opções mostra essa origem (<code>chrome-extension://…</code> ou <code>moz-extension://…</code>). Veja como liberar em <a href="/docs/problemas/#extensao">Solução de problemas</a>.</p>
+        <p>Confira se o app está aberto e veja <a href="/docs/problemas/#extensao">Solução de problemas</a>.</p>
       </Nota>
       <p>PDFs abertos do disco (<code>file://</code>) exigem, no Chrome, ligar <em>Permitir acesso a URLs de arquivo</em> nos detalhes da extensão.</p>
     </>
@@ -295,11 +401,11 @@ const extensao: PaginaDeDoc = {
 const obsidian: PaginaDeDoc = {
   slug: 'obsidian',
   titulo: 'Obsidian',
-  resumo: 'Leve grifos, notas, perguntas e conexões para o seu cofre, com link de volta para o trecho.',
+  resumo: 'Leve grifos, notas, perguntas e relações para o seu cofre, uma nota por item, com link de volta para o trecho.',
   grupo: 'Integrações',
   corpo: () => (
     <>
-      <p>O plugin do Obsidian traz para o cofre o que você faz no {N}: grifos, marcas que você confirmou ou comentou, notas, perguntas e respostas, e conexões. Cada documento vira uma nota, com uma seção por capítulo.</p>
+      <p>Tudo o que você faz no {N} pode ir para o seu cofre do Obsidian: grifos, marcas que você confirmou ou comentou, anotações, perguntas e respostas, relações, flashcards e exercícios resolvidos. Cada documento vira uma pasta, com a nota do documento e uma nota para cada item. Há três caminhos: o <a href="#instalar">plugin</a>, que mantém o cofre em dia sozinho; no app de computador, <a href="#sem-plugin">exportar direto para o cofre</a>; e, no navegador, <a href="#sem-plugin">baixar a pasta</a> em .zip.</p>
 
       <h2 id="instalar">Instalar o plugin</h2>
       <Passos>
@@ -310,18 +416,30 @@ const obsidian: PaginaDeDoc = {
 
       <h2 id="configurar">Configurar</h2>
       <ul>
-        <li><strong>Servidor:</strong> <code>{CONFIG.enderecoLocal}</code>. Os links de volta usam este endereço.</li>
+        <li><strong>Servidor:</strong> <code>{CONFIG.enderecoLocal}</code>, o app de desktop no seu computador. Ele precisa estar aberto para sincronizar, e os links de volta abrem o trecho nele.</li>
         <li><strong>Pasta:</strong> onde as notas novas são criadas (padrão <code>Margem</code>).</li>
         <li><strong>Marcas da leitura:</strong> desligado, vêm só os seus grifos e as marcas que você confirmou ou comentou. Ligado, vêm também as marcas visíveis da IA.</li>
         <li><strong>Sincronizar ao abrir</strong> ou <strong>a cada N minutos</strong>, se quiser automático.</li>
       </ul>
-      <p>Para sincronizar à mão, use o comando <strong>Sincronizar</strong> do plugin ou o ícone de livro na barra lateral. Dentro do {N}, cada documento também tem <strong>Enviar para o Obsidian</strong>.</p>
+      <p>Para sincronizar à mão, use o comando <strong>Sincronizar</strong> do plugin ou o ícone de livro na barra lateral.</p>
 
-      <h2 id="nota">Como a nota fica</h2>
+      <h2 id="sem-plugin">Exportar sem o plugin</h2>
+      <p>No documento, abra o menu <strong>•••</strong> e escolha <strong>Exportar para o Obsidian</strong>. Escolha se quer <strong>Incluir as marcas da leitura</strong> (as da IA). Depois:</p>
       <ul>
-        <li>Cada trecho vira um callout com a citação, a função da marca (tese, objeção…) e um link de volta para o trecho.</li>
-        <li>Tags como <code>#margem/tese</code> e <code>#margem/ia</code> (nas marcas da IA).</li>
-        <li>Cada trecho tem um bloco estável <code>^margem-…</code>: dá para linkar de outras notas.</li>
+        <li><strong>Exportar para o cofre…</strong> (no app de computador): escolha a pasta do cofre e as notas são gravadas em <code>Margem/</code>, dentro dela. Exportar de novo atualiza as notas sem apagar o que você escreveu nelas. Para a biblioteca inteira, use <strong>Arquivo → Exportar para o Obsidian…</strong>.</li>
+        <li><strong>Baixar a pasta (.zip):</strong> a pasta do documento, para descompactar no cofre.</li>
+        <li><strong>Baixar a biblioteca inteira (.zip):</strong> uma pasta por documento, de uma vez.</li>
+      </ul>
+
+      <h2 id="nota">Como as notas ficam</h2>
+      <ul>
+        <li><strong>Uma pasta por documento</strong>, com a nota do documento (o índice, capítulo a capítulo) e as subpastas <code>Grifos</code>, <code>Anotações</code>, <code>Perguntas</code>, <code>Relações</code>, <code>Flashcards</code> e <code>Exercícios</code>.</li>
+        <li><strong>Cada grifo</strong> é uma nota com a citação inteira, a função (tese, objeção…), o capítulo e a página, e a lista das anotações, perguntas e relações ligadas a ele.</li>
+        <li><strong>Cada relação</strong> é uma nota com os dois trechos inteiros, o porquê e links para as notas das duas pontas, mesmo quando uma delas está em outro documento.</li>
+        <li>O que você escreveu no {N} chega como Markdown: ênfase, links e listas continuam valendo.</li>
+        <li>As propriedades de cada nota (documento, autor, capítulo, página, função, cor, datas) servem para buscar e filtrar no Obsidian. Tags como <code>#margem/tese</code> e <code>#margem/ia</code> (nas marcas da IA).</li>
+        <li>Pode renomear e mover as notas: o {N} acha cada uma pelo <code>margem_id</code> e não cria cópia. Os links <code>^margem-…</code> da nota do documento continuam valendo.</li>
+        <li>Os flashcards seguem o formato do plugin Spaced Repetition.</li>
       </ul>
       <Nota tipo="aviso" titulo="Escreva fora do bloco do app">
         <p>O conteúdo do {N} fica entre <code>%% margem:inicio %%</code> e <code>%% margem:fim %%</code> e é trocado a cada sincronização. Escreva antes ou depois desse bloco: o que estiver fora continua.</p>
@@ -361,7 +479,7 @@ const audio: PaginaDeDoc = {
 
       <h2 id="privacidade">Privacidade</h2>
       <ul>
-        <li>A chave fica guardada só no seu computador, na sua instalação.</li>
+        <li>A chave fica guardada só no seu computador, nas configurações do app.</li>
         <li>Com o áudio ligado, o texto que você manda narrar vai para a ElevenLabs, que gera o áudio. O resto da biblioteca não vai.</li>
         <li>O áudio pronto fica salvo no seu computador.</li>
       </ul>
@@ -372,50 +490,103 @@ const audio: PaginaDeDoc = {
   ),
 };
 
-const manutencao: PaginaDeDoc = {
-  slug: 'manutencao',
-  titulo: 'Atualizar, backup e desinstalar',
-  resumo: 'Mantenha a instalação em dia, guarde uma cópia da biblioteca e remova o app se quiser.',
+const atualizacoes: PaginaDeDoc = {
+  slug: 'atualizacoes',
+  titulo: 'Atualizações',
+  resumo: `O ${N} se atualiza sozinho. Veja como funciona e o que fazer se a atualização não chegar.`,
   grupo: 'Manutenção',
   corpo: () => (
     <>
-      <p>O instalador cria o comando <code>{CMD}</code> (no Windows, <code>{CMD}.cmd</code>), que funciona de qualquer pasta. Os mesmos comandos existem como <code>docker compose</code>, rodados na pasta da instalação: <code>{PASTA}</code> (no Windows, <code>{PASTA_WIN}</code>).</p>
+      <p>Com o app aberto, o {N} confere de tempos em tempos se há uma versão nova (em <code>margem.dev/atualizacoes</code>, que entrega os arquivos publicados no <a href={CONFIG.urlDoRelease}>GitHub</a>). Se houver, baixa em segundo plano e mostra um aviso discreto no pé da janela: <strong>Reiniciar agora</strong> instala na hora; <strong>Depois</strong> instala quando você fechar o app.</p>
+      <p>Para procurar na hora e ver a versão instalada, abra <strong>Configurações → Sobre e atualizações</strong> e clique em <strong>Procurar atualização</strong>.</p>
+      <ul>
+        <li>A biblioteca continua como estava. Se a versão nova mudar o banco de dados, a mudança é feita sozinha ao abrir.</li>
+        <li>Leituras em preparação esperam o app voltar e continuam de onde pararam.</li>
+        <li>O que mudou em cada versão está em <a href="/novidades/">Novidades</a>.</li>
+      </ul>
 
-      <h2 id="comandos">Os comandos</h2>
-      <Comando>{`${CMD} iniciar       # sobe o app (e instala na primeira vez)
-${CMD} parar         # para o app; os dados ficam
-${CMD} estado        # mostra os serviços, o endereço e se o Codex está logado
-${CMD} login         # entra na sua conta do ChatGPT pelo Codex
-${CMD} logs          # acompanha os registros (Ctrl+C sai)
-${CMD} atualizar     # backup, versão nova e sobe de novo
-${CMD} backup        # copia o banco e os arquivos
-${CMD} restaurar <pasta>
-${CMD} arte instalar [arquivo|link]   # acervo de quadros
-${CMD} desinstalar [--apagar-dados]`}</Comando>
-      <p>No Windows, os mesmos comandos funcionam no PowerShell; as opções com dois traços viram <code>-ApagarDados</code> e <code>-Sha256</code>.</p>
+      <h2 id="formatos">Por formato</h2>
+      <ul>
+        <li><strong>Windows:</strong> automático.</li>
+        <li><strong>Linux, AppImage:</strong> automático; o próprio arquivo é trocado pela versão nova.</li>
+        <li><strong>Linux, .deb:</strong> o app baixa a versão nova e pede a senha do sistema para instalar. Se não der, baixe o <code>.deb</code> novo e instale por cima.</li>
+        <li><strong>macOS:</strong> enquanto o app não tiver assinatura da Apple, ele só avisa que há versão nova; baixe o <code>.dmg</code> e troque o app na pasta Aplicativos.</li>
+      </ul>
 
-      <h2 id="atualizar">Atualizar</h2>
-      <p>Veja o que mudou em <a href="/novidades/">Novidades</a>. Para atualizar:</p>
-      <Comando>{`${CMD} atualizar`}</Comando>
-      <p>O comando faz um backup antes, baixa a versão nova e sobe o app de novo. A biblioteca continua como estava; se a versão nova mudar o banco, a atualização é feita sozinha ao subir. Sem o comando, o equivalente é:</p>
-      <Comando>{`cd ${PASTA}\ndocker compose pull\ndocker compose up -d`}</Comando>
+      <h2 id="manual">Atualizar à mão</h2>
+      <p>Se a atualização automática não funcionar no seu sistema, baixe o instalador da versão nova na <a href="/download/">página de download</a> e instale por cima. A pasta da biblioteca não é tocada.</p>
+      <Nota titulo="Faça um backup antes de pular muitas versões">
+        <p>Não é obrigatório, mas é barato: feche o app e copie a pasta da biblioteca. Veja <a href="/docs/backup/">Backup</a>.</p>
+      </Nota>
+    </>
+  ),
+};
 
-      <h2 id="backup">Backup</h2>
-      <p>A biblioteca tem duas partes, e o backup leva as duas: o <strong>banco de dados</strong> (marcas, notas, conversas, progresso) e os <strong>arquivos</strong> (os originais, o que foi gerado a partir deles e o acervo de quadros). As duas ficam em volumes do Docker, não soltas na pasta; por isso o backup é um comando:</p>
-      <Comando>{`${CMD} backup`}</Comando>
-      <p>Ele grava <code>banco.dump</code> e <code>dados.tar</code> em <code>{PASTA}/backups/&lt;data&gt;/</code>. Copie essa pasta para um disco externo ou outro lugar seguro. O login do ChatGPT não entra no backup.</p>
-      <p>Para restaurar, num computador novo ou neste, instale o {N} e rode <code>{`${CMD} restaurar <pasta do backup>`}</code>. Ele pede confirmação e substitui o banco e os arquivos atuais.</p>
+const backup: PaginaDeDoc = {
+  slug: 'backup',
+  titulo: 'Backup',
+  resumo: 'O backup é uma cópia da pasta da biblioteca, feita com o app fechado.',
+  grupo: 'Manutenção',
+  corpo: () => (
+    <>
+      <p>Tudo o que é seu no {N} fica na pasta da biblioteca, a que você escolheu na primeira vez: os arquivos originais, o que foi gerado a partir deles, as obras que você adicionou em Quadros e o banco de dados com marcas, notas, conversas e progresso. Fazer backup é copiar essa pasta.</p>
 
-      <h2 id="parar">Parar e iniciar</h2>
-      <Comando>{`${CMD} parar      # para o app\n${CMD} iniciar    # inicia de novo\n${CMD} estado     # mostra se está no ar e se o Codex está logado`}</Comando>
+      <h2 id="fazer">Fazer um backup</h2>
+      <Passos>
+        <li><p><strong>Feche o {N}</strong> de verdade: no Windows e no Linux, pelo ícone na bandeja, <strong>Sair</strong>. Fechar só a janela deixa o app rodando.</p></li>
+        <li><p>Copie a pasta da biblioteca inteira para um disco externo ou outro lugar seguro.</p></li>
+        <li><p>Abra o {N} de novo.</p></li>
+      </Passos>
+      <Nota tipo="aviso" titulo="Com o app fechado">
+        <p>Copiar a pasta com o app aberto pode pegar o banco de dados no meio de uma gravação, e a cópia não abrir depois. Feche antes.</p>
+      </Nota>
+      <p>Não sabe onde está a pasta? Ela aparece nas <strong>Configurações</strong> do app.</p>
 
-      <h2 id="desinstalar">Desinstalar</h2>
-      <p>Para remover o app e <strong>manter</strong> a biblioteca (nos volumes do Docker):</p>
-      <Comando>{`${CMD} desinstalar`}</Comando>
-      <p>Para apagar <strong>tudo</strong>, inclusive livros, notas e o login do Codex:</p>
-      <Comando>{`${CMD} desinstalar --apagar-dados\ncd ~ && rm -rf ${PASTA}`}</Comando>
+      <h2 id="restaurar">Restaurar ou levar para outro computador</h2>
+      <Passos>
+        <li><p>Instale o {N} no computador de destino.</p></li>
+        <li><p>Copie a pasta do backup para lá.</p></li>
+        <li><p>Ao abrir o {N} (ou nas <strong>Configurações</strong>, se ele já estiver em uso), escolha essa pasta como a pasta da biblioteca.</p></li>
+      </Passos>
+      <p>O login do ChatGPT não vai junto: entre de novo no computador novo.</p>
+
+      <h2 id="sincronizar">Pastas sincronizadas</h2>
+      <p>Não use a mesma pasta da biblioteca em dois computadores ao mesmo tempo, nem deixe um serviço de sincronização (OneDrive, iCloud, Dropbox) mexer nela com o app aberto. Para uma cópia na nuvem, copie a pasta com o app fechado.</p>
+    </>
+  ),
+};
+
+const desinstalar: PaginaDeDoc = {
+  slug: 'desinstalar',
+  titulo: 'Desinstalar',
+  resumo: 'Remova o app. A biblioteca fica onde está, até você apagá-la.',
+  grupo: 'Manutenção',
+  corpo: () => (
+    <>
+      <p>Desinstalar remove o programa. A <strong>pasta da biblioteca não é apagada</strong>: os seus livros, marcas e notas continuam lá, e outra instalação do {N} pode abri-la.</p>
+
+      <h2 id="windows">Windows</h2>
+      <p>Abra <strong>Configurações → Aplicativos → Aplicativos instalados</strong>, procure o {N}, clique nos três pontos e em <strong>Desinstalar</strong>.</p>
+
+      <h2 id="linux">Linux</h2>
+      <ul>
+        <li><strong>AppImage:</strong> feche o app e apague o arquivo <code>.AppImage</code>.</li>
+        <li><strong>.deb:</strong> remova pela central de programas ou com <code>{`sudo apt remove ${CONFIG.pacoteDeb}`}</code>.</li>
+      </ul>
+
+      <h2 id="o-que-fica">O que fica no computador</h2>
+      <ul>
+        <li><strong>A pasta da biblioteca</strong>, onde você a escolheu.</li>
+        <li><strong>As configurações do app</strong> (qual é a pasta da biblioteca, preferências e o login do ChatGPT feito pelo app), numa pasta própria:
+          <ul>
+            <li>Windows: <code>{CONFIG.pastaDeConfiguracoes.windows}</code></li>
+            <li>Linux: <code>{CONFIG.pastaDeConfiguracoes.linux}</code></li>
+          </ul>
+        </li>
+      </ul>
+      <p>Para remover tudo, apague também essas duas pastas.</p>
       <Nota tipo="aviso" titulo="Não tem volta">
-        <p>Apagar a pasta remove a biblioteca para sempre. Faça um backup antes se houver algo que você queira guardar.</p>
+        <p>Apagar a pasta da biblioteca remove livros, marcas e notas para sempre. Faça um <a href="/docs/backup/">backup</a> antes se houver algo que você queira guardar.</p>
       </Nota>
     </>
   ),
@@ -424,12 +595,19 @@ ${CMD} desinstalar [--apagar-dados]`}</Comando>
 const perguntas: PaginaDeDoc = {
   slug: 'perguntas',
   titulo: 'Perguntas frequentes',
-  resumo: 'Cota do ChatGPT, privacidade, custos e o que o app faz com os seus textos.',
+  resumo: 'Privacidade, cota do ChatGPT, custos e o que o app faz com os seus textos.',
   grupo: 'Ajuda',
   corpo: () => (
     <>
       <h2 id="custo">Quanto custa?</h2>
       <p>O {N} é gratuito e de código aberto. As leituras usam a sua assinatura do ChatGPT, pelo Codex. O áudio é opcional e é pago direto à ElevenLabs, se você usar.</p>
+
+      <h2 id="privacidade">Para onde vão os meus textos?</h2>
+      <p>Para lugar nenhum além do seu computador, com uma exceção que você controla. Os arquivos, as marcas, as notas e o banco de dados ficam na pasta da biblioteca. Não há servidor do {N} guardando nada, nem métricas de uso.</p>
+      <p id="openai">A exceção é a leitura por IA: para marcar o texto, escrever as notas e responder às suas perguntas, o Codex manda à OpenAI <strong>só o que ele lê</strong> para fazer aquilo que você pediu (os trechos do capítulo em preparação, ou o trecho e o contexto de uma pergunta), <strong>pela sua conta</strong>. Valem as regras de uso e de privacidade da OpenAI para a sua conta. Se você ligar o áudio, o texto a narrar vai para a ElevenLabs.</p>
+
+      <h2 id="atualizacoes">O app se conecta a mais alguma coisa?</h2>
+      <p>Para se atualizar, o app consulta <code>margem.dev/atualizacoes</code>, que encaminha para o GitHub, onde os instaladores são publicados, e baixa a versão nova de lá. Essa consulta não leva nada da sua biblioteca.</p>
 
       <h2 id="cota">Ele gasta a minha cota do ChatGPT?</h2>
       <p>Sim. Preparar a leitura e responder perguntas usam o Codex, que conta na cota da sua conta, como qualquer uso do Codex. Um livro inteiro pede bem mais do que um artigo. Prepare primeiro os capítulos que vai ler.</p>
@@ -437,17 +615,14 @@ const perguntas: PaginaDeDoc = {
       <h2 id="cota-acabou">E se a cota acabar?</h2>
       <p>As leituras pedidas esperam na fila e continuam sozinhas quando a cota voltar; o app avisa e mostra a previsão. Não é preciso pedir de novo. Tudo o que já foi preparado continua disponível: ler, grifar e anotar não usam cota.</p>
 
-      <h2 id="privacidade">Para onde vão os meus textos?</h2>
-      <p>Os arquivos, as marcas e as notas ficam no seu computador. Para marcar e responder, o Codex manda ao ChatGPT os trechos necessários, pela sua conta. As regras de uso e de privacidade desse envio são as da OpenAI para a sua conta. Se você ligar o áudio, o texto a narrar vai para a ElevenLabs.</p>
-
       <h2 id="conta">Preciso criar conta no {N}?</h2>
-      <p>Não. Não existe conta no {N}. O único login é o do ChatGPT, dentro da sua instalação.</p>
+      <p>Não. Não existe conta no {N}. O único login é o do ChatGPT, feito pelo app no seu navegador.</p>
 
       <h2 id="internet">Funciona sem internet?</h2>
       <p>Ler, grifar e anotar o que já está na biblioteca, sim. Preparar leituras e perguntar precisam de internet, porque passam pelo ChatGPT.</p>
 
       <h2 id="outro-computador">Posso usar no celular ou em outro computador?</h2>
-      <p>O {N} atende em <code>{CONFIG.enderecoLocal}</code>, só no computador onde foi instalado. Para levar a biblioteca para outra máquina, faça um <a href="/docs/manutencao/#backup">backup</a> e restaure lá.</p>
+      <p>O {N} é um app de desktop para Windows e Linux (macOS em breve); não há versão para celular. Para levar a biblioteca para outro computador, copie a pasta da biblioteca (veja <a href="/docs/backup/#restaurar">Backup</a>).</p>
 
       <h2 id="formatos">Que formatos posso ler?</h2>
       <p>PDF, EPUB, Markdown, TXT, texto colado, páginas da web pela extensão, vídeos do YouTube pelo link e vídeo ou áudio seus com a transcrição. Um PDF escaneado, só com imagens, pode ser transcrito pelo Codex página por página. Veja <a href="/docs/importar/">Adicionar textos e vídeos</a>.</p>
@@ -457,6 +632,9 @@ const perguntas: PaginaDeDoc = {
 
       <h2 id="erros">A IA pode errar?</h2>
       <p>Pode. Marcas, notas e respostas são uma camada sobre o texto, não o texto. Toda marca aponta o trecho de onde saiu, para você conferir.</p>
+
+      <h2 id="assinatura">Por que o Windows avisa ao instalar?</h2>
+      <p>O {N} ainda não tem assinatura digital da Microsoft. O Windows avisa sobre todo app novo sem assinatura. A <a href="/docs/instalacao/">Instalação</a> mostra como seguir.</p>
     </>
   ),
 };
@@ -464,31 +642,33 @@ const perguntas: PaginaDeDoc = {
 const problemas: PaginaDeDoc = {
   slug: 'problemas',
   titulo: 'Solução de problemas',
-  resumo: 'O que fazer quando o app não abre, o Codex não entra ou a extensão não conecta.',
+  resumo: 'O que fazer quando o app não abre, o Codex não entra, a cota acaba ou a extensão não conecta.',
   grupo: 'Ajuda',
   corpo: () => (
     <>
-      <p>Os comandos rodam na pasta da instalação (<code>{PASTA}</code>). Para ver o estado dos serviços:</p>
-      <Comando>{`cd ${PASTA}\ndocker compose ps`}</Comando>
+      <nav className="fichas-doc" aria-label="Problemas comuns">
+        <a href="#nao-abre">Não abre</a><a href="#codex">Codex sem login</a><a href="#cota">Cota</a><a href="#porta">Porta ocupada</a><a href="#antivirus">Antivírus</a><a href="#extensao">Extensão</a>
+      </nav>
 
-      <h2 id="nao-abre">A página não abre</h2>
+      <h2 id="nao-abre">O app não abre</h2>
       <ul>
-        <li>Confira se o Docker está rodando (no macOS e no Windows, abra o Docker Desktop).</li>
-        <li>Suba o app de novo: <code>{`${CMD} iniciar`}</code> (ou <code>docker compose up -d</code> na pasta da instalação).</li>
-        <li>Veja os registros: <code>docker compose logs --tail 100</code>.</li>
-        <li>Se outra coisa usa a porta 8730, o app não sobe. Feche o outro programa ou troque a porta: <code>PORTA=8731</code> no arquivo <code>.env</code> da pasta da instalação, depois <code>{`${CMD} iniciar`}</code> (e o mesmo endereço nas opções da extensão).</li>
+        <li><strong>Windows:</strong> se o SmartScreen bloqueou, veja <a href="/docs/instalacao/#windows">Instalação no Windows</a>.</li>
+        <li><strong>Linux:</strong> confira se o AppImage está marcado como executável e se a biblioteca FUSE 2 está instalada (veja <a href="/docs/instalacao/#appimage">AppImage</a>).</li>
+        <li>O {N} abre uma janela só. Se ele já estiver rodando (por exemplo, minimizado na bandeja), abrir de novo traz a janela existente para a frente.</li>
       </ul>
 
-      <h2 id="docker-permissao">“permission denied” ao rodar o Docker (Linux)</h2>
-      <p>O seu usuário não está no grupo <code>docker</code>. Rode <code>sudo usermod -aG docker $USER</code>, saia da sessão e entre de novo.</p>
-
       <h2 id="codex">O app diz que o Codex não está logado</h2>
-      <p>Faça o login de novo:</p>
-      <Comando>{`${CMD} login`}</Comando>
-      <p>Se o código expirar, rode o comando outra vez para receber um novo.</p>
+      <p>O login do ChatGPT expirou ou foi desfeito. Use o botão de entrar que aparece no aviso do app: ele abre o navegador na página de login da OpenAI. Entre e volte ao {N}.</p>
+      <p>Se o navegador não abrir, confira se há um navegador padrão definido no sistema e tente de novo.</p>
 
       <h2 id="cota">“Limite de uso” ou leitura parada na fila</h2>
-      <p>A cota do Codex na sua conta acabou por enquanto. O app avisa na tela, com a previsão de volta. Nada se perde: as leituras na fila continuam sozinhas quando a cota voltar.</p>
+      <p>A cota do Codex na sua conta acabou por enquanto. O app avisa na tela, com a previsão de volta. Nada se perde: as leituras na fila continuam sozinhas quando a cota voltar. Ler, grifar e anotar continuam funcionando.</p>
+
+      <h2 id="porta">Porta {CONFIG.porta} ocupada</h2>
+      <p>O {N} atende no seu computador em <code>{CONFIG.enderecoLocal}</code>, que a extensão do navegador e o plugin do Obsidian usam. Se outro programa já ocupa essa porta, o app avisa ao abrir. Feche o outro programa (ou outra cópia do {N} rodando, por exemplo, de outra conta do computador) e abra o app de novo.</p>
+
+      <h2 id="antivirus">O antivírus bloqueou ou apagou o app</h2>
+      <p>Alguns antivírus desconfiam de apps novos sem assinatura digital, ou de programas que o {N} traz dentro (o banco de dados e o Codex). Baixe o instalador só da <a href="/download/">página de download</a> ou da <a href={CONFIG.urlDoRelease}>página do release</a> e, se o antivírus bloquear, libere a pasta do {N} nas exceções dele. Se puder, relate o caso em <a href={CONFIG.urlDeProblemas}>problemas</a>, com o nome do antivírus.</p>
 
       <h2 id="leitura-falhou">A preparação de um capítulo falhou</h2>
       <p>Abra os trabalhos do documento para ver a mensagem. Na maior parte dos casos, basta pedir de novo. Se o erro se repetir no mesmo texto, relate em <a href={CONFIG.urlDeProblemas}>problemas conhecidos</a>, sem anexar o livro.</p>
@@ -499,21 +679,15 @@ const problemas: PaginaDeDoc = {
       <h2 id="youtube">O vídeo do YouTube entrou sem texto</h2>
       <p>O vídeo não tem legendas, nem as automáticas na língua original. Ele toca assim mesmo, sem o texto ao lado. Se o leitor diz que o dono não permite assistir fora do YouTube, use <strong>Assistir no YouTube</strong> ou <strong>Ouvir o áudio local</strong>.</p>
 
-      <h2 id="quadros">"Pacote recusado" ao instalar o acervo de quadros</h2>
-      <p>O arquivo veio incompleto ou diferente do publicado: o instalador confere cada arquivo e não instala nada pela metade. Baixe de novo da <a href={CONFIG.urlDoRelease}>página do release</a> e rode <code>{`${CMD} arte instalar <arquivo>`}</code> outra vez.</p>
-
       <h2 id="extensao">A extensão não conecta</h2>
       <ul>
-        <li>Confira, nas opções da extensão, se o servidor é <code>{CONFIG.enderecoLocal}</code>.</li>
-        <li>A instalação precisa aceitar a origem da extensão. Copie a origem que aparece nas opções e acrescente à variável <code>MARGEM_EXTENSOES</code> da instalação, separada por vírgula. Depois, reinicie: <code>docker compose up -d</code>.</li>
-        <li>No Firefox, a origem muda a cada instalação da extensão.</li>
+        <li>O {N} precisa estar aberto (pode estar minimizado): a extensão fala com ele em <code>{CONFIG.enderecoLocal}</code>.</li>
+        <li>Confira, nas opções da extensão, se o servidor é <code>{CONFIG.enderecoLocal}</code>, e clique em <strong>Testar conexão</strong>.</li>
+        <li>Se a porta estiver ocupada por outro programa, veja <a href="#porta">Porta ocupada</a>.</li>
       </ul>
 
-      <h2 id="obsidian">O Obsidian recebe “origem recusada”</h2>
-      <p>Acrescente <code>app://obsidian.md</code> à variável <code>MARGEM_ORIGENS</code> da instalação e reinicie o app.</p>
-
       <h2 id="ajuda">Ainda com problema?</h2>
-      <p>Relate em <a href={CONFIG.urlDeProblemas}>{CONFIG.urlDeProblemas}</a> com o sistema, a versão e as últimas linhas de <code>docker compose logs</code>. Revise os registros antes: eles podem citar títulos dos seus documentos.</p>
+      <p>Relate em <a href={CONFIG.urlDeProblemas}>{CONFIG.urlDeProblemas}</a> com o sistema, a versão do {N} e o que aconteceu. Se anexar registros do app, revise antes: eles podem citar títulos dos seus documentos.</p>
     </>
   ),
 };
@@ -541,6 +715,9 @@ const contribuir: PaginaDeDoc = {
         <li><p>No primeiro envio, assine o acordo de contribuição (CLA). É um passo só, feito pelo próprio GitHub. Ele permite que o projeto continue podendo mudar de licença ou oferecer licenças comerciais, sem tirar de ninguém os direitos da {CONFIG.licenca}.</p></li>
       </Passos>
 
+      <h2 id="fonte">Rodar a partir do código-fonte</h2>
+      <p>Quem quiser compilar o {N} ou rodá-lo como servidor encontra as instruções de desenvolvimento no <code>README.md</code> do <a href={CONFIG.urlDoRepositorio}>repositório</a>.</p>
+
       <h2 id="modos">Modos de leitura</h2>
       <p>Os modos de leitura (as funções que cada um marca e as suas cores) ficam em <code>contratos/</code>, e as instruções da IA em <code>prompts/</code>. Propostas de modos novos são bem-vindas, com textos de exemplo de domínio público.</p>
     </>
@@ -548,7 +725,7 @@ const contribuir: PaginaDeDoc = {
 };
 
 export const PAGINAS_DE_DOCS: readonly PaginaDeDoc[] = [
-  instalacao, primeirosPassos, importar, quadros, extensao, obsidian, audio, manutencao, perguntas, problemas, contribuir,
+  instalacao, primeirosPassos, importar, relacoes, videos, questoes, quadros, extensao, obsidian, audio, atualizacoes, backup, desinstalar, perguntas, problemas, contribuir,
 ];
 
 export const GRUPOS: readonly Grupo[] = ['Começar', 'Integrações', 'Manutenção', 'Ajuda'];

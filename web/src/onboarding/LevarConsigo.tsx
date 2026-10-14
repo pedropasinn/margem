@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Icon } from '../ui/Icon';
-import { Button } from '../ui/Primitives';
+import { Button, classesDoBotao } from '../ui/Primitives';
 import './onboarding.css';
 import type { Rota } from '../biblioteca/rotas';
 import { usarOnboarding } from './ContextoDoOnboarding';
@@ -40,7 +40,7 @@ export function LevarConsigo({ ir, como: comoDado }: { ir: (destino: Rota) => vo
       <div className="levar-acao">
         {como === 'pedido' && <Button variante="primario" onClick={() => void instalar()}><Icon name="baixar" size={16} /> Instalar</Button>}
         {como === 'instalado' && <span className="badge ativo"><Icon name="check" size={14} /> Instalado</span>}
-        {(como === 'ios' || como === 'manual') && <a className="button small" href="/ajuda/instalar" onClick={(e) => { e.preventDefault(); ir({ nome: 'ajuda', pagina: 'instalar' }); }}>Como instalar</a>}
+        {(como === 'ios' || como === 'manual') && <a className={classesDoBotao({ tamanho: 'md' })} href="/ajuda/instalar" onClick={(e) => { e.preventDefault(); ir({ nome: 'ajuda', pagina: 'instalar' }); }}>Como instalar</a>}
       </div>
     </article>
     {integracoes().map((integracao) => <article key={integracao.nome} className="cartao-levar">
@@ -51,8 +51,8 @@ export function LevarConsigo({ ir, como: comoDado }: { ir: (destino: Rota) => vo
       </div>
       <div className="levar-acao">
         {integracao.link
-          ? <a className="button small" href={integracao.link} target="_blank" rel="noreferrer">Abrir <Icon name="arrow" size={14} /></a>
-          : <a className="button small" href={`/ajuda/${integracao.nome}`} onClick={(e) => { e.preventDefault(); ir({ nome: 'ajuda', pagina: integracao.nome }); }}>Saiba mais</a>}
+          ? <a className={classesDoBotao({ tamanho: 'md' })} href={integracao.link} target="_blank" rel="noreferrer">Abrir <Icon name="arrow" size={14} /></a>
+          : <a className={classesDoBotao({ tamanho: 'md' })} href={`/ajuda/${integracao.nome}`} onClick={(e) => { e.preventDefault(); ir({ nome: 'ajuda', pagina: integracao.nome }); }}>Saiba mais</a>}
       </div>
     </article>)}
     {estado.levar !== 'concluida' && <div className="button-row levar-fim"><Button variante="ghost" className="small" onClick={() => despachar({ tipo: 'concluir_levar' })}><Icon name="check" size={16} /> Entendi</Button></div>}

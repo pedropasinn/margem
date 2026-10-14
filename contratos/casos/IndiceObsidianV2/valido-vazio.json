@@ -1,0 +1,13 @@
+{
+  "versao": 2,
+  "url_base": "https://margem.exemplo.ts.net",
+  "marcas": "minhas",
+  "incluir": [
+    "documento",
+    "grifo",
+    "anotacao",
+    "pergunta",
+    "relacao"
+  ],
+  "notas": []
+}

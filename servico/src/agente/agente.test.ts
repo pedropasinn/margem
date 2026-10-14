@@ -214,7 +214,16 @@ test('sem citação válida vira aviso; cota deixa na fila com aviso; falha se r
   expect(fio.mensagens.map((m) => m.estado ?? m.autor)).toEqual(['respondida', 'agente']);
   expect(fio.mensagens[1]!.citacoes).toEqual([]);
   expect(fio.mensagens[1]!.diagnosticos.map((d) => d.codigo)).toEqual(['citacao_fora_do_texto', 'sem_citacao']);
+  // Renomear: só o título muda, numa linha; vazio, longo ou com outro campo é recusado.
+  const renomeada = await escrever(segundo.api, 'PATCH', `/api/agente/conversas/${outra.id}`, { titulo: '  Kant e a\n biblioteca ' });
+  expect(renomeada.status).toBe(200);
+  expect((await renomeada.json() as { conversa: ConversaDoAgenteV1 }).conversa.titulo).toBe('Kant e a biblioteca');
+  expect((await lerFio(segundo.api, outra.id)).conversa.titulo).toBe('Kant e a biblioteca');
+  expect((await escrever(segundo.api, 'PATCH', `/api/agente/conversas/${outra.id}`, { titulo: '  ' })).status).toBe(400);
+  expect((await escrever(segundo.api, 'PATCH', `/api/agente/conversas/${outra.id}`, { titulo: 'x'.repeat(201) })).status).toBe(400);
+  expect((await escrever(segundo.api, 'PATCH', `/api/agente/conversas/${outra.id}`, { titulo: 'x', fixada: true })).status).toBe(400);
   expect((await escrever(segundo.api, 'DELETE', `/api/agente/conversas/${outra.id}`)).status).toBe(200);
+  expect((await escrever(segundo.api, 'PATCH', `/api/agente/conversas/${outra.id}`, { titulo: 'x' })).status).toBe(404);
   expect((await segundo.api.request(`/api/agente/conversas/${outra.id}`)).status).toBe(404);
 }));
 

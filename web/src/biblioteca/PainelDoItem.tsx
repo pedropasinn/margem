@@ -17,7 +17,7 @@ export function PainelDoItem({ item, arvore, ir, fechar }: { item: ItemDaBibliot
     if (item) void lerProgresso(item.id).then((r) => { if (vivo) definirProgresso({ id: item.id, concluidos: r.progresso?.capitulos_concluidos ?? [] }); }, () => { if (vivo) definirErro(true); });
     return () => { vivo = false; };
   }, [item?.id]);
-  const total = arvore?.capitulos.length;
+  const total = typeof item?.capitulos_total === 'number' ? item.capitulos_total : arvore?.capitulos.length;
   const quantidade = item?.progresso?.capitulos_concluidos ?? 0;
   const concluidos = progresso?.id === item?.id ? progresso?.concluidos : undefined;
   return <aside className="painel-biblioteca" aria-label="Informações do texto"><header className="painel-abas"><Button variante="ghost" aria-pressed={aba === 'info'} onClick={() => mudarAba('info')}>Info</Button><Button variante="ghost" aria-pressed={aba === 'capitulos'} onClick={() => mudarAba('capitulos')}>Capítulos <span className="contador-capitulos">{total ?? '—'}</span></Button><Button variante="ghost" aria-pressed={aba === 'marcas'} onClick={() => mudarAba('marcas')}>Marcas <span className="contador-capitulos">{item?.marcas.total ?? 0}</span></Button><IconButton aria-label="Fechar informações" title="Fechar informações (])" onClick={fechar}><Icon name="painel" /></IconButton></header>

@@ -8,7 +8,7 @@ import { ONBOARDING_INICIAL, reduzirOnboarding } from './estado';
 import type { FontesDoExemplo } from './exemplo';
 import { LevarConsigo } from './LevarConsigo';
 import { PrimeiroDocumento } from './PrimeiroDocumento';
-import { TourDoLeitor } from './TourDoLeitor';
+import { TourDoLeitor, TourDoPlayer, TourDoQuadro } from './TourDoLeitor';
 import { PrimeirosPassos } from './PrimeirosPassos';
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
@@ -22,18 +22,24 @@ function Mostrador() {
 const lerEstado = () => JSON.parse(screen.getByTestId('estado').textContent ?? '{}') as typeof ONBOARDING_INICIAL;
 
 describe('boas-vindas', () => {
-  test('três telas, com foco no título a cada troca, e o progresso gravado no armazém', () => {
+  test('quatro telas que citam ler, assistir e observar, com foco no título a cada troca e o progresso gravado', () => {
     const armazem = armazemEmMemoria();
-    render(<ProvedorDoOnboarding armazem={armazem} verificarUsoAnterior={nunca}><BoasVindas ir={() => {}} /><Mostrador /></ProvedorDoOnboarding>);
+    render(<ProvedorDoOnboarding armazem={armazem} verificarUsoAnterior={nunca}><BoasVindas ir={() => {}} quadros={() => Promise.resolve({ obras: [] })} /><Mostrador /></ProvedorDoOnboarding>);
     expect(screen.getByRole('dialog', { name: 'Boas-vindas ao Margem' })).toBeDefined();
+    expect(screen.getByText(/lê, assiste e observa/)).toBeDefined();
+    expect(screen.getByText('Primeiros passos · 1 de 4')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
-    expect(screen.getByRole('heading', { name: 'Como se lê no Margem' })).toBe(document.activeElement);
+    expect(screen.getByRole('heading', { name: 'Três jeitos de estudar' })).toBe(document.activeElement);
+    expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Ler', 'Assistir', 'Observar']);
     expect(armazem.atual?.tela).toBe(1);
     fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
-    expect(screen.getByRole('heading', { name: 'Seu primeiro texto' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Abrir um texto de exemplo/ })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Como se lê no Margem' })).toBe(document.activeElement);
+    fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
+    expect(screen.getByRole('heading', { name: 'Comece por um exemplo' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Ler um texto de exemplo/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Assistir a um vídeo do YouTube/ })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
-    expect(lerEstado().tela).toBe(1);
+    expect(lerEstado().tela).toBe(2);
   });
 
   test('Esc pula e lembra; nada é gravado antes da primeira ação', () => {
@@ -48,16 +54,23 @@ describe('boas-vindas', () => {
   test('retoma na tela em que a pessoa parou', () => {
     const armazem = armazemEmMemoria(reduzirOnboarding(ONBOARDING_INICIAL, { tipo: 'avancar_tela' }, '2026-10-01T00:00:00Z'));
     render(<ProvedorDoOnboarding armazem={armazem}><BoasVindas ir={() => {}} /></ProvedorDoOnboarding>);
-    expect(screen.getByRole('heading', { name: 'Como se lê no Margem' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Três jeitos de estudar' })).toBeDefined();
   });
 
-  test('importar arquivo fecha as boas-vindas e leva à tela Adicionar', () => {
+  test('as portas fecham as boas-vindas e levam à aba certa de Adicionar, ou ao quadro de exemplo sem custo', async () => {
     const ir = vi.fn();
-    render(<ProvedorDoOnboarding armazem={armazemEmMemoria(reduzirOnboarding(reduzirOnboarding(ONBOARDING_INICIAL, { tipo: 'avancar_tela' }, 'x'), { tipo: 'avancar_tela' }, '2026-10-01T00:00:00Z'))}>
-      <BoasVindas ir={ir} /><Mostrador /></ProvedorDoOnboarding>);
-    fireEvent.click(screen.getByRole('button', { name: /Colar um texto/ }));
-    expect(ir).toHaveBeenCalledWith({ nome: 'adicionar', entrada: 'colado' });
+    const naUltima = [0, 1, 2].reduce((e) => reduzirOnboarding(e, { tipo: 'avancar_tela' }, '2026-10-01T00:00:00Z'), ONBOARDING_INICIAL);
+    const quadros = () => Promise.resolve({ obras: [{ slug: 'aula-de-danca', titulo: 'A aula de dança', artista: 'Edgar Degas', exemplo: true } as never] });
+    const { unmount } = render(<ProvedorDoOnboarding armazem={armazemEmMemoria(naUltima)}><BoasVindas ir={ir} quadros={quadros} /><Mostrador /></ProvedorDoOnboarding>);
+    fireEvent.click(screen.getByRole('button', { name: /Trazer o seu/ }));
+    expect(ir).toHaveBeenLastCalledWith({ nome: 'adicionar', aba: 'documento' });
     expect(lerEstado().boas_vindas).toBe('concluida');
+    unmount();
+    render(<ProvedorDoOnboarding armazem={armazemEmMemoria(naUltima)}><BoasVindas ir={ir} quadros={quadros} /></ProvedorDoOnboarding>);
+    fireEvent.click(await screen.findByRole('button', { name: /Observar um quadro de exemplo.*A aula de dança.*Edgar Degas/ }));
+    expect(ir).toHaveBeenLastCalledWith({ nome: 'quadro', slug: 'aula-de-danca' });
+    fireEvent.click(screen.getByRole('button', { name: /Assistir a um vídeo/ }));
+    expect(ir).toHaveBeenLastCalledWith({ nome: 'adicionar', aba: 'video' });
   });
 });
 
@@ -86,7 +99,7 @@ describe('primeiro documento: o exemplo', () => {
     };
     const armazem = armazemEmMemoria();
     render(<ProvedorDoOnboarding armazem={armazem} verificarUsoAnterior={nunca}><PrimeiroDocumento ir={ir} fontes={fontes} /></ProvedorDoOnboarding>);
-    fireEvent.click(screen.getByRole('button', { name: /Abrir um texto de exemplo/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Ler um texto de exemplo/ }));
     expect((await screen.findAllByText(/Preparando o texto/)).length).toBeGreaterThan(0);
     expect(armazem.atual?.exemplo_id).toBe('EXEMPLO1');
     await waitFor(() => expect(ir).toHaveBeenCalledWith({ nome: 'leitura', documento_id: 'EXEMPLO1' }), { timeout: 4000 });
@@ -130,7 +143,24 @@ describe('tour do leitor', () => {
     }
     expect(titulos).toEqual(['As cores dizem a função', 'Notas na margem', 'Do seu jeito', 'Pergunte ao texto', 'Retome de onde parou']);
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(armazem.atual?.tour).toBe('concluida');
+    expect(armazem.atual?.tours).toEqual({ texto: 'concluida', video: 'pendente', quadro: 'pendente' });
+  });
+
+  test('V-D4: o vídeo e o quadro têm o seu tour, que pode ser pulado sem mexer nos outros', () => {
+    const armazem = comBoasVindasVistas();
+    const { unmount } = render(<ProvedorDoOnboarding armazem={armazem}><TourDoPlayer video ir={() => {}} atrasoMs={0} /></ProvedorDoOnboarding>);
+    expect(screen.getByRole('heading', { name: 'A transcrição acompanha' })).toBeDefined();
+    expect(screen.getByText(/Clique numa frase/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima' }));
+    expect(screen.getByRole('heading', { name: 'Marque e pergunte como num texto' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Concluir' }));
+    expect(armazem.atual?.tours.video).toBe('concluida');
+    unmount();
+    render(<ProvedorDoOnboarding armazem={armazem}><TourDoQuadro ir={() => {}} atrasoMs={0} /></ProvedorDoOnboarding>);
+    expect(screen.getByRole('heading', { name: 'Percorra a obra' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar as dicas' }));
+    expect(armazem.atual?.tours).toEqual({ texto: 'pendente', video: 'concluida', quadro: 'pulada' });
   });
 
   test('sem marcas, a primeira dica diz como pedi-las em vez de prometê-las', () => {
@@ -154,7 +184,9 @@ describe('primeiros passos e leve com você', () => {
   test('mostra o progresso e reabre as boas-vindas', () => {
     const armazem = armazemEmMemoria(reduzirOnboarding(ONBOARDING_INICIAL, { tipo: 'pular_boas_vindas' }, '2026-10-01T00:00:00Z'));
     render(<ProvedorDoOnboarding armazem={armazem}><PrimeirosPassos ir={() => {}} /></ProvedorDoOnboarding>);
-    expect(screen.getByText('0 de 4 feitos')).toBeDefined();
+    expect(screen.getByText('0 de 6 feitos')).toBeDefined();
+    expect(screen.getByText('Dicas do vídeo')).toBeDefined();
+    expect(screen.getByText('Dicas do quadro')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Rever' }));
     expect(armazem.atual?.boas_vindas).toBe('pendente');
   });

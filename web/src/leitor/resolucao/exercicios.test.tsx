@@ -48,9 +48,10 @@ test('cada recorte do documento fica marcado na sua página: caixa sem fundo, no
   expect(notas[0]!.dataset['lugar']).toBe('pagina');
   expect(notas[0]!.style.left).toBe('720px');
   expect(parseFloat(notas[1]!.style.top)).toBeGreaterThan(parseFloat(notas[0]!.style.top));
-  // A prévia traz o enunciado (com a fórmula pelo KaTeX) e a ideia do primeiro item.
+  // A prévia traz só a ideia do primeiro item (com a fórmula pelo KaTeX): o enunciado já está na página.
   await waitFor(() => expect(notas[0]!.querySelector('.previa-do-exercicio .katex')).not.toBeNull());
   expect(notas[0]!.querySelector('.linha-da-previa')?.textContent).toContain('Indução em');
+  expect(notas[0]!.querySelector('.previa-do-exercicio')?.textContent).not.toContain('Prove');
   fireEvent.click(screen.getByRole('button', { name: /Exercício resolvido: abrir/ }));
   expect(aoAbrir).toHaveBeenCalledWith(id(4));
   fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
@@ -72,4 +73,17 @@ test('com a margem à vista, a nota vai para a margem, na altura do exercício',
   expect(nota.style.top).toBe('110px');
   expect(nota.textContent).toContain('Resolvendo…');
   expect(document.querySelector('.caixa-do-exercicio')?.hasAttribute('data-aceso')).toBe(true);
+});
+
+test('questão por imagem (a página inteira): a nota entra no canto, por dentro da folha (J119)', async () => {
+  const pagina = folha(1);
+  const inteira: ResolucaoV2 = { ...pronta, id: id(10), origem: { tipo: 'recorte', pagina: 1, retangulo: { x: 0, y: 0, largura: 1, altura: 1 }, imagem_sha256: 'b'.repeat(64) } };
+  const fontes: FontesDosExercicios = { listar: () => Promise.resolve({ resolucoes: [{ resolucao: inteira, estado: 'pronta' }, { resolucao: { ...pronta, origem: { ...pronta.origem as Extract<ResolucaoV2['origem'], { tipo: 'recorte' }>, pagina: 1 } }, estado: 'pronta' }] }), obter: vi.fn(), remover: vi.fn(), tentarDeNovo: vi.fn() };
+  render(<ExerciciosNaPagina documentoId={id(2)} versaoId={id(3)} aberta={null} aoAbrir={() => undefined} fontes={fontes} />);
+  await waitFor(() => expect(pagina.querySelectorAll('.nota-do-exercicio')).toHaveLength(2));
+  const [daPagina, doRecorte] = [...pagina.querySelectorAll<HTMLElement>('.nota-do-exercicio')];
+  expect(daPagina!.style.left).toBe('800px');
+  expect(daPagina!.hasAttribute('data-dentro')).toBe(true);
+  // Um recorte com folga à direita continua com a nota do lado de fora, como antes.
+  expect(doRecorte!.hasAttribute('data-dentro')).toBe(false);
 });

@@ -10,7 +10,8 @@ biblioteca do Margem. Um código só para Chrome, Edge, Brave e Firefox (Manifes
 - **PDF**: se a aba é um PDF, a extensão baixa o arquivo e envia o original (o Margem abre PDF
   como o original); não extrai texto.
 - **Opções**: endereço do Margem (padrão `http://localhost:8730`, o da instalação no próprio
-  computador), token opcional e **Testar conexão**. A página mostra também a origem da extensão,
+  computador; com o padrão, a extensão procura o Margem nas portas 8730 a 8739 por `GET /api/saude`
+  e fica com a identificação que já conhece, mostrada na checagem da instalação do Margem), token opcional e **Testar conexão**. A página mostra também a origem da extensão,
   que o Margem precisa autorizar (abaixo).
 
 A extensão não tem servidor próprio: ela fala só com o Margem que você instalou. Nada é

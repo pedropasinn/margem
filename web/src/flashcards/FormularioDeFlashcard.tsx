@@ -1,5 +1,5 @@
 /**
- * Criar um flashcard à mão a partir de uma seleção ou de um grifo: o trecho fica como âncora (o serviço
+ * Criar um flashcard à mão (a citação fica no cabeçalho do painel do trecho, não aqui) a partir de uma seleção ou de um grifo: o trecho fica como âncora (o serviço
  * confere a citação no bloco), a frente é a pergunta do leitor e o verso começa com o próprio trecho.
  */
 import { useState, type FormEvent, type ReactNode } from 'react';
@@ -24,17 +24,16 @@ export function FormularioDeFlashcard({ ancora, aoFechar, criar = criarFlashcard
   if (estado === 'criado') {
     return <div className="formulario-de-flashcard" role="status">
       <p>Flashcard criado. Ele entra na fila de hoje em Flashcards.</p>
-      <div className="botoes"><Button variante="primario" onClick={aoFechar}>Fechar</Button></div>
+      <div className="ui-rodape"><Button variante="primario" tamanho="md" onClick={aoFechar}>Fechar</Button></div>
     </div>;
   }
   return <form className="formulario-de-flashcard" onSubmit={(evento) => void salvar(evento)} aria-label="Novo flashcard">
-    <blockquote>“{ancora.citacao}”</blockquote>
     <label>Frente (a pergunta)<Textarea value={frente} maxLength={1000} autoFocus placeholder="Por que…? O que é…?" onChange={(e) => definirFrente(e.target.value)} /></label>
     <label>Verso (a resposta)<Textarea value={verso} maxLength={4000} onChange={(e) => definirVerso(e.target.value)} /></label>
     {erro && <p className="aviso" role="alert">{erro}</p>}
-    <div className="botoes">
-      <Button variante="ghost" onClick={aoFechar}>Cancelar</Button>
-      <Button type="submit" variante="primario" disabled={estado === 'salvando' || !frente.trim() || !verso.trim()}>Criar flashcard</Button>
+    <div className="ui-rodape">
+      <Button variante="ghost" tamanho="md" onClick={aoFechar}>Cancelar</Button>
+      <Button type="submit" variante="primario" tamanho="md" disabled={estado === 'salvando' || !frente.trim() || !verso.trim()}>Criar flashcard</Button>
     </div>
   </form>;
 }

@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./regras": "./src/regras.ts",
     "./texto": "./src/texto.ts",
-    "./sala": "./src/sala.ts"
+    "./sala": "./src/sala.ts",
+    "./grifo": "./src/grifo.ts"
   },
   "types": "./src/index.ts"
 }

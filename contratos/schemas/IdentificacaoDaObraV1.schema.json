@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/IdentificacaoDaObraV1.schema.json",
+  "title": "Identificação de uma obra enviada pela pessoa (J118)",
+  "description": "Título, artista e ano de uma obra que a pessoa adicionou em Quadros. É o corpo de PUT /api/arte/:slug/identificacao (a pessoa corrige o que o Codex propôs) e o que o serviço guarda como identificação da obra. Com título e artista, o dossiê é procurado no Wikidata e nas Wikipédias; o ano só desempata.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "titulo",
+    "artista"
+  ],
+  "properties": {
+    "titulo": {
+      "$ref": "#/$defs/linha"
+    },
+    "artista": {
+      "$ref": "#/$defs/linha"
+    },
+    "ano": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^(?=[^\\r\\n]*\\S)[^\\r\\n\\u2028\\u2029]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "linha": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^(?=[^\\r\\n]*\\S)[^\\r\\n\\u2028\\u2029]+$"
+    }
+  }
+}

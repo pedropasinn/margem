@@ -1,7 +1,7 @@
 /** Página de opções: endereço do servidor, token e teste de conexão. */
 import browser from 'webextension-polyfill';
 import { gravarConfiguracao, lerConfiguracao } from '../configuracao';
-import { SERVIDOR_PADRAO, normalizarServidor, permissaoDeHost } from '../servidor';
+import { SERVIDOR_PADRAO, normalizarServidor, permissaoDeHost, textoDaConexao, type Conexao } from '../servidor';
 import type { Configuracao, Pedido, Resposta } from '../tipos';
 
 function el<T extends HTMLElement>(id: string): T {
@@ -65,8 +65,8 @@ async function iniciar(): Promise<void> {
     avisar('Testando…', 'neutro');
     const pedido: Pedido = { tipo: 'testar', configuracao };
     void pedirPermissao(configuracao.servidor).then(() => browser.runtime.sendMessage(pedido)).then((bruto: unknown) => {
-      const resposta = bruto as Resposta<{ versao: number }>;
-      if (resposta.ok) avisar(`Conectado ao Margem (importação web v${String(resposta.valor.versao)}).`, 'sucesso');
+      const resposta = bruto as Resposta<Conexao>;
+      if (resposta.ok) avisar(textoDaConexao(resposta.valor), 'sucesso');
       else avisar(resposta.erro, 'erro');
     });
   });

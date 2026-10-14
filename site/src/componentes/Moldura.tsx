@@ -1,29 +1,30 @@
 import type { ReactNode } from 'react';
 import { CONFIG } from '../config';
+import { Assinatura } from './Marca';
 
 const ANCORAS = [
-  { href: '#leitura', rotulo: 'Leitura' },
-  { href: '#privacidade', rotulo: 'Privacidade' },
-  { href: '#codigo-aberto', rotulo: 'Código aberto' },
+  { href: '#estudar', rotulo: 'Recursos' },
+  { href: '#biblioteca', rotulo: 'Formatos' },
 ] as const;
 
 const PAGINAS = [
+  { href: '/docs/obsidian/', rotulo: 'Plugin do Obsidian', secao: 'obsidian' },
   { href: '/docs/', rotulo: 'Documentação', secao: 'docs' },
   { href: '/novidades/', rotulo: 'Novidades', secao: 'novidades' },
 ] as const;
 
-export type Secao = 'inicio' | 'docs' | 'novidades' | 'legal';
+export type Secao = 'inicio' | 'download' | 'docs' | 'obsidian' | 'novidades' | 'legal';
 
-export function Logotipo(): ReactNode {
+/** A assinatura com link para a página inicial; no rodapé, com o lema ("Por uma formação integral"). */
+export function Logotipo({ lema = false }: { lema?: boolean }): ReactNode {
   return (
-    <a className="logotipo" href="/" aria-label={`${CONFIG.nome}, página inicial`}>
-      <img src="/icone-512.png" alt="" width={32} height={32} />
-      <span>{CONFIG.nome}</span>
+    <a className={lema ? 'logotipo com-lema' : 'logotipo'} href="/" aria-label={`${CONFIG.nome}, página inicial`}>
+      <Assinatura lema={lema} />
     </a>
   );
 }
 
-/** Cabeçalho: na página inicial, as âncoras das seções; em todas, Documentação, Novidades e Baixar. */
+/** Cabeçalho: na página inicial, as âncoras das seções; em todas, Plugin do Obsidian, Documentação, Novidades e Baixar (a página de download). */
 export function Cabecalho({ secao = 'legal' }: { secao?: Secao }): ReactNode {
   const inicio = secao === 'inicio';
   return (
@@ -36,7 +37,7 @@ export function Cabecalho({ secao = 'legal' }: { secao?: Secao }): ReactNode {
             <a key={item.href} className={item.secao === 'docs' ? undefined : 'so-largo'} href={item.href} aria-current={secao === item.secao ? 'page' : undefined}>{item.rotulo}</a>
           ))}
         </nav>
-        <a className="botao primario pequeno" href={inicio ? '#baixar' : '/#baixar'}>Baixar</a>
+        <a className="botao primario pequeno" href="/download/" aria-current={secao === 'download' ? 'page' : undefined}>Baixar</a>
       </div>
     </header>
   );
@@ -44,9 +45,10 @@ export function Cabecalho({ secao = 'legal' }: { secao?: Secao }): ReactNode {
 
 const COLUNAS: { titulo: string; links: { href: string; rotulo: string }[] }[] = [
   { titulo: 'Produto', links: [
-    { href: '/#baixar', rotulo: 'Baixar' },
+    { href: '/download/', rotulo: 'Baixar' },
     { href: '/novidades/', rotulo: 'Novidades' },
-    { href: '/#integracoes', rotulo: 'Integrações' },
+    { href: '/docs/extensao/', rotulo: 'Extensão do navegador' },
+    { href: '/docs/obsidian/', rotulo: 'Plugin do Obsidian' },
   ] },
   { titulo: 'Ajuda', links: [
     { href: '/docs/', rotulo: 'Documentação' },
@@ -67,8 +69,7 @@ export function Rodape(): ReactNode {
     <footer className="rodape">
       <div className="container rodape-linha">
         <div className="rodape-marca">
-          <Logotipo />
-          <p>{CONFIG.slogan}</p>
+          <Logotipo lema />
         </div>
         {COLUNAS.map((coluna) => (
           <nav key={coluna.titulo} aria-label={coluna.titulo} className="rodape-coluna">

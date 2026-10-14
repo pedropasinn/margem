@@ -1,5 +1,5 @@
 import { SinteseDoCapitulo } from './SinteseDoCapitulo';
-import { BarraDeSelecao, IconeDaSelecao } from './BarraDeSelecao';
+import { AcoesDaSelecao, BarraDeSelecao, IconeDaSelecao } from './BarraDeSelecao';
 import { Blocos } from './Aparencia';
 import { Icon } from '../ui/Icon';
 import { PlayerDeMidia } from './midia/PlayerDeMidia';
@@ -9,25 +9,28 @@ import { GerarNarracao } from '../audio/GerarNarracao';
 import type { AcaoDeOuvir } from './BarraDoLeitor';
 import type { DestaqueNavegavel, NavegacaoDeDestaques } from './NavegadorDeDestaques';
 import { LARGURA_DA_MARGEM, useTelaEstreita } from './hooks/useTelaEstreita';
-import { Button, IconButton, Switch, Drawer } from '../ui/Primitives';
+import { Button, IconButton, Select, Drawer } from '../ui/Primitives';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { AncoraV1, AnotacaoV1, ConexaoV2, DificuldadeTextualV1 } from '@margem/contratos';
-import { ErroDaApi, apagarAnotacao, apagarGrifo, baixarPdfAnotado, criarEtiqueta, criarGrifo, criarResolucao, escrever, gravarPreferenciasDoDocumento, resolucoesDoDocumento, trocarFuncaoDaMarca, type SessaoDaApi } from '../biblioteca/api';
+import type { AncoraV1, AnotacaoV1, ConexaoV2, ElementoSemanticoV1, ReferenciaModo, RelacaoConexao, TipoRelacaoSemantica } from '@margem/contratos';
+import { ErroDaApi, type RelacaoDoCapitulo, apagarGrifo, baixarPdfAnotado, criarEtiqueta, criarGrifo, criarResolucao, escrever, gravarNotaDoGrifo, gravarPreferenciasDoDocumento, resolucoesDoDocumento, trocarFuncaoDaMarca, type SessaoDaApi } from '../biblioteca/api';
 import { NotasDoGrifo } from './NotasDoGrifo';
 import { atalhoDeUmaTeclaDesligado, digitando, type Comando } from './teclado/comandos';
-import { ReaderController, type EdicaoDoLeitor, type PropsDoControlador } from './ReaderController';
-import { ContextoDosModos } from './ContextoDosModos';
+import { ReaderController, type EdicaoDoLeitor, type OpcoesDoGrifo, type PropsDoControlador } from './ReaderController';
+import { ContextoDosModos, lembrarOlharNoDocumento, mesmaReferencia, modoDaMarca, olharesLembrados, type Olhar } from './ContextoDosModos';
+import { cruza, sinaisDoCapitulo, sinaisVisiveis, type SinalDeDificuldade } from './dificuldades';
+import { LinhaDaDificuldade } from './BalaoDaMarca';
 import { usaPdf } from './DocumentReader';
 import { nomeDaUnidade, usarForma } from './forma';
-import { usarAparencia } from './ContextoDeAparencia';
+import { usarMarcasVisiveis } from './ContextoDeAparencia';
 import { usarEscolhaDeDestino } from './ContextoDeConexao';
 import { ancoraDaSelecao, type SelecaoDoLeitor } from './selecao';
 import { liberarPrimeiroEu, rotuloCamada } from './f2';
-import { FormularioDeAnotacao, TIPOS_DE_ANOTACAO } from './FormularioDeAnotacao';
-import { FormularioDeConexao, ListaDeConexoes } from './Conexoes';
+import { DialogoDeConexao, ListaDeConexoes } from './Conexoes';
 import { FioDeConversa } from './FioDeConversa';
 import { FormularioDeFlashcard } from '../flashcards/FormularioDeFlashcard';
-import { IndicadoresDeEstudo, type NotaPessoal } from './NotasPessoais';
+import { PainelDoTrecho, type AbaDoTrecho } from './PainelDoTrecho';
+import type { NotaPessoal } from './NotasPessoais';
+import type { ItemDaLateral } from './NumerosNaLateral';
 import type { ApiDoLeitor, PontoDeTexto } from './tipos';
 import { compreensaoDaCamada, useCompreensao } from './compreensao/useCompreensao';
 import { ROTULO_DA_RELACAO, ROTULO_DA_DIFICULDADE } from './compreensao/rotulos';
@@ -59,7 +62,16 @@ import './compreensao/compreensao.css';
 import { LinkDoEink } from '../eink/LinkDoEink';
 
 
+/** O painel do trecho: a nota (do grifo, ou uma anotação antiga), a conversa, as conexões (com o formulário aberto em "conectar") ou o flashcard. */
 type Painel = { tipo: 'anotar'; ancora: AncoraV1; anotacao?: AnotacaoV1; marcaId?: string } | { tipo: 'perguntar'; ancora: AncoraV1; id: string | null } | { tipo: 'conectar' | 'conexoes' | 'flashcard'; ancora: AncoraV1 };
+const ABA_DO_PAINEL: Record<Painel['tipo'], AbaDoTrecho | null> = { anotar: 'nota', perguntar: 'perguntar', conectar: 'conexoes', conexoes: 'conexoes', flashcard: null };
+/** Como uma conexão do leitor se lê no braquete: o verbo mais próximo entre as relações da compreensão. */
+const TIPO_DA_CONEXAO: Record<RelacaoConexao, TipoRelacaoSemantica> = { semelhanca: 'ecoa', contraste: 'contrasta', tensao: 'tensiona', prerequisito: 'pressupoe', desenvolve: 'desenvolve', exemplo: 'exemplifica' };
+/** Uma ponta de conexão como elemento do braquete: só a âncora importa para o desenho. */
+function elementoDaConexao(id: string, ancora: AncoraV1): ElementoSemanticoV1 {
+  return { id, papel: null, ancoras: [ancora], enunciado: ancora.citacao, qualificadores: [], notas: [] } as unknown as ElementoSemanticoV1;
+}
+const mesmaAncora = (a: AncoraV1, b: AncoraV1) => a.bloco_id === b.bloco_id && a.inicio_utf16 === b.inicio_utf16 && a.fim_utf16 === b.fim_utf16;
 export interface PropsDoEstudo extends PropsDoControlador {
   aoAtualizar: (camada?: string) => Promise<void>;
   destino?: AncoraV1 | null;
@@ -69,7 +81,8 @@ export interface PropsDoEstudo extends PropsDoControlador {
   /** Vindo da página do documento: abrir um exercício, um visual ou uma ação do estudo ao chegar. */
   intencao?: IntencaoDeLeitura | null;
 }
-const SEM_DIFICULDADES: readonly DificuldadeTextualV1[] = [];
+const SEM_DIFICULDADES: readonly SinalDeDificuldade[] = [];
+const SEM_MODOS: readonly import('@margem/contratos').ModoDeLeituraV1[] = [];
 /** Âncora do começo do capítulo (o primeiro bloco com texto): onde a margem põe os visuais do capítulo inteiro. */
 function ancoraDoInicio(versaoId: string, blocos: readonly { id: string; texto: string }[]): AncoraV1 | null {
   const bloco = blocos.find((b) => b.texto.trim() !== '');
@@ -94,7 +107,8 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   const { snapshot, documento_id } = props;
   const unidade = nomeDaUnidade(usarForma());
   const leitor = useRef<ApiDoLeitor>(null);
-  const { preferencias } = usarAparencia();
+  // V-T3: todas as marcas à vista, ou nenhuma (o botão "Marcas" da barra; Configurações decide como abre).
+  const [marcasAVista] = usarMarcasVisiveis(documento_id);
   const [raiz, definirRaiz] = useState<HTMLDivElement | null>(null);
   const [selecao, selecionar] = useState<SelecaoDoLeitor | null>(null);
   const [margemPdfDisponivel, definirMargemPdf] = useState(true);
@@ -103,16 +117,12 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   const limiarDaMargem = LARGURA_DA_MARGEM + lateralDaMidia;
   const telaEstreita = useTelaEstreita(limiarDaMargem);
   const estreita = telaEstreita || (usaPdf(snapshot) && !margemPdfDisponivel);
-  const [conversaLonga, expandirConversa] = useState(false);
   const [rascunho, guardarRascunho] = useState('');
   const [painel, abrir] = useState<Painel | null>(null);
-  const [editando, editar] = useState<string | null>(null);
   const [citacao, citar] = useState<AncoraV1 | null>(null);
   const [erro, definirErro] = useState<string | null>(null);
   const [ocupado, ocupar] = useState(false);
   const [avisoDoPdf, definirAvisoDoPdf] = useState<string | null>(null);
-  // O interruptor responde na hora; a verdade volta com o snapshot, e o valor otimista some.
-  const [primeiroEuOtimista, definirPrimeiroEuOtimista] = useState<boolean | null>(null);
   const acionador = useRef<HTMLElement | null>(null);
   // Compreensão do capítulo (J31): ativa quando a camada escolhida é a de uma execução de compreensão.
   const compreensao = useCompreensao(compreensaoDaCamada(snapshot.camada, snapshot.camadas), snapshot.secao.id);
@@ -131,8 +141,8 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
     // Bolinhas por padrão (pedido de produto, 30/09); a chave mudou para que a escolha antiga não prevaleça sobre o padrão novo.
     try { return localStorage.getItem('margem:visualizacao-relacoes:2') === 'linhas' ? 'linhas' : 'pontos'; } catch { return 'pontos'; }
   });
-  // O filtro das relações é o da atenção (Player v2, etapa 4): texto puro esconde, estudo mostra as relevantes, aprofundar mostra todas.
-  const filtroRelacoes: FiltroDeRelacoes = preferencias.nivelDeAtencao === 0 ? 'ocultas' : preferencias.nivelDeAtencao === 3 ? 'todas' : 'relevantes';
+  // As relações seguem as marcas: com elas à vista, todas; ocultas, nenhuma.
+  const filtroRelacoes: FiltroDeRelacoes = marcasAVista ? 'todas' : 'ocultas';
   const [perfilAberto, abrirPerfil] = useState(false);
   const [audioAberto, abrirAudio] = useState(false);
   // Narração gerada no app com a chave ElevenLabs da pessoa (J106); quando fica pronta, o player lista de novo.
@@ -220,6 +230,8 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   // Só o texto se dobra: no PDF não há blocos `[data-bloco]` no artigo, e as braquetes usam a janela dividida.
   const artigoDoTexto = useCallback(() => raiz?.querySelector<HTMLElement>('.capitulo') ?? null, [raiz]);
   const { escolha, escolher } = usarEscolhaDeDestino();
+  // Os dois trechos escolhidos no texto, à espera do tipo da relação (o diálogo pequeno).
+  const [ligacao, ligar] = useState<{ origem: AncoraV1; destino: AncoraV1 } | null>(null);
   const referencias = useRef({ snapshot, painel }); referencias.current = { snapshot, painel };
   const fechar = useCallback(() => {
     guardarRascunho(''); abrir(null); selecionar(null); definirErro(null); window.getSelection()?.removeAllRanges();
@@ -227,24 +239,27 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   }, []);
   const abrirPainel = useCallback((novo: Painel) => {
     acionador.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    guardarRascunho(''); expandirConversa(false); abrir(novo); selecionar(null); window.getSelection()?.removeAllRanges();
+    guardarRascunho(''); abrir(novo); pedirVisual(null); selecionar(null); window.getSelection()?.removeAllRanges();
   }, []);
   const selecaoRef = useRef(selecao); selecaoRef.current = selecao;
   // O botão "Grifar" da seleção usa o mesmo caminho do H (pilha de desfazer, balão da função).
-  const grifarRef = useRef<((anotar: boolean) => void) | null>(null);
+  const grifarRef = useRef<((opcoes?: OpcoesDoGrifo) => void) | null>(null);
+  const painelDocumentoRef = useRef<(() => void) | null>(null);
+  const abrirBalaoRef = useRef<((marcaId: string, opcoes?: { nota?: boolean }) => void) | null>(null);
   const acoesDoBalao = useMemo(() => ({
-    anotar: (ancora: AncoraV1, marcaId: string) => abrirPainel({ tipo: 'anotar', ancora, marcaId }),
+    conexoes: (ancora: AncoraV1) => abrirPainel({ tipo: 'conexoes', ancora }),
     perguntar: (ancora: AncoraV1) => abrirPainel({ tipo: 'perguntar', ancora, id: null }),
-    conectar: (ancora: AncoraV1) => abrirPainel({ tipo: 'conectar', ancora }),
+    conectar: (ancora: AncoraV1) => { fechar(); escolher({ origem: ancora }); },
     flashcard: (ancora: AncoraV1) => abrirPainel({ tipo: 'flashcard', ancora }),
-  }), [abrirPainel]);
-  useEffect(() => { fechar(); citar(null); editar(null); }, [snapshot.versao_id, snapshot.secao.id, fechar]);
+  }), [abrirPainel, fechar, escolher]);
+  useEffect(() => { fechar(); citar(null); }, [snapshot.versao_id, snapshot.secao.id, fechar]);
   useEffect(() => {
     if (!raiz) return;
     let quadro = 0;
     const capturar = () => {
       const ativo = document.activeElement;
-      if (ativo?.matches('input, textarea, select') || referencias.current.painel) return;
+      // O painel do trecho não é modal: selecionar outro trecho com ele aberto traz a barra de novo.
+      if (ativo?.matches('input, textarea, select')) return;
       const artigo = raiz.querySelector<HTMLElement>('.capitulo');
       if (!artigo) return;
       const atual = leitor.current?.selecao?.(window.getSelection()) ?? (referencias.current.snapshot.formato === 'pdf' && referencias.current.snapshot.geometria_disponivel ? null : ancoraDaSelecao(window.getSelection(), artigo, referencias.current.snapshot));
@@ -259,11 +274,10 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   }, [raiz]);
   useEffect(() => {
     const teclar = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { fechar(); escolher(null); return; }
+      if (e.key === 'Escape') { if (document.querySelector('[aria-modal="true"]')) return; fechar(); pedirVisual(null); escolher(null); return; }
       if (!selecao || e.ctrlKey || e.metaKey || e.altKey || digitando(e.target) || atalhoDeUmaTeclaDesligado(e)) return;
-      if (e.key.toLowerCase() === 'a' || e.key.toLowerCase() === 'p') {
-        e.preventDefault(); abrirPainel(e.key.toLowerCase() === 'a' ? { tipo: 'anotar', ancora: selecao.ancora } : { tipo: 'perguntar', ancora: selecao.ancora, id: null });
-      }
+      // A nota é sempre do grifo (N grifa e abre a nota); com a seleção, P pergunta.
+      if (e.key.toLowerCase() === 'p') { e.preventDefault(); abrirPainel({ tipo: 'perguntar', ancora: selecao.ancora, id: null }); }
     };
     window.addEventListener('keydown', teclar);
     return () => window.removeEventListener('keydown', teclar);
@@ -274,11 +288,33 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
     return () => clearTimeout(tempo);
   }, [citacao]);
   const versaoId = snapshot.versao_id;
+  // Os modos (J138): o catálogo inteiro fica no contexto — cada grifo tem o seu modo e grifos de modos
+  // diferentes convivem. Os principais (as funções que vêm primeiro) são o do tipo de texto do documento e
+  // os das camadas abertas; sem eles, os dos grifos do capítulo. Os olhares de outros modos usados há pouco
+  // no documento sobem para a primeira fileira do balão.
+  const principais = useMemo(() => {
+    const lista: ReferenciaModo[] = [];
+    const juntar = (ref: ReferenciaModo | null | undefined) => { if (ref && !lista.some((r) => mesmaReferencia(r, ref))) lista.push({ id: ref.id, revisao: ref.revisao }); };
+    juntar(snapshot.modo_principal);
+    for (const c of snapshot.camadas ?? []) if (snapshot.camada === 'todas' || c.id === snapshot.camada) juntar(c.modo);
+    if (lista.length === 0) for (const m of snapshot.marcas) juntar(modoDaMarca(m));
+    return lista;
+  }, [snapshot.modo_principal, snapshot.camadas, snapshot.camada, snapshot.marcas]);
+  const [lembrados, definirLembrados] = useState<Olhar[]>(() => olharesLembrados(documento_id));
+  useEffect(() => { definirLembrados(olharesLembrados(documento_id)); }, [documento_id]);
+  const lembrarOlhar = useCallback((olhar: Olhar) => { definirLembrados(lembrarOlharNoDocumento(documento_id, olhar)); }, [documento_id]);
+  const recentes = useMemo(() => {
+    // Os lembrados e os modos dos grifos do capítulo que não são principais, do mais novo ao mais antigo.
+    const doCapitulo = [...snapshot.marcas].filter((m) => m.origem === 'manual' && m.funcao !== 'nenhuma').sort((a, b) => (a.criada_em < b.criada_em ? 1 : -1))
+      .flatMap((m): Olhar[] => { const modo = modoDaMarca(m); return modo && !principais.some((p) => mesmaReferencia(p, modo)) ? [{ modo, funcao: m.funcao }] : []; });
+    return [...lembrados, ...doCapitulo].filter((o, i, todos) => todos.findIndex((outro) => mesmaReferencia(outro.modo, o.modo) && outro.funcao === o.funcao) === i).slice(0, 6);
+  }, [lembrados, snapshot.marcas, principais]);
   const edicao = useMemo<EdicaoDoLeitor>(() => ({
-    criarGrifo: async (ancora, funcao) => (await criarGrifo(ancora, funcao)).marca,
+    criarGrifo: async (ancora, funcao, modo) => (await criarGrifo(ancora, funcao, modo)).marca,
     apagarGrifo: async (id) => { await apagarGrifo(id); },
-    trocarFuncao: async (id, funcao) => (await trocarFuncaoDaMarca(id, funcao)).marca,
+    trocarFuncao: async (id, funcao, modo) => (await trocarFuncaoDaMarca(id, funcao, modo)).marca,
     etiquetar: async (marcaId, nome) => { await criarEtiqueta(versaoId, { tipo: 'marca', id: marcaId }, nome); },
+    restaurarNota: async (marcaId, texto) => { await gravarNotaDoGrifo(marcaId, texto); },
   }), [versaoId]);
   const selecaoAtual = useCallback(() => selecaoRef.current?.ancora ?? null, []);
   /** Abre o pedido de visual: de um trecho (com a estrofe inteira como alternativa) ou do capítulo. */
@@ -322,7 +358,7 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   }, [destino, snapshot.versao_id, snapshot.secao.id, irACitacao]);
   const anotacoes = snapshot.anotacoes ?? [];
   const conexoes = snapshot.conexoes ?? [];
-  const liberado = liberarPrimeiroEu(snapshot.primeiro_eu?.ativo ?? false, anotacoes, snapshot.blocos);
+  const liberado = liberarPrimeiroEu(snapshot.primeiro_eu?.ativo ?? false, anotacoes, snapshot.blocos, snapshot.marcas);
   // Leitura comentada e visita conduzem o braquete principal como o Percorrer: a relação do comentário
   // acende como no hover, com a dobra do texto entre as duas pontas (sem véu, decisão de produto, 30/09).
   const relacaoDoFoco = visitaAberta && focoDaVisita ? focoDaVisita.destacada : comentadaAberta && focoDaLeitura ? focoDaLeitura.destacada : undefined;
@@ -330,28 +366,35 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
     // Comentário só de grifo (sem relação): os braquetes seguem o mouse, como fora da leitura.
     () => relacaoDoFoco ? { aberta: true, relacaoId: relacaoDoFoco } : navegacao,
     [navegacao, relacaoDoFoco]);
-  const semMarcas = !liberado || (preferencias.nivelDeAtencao === 0 && !navegacao.aberta);
-  // Nível 3 (Aprofundar): as dificuldades textuais da compreensão entram como sublinhado tracejado e nota.
-  const dificuldadesDoCapitulo = useMemo(() => (compreensao.modelo?.dificuldades ?? [])
-    .filter((d) => d.ancoras.some((a) => a.versao_id === snapshot.versao_id && snapshot.blocos.some((b) => b.id === a.bloco_id))),
-  [compreensao.modelo, snapshot.versao_id, snapshot.blocos]);
-  const dificuldades = liberado && preferencias.nivelDeAtencao === 3 ? dificuldadesDoCapitulo : SEM_DIFICULDADES;
+  const semMarcas = !liberado || (!marcasAVista && !navegacao.aberta);
+  // O sinal de dificuldade (J138): à parte do grifo, um "!" pequeno na margem ao lado do trecho. As do
+  // Codex vêm do modelo do capítulo (depois do "primeiro eu"); com as marcas à vista (V-T3) aparecem as
+  // sugeridas, as confirmadas e as do leitor; as descartadas ficam gravadas e fora da tela.
+  const sinaisDoTexto = useMemo(() => sinaisDoCapitulo(liberado ? compreensao.modelo : null, snapshot.dificuldades ?? [], snapshot.versao_id, snapshot.blocos),
+    [liberado, compreensao.modelo, snapshot.dificuldades, snapshot.versao_id, snapshot.blocos]);
+  const dificuldades = useMemo(() => (semMarcas && !liberado ? SEM_DIFICULDADES : sinaisVisiveis(sinaisDoTexto, marcasAVista)), [sinaisDoTexto, marcasAVista, semMarcas, liberado]);
+  const dificuldadesDoTrecho = useCallback((ancora: AncoraV1) => sinaisDoTexto.filter((sinal) => sinal.estado !== 'descartada' && cruza(sinal.ancora, ancora)), [sinaisDoTexto]);
+  const [sinalAberto, abrirSinal] = useState<string | null>(null);
   const visivel = useMemo(() => ({ ...snapshot,
-    // Os grifos do leitor não esperam o "primeiro eu": são dele. Só o nível 0 (texto puro) os esconde.
-    marcas: semMarcas ? snapshot.marcas.filter((m) => m.origem === 'manual' && preferencias.nivelDeAtencao > 0) : [...snapshot.marcas].sort((a, b) => {
+    // Os grifos do leitor não esperam o "primeiro eu": são dele. Só "ocultar as marcas" os esconde.
+    marcas: semMarcas ? snapshot.marcas.filter((m) => m.origem === 'manual' && marcasAVista) : [...snapshot.marcas].sort((a, b) => {
       const precedencia = snapshot.precedencia ?? [];
       return precedencia.indexOf('camada_id' in a ? a.camada_id : '') - precedencia.indexOf('camada_id' in b ? b.camada_id : '');
     }),
     tracosPessoais: [
-      ...(preferencias.nivelDeAtencao === 0 ? [] : (snapshot.anotacoes ?? []).map((a) => ({ id: a.id, ancora: a.ancora, acao: 'sublinhado' as const }))),
+      // A nota é do grifo (J138): só a nota antiga, sem grifo, ainda ganha o sublinhado do trecho.
+      ...(!marcasAVista ? [] : (snapshot.anotacoes ?? []).filter((a) => !a.marca_id).map((a) => ({ id: a.id, ancora: a.ancora, acao: 'sublinhado' as const }))),
       ...(citacao ? [{ id: 'citacao-temporaria', ancora: citacao, acao: 'caixa' as const }] : []),
+      // O primeiro trecho da conexão fica marcado enquanto se escolhe o segundo.
+      ...(escolha && escolha.origem.versao_id === snapshot.versao_id ? [{ id: 'origem-da-conexao', ancora: escolha.origem, acao: 'caixa' as const }] : []),
       ...(visitaAberta && focoDaVisita?.ancora ? [{ id: 'foco-da-visita', ancora: focoDaVisita.ancora, acao: 'caixa' as const }] : []),
       // Na leitura comentada o véu já abre só o trecho comentado: sem caixa por cima dele (Player v2).
-      ...dificuldades.flatMap((d) => d.ancoras.map((ancora, i) => ({ id: `dificuldade-${d.id}-${String(i)}`, ancora, acao: 'sublinhado' as const, dificuldade: true }))),
+      // O sinal de dificuldade aberto na margem acende o trecho dele (sem cor de função: é só a caixa).
+      ...dificuldades.filter((d) => d.chave === sinalAberto).map((d) => ({ id: `dificuldade-${d.chave}`, ancora: d.ancora, acao: 'caixa' as const })),
     ],
     guia: visitaAberta && focoDaVisita ? { marcas: focoDaVisita.marcas, ativa: focoDaVisita.ativa }
         : comentadaAberta && focoDaLeitura ? { marcas: focoDaLeitura.marcas, ativa: focoDaLeitura.ativa } : null,
-  }), [snapshot, semMarcas, preferencias.nivelDeAtencao, citacao, dificuldades, visitaAberta, focoDaVisita, comentadaAberta, focoDaLeitura]);
+  }), [snapshot, semMarcas, marcasAVista, citacao, escolha, dificuldades, sinalAberto, visitaAberta, focoDaVisita, comentadaAberta, focoDaLeitura]);
   async function executar(acao: () => Promise<void>) {
     if (ocupado) return;
     ocupar(true); definirErro(null);
@@ -363,31 +406,55 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
     }
     finally { ocupar(false); }
   }
-  const conversaNaMargem = painel?.tipo === 'perguntar' && !estreita && !conversaLonga;
-  const fio = painel?.tipo === 'perguntar' ? <FioDeConversa key={painel.ancora.bloco_id + ':' + painel.ancora.inicio_utf16} id={painel.id} ancora={painel.ancora} documentoId={documento_id} conexoes={conexoes} aoCriar={(id) => abrir({ ...painel, id })} aoMudar={atualizar} aoCitar={irACitacao} rascunho={rascunho} aoRascunho={guardarRascunho} aoLonga={() => expandirConversa(true)} /> : null;
+  const fio = painel?.tipo === 'perguntar' ? <FioDeConversa key={painel.ancora.bloco_id + ':' + painel.ancora.inicio_utf16 + ':' + (painel.id ?? '')} id={painel.id} ancora={painel.ancora} documentoId={documento_id} conexoes={conexoes} aoCriar={(id) => abrir({ ...painel, id })} aoMudar={atualizar} aoCitar={irACitacao} rascunho={rascunho} aoRascunho={guardarRascunho} /> : null;
+  // As conexões do leitor entre dois trechos são desenhadas pelos mesmos braquetes da compreensão (J132).
+  const comBraquetesDaCompreensao = compreensao.ativa !== null && compreensao.modelo !== null && compreensao.modelo.revisao >= 2 && liberado;
+  const conexoesDesenhadas = useMemo<RelacaoDoCapitulo[]>(() => conexoes.flatMap((c) => c.estado === 'rejeitada' || c.destino.tipo !== 'trecho' ? [] : [{
+    relacao: { id: c.id, tipo: TIPO_DA_CONEXAO[c.relacao], origem_id: `${c.id}:origem`, destino_id: `${c.id}:destino`, explicacao: c.justificativa, confianca: 'alta' as const, retrospectiva: false, origem: { estagio: 'revisao' as const, job_id: c.id } },
+    relevante: true, origem: elementoDaConexao(`${c.id}:origem`, c.origem), destino: elementoDaConexao(`${c.id}:destino`, c.destino.ancora), conexao_id: c.id,
+  }]), [conexoes]);
   const relacionadas = (a: AncoraV1) => conexoes.filter((c) => c.estado !== 'rejeitada' && (c.origem.bloco_id === a.bloco_id || (c.destino.tipo === 'trecho' && c.destino.ancora.bloco_id === a.bloco_id)));
-  const notas: NotaPessoal[] = preferencias.nivelDeAtencao === 0 ? [] : anotacoes.map((a) => ({ id: a.id, ancora: a.ancora, conteudo: <>
-    <span className="eyebrow">P · {TIPOS_DE_ANOTACAO[a.tipo]}</span>
-    <p className="texto-pessoal">{a.texto}</p>
-    {editando === a.id && <FormularioDeAnotacao ancora={a.ancora} anotacao={a} aoConflito={atualizar} aoFechar={() => editar(null)} aoSalvar={() => { editar(null); atualizar(); }} />}
-    {a.tipo === 'fonte' && <p className="fonte-pessoal">{a.fonte.titulo}{a.fonte.pagina && ` · p. ${a.fonte.pagina}`}{a.fonte.url && /^https?:\/\//i.test(a.fonte.url) && <> · <a href={a.fonte.url} target="_blank" rel="noreferrer">Fonte</a></>}</p>}
-    <div className="acoes-pessoais"><Button type="button" onClick={() => editar(a.id)}>Editar</Button><Button type="button" disabled={ocupado} onClick={() => void executar(async () => { await apagarAnotacao(a.id, a.revisao_edicao); await aoAtualizar(); })}>Apagar</Button>{relacionadas(a.ancora).length > 0 && <Button type="button" onClick={() => abrirPainel({ tipo: 'conexoes', ancora: a.ancora })}>↗ Conexões</Button>}</div>
-  </> }));
-  if (preferencias.nivelDeAtencao > 0) for (const c of (snapshot.conversas ?? []).filter((c) => !(conversaNaMargem && painel?.tipo === 'perguntar' && c.id === painel.id))) notas.push({ id: c.id, ancora: c.ancora, conteudo: <Button type="button" variante="ghost" className="reabrir-conversa" onClick={() => abrirPainel({ tipo: 'perguntar', ancora: c.ancora, id: c.id })}>◌ Conversa · {c.mensagens} mensagens<br /><span>{c.ancora.citacao}</span></Button> });
+  // A margem só lê (J132): rótulo, texto e um "…" no hover ou foco que abre o painel do trecho, onde ficam editar e apagar.
+  // A nota é do grifo (J138): na margem, uma linha ✎ ligada ao grifo, não um card à parte. A do grifo com
+  // comentário do Codex vai dentro da nota dele (MarginNotes); a nota antiga, sem grifo, fica só de leitura.
+  const marcaDaNota = (a: AnotacaoV1) => (a.marca_id ? snapshot.marcas.find((m) => m.id === a.marca_id) : undefined);
+  const abrirNota = (a: AnotacaoV1) => (a.marca_id && marcaDaNota(a) ? abrirBalaoRef.current?.(a.marca_id, { nota: true }) : abrirPainel({ tipo: 'anotar', ancora: a.ancora, anotacao: a }));
+  const notaPessoal = (a: AnotacaoV1): NotaPessoal => {
+    const marca = marcaDaNota(a);
+    return { id: a.id, ancora: marca?.ancora ?? a.ancora, aoAbrir: () => abrirNota(a), resumo: a.texto, sinal: marca ? '✎' : 'N',
+      descricao: `${marca ? 'Sua anotação' : 'Nota antiga'}: ${a.texto.slice(0, 80)}`, conteudo: marca
+        ? <button type="button" className="nota-do-grifo-linha" onClick={() => abrirNota(a)} aria-label={`Sua anotação: ${a.texto.slice(0, 80)}`}>
+          <span className="nota-do-grifo-sinal" aria-hidden="true">✎</span><span className="nota-do-grifo-texto">{a.texto}</span></button>
+        : <><p className="nota-cabeca"><span className="nota-rotulo">Nota antiga</span>
+          <IconButton tamanho="sm" icone="reticencias" className="abrir-da-margem" aria-label="Abrir a nota no painel" onClick={() => abrirNota(a)} /></p>
+        <p className="nota-texto">{a.texto}</p></> };
+  };
+  // Na margem, a nota do grifo do Codex com comentário já aparece dentro da nota dele.
+  const naMargem = (a: AnotacaoV1) => { const marca = marcaDaNota(a); return !marca || marca.origem === 'manual' || marca.comentario === null; };
+  const visiveisNoTexto = new Set(visivel.marcas.map((m) => m.id));
+  const notas: NotaPessoal[] = !marcasAVista ? [] : anotacoes.filter((a) => !a.marca_id || visiveisNoTexto.has(a.marca_id)).filter(naMargem).map(notaPessoal);
+  const notasDoCaderno: NotaPessoal[] = anotacoes.filter((a) => !a.marca_id || marcaDaNota(a)).map(notaPessoal);
+  if (marcasAVista) for (const c of (snapshot.conversas ?? [])) notas.push({ id: c.id, ancora: c.ancora, aoAbrir: () => abrirPainel({ tipo: 'perguntar', ancora: c.ancora, id: c.id }), sinal: 'C', descricao: `Conversa · ${String(c.mensagens)} mensagens`, conteudo: <Button variante="ghost" tamanho="sm" className="reabrir-conversa" onClick={() => abrirPainel({ tipo: 'perguntar', ancora: c.ancora, id: c.id })}>
+    <span className="reabrir-conversa-rotulo"><Icon name="conversas" size={16} />Conversa · {c.mensagens} {c.mensagens === 1 ? 'mensagem' : 'mensagens'}</span><span className="reabrir-conversa-citacao">{c.ancora.citacao}</span></Button> });
   const blocosConectados = [...new Set(conexoes.filter((c) => c.estado !== 'rejeitada').flatMap((c) => [c.origem, ...(c.destino.tipo === 'trecho' ? [c.destino.ancora] : [])]).filter((a) => a.versao_id === snapshot.versao_id && snapshot.blocos.some((b) => b.id === a.bloco_id)).map((a) => a.bloco_id))];
-  if (preferencias.nivelDeAtencao > 0) for (const blocoId of blocosConectados) {
+  if (marcasAVista) for (const blocoId of blocosConectados) {
     const c = conexoes.find((c) => c.origem.bloco_id === blocoId || (c.destino.tipo === 'trecho' && c.destino.ancora.bloco_id === blocoId));
     if (!c) continue;
     const a = c.origem.bloco_id === blocoId ? c.origem : c.destino.tipo === 'trecho' ? c.destino.ancora : c.origem;
-    notas.push({ id: `conexoes-${blocoId}`, ancora: a, conteudo: <><Button type="button" onClick={() => abrirPainel({ tipo: 'conexoes', ancora: a })}>↗ Conexões do trecho</Button><ListaDeConexoes conexoes={relacionadas(a)} aoMudar={atualizar} aoCitar={irACitacao} /></> });
+    const total = relacionadas(a).length;
+    notas.push({ id: `conexoes-${blocoId}`, ancora: a, aoAbrir: () => abrirPainel({ tipo: 'conexoes', ancora: a }), sinal: '↗', descricao: total === 1 ? '1 conexão' : `${String(total)} conexões`, conteudo: <Button variante="ghost" tamanho="sm" className="conexoes-da-margem" onClick={() => abrirPainel({ tipo: 'conexoes', ancora: a })}>
+      <Icon name="relacao" size={16} />{total === 1 ? '1 conexão' : `${String(total)} conexões`}</Button> });
   }
-  // Sem margem, as dificuldades vão para a lateral direita, com os números das notas (`extrasDaLateral`).
+  // O sinal de dificuldade na margem (J138): o "!" do tamanho das bolinhas, ao lado do trecho; tocar abre o
+  // cartão pequeno (categoria, descrição do Codex, confirmar e descartar). Sem margem, vai para a lateral.
+  const cartaoDoSinal = (d: SinalDeDificuldade) => <LinhaDaDificuldade sinal={d} aoMudar={atualizar} aoErro={definirErro} />;
   for (const d of estreita ? [] : dificuldades) {
-    const ancora = d.ancoras[0];
-    // Na margem, com a mesma cara de uma nota de marca: o círculo (tracejado, em âmbar, como o sublinhado) e o tipo.
-    if (ancora) notas.push({ id: `dificuldade-${d.id}`, ancora, conteudo: <div className="nota-dificuldade">
-      <p className="nota-cabeca"><span className="nota-numero nota-numero-dificuldade" role="img" aria-label="Dificuldade" title="Dificuldade do texto">?</span><span className="nota-rotulo">{ROTULO_DA_DIFICULDADE[d.tipo]}</span></p>
-      <p className="nota-texto">{d.descricao}</p>
+    const aberto = sinalAberto === d.chave;
+    notas.push({ id: `dificuldade-${d.chave}`, ancora: d.ancora, conteudo: <div className={`sinal-na-margem${aberto ? ' aberto' : ''}`}>
+      <button type="button" className="nota-numero sinal-de-dificuldade-botao" aria-expanded={aberto} onClick={() => abrirSinal(aberto ? null : d.chave)}
+        aria-label={`Dificuldade${d.tipo ? `: ${ROTULO_DA_DIFICULDADE[d.tipo]}` : ''}${d.estado === 'sugerida' ? ' (sugerida pelo Codex)' : ''}`}
+        title={d.tipo ? ROTULO_DA_DIFICULDADE[d.tipo] : 'Dificuldade'} data-estado={d.estado}>!</button>
+      {aberto && cartaoDoSinal(d)}
     </div> });
   }
   // Visuais de trecho e de estrofe: nota na margem (ou no rodapé, sem margem), ancorada ao trecho. Os do
@@ -396,26 +463,29 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   // aberto, tomava o lugar das notas das estrofes.
   const quadroNoTexto = poesia && !usaPdf(snapshot);
   const inicioDoCapitulo = quadroNoTexto ? null : ancoraDoInicio(snapshot.versao_id, snapshot.blocos);
-  const visuaisDoCapitulo = preferencias.nivelDeAtencao > 0 ? <VisuaisDoCapitulo series={visuais.series.filter((s) => s.atual.alvo.tipo === 'capitulo')} rotulo={rotuloVisual} ocupado={ocupado}
+  const visuaisDoCapitulo = marcasAVista ? <VisuaisDoCapitulo series={visuais.series.filter((s) => s.atual.alvo.tipo === 'capitulo')} rotulo={rotuloVisual} ocupado={ocupado}
     aoAbrir={(serie) => ampliarVisual(serie.atual.id)} aoTentarDeNovo={(v) => void executar(async () => { await regenerarVisual(v.id); await visuais.recarregar(); })} /> : null;
-  if (preferencias.nivelDeAtencao > 0) for (const serie of visuais.series) {
+  if (marcasAVista) for (const serie of visuais.series) {
     const alvo = serie.atual.alvo;
     const ancora = alvo.tipo === 'capitulo' ? (estreita ? null : inicioDoCapitulo) : alvo.ancora;
     if (ancora === null || !snapshot.blocos.some((b) => b.id === ancora.bloco_id)) continue;
-    notas.push({ id: `visual-${serie.atual.id}`, ancora, conteudo: <NotaDoVisual serie={serie} rotulo={rotuloVisual(serie.atual)} ocupado={ocupado}
+    notas.push({ id: `visual-${serie.atual.id}`, ancora, aoAbrir: () => ampliarVisual(serie.atual.id), sinal: serie.atual.estado === 'falhou' ? '!' : 'V',
+      descricao: serie.atual.estado === 'falhou' ? `${rotuloVisual(serie.atual)} não saiu: ver o motivo` : rotuloVisual(serie.atual), conteudo: <NotaDoVisual serie={serie} rotulo={rotuloVisual(serie.atual)} ocupado={ocupado}
       aoAbrir={() => ampliarVisual(serie.atual.id)} aoTentarDeNovo={() => void executar(async () => { await regenerarVisual(serie.atual.id); await visuais.recarregar(); })} /> });
   }
-  if (conversaNaMargem && painel) notas.push({ id: 'conversa-aberta', ancora: painel.ancora, conteudo: <section className="conversa-na-margem" aria-label="Conversa no trecho"><div className="cabeca-estudo"><span className="eyebrow">Conversa no trecho</span><Button variante="ghost" onClick={fechar}>Fechar</Button></div>{fio}<Button variante="ghost" onClick={() => expandirConversa(true)}>Ampliar conversa</Button></section> });
   // As dificuldades já têm o sublinhado tracejado no texto: não ganham indicador por cima dele.
   // Os visuais já aparecem inteiros na margem (ou no rodapé): não ganham indicador por cima do texto.
-  const indicadores = notas.filter((n) => n.id !== 'conversa-aberta' && !n.id.startsWith('dificuldade-') && !n.id.startsWith('visual-')).map((n) => ({ id: n.id, ancora: n.ancora, rotulo: n.id.startsWith('conexoes-') ? 'Ver conexões do trecho' : anotacoes.some((a) => a.id === n.id) ? 'Ver sua anotação' : 'Reabrir conversa do trecho', simbolo: n.id.startsWith('conexoes-') ? '↗' : anotacoes.some((a) => a.id === n.id) ? '✎' : '◌' }));
+  // Sem margem (celular), as notas, conversas e conexões entram na lateral direita, com os números das marcas; nunca por cima do texto.
+  // Os visuais seguem no rodapé, inteiros; só a falha ganha o triângulo na lateral.
+  const pessoaisNaLateral: ItemDaLateral[] = notas.flatMap((n) => n.aoAbrir === undefined || n.sinal === undefined || n.sinal === 'V' ? [] : [{
+    id: `pessoal-${n.id}`, ancora: n.ancora, aoAbrir: n.aoAbrir, classe: n.sinal === '!' ? 'numero-pessoal numero-falha' : 'numero-pessoal',
+    rotulo: n.sinal === '!' ? '!' : n.sinal, descricao: n.descricao ?? 'Abrir' }]);
   const comandos: Comando[] = [
     ...(comandosDeFora ?? []),
     ...(compreensao.modelo && compreensao.modelo.revisao >= 2 ? [{ id: 'comentada', grupo: 'Estudo', rotulo: comentadaAberta ? 'Sair da leitura comentada' : comentada.leitura ? 'Leitura comentada' : 'Preparar a leitura comentada', palavras: 'professor voz ouvir ler em voz alta comentários karaokê', executar: alternarComentada }] : []),
     ...(compreensao.modelo && compreensao.modelo.revisao >= 2 ? [{ id: 'visita', grupo: 'Estudo', rotulo: visitaAberta ? 'Sair da visita (só comentários)' : visita.roteiro ? 'Visita (só comentários)' : 'Preparar a visita (só comentários)', palavras: 'narrada voz ouvir tour guiada', executar: alternarVisita }] : []),
     ...(compreensao.modelo && compreensao.modelo.elementos.length > 0 ? [{ id: 'mapa', grupo: 'Estudo', rotulo: `Mapa do ${unidade}`, executar: () => abrirMapa(true) }] : []),
     ...(selecao ? [
-      { id: 'anotar-selecao', grupo: 'Seleção', rotulo: 'Anotar a seleção', atalho: 'A', executar: () => abrirPainel({ tipo: 'anotar', ancora: selecao.ancora }) },
       { id: 'perguntar-selecao', grupo: 'Seleção', rotulo: 'Perguntar sobre a seleção', atalho: 'P', executar: () => abrirPainel({ tipo: 'perguntar', ancora: selecao.ancora, id: null }) },
       { id: 'flashcard-selecao', grupo: 'Seleção', rotulo: 'Criar flashcard da seleção', palavras: 'cartão anki revisão', executar: () => abrirPainel({ tipo: 'flashcard', ancora: selecao.ancora }) },
       { id: 'imagem-selecao', grupo: 'Seleção', rotulo: 'Criar imagem da seleção', executar: () => abrirVisual('imagem', selecao.ancora) },
@@ -433,10 +503,10 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   const relacoesParaNavegar = useMemo<DestaqueNavegavel[]>(() => {
     const modelo = compreensao.modelo;
     if (!liberado || !modelo || modelo.revisao < 2) return [];
-    return modelo.relacoes.flatMap((relacao, indice) => {
+    return modelo.relacoes.flatMap((relacao) => {
       const ancora = modelo.elementos.find((e) => e.id === relacao.origem_id)?.ancoras[0];
       const destino = modelo.elementos.find((e) => e.id === relacao.destino_id)?.ancoras[0];
-      return ancora && destino ? [{ id: relacao.id, tipo: 'braquete' as const, ancora, destino, titulo: ROTULO_DA_RELACAO[relacao.tipo], texto: relacao.explicacao, cor: corDaRelacao(indice) }] : [];
+      return ancora && destino ? [{ id: relacao.id, tipo: 'braquete' as const, ancora, destino, titulo: ROTULO_DA_RELACAO[relacao.tipo], texto: relacao.explicacao, cor: corDaRelacao(relacao.id) }] : [];
     });
   }, [compreensao.modelo, liberado]);
   // O que o estudo acrescenta ao Caderno, cada item na sua posição no texto: relações, exercícios e visuais.
@@ -447,9 +517,10 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
   const extrasDoCaderno: ItemExtraDoCaderno[] = [
     ...relacoesParaNavegar.map((relacao): ItemExtraDoCaderno => ({ id: `relacao-${relacao.id}`, tipo: 'relacao', ordem: ordemNoTexto(snapshot.blocos, relacao.ancora), rotulo: `Relação: ${relacao.titulo}`,
       aoAbrir: () => irACitacao(relacao.ancora),
-      conteudo: <><span className="painel-leitor-rotulo"><Icon name="relacao" size={14} /> Relação · {relacao.titulo}</span>
+      cor: relacao.cor,
+      conteudo: <><span className="painel-leitor-rotulo"><span className="painel-leitor-ponto" style={{ backgroundColor: relacao.cor }} />Relação · {relacao.titulo.toLocaleLowerCase('pt-BR')}</span>
         <span className="painel-leitor-citacao">{relacao.ancora.citacao}</span>
-        {relacao.destino && <span className="painel-leitor-destino">↳ {relacao.destino.citacao}</span>}
+        {relacao.destino && <span className="painel-leitor-destino"><Icon name="relacao" size={14} />{relacao.destino.citacao}</span>}
         {relacao.texto && <span className="painel-leitor-comentario">{relacao.texto}</span>}</> })),
     ...resolucoes.flatMap(({ resolucao, estado }): ItemExtraDoCaderno[] => {
       const origem = resolucao.origem;
@@ -485,13 +556,51 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
     if (intencao.acao === 'mapa' && compreensao.modelo && compreensao.modelo.elementos.length > 0) cumprir('mapa', () => abrirMapa(true));
     if (intencao.acao === 'visita' && visita.roteiro) cumprir('visita', () => abrirVisita({ tocar: false }));
     if (intencao.acao === 'comentada' && comentada.leitura) cumprir('comentada', () => abrirComentada({ tocar: false }));
-  }, [intencao, compreensao.modelo, visita.roteiro, comentada.leitura]);
-  const marcaDoPainel = painel?.tipo === 'anotar' && painel.marcaId !== undefined ? snapshot.marcas.find((m) => m.id === painel.marcaId) ?? null : null;
-  const modos = (snapshot.modos ?? []).filter((m) => (snapshot.camadas ?? []).some((c) => (snapshot.camada === 'todas' || c.id === snapshot.camada) && c.modo.id === m.id && c.modo.revisao === m.revisao));
-  return <ContextoDosModos modos={modos}><div ref={definirRaiz} className="estudo-capitulo">
+    // Vindo da página Notas (J145): o painel certo do item, depois que o leitor chegou ao trecho.
+    const { marca, conversa: conversaId, conexao: conexaoId, relacao: relacaoId } = intencao;
+    if (marca && snapshot.marcas.some((m) => m.id === marca)) cumprir(`m:${marca}`, () => { setTimeout(() => abrirBalaoRef.current?.(marca, intencao.nota ? { nota: true } : {}), 900); });
+    const conversa = conversaId ? (snapshot.conversas ?? []).find((c) => c.id === conversaId) : undefined;
+    if (conversa) cumprir(`c:${conversa.id}`, () => abrirPainel({ tipo: 'perguntar', ancora: conversa.ancora, id: conversa.id }));
+    const conexao = conexaoId ? conexoes.find((c) => c.id === conexaoId) : undefined;
+    if (conexao) cumprir(`x:${conexao.id}`, () => abrirPainel({ tipo: 'conexoes', ancora: conexao.origem.versao_id === snapshot.versao_id ? conexao.origem : conexao.destino.tipo === 'trecho' ? conexao.destino.ancora : conexao.origem }));
+    if (relacaoId && relacoesParaNavegar.some((r) => r.id === relacaoId)) cumprir(`r2:${relacaoId}`, () => { setTimeout(() => definirNavegacao({ aberta: true, relacaoId, cartao: true }), 900); });
+  }, [intencao, compreensao.modelo, visita.roteiro, comentada.leitura, snapshot.marcas, snapshot.conversas, snapshot.versao_id, conexoes, relacoesParaNavegar, abrirPainel]);
+  // O grifo do trecho aberto: o da nota pedida, ou o que cobre exatamente o trecho (do leitor antes do da IA).
+  const marcaDoPainel = painel === null ? null : painel.tipo === 'anotar' && painel.marcaId !== undefined ? snapshot.marcas.find((m) => m.id === painel.marcaId) ?? null
+    : painel.tipo === 'anotar' && painel.anotacao ? null
+      : [...snapshot.marcas].sort((a, b) => Number(b.origem === 'manual') - Number(a.origem === 'manual')).find((m) => mesmaAncora(m.ancora, painel.ancora)) ?? null;
+  const trocarAba = (aba: AbaDoTrecho) => {
+    if (!painel) return;
+    const ancora = painel.ancora;
+    if (aba === 'nota') abrir(marcaDoPainel ? { tipo: 'anotar', ancora, marcaId: marcaDoPainel.id } : { tipo: 'anotar', ancora });
+    else if (aba === 'perguntar') abrir({ tipo: 'perguntar', ancora, id: (snapshot.conversas ?? []).find((c) => mesmaAncora(c.ancora, ancora))?.id ?? null });
+    else abrir({ tipo: 'conexoes', ancora });
+  };
+  const conteudoDoPainel = painel === null ? null : <>
+    {painel.tipo === 'anotar' && marcaDoPainel && <NotasDoGrifo key={marcaDoPainel.id} marca={marcaDoPainel} aoMudar={atualizar}
+      nota={anotacoes.find((a) => a.marca_id === marcaDoPainel.id) ?? null} pendente={(snapshot.revisoes_pendentes ?? []).some((id) => anotacoes.some((a) => a.id === id && a.marca_id === marcaDoPainel.id))}
+      comentarioDaIa={snapshot.edicoes?.[marcaDoPainel.id]?.comentario_da_ia} />}
+    {painel.tipo === 'anotar' && !marcaDoPainel && painel.anotacao
+      ? <NotaAntiga key={painel.anotacao.id} anotacao={painel.anotacao} ocupado={ocupado} aoGrifar={() => grifarRef.current?.({ nota: true, ancora: painel.ancora })} />
+      : painel.tipo === 'anotar' && !marcaDoPainel && <>
+        <p className="painel-trecho-vazio">A nota fica no grifo: grife o trecho para escrever sobre ele.</p>
+        <div className="ui-rodape"><Button variante="primario" tamanho="md" disabled={ocupado} onClick={() => grifarRef.current?.({ nota: true, ancora: painel.ancora })}>Grifar e escrever a nota</Button></div>
+      </>}
+    {painel.tipo === 'perguntar' && fio}
+    {(painel.tipo === 'conexoes' || painel.tipo === 'conectar') && <>
+      {relacionadas(painel.ancora).length > 0 ? <ListaDeConexoes conexoes={relacionadas(painel.ancora)} aoMudar={atualizar} aoCitar={irACitacao} doTrecho={painel.ancora} />
+        : <p className="painel-trecho-vazio">Nenhuma conexão neste trecho ainda.</p>}
+      <Button variante="ghost" tamanho="sm" className="nova-nota" onClick={() => { const origem = painel.ancora; fechar(); escolher({ origem }); }}><Icon name="somar" size={16} />Conectar a outro trecho</Button>
+    </>}
+    {painel.tipo === 'flashcard' && <FormularioDeFlashcard ancora={painel.ancora} aoFechar={fechar} />}
+  </>;
+  const tituloDoVisual = pedidoVisual === null ? '' : pedidoVisual.tipo === 'imagem' ? (pedidoVisual.ancora === null && pedidoVisual.blocoInteiro === null ? (poesia ? 'Quadro do poema' : `Quadro do ${unidade}`) : 'Criar imagem') : (pedidoVisual.ancora === null && pedidoVisual.blocoInteiro === null ? `Fluxograma do ${unidade}` : 'Fluxograma');
+  const voltarAoDocumento = () => painelDocumentoRef.current?.();
+  return <ContextoDosModos modos={snapshot.modos ?? SEM_MODOS} principais={principais} recentes={recentes} lembrarOlhar={lembrarOlhar}><div ref={definirRaiz} className="estudo-capitulo">
     <ReaderController {...props} {...(quadroNoTexto ? { abertura: <>{props.abertura}{visuaisDoCapitulo}</> } : {})} limiarDaMargem={limiarDaMargem}
-      estudoAberto={painel !== null}
-      pessoaisDoCaderno={notas.filter((nota) => anotacoes.some((anotacao) => anotacao.id === nota.id))}
+      estudoAberto={painel !== null || pedidoVisual !== null} aoFecharPainel={() => { fechar(); pedirVisual(null); }} painelDocumentoRef={painelDocumentoRef}
+      pessoaisDoCaderno={notasDoCaderno}
+      dificuldadesDoTrecho={dificuldadesDoTrecho} conexoesDoTrecho={(a) => relacionadas(a).length} abrirBalaoRef={abrirBalaoRef}
       conversasDoPainel={(snapshot.camadas?.length || snapshot.conversas?.length) ? {
         total: snapshot.conversas?.length ?? 0,
         conteudo: <>
@@ -505,37 +614,28 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
           <p className="painel-leitor-dica">Selecione um trecho e use Perguntar (p) para conversar ancorado no texto.</p>
         </>,
       } : undefined}
-      relacoesParaNavegar={relacoesParaNavegar} aoNavegarDestaques={definirNavegacao} navegacaoSuspensa={visitaAberta !== null || comentadaAberta !== null} leitorRef={leitor} acoesDoBalao={acoesDoBalao} edicao={edicao} grifarRef={grifarRef} selecaoAtual={selecaoAtual} aoMudarMarcas={atualizar} comandos={comandos} aoMudarMargem={definirMargemPdf} snapshot={visivel} pessoais={notas} extrasDaLateral={estreita ? dificuldades.map((d) => ({
-        id: `dificuldade-${d.id}`, ancora: d.ancoras[0]!, rotulo: '?', tracejado: true, classe: 'nota-numero-dificuldade', descricao: `Dificuldade: ${ROTULO_DA_DIFICULDADE[d.tipo]}`,
-        conteudo: <div className="nota-dificuldade"><p className="nota-cabeca"><span className="nota-numero nota-numero-dificuldade" aria-hidden="true">?</span><span className="nota-rotulo">{ROTULO_DA_DIFICULDADE[d.tipo]}</span></p><p className="nota-texto">{d.descricao}</p></div>,
-      })).filter((item) => item.ancora !== undefined) : undefined} dificuldadesNoNivel3={liberado ? dificuldadesDoCapitulo.length : 0} perguntas={semMarcas ? [] : props.perguntas}
-      conexaoDaNota={(a) => relacionadas(a).length > 0 ? <Button type="button" className="conexao-da-nota" aria-label="Conexões desta nota" onClick={() => abrirPainel({ tipo: 'conexoes', ancora: a })}>↗</Button> : null}
-      filtrosDoCaderno={(snapshot.camadas ?? []).length > 1 ? <div className="chips" role="group" aria-label="Camada de marcas">{[{ id: 'todas', rotulo: 'Todas as camadas' }, ...(snapshot.camadas ?? []).map((c) => ({ id: c.id, rotulo: rotuloCamada(c) }))].map((c) => (
-        <button key={c.id} type="button" className="chip" aria-pressed={snapshot.camada === c.id} disabled={ocupado} onClick={() => { const camada = c.id; if (camada === snapshot.camada) return; void executar(async () => {
+      relacoesParaNavegar={relacoesParaNavegar} aoNavegarDestaques={definirNavegacao} navegacaoSuspensa={visitaAberta !== null || comentadaAberta !== null} leitorRef={leitor} acoesDoBalao={acoesDoBalao} edicao={edicao} grifarRef={grifarRef} selecaoAtual={selecaoAtual} aoMudarMarcas={atualizar} comandos={comandos} aoMudarMargem={definirMargemPdf} snapshot={visivel} pessoais={notas} extrasDaLateral={estreita ? [...pessoaisNaLateral, ...dificuldades.map((d) => ({
+        id: `dificuldade-${d.chave}`, ancora: d.ancora, rotulo: '!', classe: 'numero-dificuldade', descricao: `Dificuldade${d.tipo ? `: ${ROTULO_DA_DIFICULDADE[d.tipo]}` : ''}`,
+        conteudo: cartaoDoSinal(d),
+      }))] : undefined} perguntas={semMarcas ? [] : props.perguntas}
+      conexaoDaNota={(a) => relacionadas(a).length > 0 ? <IconButton tamanho="sm" icone="relacao" className="conexao-da-nota" aria-label="Conexões desta nota" onClick={() => abrirPainel({ tipo: 'conexoes', ancora: a })} /> : null}
+      filtrosDoCaderno={(snapshot.camadas ?? []).length > 1 ? <Select aria-label="Camada de marcas" className="caderno-seletor" value={snapshot.camada ?? 'todas'} disabled={ocupado} onChange={(evento) => { const camada = evento.target.value; if (camada === snapshot.camada) return; void executar(async () => {
           await gravarPreferenciasDoDocumento(documento_id, { camada_padrao: camada === 'todas' ? null : camada });
           try {
             if (camada === 'todas') localStorage.setItem(`margem:camada:${documento_id}`, camada);
             else localStorage.removeItem(`margem:camada:${documento_id}`);
           } catch { /* A sessão continua sem storage. */ }
           await aoAtualizar(camada);
-        }); }}>{c.rotulo}</button>))}</div> : undefined}
+        }); }}>{[{ id: 'todas', rotulo: 'Todas as camadas' }, ...(snapshot.camadas ?? []).map((c) => ({ id: c.id, rotulo: rotuloCamada(c) }))].map((c) => <option key={c.id} value={c.id}>{c.rotulo}</option>)}</Select> : undefined}
       extrasDoCaderno={extrasDoCaderno}
       aoMudarPainel={definirPainelAberto}
-      infoDoPainel={<>
-        {liberado && compreensao.modelo?.execucao_id === compreensao.ativa && compreensao.modelo?.secao_id === snapshot.secao.id && <SinteseDoCapitulo key={compreensao.modelo.id} movimento={compreensao.modelo.movimento} />}
-        <Switch checked={primeiroEuOtimista ?? snapshot.primeiro_eu?.ativo ?? false} disabled={ocupado} onChange={(ativo) => { definirPrimeiroEuOtimista(ativo); void executar(async () => { try { await gravarPreferenciasDoDocumento(documento_id, { primeiro_eu: ativo }); await aoAtualizar(); } finally { definirPrimeiroEuOtimista(null); } }); }}>Primeiro eu</Switch>
-        <details className="metodo-estudo"><summary>Um caminho para a sua leitura</summary><p>Impressão → dúvida → observação → hipótese → fonte → releitura. Comece pelo que chamou sua atenção; volte à hipótese depois de consultar a fonte. A ordem é uma sugestão.</p></details>
-      </>}
+      estudoTopoDoPainel={liberado && compreensao.modelo?.execucao_id === compreensao.ativa && compreensao.modelo?.secao_id === snapshot.secao.id ? <SinteseDoCapitulo key={compreensao.modelo.id} movimento={compreensao.modelo.movimento} /> : undefined}
       estudoDoPainel={[
-        ...(compreensao.modelo && compreensao.modelo.elementos.length > 0 ? [{ id: 'mapa', icone: 'mapa', rotulo: `Mapa do ${unidade}`, executar: () => abrirMapa(true) }] : []),
-        ...(compreensao.modelo && compreensao.modelo.revisao >= 2 ? [
-          { id: 'visita', icone: 'visita', rotulo: visita.estado === 'preparando' ? 'Preparando…' : visita.roteiro ? 'Visita' : 'Preparar visita', ativa: visitaAberta !== null, desabilitada: visita.estado === 'preparando' || visita.estado === null, executar: alternarVisita },
-          { id: 'comentada', icone: 'comentada', rotulo: comentada.estado === 'preparando' ? 'Preparando…' : comentada.leitura ? 'Leitura comentada' : 'Preparar leitura comentada', ativa: comentadaAberta !== null, desabilitada: comentada.estado === 'preparando' || comentada.estado === null, executar: alternarComentada },
-        ] : []),
-        { id: 'quadro', icone: 'imagem', rotulo: poesia ? 'Quadro do poema' : `Quadro do ${unidade}`, executar: () => abrirVisual('imagem', null) },
-        ...(usaPdf(snapshot) ? [{ id: 'resolver', icone: 'resolver', rotulo: 'Resolver exercício', detalhe: 'Shift Ctrl S', executar: () => { abrirResolucao(null); recortar(true); } }] : []),
-        { id: 'resolvidos', icone: 'resolvidos', rotulo: 'Exercícios resolvidos', executar: () => abrirListaDeResolucoes(true) },
-        { id: 'pagina-de-exercicios', icone: 'resolvidos', rotulo: 'Página de exercícios', executar: () => irParaOsExercicios(documento_id) },
+        // Estudar este capítulo (J132): entender, praticar e ver. Ouvir (visita, leitura comentada) fica no botão da barra.
+        ...(compreensao.modelo && compreensao.modelo.elementos.length > 0 ? [{ id: 'mapa', grupo: 'Entender' as const, icone: 'mapa', rotulo: `Mapa do ${unidade}`, executar: () => abrirMapa(true) }] : []),
+        { id: 'resolvidos', grupo: 'Praticar' as const, icone: 'resolvidos', rotulo: 'Exercícios', detalhe: 'Os deste livro, com a página de todos', executar: () => abrirListaDeResolucoes(true) },
+        ...(usaPdf(snapshot) ? [{ id: 'resolver', grupo: 'Praticar' as const, icone: 'resolver', rotulo: 'Resolver exercício', detalhe: 'Shift Ctrl S', executar: () => { abrirResolucao(null); recortar(true); } }] : []),
+        { id: 'quadro', grupo: 'Ver' as const, icone: 'imagem', rotulo: poesia ? 'Quadro do poema' : `Quadro do ${unidade}`, executar: () => abrirVisual('imagem', null) },
       ]}
       ouvir={[
         ...(compreensao.modelo && compreensao.modelo.revisao >= 2 ? [{ id: 'comentada', icone: 'comentada', ativa: comentadaAberta !== null,
@@ -570,20 +670,19 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
         })}><Icon name="exportar" size={18} /><span><span className="acao-rotulo">Baixar PDF anotado</span><span className="acao-detalhe">Seus grifos e notas</span></span></Button></li>}
         {compreensao.plano && <LinkDoEink documento_id={documento_id} secao_id={snapshot.secao.id} />}
       </>}
-      avisoExtra={<>{!quadroNoTexto && (estreita || inicioDoCapitulo === null) && visuaisDoCapitulo}{visuais.erro && <p className="aviso-estudo" role="alert">{visuais.erro}</p>}{visita.erro && <p className="aviso-estudo" role="alert">{visita.erro}</p>}{comentada.erro && <p className="aviso-estudo" role="alert">{comentada.erro}</p>}{compreensao.erro && <p className="aviso-estudo" role="alert">{compreensao.erro}</p>}{!liberado && <p className="aviso-estudo" role="status">As marcas da IA aparecem depois da sua primeira anotação neste {unidade}</p>}{erro && <p className="aviso-estudo" role="alert">{erro}</p>}{avisoDoPdf && <p className="aviso-estudo" role="status">{avisoDoPdf}</p>}</>}
-      painel={painel && !conversaNaMargem && <Drawer rotulo={painel.tipo === 'anotar' ? (marcaDoPainel ? 'Notas do grifo' : 'Sua anotação') : painel.tipo === 'perguntar' ? 'Conversa no trecho' : painel.tipo === 'flashcard' ? 'Novo flashcard' : 'Conexões'} aoFechar={fechar}>
-        <blockquote>{painel.ancora.citacao}</blockquote>
-        {painel.tipo === 'anotar' && marcaDoPainel && <NotasDoGrifo key={marcaDoPainel.id} marca={marcaDoPainel} aoMudar={atualizar}
-          anotacoes={anotacoes.filter((a) => a.marca_id === marcaDoPainel.id)} pendentes={snapshot.revisoes_pendentes ?? []} comentarioDaIa={snapshot.edicoes?.[marcaDoPainel.id]?.comentario_da_ia} />}
-        {painel.tipo === 'anotar' && !marcaDoPainel && <FormularioDeAnotacao key={painel.anotacao?.id ?? 'nova'} ancora={painel.ancora} anotacao={painel.anotacao} aoConflito={atualizar} marcaId={painel.marcaId} aoFechar={fechar} aoSalvar={() => { fechar(); atualizar(); }} />}
-        {painel.tipo === 'perguntar' && fio}
-        {painel.tipo === 'conectar' && <FormularioDeConexao origem={painel.ancora} aoFechar={fechar} aoSalvar={() => { fechar(); atualizar(); }} />}
-        {painel.tipo === 'flashcard' && <FormularioDeFlashcard ancora={painel.ancora} aoFechar={fechar} />}
-        {painel.tipo === 'conexoes' && <ListaDeConexoes conexoes={relacionadas(painel.ancora)} aoMudar={atualizar} aoCitar={irACitacao} />}
-      </Drawer>}
+      avisoExtra={<>{!quadroNoTexto && (estreita || inicioDoCapitulo === null) && visuaisDoCapitulo}{visuais.erro && <p className="aviso-estudo" role="alert">{visuais.erro}</p>}{visita.erro && <p className="aviso-estudo" role="alert">{visita.erro}</p>}{comentada.erro && <p className="aviso-estudo" role="alert">{comentada.erro}</p>}{compreensao.erro && <p className="aviso-estudo" role="alert">{compreensao.erro}</p>}{!liberado && <p className="aviso-estudo" role="status">As marcas da IA aparecem depois do seu primeiro grifo neste {unidade}</p>}{erro && <p className="aviso-estudo" role="alert">{erro}</p>}{avisoDoPdf && <p className="aviso-estudo" role="status">{avisoDoPdf}</p>}</>}
+      painel={painel ? <PainelDoTrecho key={`${painel.ancora.bloco_id}:${String(painel.ancora.inicio_utf16)}:${String(painel.ancora.fim_utf16)}`} ancora={painel.ancora} marca={marcaDoPainel}
+        aba={ABA_DO_PAINEL[painel.tipo]} titulo="Novo flashcard" conexoes={relacionadas(painel.ancora).length} aoMudarAba={trocarAba} aoFechar={fechar} aoVoltarAoDocumento={voltarAoDocumento}>{conteudoDoPainel}</PainelDoTrecho>
+        : pedidoVisual ? <PainelDoTrecho ancora={null} aba={null} titulo={tituloDoVisual} aoFechar={() => pedirVisual(null)} aoVoltarAoDocumento={voltarAoDocumento}>
+          <PainelDoVisual key={`${pedidoVisual.tipo}:${pedidoVisual.ancora?.bloco_id ?? pedidoVisual.blocoInteiro?.bloco_id ?? 'capitulo'}`} pedido={pedidoVisual} poesia={poesia} unidade={unidade} aoFechar={() => pedirVisual(null)}
+            aoEnviar={async ({ alvo, pedido }) => {
+              await criarVisual({ tipo: pedidoVisual.tipo, versao_id: snapshot.versao_id, secao_id: snapshot.secao.id, alvo, ...(pedido.trim() === '' ? {} : { pedido }) });
+              pedirVisual(null); await visuais.recarregar();
+            }} />
+        </PainelDoTrecho> : null}
     />
-    {compreensao.ativa && compreensao.modelo && compreensao.modelo.revisao >= 2 && liberado && <Braquetes compreensaoId={compreensao.ativa} secaoId={snapshot.secao.id}
-      key={visualizacaoRelacoes} visualizacao={visualizacaoRelacoes} navegacao={navegacaoDosBraquetes} modeloId={compreensao.modelo.id} filtro={navegacaoDosBraquetes.aberta ? 'todas' : filtroRelacoes} leitor={leitor} coluna={colunaDoTexto} blocos={snapshot.blocos} artigo={artigoDoTexto} pdf={usaPdf(snapshot)} />}
+    {(comBraquetesDaCompreensao || conexoesDesenhadas.length > 0) && <Braquetes compreensaoId={comBraquetesDaCompreensao ? compreensao.ativa : null} secaoId={snapshot.secao.id} extras={conexoesDesenhadas} aoAdotar={atualizar}
+      key={visualizacaoRelacoes} visualizacao={visualizacaoRelacoes} navegacao={navegacaoDosBraquetes} modeloId={compreensao.modelo?.id ?? 'conexoes'} filtro={navegacaoDosBraquetes.aberta ? 'todas' : filtroRelacoes} leitor={leitor} coluna={colunaDoTexto} blocos={snapshot.blocos} artigo={artigoDoTexto} pdf={usaPdf(snapshot)} />}
     {comentadaAberta && comentada.leitura && <LeituraComentada tituloDocumento={props.tituloDocumento} key={comentada.leitura.id} leitura={comentada.leitura} narracao={comentada.narracao} modelo={compreensao.modelo} documentoId={documento_id}
       leitor={leitor} raiz={raiz} marcas={semMarcas ? [] : snapshot.marcas} tocarAoAbrir={comentadaAberta.tocar}
       aoSair={() => abrirComentada(null)} aoCitar={irACitacao} aoMudarFoco={definirFocoDaLeitura} {...(aoIrCapitulo ? { aoIrCapitulo } : {})} />}
@@ -605,8 +704,10 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
       if (!ancora) return;
       if (acao === 'explicar') { abrirPainel({ tipo: 'perguntar', ancora, id: null }); guardarRascunho('Explique este trecho: o que ele diz e por que importa aqui.'); }
       else if (acao === 'imagem') abrirVisual('imagem', ancora);
-      else abrirPainel({ tipo: 'anotar', ancora });
+      // A nota é sempre de um grifo: a área vira grifo, e a nota dele abre.
+      else grifarRef.current?.({ nota: true, ancora });
     }} />}
+    {ligacao && <DialogoDeConexao origem={ligacao.origem} destino={ligacao.destino} aoFechar={() => ligar(null)} aoSalvar={() => { ligar(null); atualizar(); }} />}
     {resolucaoAberta && <SessaoDeResolucao key={resolucaoAberta} id={resolucaoAberta} aoFechar={() => abrirResolucao(null)} />}
     {listaDeResolucoes && <Drawer rotulo="Exercícios resolvidos" aoFechar={() => abrirListaDeResolucoes(false)}>
       <a className="link-dos-exercicios" href={`/documentos/${documento_id}/exercicios`} onClick={(evento) => { evento.preventDefault(); irParaOsExercicios(documento_id); }}>Todos os exercícios do livro, com exportação em PDF →</a>
@@ -616,13 +717,6 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
     {ouvirDaqui && <OuvirDaqui blocos={snapshot.blocos} raiz={raiz} inicio={ouvirDaqui.inicio} aoSair={() => abrirOuvirDaqui(null)} />}
     {audioAberto && fontesProntas.length > 0 && <PlayerDeMidia tituloDocumento={props.tituloDocumento} key={snapshot.versao_id + snapshot.secao.id} fontes={fontesProntas} raiz={raiz} snapshot={visivel}
       aoFechar={() => abrirAudio(false)} aoMudarLateral={definirLateralDaMidia} />}
-    {pedidoVisual && <Drawer rotulo={pedidoVisual.tipo === 'imagem' ? (pedidoVisual.ancora === null && pedidoVisual.blocoInteiro === null ? (poesia ? 'Quadro do poema' : `Quadro do ${unidade}`) : 'Criar imagem') : (pedidoVisual.ancora === null && pedidoVisual.blocoInteiro === null ? `Fluxograma do ${unidade}` : 'Fluxograma')} aoFechar={() => pedirVisual(null)}>
-      <PainelDoVisual key={`${pedidoVisual.tipo}:${pedidoVisual.ancora?.bloco_id ?? pedidoVisual.blocoInteiro?.bloco_id ?? 'capitulo'}`} pedido={pedidoVisual} poesia={poesia} unidade={unidade} aoFechar={() => pedirVisual(null)}
-        aoEnviar={async ({ alvo, pedido }) => {
-          await criarVisual({ tipo: pedidoVisual.tipo, versao_id: snapshot.versao_id, secao_id: snapshot.secao.id, alvo, ...(pedido.trim() === '' ? {} : { pedido }) });
-          pedirVisual(null); await visuais.recarregar();
-        }} />
-    </Drawer>}
     {serieAmpliada && <VisualAmpliado key={serieAmpliada.atual.id} serie={serieAmpliada} rotulo={rotuloVisual(serieAmpliada.atual)} aoFechar={() => ampliarVisual(null)} aoCitar={irACitacao}
       aoRegenerar={async (v, pedido) => { const { visual } = await regenerarVisual(v.id, pedido); await visuais.recarregar(); ampliarVisual(visual.id); }}
       aoApagar={async (v) => { await apagarVisual(v.id); await visuais.recarregar(); }} />}
@@ -632,17 +726,37 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
         aoPedir={(nova) => narracao.atualizar(nova)} aoConfigurar={() => { abrirGeracao(null); irParaConfiguracoes(); }}
         {...(fontesProntas.some((f) => f.origem === 'audio') ? { aoOuvir: () => { abrirGeracao(null); abrirAudio(true); } } : {})} />
     </Drawer>}
-    <IndicadoresDeEstudo leitor={leitor} notas={indicadores} raiz={raiz} aoAbrir={(id) => {
-      const a = anotacoes.find((a) => a.id === id);
-      const c = snapshot.conversas?.find((c) => c.id === id);
-      const n = notas.find((n) => n.id === id);
-      if (a) abrirPainel({ tipo: 'anotar', ancora: a.ancora, anotacao: a });
-      else if (c) abrirPainel({ tipo: 'perguntar', ancora: c.ancora, id: c.id });
-      else if (n) abrirPainel({ tipo: 'conexoes', ancora: n.ancora });
-    }} />
-    {selecao && !painel && <BarraDeSelecao selecao={selecao}>
-      {escolha ? <Button variante="ghost" type="button" disabled={ocupado} onClick={() => void executar(async () => { await escrever<{ conexao: ConexaoV2 }>('/api/conexoes', { ...escolha, destino: { tipo: 'trecho', ancora: selecao.ancora } }); escolher(null); fechar(); await aoAtualizar(); })}><IconeDaSelecao nome="conectar" /><span>Conectar a este trecho</span></Button> : <><Button variante="ghost" type="button" onClick={() => grifarRef.current?.(false)} aria-label="Grifar"><IconeDaSelecao nome="grifar" /><span>Grifar</span><kbd aria-hidden="true">h</kbd></Button><span className="separador-selecao" aria-hidden="true" /><Button variante="ghost" type="button" onClick={() => abrirPainel({ tipo: 'anotar', ancora: selecao.ancora })} aria-label="Anotar"><IconeDaSelecao nome="anotar" /><span>Anotar</span><kbd aria-hidden="true">a</kbd></Button><Button variante="ghost" type="button" onClick={() => abrirPainel({ tipo: 'perguntar', ancora: selecao.ancora, id: null })} aria-label="Perguntar"><IconeDaSelecao nome="perguntar" /><span>Perguntar</span><kbd aria-hidden="true">p</kbd></Button><Button variante="ghost" type="button" onClick={() => abrirPainel({ tipo: 'conectar', ancora: selecao.ancora })} aria-label="Conectar"><IconeDaSelecao nome="conectar" /><span>Conectar</span></Button><Button variante="ghost" type="button" onClick={() => abrirPainel({ tipo: 'flashcard', ancora: selecao.ancora })} aria-label="Criar flashcard" title="Criar flashcard da seleção"><IconeDaSelecao nome="flashcard" /><span>Flashcard</span></Button><span className="separador-selecao" aria-hidden="true" /><Button variante="ghost" type="button" onClick={() => abrirVisual('imagem', selecao.ancora)} aria-label="Criar imagem" title="Criar imagem da seleção"><IconeDaSelecao nome="imagem" /><span>Imagem</span></Button><Button variante="ghost" type="button" onClick={() => abrirVisual('diagrama', selecao.ancora)} aria-label="Fluxograma" title="Fluxograma da seleção"><IconeDaSelecao nome="fluxograma" /><span>Fluxograma</span></Button><span className="separador-selecao" aria-hidden="true" /><Button variante="ghost" type="button" disabled={ocupado} onClick={() => { const ancora = selecao.ancora; fechar(); void executar(async () => { const criada = await criarResolucao(documento_id, { tipo: 'trecho', ancora }, ancora.citacao); abrirResolucao(criada.resolucao.id); }); }} aria-label="Resolver"><IconeDaSelecao nome="resolver" /><span>Resolver</span></Button></>}
-      <IconButton aria-label="Fechar seleção" onClick={fechar}><IconeDaSelecao nome="fechar" /></IconButton>
+    {selecao && <BarraDeSelecao selecao={selecao}>
+      {escolha ? <Button variante="ghost" type="button" className="botao-de-destino" disabled={ocupado} onClick={() => {
+        const destino = selecao.ancora;
+        // Vindo do formulário antigo (destino trecho com relação já escolhida), grava direto; senão, o diálogo pequeno escolhe a relação.
+        if (escolha.relacao && escolha.justificativa) void executar(async () => { await escrever<{ conexao: ConexaoV2 }>('/api/conexoes', { origem: escolha.origem, relacao: escolha.relacao, justificativa: escolha.justificativa, destino: { tipo: 'trecho', ancora: destino } }); escolher(null); fechar(); await aoAtualizar(); });
+        else { ligar({ origem: escolha.origem, destino }); escolher(null); fechar(); }
+      }}><IconeDaSelecao nome="conectar" /><span>Conectar estes dois</span></Button>
+        : <AcoesDaSelecao ocupado={ocupado} aoGrifar={(funcao) => grifarRef.current?.({ funcao: funcao.chave, modo: funcao.modo })}
+          aoOutrosOlhares={() => grifarRef.current?.({ olhares: true })}
+          aoPerguntar={() => abrirPainel({ tipo: 'perguntar', ancora: selecao.ancora, id: null })} aoConectar={() => { const origem = selecao.ancora; fechar(); escolher({ origem }); }}
+          mais={[
+            { id: 'flashcard', rotulo: 'Criar flashcard', icone: 'cartoes', executar: () => abrirPainel({ tipo: 'flashcard', ancora: selecao.ancora }) },
+            { id: 'imagem', rotulo: 'Criar imagem', icone: 'imagem', executar: () => abrirVisual('imagem', selecao.ancora) },
+            { id: 'fluxograma', rotulo: 'Fluxograma', icone: 'fluxograma', executar: () => abrirVisual('diagrama', selecao.ancora) },
+            { id: 'resolver', rotulo: 'Resolver exercício', icone: 'resolver', desabilitado: ocupado, executar: () => { const ancora = selecao.ancora; fechar(); void executar(async () => { const criada = await criarResolucao(documento_id, { tipo: 'trecho', ancora }, ancora.citacao); abrirResolucao(criada.resolucao.id); }); } },
+            { id: 'copiar', rotulo: 'Copiar texto', icone: 'copiar', executar: () => { void navigator.clipboard?.writeText(selecao.ancora.citacao).catch(() => undefined); fechar(); } },
+          ]} />}
+      <IconButton aria-label="Fechar seleção" className="botao-da-selecao" onClick={fechar}><IconeDaSelecao nome="fechar" /></IconButton>
     </BarraDeSelecao>}
   </div></ContextoDosModos>;
+}
+
+/**
+ * Uma nota antiga, sem grifo (de antes de a nota ir para o grifo e que a migração não ligou a um grifo):
+ * só leitura. Grifar o trecho dá a ele um grifo com a nota nova.
+ */
+function NotaAntiga({ anotacao, ocupado, aoGrifar }: { anotacao: AnotacaoV1; ocupado: boolean; aoGrifar: () => void }): ReactNode {
+  return <article className="nota-do-grifo" data-autor="leitor">
+    <p className="eyebrow">Nota antiga</p>
+    <p className="texto-pessoal">{anotacao.texto}</p>
+    <p className="painel-trecho-vazio">Esta nota é de antes de as notas irem para o grifo. Grife o trecho para escrever sobre ele.</p>
+    <div className="ui-rodape"><Button variante="primario" tamanho="md" disabled={ocupado} onClick={aoGrifar}>Grifar o trecho</Button></div>
+  </article>;
 }

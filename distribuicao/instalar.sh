@@ -11,9 +11,6 @@
 #   restaurar d  restaura um backup feito por "backup"
 #   logs         acompanha os registros (Ctrl+C sai)
 #   desinstalar  remove os containers; com --apagar-dados remove também banco, livros e login
-#   arte instalar [arquivo|url] [--sha256 hex]
-#                instala o acervo de quadros (obras em domínio público); sem argumento baixa o
-#                pacote publicado. Um arquivo local é copiado para dentro do container e apagado depois
 #
 # Variáveis já definidas no ambiente têm precedência: PORTA=8731 ./instalar.sh
 # Compatível com o bash 3.2 do macOS.
@@ -284,37 +281,6 @@ cmd_desinstalar() {
   fi
 }
 
-cmd_arte() {
-  local sub="${1:-}"; [ $# -gt 0 ] && shift
-  [ "$sub" = "instalar" ] || erro "uso: $0 arte instalar [arquivo.tar.gz|url] [--sha256 <hex>]"
-  conferir_docker; exigir_instalacao
-  local args=() temporario='' alvo
-  while [ $# -gt 0 ]; do
-    case "$1" in
-      --sha256) [ $# -ge 2 ] || erro "--sha256 precisa do hash"; args+=(--sha256 "$2"); shift 2 ;;
-      -*) erro "opção desconhecida: $1" ;;
-      *)
-        alvo="$1"; shift
-        case "$alvo" in
-          http://*|https://*) args+=("$alvo") ;;
-          *)
-            [ -f "$alvo" ] || erro "arquivo não encontrado: $alvo"
-            # O arquivo está no computador, não no container: vai para a pasta temporária do app
-            # (no volume da imagem, não no de dados) e é apagado no fim.
-            temporario="/home/app/tmp/acervo-$$.tar.gz"
-            info "Copiando $alvo para o container…"
-            compose cp "$alvo" "app:$temporario"
-            compose exec -T -u root app chown app:app "$temporario"
-            args+=("$temporario") ;;
-        esac ;;
-    esac
-  done
-  local saida=0
-  compose exec -T app npm run --silent arte:instalar -- ${args[@]+"${args[@]}"} || saida=$?
-  if [ -n "$temporario" ]; then compose exec -T app rm -f "$temporario" >/dev/null 2>&1 || true; fi
-  return "$saida"
-}
-
 comando="${1:-iniciar}"; [ $# -gt 0 ] && shift
 case "$comando" in
   iniciar|instalar) cmd_iniciar ;;
@@ -326,7 +292,6 @@ case "$comando" in
   restaurar) cmd_restaurar "$@" ;;
   logs) cmd_logs ;;
   desinstalar) cmd_desinstalar "$@" ;;
-  arte) cmd_arte "$@" ;;
-  -h|--help|ajuda) sed -n '2,19p' "$ESTE" | sed 's/^# \{0,1\}//' ;;
+  -h|--help|ajuda) sed -n '2,16p' "$ESTE" | sed 's/^# \{0,1\}//' ;;
   *) erro "comando desconhecido: $comando (veja $0 ajuda)" ;;
 esac

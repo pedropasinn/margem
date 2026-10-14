@@ -37,7 +37,7 @@
 .painel-leitor-trecho.ui-button { display: flex; flex-direction: column; align-items: stretch; width: 100%; padding: 4px; text-align: left; white-space: normal; font-weight: 400; gap: 12px; border-radius: var(--r-8); }
 .painel-leitor-trecho[aria-pressed="true"] { outline: 1px solid var(--borda-hover); }
 .painel-leitor-rotulo { font: 600 12px var(--sans); color: var(--texto-3); }
-.painel-leitor-rotulo > span { color: var(--cor-nota); margin-right: 6px; }
+.painel-leitor-rotulo { gap: 6px; }
 .painel-leitor-citacao { display: block; padding: 6px 12px; border-radius: var(--r-8); background: color-mix(in srgb, var(--cor-nota, var(--borda)) 9%, transparent); font: 400 16px/1.5 var(--serif); color: var(--texto-2); }
 .painel-leitor-comentario, .painel-leitor-pessoal { font: 400 14px/1.5 var(--sans); color: var(--texto-2); }
 .painel-leitor-pessoal { margin: 12px 4px; }
@@ -67,7 +67,8 @@
     top: calc(var(--altura-casca-leitor, 0px) + var(--largura-guiada, 400px) * 9 / 16);
     width: max(360px, var(--largura-guiada, 400px));
     border-top-left-radius: 0;
-    --sombra-painel-leitor: -8px 0 28px color-mix(in srgb, var(--borda) 55%, transparent);
+    /* Sem sombra (V-T1): continua a coluna do vídeo, que também não tem. */
+    --sombra-painel-leitor: none;
   }
 }
 /* No celular, com o player de mídia aberto, o fim da folha não fica sob a barra de transporte. */
@@ -77,31 +78,47 @@
 
 /* Player v2, etapa 4: o painel é a casa do documento. Chips no topo do Caderno (as funções são a legenda),
    o botão Percorrer, miniaturas dos exercícios e dos visuais, e a grade de ações da aba Estudo. */
-.caderno-topo { display: grid; gap: 10px; margin-bottom: 22px; }
-.filtros-do-caderno { display: grid; gap: 8px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 4px 10px;
-  border: 1px solid var(--borda); border-radius: var(--r-pilula); background: transparent;
-  color: var(--texto-3); font: 500 12.5px/1.2 var(--sans); cursor: pointer;
-}
-.chip:hover:not(:disabled) { border-color: var(--borda-hover); color: var(--texto-1); }
-.chip[aria-pressed="true"] { background: var(--bg-2); border-color: var(--borda-hover); color: var(--texto-1); }
-.chip:disabled { opacity: .5; cursor: default; }
-.chip-ponto { width: 8px; height: 8px; border-radius: 50%; background: var(--cor-chip, var(--texto-3)); }
-.chip-funcao[aria-pressed="false"] .chip-ponto { background: transparent; box-shadow: inset 0 0 0 1.5px var(--cor-chip); }
-.chip-conta { color: var(--texto-3); font-variant-numeric: tabular-nums; font-weight: 400; }
-.botao-percorrer.ui-button { justify-self: start; display: inline-flex; gap: 8px; font-size: 13px; }
+.botao-percorrer.ui-button { justify-self: start; }
 .painel-leitor-rotulo { display: inline-flex; align-items: center; gap: 4px; }
 .painel-leitor-destino { display: block; padding-left: 14px; font: 400 15px/1.5 var(--serif); color: var(--texto-3); }
 .painel-leitor-miniatura { display: block; max-width: 100%; max-height: 160px; object-fit: contain; object-position: left; border: 1px solid var(--borda); border-radius: var(--r-8); background: #fff; }
 .painel-leitor-info-extra { display: grid; gap: 14px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--borda); }
-.grade-de-estudo { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.acao-de-estudo.ui-button {
-  display: grid; justify-items: center; align-content: start; gap: 8px; width: 100%; min-height: 96px; padding: 14px 6px;
-  border: 1px solid var(--borda); border-radius: var(--r-12); white-space: normal; text-align: center;
-  color: var(--texto-2); font: 500 12.5px/1.3 var(--sans);
+/* Estudo (J132): uma lista em três grupos (Entender, Praticar, Ver), não uma grade de ladrilhos. */
+.estudo-do-painel { display: grid; gap: 8px; }
+.estudo-do-painel section h3 { margin: 18px 0 6px; }
+.lista-de-estudo { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.acao-de-estudo.ui-button { display: grid; grid-template-columns: 20px 1fr; justify-items: start; column-gap: 12px; width: 100%; padding: 8px 10px; border-radius: var(--r-8); text-align: left; white-space: normal; font-weight: 500; color: var(--texto-1); }
+.acao-de-estudo .acao-detalhe { grid-column: 2; color: var(--texto-3); font-size: 12.5px; font-weight: 400; }
+.acao-de-estudo[aria-pressed="true"] { background: var(--accent-suave); color: var(--accent-texto); }
+/* Caderno: uma linha de filtro (o seletor, a camada e o Percorrer). */
+.caderno-filtro { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.caderno-filtro .caderno-seletor { flex: 1; min-width: 0; }
+.caderno-filtro .ui-select > .ui-button { min-height: 40px; padding-block: 8px; }
+.painel-leitor-numero { color: var(--texto-3); font-variant-numeric: tabular-nums; }
+.painel-leitor-destino { display: flex; gap: 6px; align-items: baseline; }
+
+/* O painel do trecho (J132): o mesmo trilho, com a citação uma vez no topo, as abas das ações e o
+   conteúdo rolando; o rodapé de cada formulário fica preso embaixo, com um único botão principal. */
+.painel-trecho:focus { outline: none; }
+.painel-trecho-cabeca { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 6px 10px 6px 12px; border-bottom: 1px solid var(--borda); }
+.painel-trecho-cabeca h2 { flex: 1; min-width: 0; margin: 0; font: 600 15px/1.3 var(--sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.painel-trecho-voltar.ui-button { color: var(--texto-2); padding-inline: 8px; }
+.painel-trecho-citacao { margin: 0; padding: 16px 20px 12px; }
+.painel-trecho-citacao blockquote { margin: 0; padding: 8px 12px; border-radius: var(--r-8); background: color-mix(in srgb, var(--cor-nota, var(--borda)) 12%, transparent); font: 400 16px/1.5 var(--serif); color: var(--texto-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+.painel-trecho-citacao blockquote[data-recolhida] { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.painel-trecho-citacao figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; margin-top: 4px; font: 500 12.5px var(--sans); color: var(--texto-3); }
+.painel-trecho-rotulo { display: inline-flex; align-items: center; gap: 6px; }
+.painel-trecho-abas { margin: 0 20px 4px; }
+.painel-trecho-corpo { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 20px 0; overflow-wrap: anywhere; }
+.painel-trecho-corpo > :last-child:not(form):not(.fio-conversa) { margin-bottom: 20px; }
+.painel-trecho-corpo > form > .ui-rodape, .painel-trecho-corpo > .formulario-de-flashcard > .ui-rodape, .painel-trecho-corpo .nota-nova form > .ui-rodape {
+  position: sticky; bottom: 0; margin: 16px -20px 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--borda);
 }
-.acao-de-estudo.ui-button:hover:not(:disabled) { border-color: var(--borda-hover); color: var(--texto-1); background: transparent; }
-.acao-de-estudo[aria-pressed="true"] { border-color: var(--accent); color: var(--texto-1); }
-.acao-de-estudo .acao-detalhe { color: var(--texto-3); font-size: 11px; font-weight: 400; }
+.painel-trecho-corpo .nota-nova form > .ui-rodape { margin-inline: -20px; }
+.painel-trecho-corpo .fio-conversa { display: flex; flex-direction: column; flex: 1; }
+.painel-trecho-corpo .fio-conversa > form { position: sticky; bottom: 0; margin: auto -20px 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--borda); }
+.painel-trecho-corpo .fio-conversa textarea { min-height: 72px; }
+.painel-trecho-vazio { margin: 0 0 12px; color: var(--texto-3); }
+.painel-trecho-corpo .notas-do-grifo { gap: 4px; }
+.painel-trecho-corpo .nova-nota.ui-button { align-self: flex-start; }

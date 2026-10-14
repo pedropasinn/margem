@@ -4,9 +4,10 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { esquemaDoCapitulo, gerarEsquema, type SituacaoDoEsquema } from '../../../biblioteca/api';
+import { apagarMapa } from '../../../apagar/api';
 
-export interface FontesDoEsquema { ler: typeof esquemaDoCapitulo; gerar: typeof gerarEsquema }
-export const FONTES_DO_ESQUEMA: FontesDoEsquema = { ler: esquemaDoCapitulo, gerar: gerarEsquema };
+export interface FontesDoEsquema { ler: typeof esquemaDoCapitulo; gerar: typeof gerarEsquema; apagar?: typeof apagarMapa }
+export const FONTES_DO_ESQUEMA: FontesDoEsquema = { ler: esquemaDoCapitulo, gerar: gerarEsquema, apagar: apagarMapa };
 export const INTERVALO_DO_ESQUEMA_MS = 4000;
 
 export interface EstadoDoUsoDoEsquema {
@@ -15,6 +16,8 @@ export interface EstadoDoUsoDoEsquema {
   /** Um pedido acabou de ser enviado (antes da resposta). */
   pedindo: boolean;
   gerar: () => void;
+  /** V-T8: `soPedido` cancela o mapa sendo gerado (o pronto fica); sem ele, apaga o mapa. Rejeita se falhar. */
+  apagar: (soPedido: boolean) => Promise<void>;
 }
 
 export const emCurso = (situacao: SituacaoDoEsquema | null): boolean => situacao?.estado === 'pendente' || situacao?.estado === 'executando';
@@ -51,5 +54,12 @@ export function useEsquema(compreensaoId: string, secaoId: string, fontes: Fonte
     });
   }, [compreensaoId, secaoId, fontes]);
 
-  return { situacao, erro, pedindo, gerar };
+  const apagar = useCallback(async (soPedido: boolean) => {
+    definirErro(null);
+    if (!fontes.apagar) return;
+    await fontes.apagar(compreensaoId, secaoId, soPedido);
+    definir(await fontes.ler(compreensaoId, secaoId));
+  }, [compreensaoId, secaoId, fontes]);
+
+  return { situacao, erro, pedindo, gerar, apagar };
 }

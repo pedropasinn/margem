@@ -65,7 +65,7 @@ export function PainelDoVisual({ pedido, poesia, unidade, aoEnviar, aoFechar }: 
     </label>
     <p className="nota-do-pedido">{pedido.tipo === 'imagem' ? 'O Codex gera a imagem sem texto escrito; ela aparece aqui como nota.' : 'Fluxograma vertical; cada ideia leva ao trecho que a sustenta.'}</p>
     {erro && <p className="erro-do-visual" role="alert">{erro}</p>}
-    <div className="acoes-pessoais"><Button type="submit" variante="primario" disabled={enviando}>{enviando ? 'Pedindo…' : acao}</Button><Button type="button" variante="ghost" onClick={aoFechar}>Cancelar</Button></div>
+    <div className="ui-rodape"><Button variante="ghost" tamanho="md" onClick={aoFechar}>Cancelar</Button><Button type="submit" variante="primario" tamanho="md" disabled={enviando}>{enviando ? 'Pedindo…' : acao}</Button></div>
   </form>;
 }
 
@@ -95,8 +95,8 @@ function CorpoDoVisual({ serie, rotulo, ocupado, aoAbrir, aoTentarDeNovo }: {
     {(atual.estado === 'pendente' || atual.estado === 'executando') && <p className="estado-do-visual" role="status" data-estado={atual.estado}><span className="pulso" aria-hidden="true" />{estadoEmPalavras(atual)}</p>}
     {atual.estado === 'falhou' && <>
       <p className="erro-do-visual" role="alert">{atual.motivo}</p>
-      <div className="acoes-pessoais"><Button type="button" disabled={ocupado} onClick={aoTentarDeNovo}>Tentar de novo</Button>
-        <Button type="button" variante="ghost" onClick={aoAbrir}>Detalhes</Button></div>
+      <div className="acoes-pessoais"><Button tamanho="sm" disabled={ocupado} onClick={aoTentarDeNovo}>Tentar de novo</Button>
+        <Button variante="ghost" tamanho="sm" onClick={aoAbrir}>Detalhes</Button></div>
     </>}
     {atual.estado === 'pronto' && <>
       <Miniatura visual={atual} aoAbrir={aoAbrir} />
@@ -106,7 +106,32 @@ function CorpoDoVisual({ serie, rotulo, ocupado, aoAbrir, aoTentarDeNovo }: {
 }
 
 export function NotaDoVisual(props: { serie: SerieDeVisuais; rotulo: string; ocupado: boolean; aoAbrir: () => void; aoTentarDeNovo: () => void }): ReactNode {
+  // Na margem, a falha não empurra as outras notas (J132): um triângulo do tamanho das bolinhas; o motivo e as ações ao tocar.
+  if (props.serie.atual.estado === 'falhou') return <FalhaDoVisual {...props} />;
   return <div className="nota-do-visual" data-tipo={props.serie.atual.tipo} data-estado={props.serie.atual.estado}><CorpoDoVisual {...props} /></div>;
+}
+
+function FalhaDoVisual({ serie, rotulo, ocupado, aoAbrir, aoTentarDeNovo }: { serie: SerieDeVisuais; rotulo: string; ocupado: boolean; aoAbrir: () => void; aoTentarDeNovo: () => void }): ReactNode {
+  const [aberta, abrir] = useState(false);
+  const raiz = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!aberta) return;
+    const fora = (evento: PointerEvent) => { if (evento.target instanceof Node && !raiz.current?.contains(evento.target)) abrir(false); };
+    const tecla = (evento: KeyboardEvent) => { if (evento.key === 'Escape') abrir(false); };
+    document.addEventListener('pointerdown', fora); window.addEventListener('keydown', tecla);
+    return () => { document.removeEventListener('pointerdown', fora); window.removeEventListener('keydown', tecla); };
+  }, [aberta]);
+  return <div ref={raiz} className="nota-do-visual falha-do-visual" data-tipo={serie.atual.tipo} data-estado="falhou">
+    <button type="button" className="triangulo-de-falha" aria-expanded={aberta} aria-label={`${rotulo} não saiu: ver o motivo`} title={`${rotulo} não saiu`} onClick={() => abrir(!aberta)}>
+      <svg width="24" height="22" viewBox="0 0 24 22" aria-hidden="true"><path d="M12 2 22.5 20H1.5Z" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /><path d="M12 8.5v5.2M12 16.6v.1" stroke="var(--bg)" strokeWidth="2" strokeLinecap="round" /></svg>
+    </button>
+    {aberta && <div className="cartao-da-falha" role="group" aria-label={`${rotulo} não saiu`}>
+      <p className="eyebrow">{rotulo} não saiu</p>
+      <p className="erro-do-visual" role="alert">{serie.atual.motivo}</p>
+      <div className="acoes-pessoais"><Button tamanho="sm" disabled={ocupado} onClick={() => { abrir(false); aoTentarDeNovo(); }}>Tentar de novo</Button>
+        <Button variante="ghost" tamanho="sm" onClick={() => { abrir(false); aoAbrir(); }}>Detalhes</Button></div>
+    </div>}
+  </div>;
 }
 
 /** Os visuais do capítulo inteiro, no topo dele, na largura do texto. */
@@ -160,11 +185,11 @@ export function VisualAmpliado({ serie, rotulo, aoFechar, aoCitar, aoRegenerar, 
         {versoes.length > 1 && <SegmentedControl rotulo="Versão" valor={String(indice)} aoMudar={(valor) => escolher(Number(valor))}
           opcoes={versoes.map((v, i) => ({ valor: String(i), rotulo: `v${String(versoes.length - i)}`, nome: `Versão ${String(versoes.length - i)}${i === 0 ? ' (atual)' : ''}` }))} />}
         {artefato?.tipo === 'mermaid' && <div className="zoom-do-ampliado" role="group" aria-label="Zoom">
-          <IconButton aria-label="Diminuir" disabled={zoom === 0} onClick={() => definirZoom((z) => Math.max(0, z - 1))}>−</IconButton>
+          <IconButton aria-label="Diminuir" disabled={zoom === 0} onClick={() => definirZoom((z) => Math.max(0, z - 1))} icone="menos" />
           <span>{Math.round(ZOOMS[zoom]! * 100)}%</span>
-          <IconButton aria-label="Aumentar" disabled={zoom === ZOOMS.length - 1} onClick={() => definirZoom((z) => Math.min(ZOOMS.length - 1, z + 1))}>+</IconButton>
+          <IconButton aria-label="Aumentar" disabled={zoom === ZOOMS.length - 1} onClick={() => definirZoom((z) => Math.min(ZOOMS.length - 1, z + 1))} icone="somar" />
         </div>}
-        <IconButton aria-label="Fechar" onClick={aoFechar}>×</IconButton>
+        <IconButton aria-label="Fechar" onClick={aoFechar} icone="xis" />
       </div>
     </header>
     <div className="corpo-do-ampliado">

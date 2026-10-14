@@ -1,6 +1,8 @@
+import { escolherOpcao } from '../../tests/apoio-react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Id, MarcaV1 } from '@margem/contratos';
+import { ContextoDeAparencia } from './ContextoDeAparencia';
 import { ReaderController } from './ReaderController';
 import { ATRASO_DO_CORREDOR_MS } from './useControlador';
 import { capituloExemplo } from './fixtures/capitulo-exemplo';
@@ -149,7 +151,7 @@ describe('ReaderController: ações da marca e filtros', () => {
     // Os filtros moraram no Caderno (Player v2): o chip "Confirmadas" recorta o texto e a margem.
     fireEvent.click(screen.getByRole('button', { name: 'Painel do documento' }));
     fireEvent.click(screen.getByRole('tab', { name: /Caderno/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmadas' }));
+    escolherOpcao('Mostrar no caderno', 'Confirmadas');
     fireEvent.click(screen.getByRole('button', { name: 'Fechar painel do documento' }));
     expect(container.querySelectorAll('.nota')).toHaveLength(1);
   });
@@ -165,29 +167,33 @@ describe('ReaderController: ações da marca e filtros', () => {
     };
     const fecharPainel = () => fireEvent.click(screen.getByRole('button', { name: 'Fechar painel do documento' }));
     caderno();
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmadas' }));
-    expect(screen.getByRole('button', { name: 'Confirmadas' }).getAttribute('aria-pressed')).toBe('true');
+    // Uma linha de filtro (J132): um seletor só, que recorta o Caderno e o texto.
+    escolherOpcao('Mostrar no caderno', 'Confirmadas');
+    expect(screen.getByRole('combobox', { name: 'Mostrar no caderno' }).textContent).toContain('Confirmadas');
     // O texto também é recortado, com o painel aberto.
     expect(container.querySelectorAll('span[data-marcas]')).toHaveLength(0);
     fecharPainel();
     expect(container.querySelectorAll('.nota')).toHaveLength(0);
 
     caderno();
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmadas' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Mostrar no caderno' }));
+    fireEvent.click(screen.getByRole('option', { name: /^Tudo/ }));
     fecharPainel();
     expect(container.querySelectorAll('.nota')).toHaveLength(comentadas);
-    // As funções são chips coloridos (a legenda); a interna "nenhuma" não vira chip.
+    // As funções entram no seletor com a contagem; a interna "nenhuma" não. Escolher uma deixa só ela no texto.
     caderno();
-    const funcoes = screen.getByRole('group', { name: 'Funções' });
-    expect(within(funcoes).queryByRole('button', { name: /nenhuma/ })).toBeNull();
-    for (const chip of within(funcoes).getAllByRole('button')) fireEvent.click(chip);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Mostrar no caderno' }));
+    const opcoes = screen.getAllByRole('option').map((opcao) => opcao.textContent ?? '');
+    expect(opcoes.some((opcao) => /nenhuma/i.test(opcao))).toBe(false);
+    const tese = screen.getByRole('option', { name: /^tese/i });
+    fireEvent.click(tese);
     fecharPainel();
-    expect(container.querySelectorAll('.nota')).toHaveLength(capituloExemplo.marcas.filter((m) => m.funcao === 'nenhuma' && m.comentario !== null && m.visivel && m.validade === 'resolvida').length);
+    expect(container.querySelectorAll('.nota')).toHaveLength(capituloExemplo.marcas.filter((m) => m.funcao === 'tese' && m.comentario !== null && m.visivel && m.validade === 'resolvida' && m.avaliacao !== 'rejeitada').length);
   });
 });
 
 describe('ReaderController: folha inferior', () => {
-  test('a folha abre e fecha sem mexer no scrollTop do documento', () => {
+  test('o balão abre e fecha sem mexer no scrollTop do documento', () => {
     const rolagem = document.scrollingElement ?? document.documentElement;
     let posicao = 240;
     Object.defineProperty(rolagem, 'scrollTop', {
@@ -202,23 +208,41 @@ describe('ReaderController: folha inferior', () => {
     // Em tela estreita não existe margem: quem responde é a folha.
     expect(container.querySelector('.margem')).toBeNull();
 
-    // Tocar no grifo abre o balão sobre ele; a nota abre por "Mais opções › Ver a nota da marca" (ou pelo número).
+    // Tocar no grifo abre o balão sobre ele, com o comentário do Codex (J138); a folha da nota abre pelo número.
     fireEvent.click(trechoDe(container, M01));
     expect(container.querySelector('.folha')).toBeNull();
-    expect(document.querySelector('.balao-da-marca')).not.toBeNull();
-    fireEvent.click(document.querySelector<HTMLElement>('[aria-label="Mais opções"]')!);
-    fireEvent.click([...document.querySelectorAll<HTMLElement>('.balao-menu button')].find((botao) => botao.textContent === 'Ver a nota da marca')!);
+    expect(document.querySelector('.balao-da-marca')?.textContent).toContain('Duas grafias de “café”');
+    fireEvent.click(within(document.querySelector<HTMLElement>('.balao-da-marca')!).getByRole('button', { name: 'Fechar' }));
     expect(document.querySelector('.balao-da-marca')).toBeNull();
-    const folha = container.querySelector('.folha');
-    expect(folha).not.toBeNull();
-    // O trecho já está aceso no texto: a folha traz só a nota.
-    expect(folha?.textContent).toContain('Duas grafias de “café”');
-    expect(folha?.textContent).not.toContain('O café aparece também como café');
-    expect(posicao).toBe(240);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
     expect(container.querySelector('.folha')).toBeNull();
     expect(posicao).toBe(240);
+  });
+
+  test('"Remover grifo" no balão confirma e apaga de vez, também o grifo do Codex (V-T8)', async () => {
+    const apagados: Id[] = [];
+    const mudou = vi.fn();
+    const edicao = {
+      criarGrifo: vi.fn(), apagarGrifo: vi.fn(), trocarFuncao: vi.fn(),
+      apagarDeVez: (id: Id) => { apagados.push(id); return Promise.resolve(); },
+    };
+    const { container } = render(
+      <ReaderController snapshot={capituloExemplo} documento_id={DOCUMENTO} limiarDaMargem={4000} edicao={edicao} aoMudarMarcas={mudou} />,
+    );
+    fireEvent.click(trechoDe(container, M01));
+    fireEvent.click(within(document.querySelector<HTMLElement>('.balao-da-marca')!).getByRole('button', { name: 'Mais ações do grifo' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Remover grifo' }));
+    const dialogo = screen.getByRole('alertdialog');
+    expect(dialogo.textContent).toContain('Remover este grifo?');
+    expect(dialogo.textContent).toContain('o comentário do Codex');
+    expect(dialogo.textContent).toContain('Isto não pode ser desfeito.');
+    expect(apagados).toEqual([]);
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Remover' }));
+    await act(() => Promise.resolve());
+    expect(apagados).toEqual([M01]);
+    expect(mudou).toHaveBeenCalled();
+    expect(edicao.apagarGrifo).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(container.querySelector(`span[data-marcas~="${M01}"]`)).toBeNull();
   });
 
   test('em tela estreita o ponteiro não ativa nada: o gate é o toque', () => {
@@ -248,16 +272,35 @@ describe('ReaderController: capítulo concluído', () => {
   });
 });
 
-test('a atenção fica num popover pequeno da barra, em qualquer largura; as notas voltam à margem em 1440 px', () => {
+test('sem níveis de atenção: "Marcas" na barra esconde e mostra todas, em qualquer largura; as notas voltam à margem em 1440 px', () => {
   vi.stubGlobal('innerWidth', 1366);
-  const { container } = render(<ReaderController snapshot={capituloExemplo} documento_id={DOCUMENTO} />);
+  const { container } = render(<ContextoDeAparencia><ReaderController snapshot={capituloExemplo} documento_id={DOCUMENTO} /></ContextoDeAparencia>);
   expect(container.querySelector('.margem')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: /^Atenção: nível/ }));
-  expect(within(screen.getByRole('dialog', { name: 'Atenção' })).getByRole('radiogroup', { name: 'Nível de atenção' })).toBeDefined();
+  expect(screen.queryByRole('radiogroup', { name: 'Nível de atenção' })).toBeNull();
+  expect(screen.queryByRole('button', { name: /Atenção/u })).toBeNull();
+  const marcas = screen.getByRole('button', { name: 'Marcas' });
+  expect(marcas.getAttribute('aria-pressed')).toBe('true');
+  expect(container.querySelectorAll('[data-marcas]').length).toBeGreaterThan(0);
+  fireEvent.click(marcas);
+  expect(container.querySelectorAll('[data-marcas]')).toHaveLength(0);
+  fireEvent.click(screen.getByRole('button', { name: 'Marcas' }));
   vi.stubGlobal('innerWidth', 1440);
   act(() => { window.dispatchEvent(new Event('resize')); });
   expect(container.querySelector('.margem')).not.toBeNull();
-  expect(screen.getAllByRole('radiogroup', { name: 'Nível de atenção' })).toHaveLength(1);
+});
+
+test('com "Mostrar todas as marcas ao abrir" desligado, o leitor abre sem marcas e o botão as mostra', () => {
+  try { localStorage.setItem('margem:aparencia', JSON.stringify({ marcasAoAbrir: false, versao: 3 })); } catch { /* sem storage */ }
+  try {
+    const { container } = render(<ContextoDeAparencia><ReaderController snapshot={capituloExemplo} documento_id={DOCUMENTO} /></ContextoDeAparencia>);
+    expect(container.querySelectorAll('[data-marcas]')).toHaveLength(0);
+    const marcas = screen.getByRole('button', { name: 'Marcas' });
+    expect(marcas.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(marcas);
+    expect(container.querySelectorAll('[data-marcas]').length).toBeGreaterThan(0);
+  } finally {
+    try { localStorage.removeItem('margem:aparencia'); } catch { /* sem storage */ }
+  }
 });
 
 const percorrer = () => {

@@ -22,6 +22,8 @@ export interface SnapshotCapitulo extends DadosF2 {
   ilustracoes?: { bloco_id: string; url: string; alt: string; posicao: 'antes' | 'depois'; largura?: number; altura?: number }[];
   /** Leitura guiada: as marcas do passo ficam acesas, as outras recuam; `ativa` é a que a barra aponta. */
   guia?: GuiaDoPasso | null;
+  /** O capítulo seguinte; `null` no último (o fim dele é o fim do documento). */
+  proxima?: Id | null;
 }
 
 export interface GuiaDoPasso { marcas: readonly Id[]; ativa: Id | null }
@@ -80,6 +82,10 @@ export interface DadosF2 {
   etiquetas?: import('@margem/contratos').EtiquetaV1[];
   /** J37: notas do leitor que o Codex está revisando. */
   revisoes_pendentes?: string[];
+  /** J138: os sinais de dificuldade gravados no capítulo (do leitor e decisões sobre as do Codex). */
+  dificuldades?: import('@margem/contratos').DificuldadeV1[];
+  /** J138: o modo do tipo de texto do documento (as funções dele vêm primeiro no balão); `null` sem tipo. */
+  modo_principal?: import('@margem/contratos').ReferenciaModo | null;
 }
 
 /** Formatação visual da fonte que não altera os caracteres nem os offsets canônicos. */

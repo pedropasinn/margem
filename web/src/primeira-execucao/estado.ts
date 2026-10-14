@@ -20,8 +20,42 @@ export interface EstadoDaInstalacao {
     executor: 'codex' | 'falso';
   };
   cota: { esgotada: boolean; volta_em: string | null };
+  /** Programas externos (mídia, YouTube, Codex), sem afetar `pronto`. Ausente se o serviço não verificou. */
+  ferramentas?: Partial<Record<NomeDaFerramenta, SituacaoDaFerramenta>>;
+  /** Avisos do app de computador sobre a instalação (`MARGEM_AVISOS`), um por item. */
+  avisos?: string[];
+  /** V-W9: a identificação deste Margem (a extensão do navegador mostra a mesma) e a porta da API. */
+  instancia?: { id: string; porta: number };
   primeira_execucao: { concluida: boolean; concluida_em: string | null; exemplo_documento_id: string | null };
   pronto: boolean;
+  /** `desktop`: o app de computador já escolheu a pasta e conferiu o login na janela de abertura (V-D5). */
+  origem?: 'desktop';
+}
+
+export type NomeDaFerramenta = 'ffmpeg' | 'ffprobe' | 'yt_dlp' | 'codex';
+export interface SituacaoDaFerramenta { ok: boolean; origem: string; mensagem?: string }
+
+/** Os avisos do app que valem mostrar: textos não vazios, sem repetição. */
+export function avisosDoApp(estado: EstadoDaInstalacao): string[] {
+  return [...new Set((Array.isArray(estado.avisos) ? estado.avisos : []).filter((a) => typeof a === 'string' && a.trim() !== '').map((a) => a.trim()))];
+}
+
+/** As ferramentas de mídia que faltam, como linhas da checagem (o Codex já tem linha própria). */
+export function ferramentasDaChecagem(estado: EstadoDaInstalacao): { nome: string; ok: boolean; detalhe: string }[] {
+  const f = estado.ferramentas;
+  if (f === undefined || typeof f !== 'object' || f === null) return [];
+  const linhas: { nome: string; ok: boolean; detalhe: string }[] = [];
+  const midia = [f.ffmpeg, f.ffprobe].filter((s): s is SituacaoDaFerramenta => s !== undefined);
+  if (midia.length > 0) {
+    const falta = midia.find((s) => !s.ok);
+    linhas.push({ nome: 'Áudio e vídeo', ok: falta === undefined,
+      detalhe: falta === undefined ? 'narração, vídeos e transcrições' : falta.mensagem ?? 'o ffmpeg não foi encontrado; narração e vídeos ficam indisponíveis' });
+  }
+  if (f.yt_dlp !== undefined) {
+    linhas.push({ nome: 'Vídeos do YouTube', ok: f.yt_dlp.ok,
+      detalhe: f.yt_dlp.ok ? 'importar pelo endereço do vídeo' : f.yt_dlp.mensagem ?? 'o yt-dlp não foi encontrado; importar do YouTube fica indisponível' });
+  }
+  return linhas;
 }
 
 /** Conferência mínima do que veio da rede: um serviço de outra versão não derruba a casca. */
@@ -81,7 +115,8 @@ export function quandoVolta(iso: string | null, agora: Date = new Date()): strin
 }
 
 export interface AvisoDaInstalacao {
-  tipo: 'ausente' | 'deslogado' | 'incompativel' | 'cota' | 'motor' | 'banco';
+  /** `app`: avisos do app de computador (ex.: o Codex roda no sandbox próprio); não impedem a leitura. */
+  tipo: 'ausente' | 'deslogado' | 'incompativel' | 'cota' | 'motor' | 'banco' | 'app';
   titulo: string;
   texto: string;
   /** Comandos para copiar, na ordem: com Docker primeiro, depois sem Docker. */
@@ -120,6 +155,11 @@ export function avisoDaInstalacao(estado: EstadoDaInstalacao, agora: Date = new 
     const volta = quandoVolta(estado.cota.volta_em, agora);
     return { tipo: 'cota', titulo: 'A cota do Codex da sua conta acabou por agora.', comandos: [],
       texto: `As leituras pedidas esperam na fila e continuam sozinhas quando ela voltar${volta ? ` (previsão: ${volta})` : ''}. Não é preciso pedir de novo.` };
+  }
+  const doApp = avisosDoApp(estado);
+  if (doApp.length > 0) {
+    return { tipo: 'app', titulo: doApp.length === 1 ? 'Um aviso sobre esta instalação.' : 'Avisos sobre esta instalação.',
+      texto: doApp.join(' '), comandos: [] };
   }
   return null;
 }

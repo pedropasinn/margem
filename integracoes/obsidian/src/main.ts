@@ -1,11 +1,16 @@
 /**
- * Plugin Margem para o Obsidian: traz as marcas, as notas e as perguntas do Margem para uma pasta do
- * cofre, uma nota por documento, sem apagar o que o usuário escreveu fora do bloco gerenciado.
+ * Plugin Margem para o Obsidian: traz os grifos, as anotações, as perguntas, as relações, os flashcards
+ * e os exercícios do Margem para uma pasta do cofre, uma pasta por documento e uma nota por item
+ * (formato 2, `servico/src/obsidian/FORMATO.md`), sem apagar o que o usuário escreveu fora do bloco
+ * gerenciado.
  */
-import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, normalizePath, requestUrl } from 'obsidian';
+import { App, Notice, Plugin, addIcon, PluginSettingTab, Setting, TFile, normalizePath, requestUrl } from 'obsidian';
 import {
-  resumoDoRelatorio, sincronizar, type ClienteDoMargem, type CofreDaSincronizacao, type EstadoDaSincronizacao, type IndiceDoMargem,
+  clienteDoMargem, resumoDoRelatorio, sincronizarV2, type CofreDaSincronizacao, type EstadoDaSincronizacao,
 } from './sincronizar';
+
+/** Símbolo do Margem (docs/identidade/simbolo.svg: arco de cinco segmentos + M) num ícone de 100×100, na cor do tema, como os do Obsidian. */
+const ICONE_DO_MARGEM = '<g fill="currentColor" transform="scale(0.6667) translate(-29.06 -28.5)"><path d="M76.805 28.957C68.5637 34.7276 61.3363 41.8248 55.417 49.96L78.058 66.434C82.1559 60.8018 87.1594 55.8881 92.865 51.893L76.805 28.957Z"/><path d="M52.03 54.955C46.663 63.4643 42.7442 72.8046 40.433 82.596L67.685 89.028C69.2848 82.2494 71.9976 75.7831 75.713 69.892L52.03 54.955Z"/><path d="M39.243 88.512C37.586 98.4353 37.586 108.565 39.243 118.488L66.86 113.876C65.7129 107.006 65.7129 99.9938 66.86 93.124L39.243 88.512Z"/><path d="M40.433 124.404C42.7442 134.195 46.663 143.536 52.03 152.045L75.713 137.108C71.9976 131.217 69.2848 124.751 67.685 117.972L40.433 124.404Z"/><path d="M55.417 157.04C61.3363 165.175 68.5637 172.272 76.805 178.043L92.865 155.107C87.1594 151.112 82.1559 146.198 78.058 140.566L55.417 157.04Z"/><path d="M96.9538 70.5455H116.545L133.165 111.071H133.932L150.551 70.5455H170.143V136H154.738V95.794H154.195L138.47 135.585H128.626L112.902 95.5703H112.359V136H96.9538V70.5455Z"/></g>';
 
 interface Configuracoes {
   /** Endereço do Margem, como se abre no navegador (ex.: http://localhost:8730). */
@@ -19,6 +24,7 @@ interface Configuracoes {
   sincronizarAoAbrir: boolean;
   /** 0 desliga. */
   intervaloMinutos: number;
+  /** Por nota (`margem_id`): o sha256 e o caminho da última sincronização. O da V1 (por documento) é aproveitado. */
   estado: EstadoDaSincronizacao;
 }
 
@@ -39,7 +45,8 @@ export default class PluginDoMargem extends Plugin {
   async onload(): Promise<void> {
     await this.carregarConfiguracoes();
     this.addCommand({ id: 'sincronizar', name: 'Sincronizar', callback: () => { void this.sincronizarAgora(); } });
-    this.addRibbonIcon('book-open', 'Margem: sincronizar', () => { void this.sincronizarAgora(); });
+    addIcon('margem', ICONE_DO_MARGEM);
+    this.addRibbonIcon('margem', 'Margem: sincronizar', () => { void this.sincronizarAgora(); });
     this.addSettingTab(new AbaDoMargem(this.app, this));
     this.app.workspace.onLayoutReady(() => {
       if (this.configuracoes.sincronizarAoAbrir) void this.sincronizarAgora(true);
@@ -75,23 +82,16 @@ export default class PluginDoMargem extends Plugin {
     return { 'X-Margem': '1', ...(this.configuracoes.token.trim() === '' ? {} : { Authorization: `Bearer ${this.configuracoes.token.trim()}` }) };
   }
 
-  private async pedir(caminho: string): Promise<{ status: number; text: string }> {
-    const servidor = semBarraFinal(this.configuracoes.servidor);
-    const consulta = new URLSearchParams({ marcas: this.configuracoes.marcas, base: servidor });
-    if (this.configuracoes.todos) consulta.set('todos', '1');
-    const resposta = await requestUrl({ url: `${servidor}${caminho}?${consulta.toString()}`, headers: this.cabecalhos(), throw: false });
+  private async pedir(url: string): Promise<string> {
+    const resposta = await requestUrl({ url, headers: this.cabecalhos(), throw: false });
     if (resposta.status === 401 || resposta.status === 403) {
       throw new Error(`O Margem recusou o pedido (${String(resposta.status)}). Confira o token e, se o servidor recusar a origem do Obsidian, inclua-a em MARGEM_ORIGENS.`);
     }
-    if (resposta.status >= 400) throw new Error(`O Margem respondeu ${String(resposta.status)} em ${caminho}.`);
-    return { status: resposta.status, text: resposta.text };
-  }
-
-  private cliente(): ClienteDoMargem {
-    return {
-      indice: async () => JSON.parse((await this.pedir('/api/obsidian/indice')).text) as IndiceDoMargem,
-      nota: async (documentoId) => (await this.pedir(`/api/documentos/${encodeURIComponent(documentoId)}/obsidian.md`)).text,
-    };
+    if (resposta.status === 404 && url.includes('/api/obsidian/v2/')) {
+      throw new Error('Este servidor do Margem é anterior às notas por item. Atualize o Margem.');
+    }
+    if (resposta.status >= 400) throw new Error(`O Margem respondeu ${String(resposta.status)} em ${new URL(url).pathname}.`);
+    return resposta.text;
   }
 
   private cofre(): CofreDaSincronizacao {
@@ -125,8 +125,11 @@ export default class PluginDoMargem extends Plugin {
     this.emCurso = true;
     const aviso = silencioso ? null : new Notice('Margem: sincronizando…', 0);
     try {
-      const { relatorio, estado } = await sincronizar({
-        cofre: this.cofre(), cliente: this.cliente(), pasta: this.configuracoes.pasta, estado: this.configuracoes.estado,
+      const cliente = clienteDoMargem({
+        servidor: semBarraFinal(this.configuracoes.servidor), marcas: this.configuracoes.marcas, todos: this.configuracoes.todos,
+      }, (url) => this.pedir(url));
+      const { relatorio, estado } = await sincronizarV2({
+        cofre: this.cofre(), cliente, pasta: this.configuracoes.pasta, estado: this.configuracoes.estado,
       });
       this.configuracoes.estado = estado;
       await this.salvarConfiguracoes();
@@ -156,11 +159,11 @@ class AbaDoMargem extends PluginSettingTab {
       .addText((campo) => campo.setPlaceholder(PADRAO.servidor).setValue(c.servidor).onChange(async (valor) => { c.servidor = valor.trim(); await salvar(); }));
     new Setting(containerEl).setName('Token').setDesc('Token pessoal do Margem. Hoje o servidor pessoal não pede; deixe vazio.')
       .addText((campo) => { campo.inputEl.type = 'password'; campo.setValue(c.token).onChange(async (valor) => { c.token = valor; await salvar(); }); });
-    new Setting(containerEl).setName('Pasta').setDesc('Onde as notas do Margem ficam no cofre.')
+    new Setting(containerEl).setName('Pasta').setDesc('Onde as notas do Margem ficam no cofre: uma pasta por documento, com uma nota por grifo, anotação, pergunta e relação.')
       .addText((campo) => campo.setPlaceholder('Margem').setValue(c.pasta).onChange(async (valor) => { c.pasta = valor.trim(); await salvar(); }));
     new Setting(containerEl).setName('Marcas da leitura').setDesc('Além dos seus grifos e das marcas que você confirmou ou comentou, trazer as marcas visíveis da leitura do Codex.')
       .addToggle((chave) => chave.setValue(c.marcas === 'todas').onChange(async (valor) => { c.marcas = valor ? 'todas' : 'minhas'; await salvar(); }));
-    new Setting(containerEl).setName('Documentos sem notas').setDesc('Criar nota também para os documentos em que você ainda não marcou nada.')
+    new Setting(containerEl).setName('Documentos sem notas').setDesc('Criar a nota do documento também quando você ainda não marcou nada nele.')
       .addToggle((chave) => chave.setValue(c.todos).onChange(async (valor) => { c.todos = valor; await salvar(); }));
     new Setting(containerEl).setName('Sincronizar ao abrir o Obsidian')
       .addToggle((chave) => chave.setValue(c.sincronizarAoAbrir).onChange(async (valor) => { c.sincronizarAoAbrir = valor; await salvar(); }));

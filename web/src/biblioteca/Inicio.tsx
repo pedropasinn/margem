@@ -4,7 +4,8 @@ import FlipCard from '../ui/virar/FlipCard';
 import { BarraDeProgresso, Icon } from '../ui/Icon';
 import { IconButton } from '../ui/Primitives';
 import { Esqueleto } from '../ui/Esqueleto';
-import { lerProgresso } from './api';
+import { arvoreDaVersao, lerProgresso } from './api';
+import { capitulosDoItem } from './categorias';
 import { fraseDoProgresso } from './estado';
 import { ConviteAdicionar, ROTULO_DO_FORMATO, formatoDaCapa, usarBiblioteca, type PropsDaLista } from './Lista';
 import { rotuloDoDocumento } from './tipos';
@@ -21,10 +22,11 @@ export function Inicio({ ir, carregar, carregarQuadros }: PropsDaLista) {
   if (!documentos || carregados === null) return <Esqueleto />;
   const recentes = [...documentos].sort((a, b) => b.criado_em.localeCompare(a.criado_em));
   const continuar = documentos.filter((d) => {
-    const total = arvores[d.versao_id ?? '']?.capitulos.length;
+    const total = capitulosDoItem(d, arvores);
     return d.texto_disponivel && d.progresso && total !== undefined && d.progresso.capitulos_concluidos < total;
   }).sort((a, b) => (b.progresso?.atualizado_em ?? '').localeCompare(a.progresso?.atualizado_em ?? ''));
-  const livros = recentes.filter((d) => (arvores[d.versao_id ?? '']?.capitulos.length ?? 0) > 1);
+  // "Livro" é atributo (mais de um capítulo), não categoria: a fileira junta EPUBs, PDFs e Markdowns com capítulos.
+  const livros = recentes.filter((d) => !d.midia && (capitulosDoItem(d, arvores) ?? 0) > 1);
   return <div className="inicio"><h1 className="titulo-oculto">Início</h1>
     {documentos.length === 0 && quadros.length === 0 ? <ConviteAdicionar ir={ir} /> : <div className="inicio-secoes">
       {continuar.length > 0 && <Fileira titulo="Continuar lendo" subtitulo="Abertos recentemente e ainda não terminados" icone="book" documentos={continuar} arvores={arvores} ir={ir} retomada />}
@@ -41,9 +43,9 @@ function Fileira({ titulo, subtitulo, icone, documentos, quadros = [], arvores, 
       if (quadro) return <CartaoDoQuadro key={`quadro:${quadro.slug}`} quadro={quadro} ir={ir} />;
       if (!documento) return null;
       const arvore = arvores[documento.versao_id ?? ''];
-      const total = arvore?.capitulos.length;
+      const total = capitulosDoItem(documento, arvores);
       const destino = { nome: documento.texto_disponivel ? 'leitura' as const : 'documento' as const, documento_id: documento.id };
-      return <article key={documento.id} className="cartao-documento" onClick={() => ir(destino)}><CapaQueVira documento={documento} total={total} /><div className="cartao-dados"><span className="eyebrow">{rotuloDoDocumento(documento, ROTULO_DO_FORMATO)}{total !== undefined && !documento.midia && ` · ${total > 1 ? 'Livro' : 'Texto'}`}</span><h3><a href={`/${documento.texto_disponivel ? 'ler' : 'documentos'}/${documento.id}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); ir(destino); }}>{documento.titulo}</a></h3>{documento.autor && <p className="autor">{documento.autor}</p>}
+      return <article key={documento.id} className="cartao-documento" onClick={() => ir(destino)}><CapaQueVira documento={documento} total={total} /><div className="cartao-dados"><span className="eyebrow">{rotuloDoDocumento(documento, ROTULO_DO_FORMATO)}{total !== undefined && !documento.midia && total > 1 && ' · Livro'}</span><h3><a href={`/${documento.texto_disponivel ? 'ler' : 'documentos'}/${documento.id}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); ir(destino); }}>{documento.titulo}</a></h3>{documento.autor && <p className="autor">{documento.autor}</p>}
         {retomada ? <ProgressoDaBiblioteca documento={documento} arvore={arvore} /> : <p className="dados">{total === 1 ? documento.progresso?.capitulos_concluidos ? 'Lido' : documento.progresso ? 'Texto único · em andamento' : 'texto único' : total !== undefined ? `${documento.progresso?.capitulos_concluidos ?? 0} de ${total} capítulos` : 'Preparando o texto'}</p>}
         {!retomada && total !== undefined && total > 1 && <BarraDeProgresso valor={100 * (documento.progresso?.capitulos_concluidos ?? 0) / total} rotulo="Capítulos concluídos" />}
         {retomada && indice === 0 && <a className="continuar-link" href={`/ler/${documento.id}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); ir({ nome: 'leitura', documento_id: documento.id }); }}>Continuar <Icon name="arrow" size={14} /></a>}
@@ -58,8 +60,17 @@ function misturar(documentos: ItemDaBiblioteca[], quadros: ResumoDoQuadro[]): { 
   return documentos.length === 0 ? todos : todos.sort((a, b) => b.data.localeCompare(a.data));
 }
 /** Reutiliza a árvore carregada para a lista; só a retomada precisa dos IDs concluídos. */
-function ProgressoDaBiblioteca({ documento, arvore }: { documento: ItemDaBiblioteca; arvore: ArvoreDaVersao | undefined }): ReactNode {
+function ProgressoDaBiblioteca({ documento, arvore: recebida }: { documento: ItemDaBiblioteca; arvore: ArvoreDaVersao | undefined }): ReactNode {
   const [concluidos, definirConcluidos] = useState<string[] | null>(null);
+  // A lista não traz as árvores (V-D1): a retomada pede só a do documento que mostra.
+  const [buscada, definirBuscada] = useState<ArvoreDaVersao | undefined>(undefined);
+  useEffect(() => {
+    if (recebida || !documento.versao_id) return;
+    let vivo = true;
+    void arvoreDaVersao(documento.versao_id).then((a) => { if (vivo && Array.isArray(a.capitulos)) definirBuscada(a); }, () => {});
+    return () => { vivo = false; };
+  }, [recebida, documento.versao_id]);
+  const arvore = recebida ?? buscada;
   useEffect(() => {
     let vivo = true;
     definirConcluidos(null);

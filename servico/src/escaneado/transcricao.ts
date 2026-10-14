@@ -16,7 +16,8 @@
  */
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { copyFile, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { renomearComRetentativa } from '../plataforma/disco.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type pg from 'pg';
@@ -26,6 +27,8 @@ import { comTransacao, type Transacao } from '../db/transacao.js';
 import { interpretarJson, lerJsonLimitado, lerTextoLimitado, ORCAMENTOS } from '../entrada-json.js';
 import { sha256 } from '../executor/artefato.js';
 import { ambienteSaneado } from '../executor/ambiente.js';
+import { comandoDoMotor, type ComandoDoMotor } from '../plataforma/executaveis.js';
+import { encerrarArvore, opcoesDeProcesso } from '../plataforma/processos.js';
 import { prepararEntrada } from '../executor/entrada.js';
 import { falhou, type ExecucaoOk, type Executor, type ResultadoExecutor } from '../executor/tipos.js';
 import { corpoDoModelo, ehObjeto, lerPrompt } from '../leitura/v2/prompt.js';
@@ -91,21 +94,21 @@ export interface OpcoesDaTranscricao {
   raiz?: string;
   /** Prazo de cada chamada ao Codex e de cada subprocesso Python. */
   prazoMs?: number;
-  /** Python com numpy e pymupdf para a camada: `MARGEM_PYTHON_CAMADA`, ou o do motor. */
+  /** Python com numpy e pymupdf para a camada (testes). Sem ele: o motor congelado (`MARGEM_MOTOR`), `MARGEM_PYTHON_CAMADA` ou o do motor. */
   python?: string;
   /** Script da camada (padrão `tools/camada-da-transcricao.py`); os testes trocam por um sem numpy. */
   scriptDaCamada?: string;
   diretorioArtefatos?: string;
 }
 
-/** Roda um script de `tools/` e devolve a cauda do stderr quando falha. */
-function rodarPython(python: string, argumentos: string[], cwd: string, prazoMs: number, sinal: AbortSignal): Promise<string | null> {
+/** Roda um subcomando do motor (script de `tools/`) e devolve a cauda do stderr quando falha. */
+function rodarPython(comando: ComandoDoMotor, prazoMs: number, sinal: AbortSignal): Promise<string | null> {
   return new Promise((resolver) => {
-    const processo = spawn(python, argumentos, { cwd, env: ambienteSaneado(), stdio: ['ignore', 'ignore', 'pipe'] });
+    const processo = spawn(comando.programa, comando.argumentos, { cwd: comando.cwd, env: ambienteSaneado(), stdio: ['ignore', 'ignore', 'pipe'], ...opcoesDeProcesso() });
     let erro = '';
     processo.stderr.setEncoding('utf8');
     processo.stderr.on('data', (pedaco: string) => { erro = `${erro}${pedaco}`.slice(-2_000); });
-    const matar = () => { processo.kill('SIGKILL'); };
+    const matar = () => { void encerrarArvore(processo, 'forcado'); };
     const prazo = setTimeout(matar, prazoMs);
     sinal.addEventListener('abort', matar, { once: true });
     const fim = (mensagem: string | null) => { clearTimeout(prazo); sinal.removeEventListener('abort', matar); resolver(mensagem); };
@@ -141,7 +144,7 @@ async function transcreverPagina(opcoes: OpcoesDaTranscricao, imagem: string, de
     const pagina: unknown = await lerJsonLimitado(resultado.artefato, ORCAMENTOS.resposta);
     const provisorio = `${destino}.parcial`;
     await writeFile(provisorio, JSON.stringify({ pagina, modelo: resultado.modelo, esforco: resultado.esforco ?? opcoes.esforco }), { mode: 0o600 });
-    await rename(provisorio, destino);
+    await renomearComRetentativa(provisorio, destino);
     return resultado;
   } finally {
     await rm(raiz, { recursive: true, force: true });
@@ -151,8 +154,11 @@ async function transcreverPagina(opcoes: OpcoesDaTranscricao, imagem: string, de
 /** Job `transcrever_escaneado`: páginas → Codex com imagem → camada invisível → canônico do PDF com camada. */
 export function manipuladorTranscreverEscaneado(opcoes: OpcoesDaTranscricao): Manipulador {
   const raiz = opcoes.raiz ?? raizDoRepositorio();
-  const pythonDoMotor = join(raiz, 'motor/.venv/bin/python');
-  const pythonDaCamada = opcoes.python ?? (process.env.MARGEM_PYTHON_CAMADA?.trim() || pythonDoMotor);
+  // Os testes trocam o Python e o script da camada; o resto passa pela resolução do motor (J114).
+  const comandoDaCamada = (argumentos: string[]): ComandoDoMotor => opcoes.python === undefined && opcoes.scriptDaCamada === undefined
+    ? comandoDoMotor('camada-da-transcricao', argumentos, { raiz })
+    : { ...comandoDoMotor('camada-da-transcricao', argumentos, { raiz, ...(opcoes.python === undefined ? {} : { python: opcoes.python }) }),
+      ...(opcoes.scriptDaCamada === undefined ? {} : { argumentos: [opcoes.scriptDaCamada, ...argumentos] }) };
   const prazo = opcoes.prazoMs ?? 1_800_000;
   return {
     async executar(tarefa: Tarefa): Promise<ResultadoExecutor> {
@@ -171,8 +177,8 @@ export function manipuladorTranscreverEscaneado(opcoes: OpcoesDaTranscricao): Ma
       const imagens = join(trabalho, 'imagens');
       const respostas = join(trabalho, 'paginas');
       await mkdir(respostas, { recursive: true, mode: 0o700 });
-      const renderizacao = await rodarPython(pythonDoMotor, [join(raiz, 'tools/renderizar-paginas.py'), documento.origem_caminho, imagens, paginas.join(',')],
-        raiz, prazo, tarefa.sinal);
+      const renderizacao = await rodarPython(comandoDoMotor('renderizar-paginas', [documento.origem_caminho, imagens, paginas.join(',')], { raiz }),
+        prazo, tarefa.sinal);
       if (renderizacao !== null) return falhou(tarefa.sinal.aborted ? 'cancelado' : 'processo', `Renderização das páginas: ${renderizacao}`, decorrido());
 
       let modelo = opcoes.modelo;
@@ -187,8 +193,7 @@ export function manipuladorTranscreverEscaneado(opcoes: OpcoesDaTranscricao): Ma
       }
 
       const camada = join(trabalho, 'camada.pdf');
-      const gravacao = await rodarPython(pythonDaCamada, [opcoes.scriptDaCamada ?? join(raiz, 'tools/camada-da-transcricao.py'), documento.origem_caminho, trabalho, camada],
-        raiz, prazo, tarefa.sinal);
+      const gravacao = await rodarPython(comandoDaCamada([documento.origem_caminho, trabalho, camada]), prazo, tarefa.sinal);
       if (gravacao !== null) return falhou(tarefa.sinal.aborted ? 'cancelado' : 'processo', `Camada de texto: ${gravacao}`, decorrido());
       const sha = createHash('sha256').update(await readFile(camada)).digest('hex');
       const final = caminhoDaCamada(documentoId, sha);

@@ -20,21 +20,43 @@ test('síntese só existe com movimento, começa recolhida e mantém texto liter
   expect(screen.getByText('Estabelece a hipótese.')).toBeDefined();
 });
 
-test.each(['md', 'pdf'])('progresso por palavras acompanha a âncora e conclusão em %s', async (formato) => {
+test.each(['md', 'pdf'])('progresso por palavras acompanha a âncora e conclusão em %s, só com o percentual', async (formato) => {
   const bloco = { ...capituloExemplo.blocos[0]!, texto: 'palavra '.repeat(460) };
   let offset = 0;
   const leitor = { current: { localizar: () => null, ancoraVisivel: () => ({ bloco_id: bloco.id, offset_utf16: offset }) } } satisfies { current: ApiDoLeitor };
   const snapshot = { ...capituloExemplo, formato, blocos: [bloco], palavras_no_livro: { antes: 460, total: 1380 } };
-  const { rerender } = render(<ProgressoNoLivro snapshot={snapshot} leitor={leitor} concluido={false} />);
-  expect(screen.getByText('33% do livro')).toBeDefined();
-  expect(screen.getByText('~2 min no capítulo · ~4 min no livro')).toBeDefined();
+  const { rerender, container } = render(<ProgressoNoLivro snapshot={snapshot} leitor={leitor} concluido={false} />);
+  expect(screen.getByText('33%')).toBeDefined();
+  // Nada de minutos por capítulo ou por livro.
+  expect(container.textContent).not.toMatch(/min/);
   offset = 230 * 8;
   fireEvent.scroll(window);
-  await waitFor(() => expect(screen.getByText('50% do livro')).toBeDefined());
-  expect(screen.getByText('~1 min no capítulo · ~3 min no livro')).toBeDefined();
+  await waitFor(() => expect(screen.getByText('50%')).toBeDefined());
   rerender(<ProgressoNoLivro snapshot={{ ...snapshot, palavras_no_livro: { antes: 920, total: 1380 } }} leitor={leitor} concluido />);
-  expect(screen.getByText('100% do livro')).toBeDefined();
-  expect(screen.getByText('~0 min no capítulo · ~0 min no livro')).toBeDefined();
+  expect(screen.getByText('100%')).toBeDefined();
   rerender(<ProgressoNoLivro snapshot={{ ...capituloExemplo, blocos: [] }} leitor={leitor} concluido={false} />);
-  expect(screen.queryByText(/% do livro/)).toBeNull();
+  expect(screen.queryByText(/%/)).toBeNull();
+});
+
+test('no fim da rolagem o capítulo conta inteiro e, na última parte, o documento chega a 100%', async () => {
+  const bloco = { ...capituloExemplo.blocos[0]!, texto: 'palavra '.repeat(400) };
+  // A âncora visível fica no meio do bloco (o topo da tela), como no fim de um capítulo longo.
+  const leitor = { current: { localizar: () => null, ancoraVisivel: () => ({ bloco_id: bloco.id, offset_utf16: 8 * 200 }) } } satisfies { current: ApiDoLeitor };
+  // Um "Referências" curto depois: o fim da rolagem não é o fim do documento.
+  const snapshot = { ...capituloExemplo, blocos: [bloco], palavras_no_livro: { antes: 0, total: 420 } };
+  const altura = Object.getOwnPropertyDescriptor(document.documentElement, 'scrollHeight');
+  Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 2000 });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+  try {
+    const { rerender } = render(<ProgressoNoLivro snapshot={snapshot} leitor={leitor} concluido={false} />);
+    await waitFor(() => expect(screen.getByText('47%')).toBeDefined());
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 1200 });
+    fireEvent.scroll(window);
+    await waitFor(() => expect(screen.getByText('95%')).toBeDefined());
+    rerender(<ProgressoNoLivro snapshot={snapshot} leitor={leitor} concluido={false} ultimaParte />);
+    await waitFor(() => expect(screen.getByText('100%')).toBeDefined());
+  } finally {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    if (altura) Object.defineProperty(document.documentElement, 'scrollHeight', altura); else delete (document.documentElement as unknown as Record<string, unknown>)['scrollHeight'];
+  }
 });

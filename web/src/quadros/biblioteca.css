@@ -9,10 +9,29 @@
 .capa-do-painel { display: grid; box-sizing: border-box; overflow: hidden; place-items: center; height: 220px; margin-bottom: 18px; padding: 12px; border-radius: var(--r-12); background: var(--painel); }
 .capa-do-painel img { max-width: 100%; max-height: 196px; width: auto; height: auto; object-fit: contain; box-shadow: 0 2px 8px #0000002e; }
 
-/* Sem acervo instalado (J110): a mesma condução da biblioteca vazia, com o botão e o comando. */
-.acervo-ausente .acervo-em-preparacao { display: grid; justify-items: center; gap: 6px; font-size: 14px; }
-.acervo-ausente .acervo-comando { display: grid; justify-items: center; gap: 8px; width: min(560px, 100%); font-size: 14px; }
-.acervo-ausente .acervo-comando-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; }
-.acervo-ausente .acervo-comando code { overflow-x: auto; padding: 6px 10px; border: 1px solid var(--borda); border-radius: var(--r-8); background: var(--surface-1); color: var(--texto-1); font-size: 13px; white-space: nowrap; text-align: left; }
-.acervo-ausente .acervo-comando .ui-icon { min-height: 32px; width: 32px; min-width: 32px; }
-.acervo-ausente + .linhas-biblioteca:empty { display: none; }
+/* Quadros da pessoa (J118): convite vazio, envio da obra, linha e painel em preparo. Sem faixa lateral. */
+.quadros-vazios .ui-button { gap: 8px; }
+.adicionar-obra-botao { flex-shrink: 0; width: 36px; min-width: 36px; height: 36px; min-height: 36px; }
+.adicionar-obra .dropzone-da-obra { padding: 24px 16px; }
+.adicionar-obra .dropzone-da-obra > svg { color: var(--texto-3); }
+.adicionar-obra .dropzone-da-obra p { overflow-wrap: anywhere; }
+.adicionar-obra .dropzone-da-obra small { color: var(--texto-3); }
+.previa-da-obra { display: block; max-width: 100%; max-height: 220px; width: auto; height: auto; border-radius: var(--r-8); box-shadow: 0 2px 8px #0000002e; }
+.nota-da-obra { margin: 0; color: var(--texto-2); font-size: 13px; line-height: 1.5; }
+.linha-em-preparo .titulo { cursor: default; }
+.linha-em-preparo .capa-do-quadro img { opacity: .8; }
+.linha-em-preparo[data-estado=falhou] .capa-do-quadro img { opacity: .5; filter: grayscale(.6); }
+.linha-em-preparo .linha-meta .badge { align-self: center; margin-inline: 4px; }
+.linha-em-preparo .linha-meta > .badge::before { content: none; }
+.linha-em-preparo .linha-meta > .badge + span::before { content: none; }
+.preparo-nota { margin: 8px 0 0; color: var(--texto-2); font-size: 13px; }
+.preparo-falha { display: grid; gap: 10px; margin-top: 10px; padding: 12px 14px; border-radius: var(--r-8); background: var(--error-bg); color: var(--error-texto); font-size: 13px; cursor: default; }
+.preparo-falha p { margin: 0; }
+.preparo-falha .button-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.preparo-falha .ui-button { min-height: 32px; height: auto; font-size: 13px; gap: 6px; }
+/* No celular as linhas têm altura fixa (biblioteca.css); a obra que falhou cresce para caber o motivo e as ações. */
+@media (max-width: 799px) {
+  .linha-em-preparo[data-estado=falhou] { height: auto; align-items: flex-start; }
+  .preparo-falha { padding: 10px 12px; }
+  .preparo-falha .ui-button { padding-inline: 10px; }
+}

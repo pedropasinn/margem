@@ -1,3 +1,4 @@
+import { gravarTipoDetectado } from '../tipo-de-texto/identificar.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { ulid } from 'ulid';
 import type pg from 'pg';
@@ -48,6 +49,8 @@ export async function guardarNaBiblioteca(banco: pg.Pool, id: string): Promise<s
       hash_estrutural: hashEstrutural(texto.blocos), blocos: texto.blocos, secoes: texto.secoes,
       assets: [], limites: ['Síntese editorial. As fontes originais são documentos distintos; as evidências estão transcritas com seus links.'] };
     await documentos.criarVersao(c, doc.id, canonico);
+    // A edição das Notícias já se sabe notícia: nenhum Codex para reconhecer o tipo.
+    await gravarTipoDetectado(c, doc.id, { tipo_id: 'noticia', confianca: 'alta', justificativa: 'Edição das Notícias do Margem.', alternativas: [], job_id: null, em: new Date().toISOString() });
     await c.query('UPDATE noticia_edicao SET documento_id=$2 WHERE id=$1', [id, doc.id]);
     return doc.id;
   });

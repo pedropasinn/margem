@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } 
 import { afterEach, expect, test, vi } from 'vitest';
 import type { ModeloDoCapituloV1, PlanoPedagogicoV1 } from '@margem/contratos';
 import type { ApiDoLeitor } from '../tipos';
-import { Braquetes, ESPERA_PARA_ACENDER_MS, type FontesDosBraquetes } from './Braquetes';
+import { AdotarRelacao, Braquetes, ESPERA_PARA_ACENDER_MS, type FontesDosBraquetes } from './Braquetes';
 import { distribuirEmPistas } from './geometria';
 import { PerfilDoLeitor, type FontesDoPerfil } from './PerfilDoLeitor';
 import { compreensaoDaCamada, useCompreensao, type FontesDaCompreensao } from './useCompreensao';
@@ -97,6 +97,8 @@ test('tentar de novo depois da falha volta a acompanhar até ficar pronto', asyn
   result.current.preparar();
   await waitFor(() => expect(result.current.visivel).toBe('pronto'));
   expect(fontes.capitulo).toHaveBeenCalledTimes(3);
+  // O botão pede que os jobs que falharam voltem à fila (antes, "tentar de novo" não refazia nada).
+  expect(fontes.preparar).toHaveBeenCalledWith('C', id(61), true, true);
 });
 
 test('braquetes no celular: pilhas na lateral esquerda; tocar abre a folha e esconde as outras', async () => {
@@ -125,6 +127,26 @@ test('braquetes no celular: pilhas na lateral esquerda; tocar abre a folha e esc
     fireEvent.click(within(folha).getByRole('button', { name: 'Fechar' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   } finally { vi.unstubAllGlobals(); }
+});
+
+test('fixada pelo clique, a relação da leitura pode virar "minha conexão"; adotada, o card diz isso', async () => {
+  const adotar = vi.fn(() => Promise.resolve({ conexao_id: 'CX', criada: true }));
+  const aoAdotar = vi.fn();
+  const fontes: FontesDosBraquetes = {
+    relacoes: vi.fn(() => Promise.resolve({ relacoes: [{ relacao: modelo().relacoes[0]!, relevante: true, origem: modelo().elementos[1], destino: modelo().elementos[0], conexao_id: null }] })),
+    adotar,
+  };
+  render(<Braquetes esperaMs={0} compreensaoId="C" secaoId={id(60)} modeloId={id(503)} filtro="relevantes" leitor={leitorFalso()} coluna={() => retangulo(0, 1000)} fontes={fontes} aoAdotar={aoAdotar} />);
+  const alvo = await screen.findByRole('button', { name: /Relação: pressupõe/ });
+  fireEvent.pointerEnter(alvo);
+  // Só com o hover, o card é uma dica: nada de botão que disputaria o mouse.
+  expect(screen.queryByRole('button', { name: 'Adotar como minha conexão' })).toBeNull();
+  fireEvent.click(alvo);
+  const card = screen.getByRole('group', { name: 'Relação da leitura' });
+  fireEvent.click(within(card).getByRole('button', { name: 'Adotar como minha conexão' }));
+  await waitFor(() => expect(adotar).toHaveBeenCalledWith('C', id(60), modelo().relacoes[0]!.id));
+  expect(await within(card).findByText('Está em Minhas conexões.')).toBeDefined();
+  expect(aoAdotar).toHaveBeenCalledOnce();
 });
 
 test('braquetes: a relação vira uma chave na lateral; o hover acende e mostra a explicação', async () => {
@@ -489,3 +511,30 @@ test('braquetes guiadas (leitura comentada, visita): a ponta fora da tela vira u
   expect(grupo.querySelector('circle')).toBeNull();
 });
 
+
+test('J132: sem compreensão, as conexões do leitor são desenhadas pelos mesmos braquetes, sem pedir relações à API', async () => {
+  const fontes: FontesDosBraquetes = { relacoes: vi.fn(() => Promise.resolve({ relacoes: [] })) };
+  const extra = { relacao: { ...modelo().relacoes[0]!, id: 'CONEXAO-DO-LEITOR' }, relevante: true, origem: modelo().elementos[1], destino: modelo().elementos[0], conexao_id: 'CONEXAO-DO-LEITOR' };
+  const { container } = render(<Braquetes esperaMs={0} compreensaoId={null} extras={[extra]} secaoId={id(60)} modeloId="conexoes" filtro="relevantes" leitor={leitorFalso()} coluna={() => retangulo(0, 1000)} fontes={fontes} />);
+  await waitFor(() => expect(container.querySelector('g.relacao-braquete path.braquete')).not.toBeNull());
+  expect(fontes.relacoes).not.toHaveBeenCalled();
+  // Em "ocultas" (texto puro), também somem.
+  const ocultas = render(<Braquetes esperaMs={0} compreensaoId={null} extras={[extra]} secaoId={id(60)} modeloId="conexoes" filtro="ocultas" leitor={leitorFalso()} coluna={() => retangulo(0, 1000)} fontes={fontes} />);
+  expect(ocultas.container.querySelector('g.relacao-braquete')).toBeNull();
+});
+
+test('relação da análise: "Remover relação" confirma antes de apagar (V-T8); sem remover, só adotar', async () => {
+  const item = { relacao: { id: 'R'.repeat(26), tipo: 'suporta', explicacao: 'A segunda apoia a primeira.' }, conexao_id: null } as unknown as Parameters<typeof AdotarRelacao>[0]['item'];
+  const remover = vi.fn(() => Promise.resolve());
+  const { unmount } = render(<AdotarRelacao item={item} adotar={vi.fn(() => Promise.resolve())} remover={remover} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Remover relação' }));
+  const dialogo = screen.getByRole('alertdialog');
+  expect(dialogo.textContent).toContain('A segunda apoia a primeira.');
+  expect(remover).not.toHaveBeenCalled();
+  fireEvent.click(within(dialogo).getByRole('button', { name: 'Remover' }));
+    await act(() => Promise.resolve());
+  expect(remover).toHaveBeenCalledWith('R'.repeat(26));
+  unmount();
+  render(<AdotarRelacao item={item} adotar={vi.fn(() => Promise.resolve())} />);
+  expect(screen.queryByRole('button', { name: 'Remover relação' })).toBeNull();
+});

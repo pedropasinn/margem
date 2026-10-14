@@ -1,8 +1,8 @@
 import type {
-  Bloco, ConexaoV1, ConexaoV2, ExecucaoLeituraV2, Funcao, Id, MarcaGeradaV2, MarcaV1, MarcaV2, ModoDeLeituraV1, RespostaGeradaV1,
+  Bloco, ConexaoV1, ConexaoV2, ConexaoV3, ExecucaoLeituraV2, Funcao, Id, MarcaGeradaV2, MarcaV1, MarcaV2, ModoDeLeituraV1, RespostaGeradaV1,
 } from './tipos';
 import { MODO_F1, mesmoModo } from './modos';
-import { validarConexao, validarConexaoV2, validarExecucaoLeituraV2, validarMarca, validarMarcaGeradaV2, validarMarcaV2, validarModoDeLeitura } from './validadores';
+import { validarConexao, validarConexaoV2, validarConexaoV3, validarExecucaoLeituraV2, validarMarca, validarMarcaGeradaV2, validarMarcaV2, validarModoDeLeitura } from './validadores';
 
 export type Localizacao =
   | { tipo: 'unica'; inicio_utf16: number; fim_utf16: number }
@@ -135,8 +135,9 @@ export function diagnosticarRespostaGerada(resposta: RespostaGeradaV1, blocos: r
  * Única transição de estado de uma conexão: uma sugestão da IA decidida pelo leitor.
  * Decisões são finais nesta versão; conexão do leitor já nasce aceita. Aceita V1 ou V2 e devolve a mesma versão.
  */
-export function decidirConexao<T extends ConexaoV1 | ConexaoV2>(conexao: T, estado: 'aceita' | 'rejeitada', decidida_em: string): T {
-  const validar = (valor: unknown): valor is T => conexao.versao === 2 ? validarConexaoV2(valor) : validarConexao(valor);
+export function decidirConexao<T extends ConexaoV1 | ConexaoV2 | ConexaoV3>(conexao: T, estado: 'aceita' | 'rejeitada', decidida_em: string): T {
+  const validar = (valor: unknown): valor is T => conexao.versao === 3 ? validarConexaoV3(valor)
+    : conexao.versao === 2 ? validarConexaoV2(valor) : validarConexao(valor);
   if (!validar(conexao) || conexao.autor !== 'ia' || conexao.estado !== 'sugerida') throw new Error('Só uma sugestão da IA pode ser decidida.');
   const decidida: unknown = { ...structuredClone(conexao), estado, decidida_em };
   if (!validar(decidida)) throw new Error('Decisão inválida.');

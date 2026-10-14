@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ExecucoesDoCodexV2.schema.json",
+  "title": "Execuções do Codex em andamento e recém-terminadas (avisos da interface), com os avisos das concluídas",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "gerado_em",
+    "execucoes",
+    "omitidas"
+  ],
+  "properties": {
+    "versao": {
+      "const": 2
+    },
+    "gerado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "omitidas": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "execucoes": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "tipo",
+          "rotulo",
+          "estado",
+          "inicio",
+          "fim",
+          "documento",
+          "secao",
+          "rota",
+          "mensagem",
+          "avisos"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+          },
+          "tipo": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
+            "maxLength": 40
+          },
+          "rotulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "estado": {
+            "enum": [
+              "na_fila",
+              "rodando",
+              "concluida",
+              "falhou"
+            ]
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fim": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documento": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "titulo"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+                  },
+                  "titulo": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "secao": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "titulo",
+                  "numero"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+                  },
+                  "titulo": {
+                    "type": "string"
+                  },
+                  "numero": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rota": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^/(?!/)[^\\s]*$",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mensagem": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "avisos": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "codigo",
+                "mensagem"
+              ],
+              "properties": {
+                "codigo": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
+                  "maxLength": 60
+                },
+                "mensagem": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

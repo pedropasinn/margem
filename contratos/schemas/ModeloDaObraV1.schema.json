@@ -61,12 +61,13 @@
           "minLength": 1
         },
         "afirmacoes": {
+          "description": "Afirmações `fato` da identidade. Vazia só numa obra não identificada (análise só pela imagem, V-W5), cuja única fonte é a imagem enviada (`imagem_enviada`).",
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1
           },
-          "minItems": 1
+          "minItems": 0
         }
       }
     },
@@ -199,9 +200,10 @@
             "minLength": 1
           },
           "url": {
+            "description": "Endereço público (https). A imagem enviada pela pessoa, numa obra não identificada, usa `margem:quadros/<slug>/imagem.jpg`.",
             "type": "string",
             "format": "uri",
-            "pattern": "^https://"
+            "pattern": "^(https://|margem:quadros/[a-z0-9][a-z0-9-]{0,79}/imagem\\.jpg$)"
           },
           "categoria": {
             "type": "string",
@@ -214,7 +216,8 @@
               "leilao",
               "google_arts",
               "secundaria",
-              "popular"
+              "popular",
+              "imagem_enviada"
             ]
           },
           "consultado_em": {

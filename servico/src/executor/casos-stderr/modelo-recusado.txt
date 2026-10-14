@@ -1,0 +1,25 @@
+Reading additional input from stdin...
+OpenAI Codex v0.162.1
+--------
+workdir: /tmp
+model: gpt-9-inexistente
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 01a13b98-e4a5-7bb0-80c8-ba25753cfb38
+--------
+user
+responda ok
+warning: `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.
+warning: `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation.
+warning: Model metadata for `gpt-9-inexistente` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.
+hook: SessionStart
+hook: SessionStart
+hook: SessionStart Completed
+hook: SessionStart Completed
+hook: UserPromptSubmit
+hook: UserPromptSubmit Completed
+ERROR: {"type":"error","status":400,"error":{"type":"invalid_request_error","message":"The 'gpt-9-inexistente' model is not supported when using Codex with a ChatGPT account."}}
+ERROR: {"type":"error","status":400,"error":{"type":"invalid_request_error","message":"The 'gpt-9-inexistente' model is not supported when using Codex with a ChatGPT account."}}

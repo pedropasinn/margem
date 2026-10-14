@@ -13,7 +13,7 @@ import { comTransacao } from '../db/transacao';
 import { arquivoNosDados } from '../geometria/arquivos';
 import { caminhoDaMidia, limiteDeMidia, MidiaGrandeDemais, receberMidia, sondarMidia } from '../midia/arquivos';
 import { ErroDeMidia, publicarMidia, type PedidoDeMidia } from '../midia/publicacao';
-import { estadoDosConceitos, MidiaInexistente, pedirConceitos } from '../midia/conceitos';
+import { estadoDosConceitos, midiaDeVideo, MidiaInexistente, pedirConceitos } from '../midia/conceitos';
 import { videoDoDocumento } from '../midia/importacao-youtube';
 import { ErroDeRevisao, registrarRevisao, type CodigoDaRevisao, type PedidoDeRevisao } from '../midia/revisao';
 import { faixaDeBytes } from './documento-original';
@@ -177,9 +177,10 @@ export function registrarMidia(api: Hono, banco: pg.Pool): void {
   const conceitos = async (id: Id) => comTransacao(banco, (cliente) => estadoDosConceitos(cliente, id));
   const exigirMidia = async (id: string): Promise<Id> => {
     if (!ehUlid(id)) throw new ErroDaApi(400, 'id_invalido');
-    const { rows: [midia] } = await banco.query<{ tipo: string }>('SELECT tipo FROM midia WHERE id=$1', [id]);
+    const { rows: [midia] } = await banco.query<{ tipo: string; url: string | null }>("SELECT tipo, conteudo->'fonte'->>'url' AS url FROM midia WHERE id=$1", [id]);
     if (!midia) throw new ErroDaApi(404, 'midia_inexistente');
-    if (midia.tipo !== 'video') throw new ErroDaApi(422, 'nao_e_video', 'Conceitos sobre a tela só existem para vídeo.');
+    // J142: o vídeo do YouTube guarda só o áudio, mas é vídeo (toca pelo player embutido); os popups valem para ele.
+    if (!midiaDeVideo(midia)) throw new ErroDaApi(422, 'nao_e_video', 'Momentos sobre a tela só existem para vídeo.');
     return id;
   };
   api.get('/api/midias/:id/conceitos', async (c) => c.json(await conceitos(await exigirMidia(c.req.param('id')))));

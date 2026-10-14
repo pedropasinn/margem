@@ -115,10 +115,12 @@ try {
     await dialogo.waitFor();
     await captura(pagina, prefixo, '01-boas-vindas');
     await dialogo.getByRole('button', { name: /Continuar/ }).click();
-    await captura(pagina, prefixo, '02-como-se-le');
+    await captura(pagina, prefixo, '02-tres-jeitos');
     await dialogo.getByRole('button', { name: /Continuar/ }).click();
-    await captura(pagina, prefixo, '03-primeiro-texto');
-    await dialogo.getByRole('button', { name: /Abrir um texto de exemplo/ }).click();
+    await captura(pagina, prefixo, '02b-como-se-le');
+    await dialogo.getByRole('button', { name: /Continuar/ }).click();
+    await captura(pagina, prefixo, '03-primeiro-exemplo');
+    await dialogo.getByRole('button', { name: /Ler um texto de exemplo/ }).click();
     await pagina.getByText('Preparando o texto… leva alguns segundos.').first().waitFor();
     await captura(pagina, prefixo, '04-preparando-exemplo');
     cena.pronto = true;
@@ -151,11 +153,11 @@ try {
     await simular(vazia, { documentos: false, marcas: [], pronto: false, estadoDoc: 'pronto' });
     await vazia.addInitScript((valor) => { localStorage.setItem('margem:onboarding:v1:local', valor); }, estadoGuardado({ boas_vindas: 'pulada' }));
     await vazia.goto(`${base}/`);
-    await vazia.getByRole('heading', { name: 'Nenhum texto ainda.' }).waitFor();
+    await vazia.getByRole('heading', { name: 'Nenhum item ainda.' }).waitFor();
     assert.equal(await vazia.getByRole('dialog').count(), 0);
     await captura(vazia, prefixo, '13-inicio-vazio');
     await vazia.goto(`${base}/biblioteca`);
-    await vazia.getByRole('heading', { name: 'Nenhum texto ainda.' }).waitFor();
+    await vazia.getByRole('heading', { name: 'Nenhum item ainda.' }).waitFor();
     await captura(vazia, prefixo, '14-biblioteca-vazia');
     await vazia.close();
 
@@ -169,7 +171,7 @@ try {
     await captura(semMarcas, prefixo, '15-dica-sem-marcas');
     await semMarcas.keyboard.press('Escape');
     assert.equal(await semMarcas.locator('.dica-ancorada').count(), 0, 'Esc fecha o tour');
-    assert.equal(await semMarcas.evaluate(() => (JSON.parse(localStorage.getItem('margem:onboarding:v1:local') ?? '{}') as { tour?: string }).tour), 'pulada');
+    assert.equal(await semMarcas.evaluate(() => (JSON.parse(localStorage.getItem('margem:onboarding:v2:local') ?? '{}') as { tours?: { texto?: string } }).tours?.texto), 'pulada');
     await semMarcas.close();
     await contexto.close();
   }

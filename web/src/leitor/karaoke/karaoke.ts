@@ -247,7 +247,8 @@ export class Karaoke {
   private desenharFilete(camada: HTMLDivElement, intervalo: Range | null, base: DOMRect, blocos: readonly Bloco[]): void {
     const no = intervalo?.startContainer;
     const paragrafo = (no instanceof Element ? no : no?.parentElement)?.closest<HTMLElement>('[data-bloco]');
-    const caixa = this.opcoes.filete === false || !paragrafo || blocos.length === 0 ? null : paragrafo.getBoundingClientRect();
+    // J142: sem filete por padrão (nenhuma faixa lateral colorida no Margem); só quem pedir `filete: true`.
+    const caixa = this.opcoes.filete !== true || !paragrafo || blocos.length === 0 ? null : paragrafo.getBoundingClientRect();
     if (!caixa || caixa.height === 0) { this.filete?.remove(); this.filete = null; return; }
     if (!this.filete) { this.filete = document.createElement('div'); this.filete.className = 'karaoke-filete'; camada.prepend(this.filete); }
     const recuo = window.innerWidth < 600 ? 9 : 22;

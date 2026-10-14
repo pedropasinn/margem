@@ -10,7 +10,8 @@
  * O Codex recebe a pasta montada só para leitura (`anexos` do executor) e a percorre com `grep`,
  * `sed` e `cat`, dentro do sandbox, sem rede.
  */
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { renomearComRetentativa } from '../plataforma/disco.js';
 import { join } from 'node:path';
 import { ulid } from 'ulid';
 import type { Bloco, CanonicoV1, Id, Secao } from '@margem/contratos';
@@ -95,7 +96,7 @@ async function exportarVersao(cliente: Transacao, raiz: string, documento: { id:
     };
     await writeFile(join(temporaria, 'manifesto.json'), `${JSON.stringify({ versao: VERSAO_DO_EXPORT, documento: exportado } satisfies Manifesto, null, 2)}\n`);
     try {
-      await rename(temporaria, pasta);
+      await renomearComRetentativa(temporaria, pasta);
     } catch {
       // Outra pergunta escreveu a mesma versão antes: vale a dela (o conteúdo é o mesmo).
       await rm(temporaria, { recursive: true, force: true });
@@ -141,6 +142,6 @@ export async function exportarBiblioteca(cliente: Transacao, raiz: string): Prom
   }
   const temporario = join(raiz, `.${ARQUIVO_DO_INDICE}-${ulid()}`);
   await writeFile(temporario, indiceEmMarkdown(documentos));
-  await rename(temporario, join(raiz, ARQUIVO_DO_INDICE));
+  await renomearComRetentativa(temporario, join(raiz, ARQUIVO_DO_INDICE));
   return { raiz, documentos, novos };
 }

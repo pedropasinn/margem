@@ -24,6 +24,7 @@ const SELECAO = `SELECT v.*, j.estado AS job_estado, j.diagnosticos AS job_diagn
 /** Motivos legíveis para códigos de falha sem mensagem própria. */
 const MOTIVOS: Record<string, string> = {
   sem_imagem: 'O Codex terminou sem gerar imagem.',
+  publicacao: 'A imagem foi gerada, mas não pôde ser guardada no disco.',
   timeout: 'O Codex passou do prazo.',
   cancelado: 'O pedido foi cancelado.',
   auth: 'A conta do Codex está sem sessão válida.',

@@ -7,6 +7,8 @@
  */
 import { spawn } from 'node:child_process';
 import type { RetanguloDaObra } from '@margem/contratos';
+import { ffmpeg, ffprobe, FONTE_DA_IMAGEM, fonteDosRotulos } from '../../plataforma/executaveis.js';
+import { opcoesDeProcesso } from '../../plataforma/processos.js';
 
 export interface Dimensoes { largura: number; altura: number }
 export interface PedidoDeImagem {
@@ -21,7 +23,20 @@ export interface PedidoDeImagem {
 }
 export type PrepararImagem = (origem: string, destino: string, pedido: PedidoDeImagem, dimensoes: Dimensoes) => Promise<void>;
 
-export const FONTE_DOS_ROTULOS = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+/** Fonte da imagem Docker; o app de desktop leva a sua nos recursos (`MARGEM_FONTE`, J114). */
+export const FONTE_DOS_ROTULOS = FONTE_DA_IMAGEM;
+
+/**
+ * Caminho como valor de opção de filtro do ffmpeg. Caminho simples (o do Linux) passa como está. Com
+ * dois-pontos, barra invertida, espaço ou vírgula (Windows: `C:\Program Files\…`), vira barras normais
+ * entre aspas simples e com o dois-pontos escapado (`'C\:/Program Files/…'`): as aspas protegem do
+ * analisador do grafo, e o `\:` do analisador das opções.
+ */
+export function caminhoNoFiltro(caminho: string): string {
+  if (/^[A-Za-z0-9_./-]+$/u.test(caminho)) return caminho;
+  if (caminho.includes("'")) throw new Error('Caminho da fonte com aspas simples não é aceito no filtro do ffmpeg.');
+  return `'${caminho.replaceAll('\\', '/').replaceAll(':', '\\:')}'`;
+}
 const par = (n: number): number => Math.max(2, Math.round(n / 2) * 2);
 
 /** Passo da grade: o maior entre 0,1/0,05/0,02/0,01 que ainda dá seis linhas no menor lado do recorte. */
@@ -35,7 +50,7 @@ function rotuloDaCoordenada(valor: number, passo: number): string {
 }
 
 /** Cadeia de filtros do ffmpeg para um pedido; pura, testável sem ffmpeg. */
-export function filtroDaImagem(dim: Dimensoes, pedido: PedidoDeImagem): { filtro: string; saida: Dimensoes } {
+export function filtroDaImagem(dim: Dimensoes, pedido: PedidoDeImagem, fonte: string = fonteDosRotulos()): { filtro: string; saida: Dimensoes } {
   const r = pedido.recorte;
   const cx = Math.round(r.x * dim.largura), cy = Math.round(r.y * dim.altura);
   const cw = Math.max(2, Math.min(dim.largura - cx, Math.round(r.largura * dim.largura)));
@@ -45,7 +60,7 @@ export function filtroDaImagem(dim: Dimensoes, pedido: PedidoDeImagem): { filtro
   const filtros = [`crop=${String(cw)}:${String(ch)}:${String(cx)}:${String(cy)}`, `scale=${String(saida.largura)}:${String(saida.altura)}`];
   const corpo = Math.max(12, Math.round(Math.max(saida.largura, saida.altura) / 70));
   const texto = (t: string, x: number, y: number, cor = 'white') =>
-    `drawtext=fontfile=${FONTE_DOS_ROTULOS}:text='${t}':x=${String(Math.round(x))}:y=${String(Math.round(y))}:fontsize=${String(corpo)}:fontcolor=${cor}:box=1:boxcolor=black@0.6:boxborderw=2`;
+    `drawtext=fontfile=${caminhoNoFiltro(fonte)}:text='${t}':x=${String(Math.round(x))}:y=${String(Math.round(y))}:fontsize=${String(corpo)}:fontcolor=${cor}:box=1:boxcolor=black@0.6:boxborderw=2`;
   if (pedido.grade) {
     const passo = passoDaGrade(r);
     const linhas = (inicio: number, tamanho: number) => {
@@ -75,7 +90,7 @@ export function filtroDaImagem(dim: Dimensoes, pedido: PedidoDeImagem): { filtro
 
 function rodar(comando: string, argumentos: string[]): Promise<string> {
   return new Promise((resolver, rejeitar) => {
-    const filho = spawn(comando, argumentos, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const filho = spawn(comando, argumentos, { stdio: ['ignore', 'pipe', 'pipe'], ...opcoesDeProcesso() });
     let saida = '', erro = '';
     filho.stdout.on('data', (b: Buffer) => { saida += b.toString(); });
     filho.stderr.on('data', (b: Buffer) => { erro = (erro + b.toString()).slice(-4000); });
@@ -85,7 +100,7 @@ function rodar(comando: string, argumentos: string[]): Promise<string> {
 }
 
 export async function dimensoesDaImagem(caminho: string): Promise<Dimensoes> {
-  const saida = await rodar('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', caminho]);
+  const saida = await rodar(ffprobe(), ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', caminho]);
   const [largura, altura] = saida.trim().split(',').map(Number);
   if (!largura || !altura) throw new Error('dimensoes_ilegiveis');
   return { largura, altura };
@@ -93,8 +108,19 @@ export async function dimensoesDaImagem(caminho: string): Promise<Dimensoes> {
 
 export const prepararComFfmpeg: PrepararImagem = async (origem, destino, pedido, dim) => {
   const { filtro } = filtroDaImagem(dim, pedido);
-  await rodar('ffmpeg', ['-v', 'error', '-y', '-i', origem, '-vf', filtro, '-frames:v', '1', '-q:v', '3', destino]);
+  await rodar(ffmpeg(), ['-v', 'error', '-y', '-i', origem, '-vf', filtro, '-frames:v', '1', '-q:v', '3', destino]);
 };
+
+/**
+ * A imagem que a pessoa enviou (J118) vira o `imagem.jpg` da obra: JPEG sem rotação pendente fica
+ * byte a byte; com orientação EXIF, PNG e WebP passam pelo ffmpeg (transparência sobre branco, a
+ * rotação aplicada uma vez só: `-noautorotate` + `transpose`, porque o ffmpeg 6+ já gira sozinho).
+ * As coordenadas das regiões valem para o `imagem.jpg` exatamente como o navegador o mostra.
+ */
+export async function converterParaJpeg(origem: string, destino: string, rotacao: string | null, dim: Dimensoes): Promise<void> {
+  const filtros = [`color=c=white:s=${String(dim.largura)}x${String(dim.altura)}[fundo]`, `[fundo][0:v]overlay=shortest=1:format=auto${rotacao ? `,${rotacao}` : ''}`];
+  await rodar(ffmpeg(), ['-v', 'error', '-y', '-noautorotate', '-i', origem, '-filter_complex', filtros.join(';'), '-frames:v', '1', '-q:v', '2', destino]);
+}
 
 /** Quatro ladrilhos de 0,6 × 0,6 que se sobrepõem no centro: cada canto da obra visto de perto. */
 export const LADRILHOS: { nome: string; recorte: RetanguloDaObra }[] = [

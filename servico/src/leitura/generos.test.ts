@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import Ajv from 'ajv/dist/2020.js';
 import { expect, test } from 'vitest';
-import { obterModo, validarMarcaV2, validarModoDeLeitura, type ModeloDoCapituloV1, type ModoDeLeituraV1 } from '@margem/contratos';
+import { lerTiposDeTexto, obterModo, validarMarcaV2, validarModoDeLeitura, type ModeloDoCapituloV1, type ModoDeLeituraV1 } from '@margem/contratos';
 import { montarPromptDeLeitura } from './v2/prompt.js';
 import { modeloDoPrompt, protocoloDoModo } from './protocolos.js';
 import { montarPromptDeAnalise, montarPromptDeSintese, montarPromptDeRevisao, montarPromptDoPlano } from '../compreensao/prompts.js';
@@ -15,8 +15,8 @@ function modelo(modo: ModoDeLeituraV1): ModeloDoCapituloV1 {
   const valor = JSON.parse(readFileSync(new URL('../../../contratos/casos/ModeloDoCapitulo/valido-minimo.json', import.meta.url), 'utf8')) as ModeloDoCapituloV1;
   return { ...valor, modo: { id: modo.id, revisao: modo.revisao }, elementos: [], relacoes: [], dificuldades: [], unidades: [], movimento: null };
 }
-test('o catálogo consolidado tem os dezoito protocolos recomendados, todos com seis funções', () => {
-  expect(nomes).toHaveLength(18);
+test('o catálogo tem os protocolos de gênero (dezoito do J97 e onze da v0.1), todos com seis funções', () => {
+  expect(nomes).toHaveLength(29);
   for (const nome of nomes) {
     const [chave, revisao] = nome.replace('.md', '').split('@');
     const modo = obterModo({ id: chave!, revisao: Number(revisao) });
@@ -61,6 +61,12 @@ for (const nome of nomes) test(`${nome}: protocolo, schema, âncora e projeção
   expect(resolverAnalise(ambigua, contexto).elementos).toHaveLength(0);
   const errada = structuredClone(saida); errada.elementos[0]!.papel = 'funcao_inventada';
   expect(schema(errada)).toBe(false);
+});
+test('todo modo da taxonomia de tipos de texto tem protocolo de gênero', () => {
+  const comProtocolo = new Set(nomes.map((nome) => nome.replace('.md', '')));
+  for (const grupo of lerTiposDeTexto().grupos) for (const tipo of grupo.tipos) {
+    expect(comProtocolo.has(`${tipo.modo.id}@${String(tipo.modo.revisao)}`), tipo.id).toBe(true);
+  }
 });
 test('retomada preserva o prompt anterior e não injeta protocolos novos', () => {
   const modo = obterModo({ id: 'literaria', revisao: 1 });

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/NotaDoGrifoV1.schema.json",
+  "title": "A nota do leitor sobre um grifo (1:1): texto simples, sem tipo",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "marca_id",
+    "versao_id",
+    "texto",
+    "criada_em",
+    "atualizada_em",
+    "revisao_edicao"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "marca_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "texto": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8000,
+      "pattern": "\\S"
+    },
+    "revisao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "autor",
+        "texto_anterior",
+        "motivo",
+        "em"
+      ],
+      "description": "A última revisão feita pelo Codex (job `revisar_anotacao`): o texto do leitor antes dela e o motivo.",
+      "properties": {
+        "autor": {
+          "const": "codex"
+        },
+        "texto_anterior": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000,
+          "pattern": "\\S"
+        },
+        "motivo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600,
+          "pattern": "\\S"
+        },
+        "em": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "atualizada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revisao_edicao": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647,
+      "description": "Contador de concorrência; distinto da revisão textual do Codex."
+    }
+  }
+}

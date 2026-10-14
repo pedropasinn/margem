@@ -6,3 +6,10 @@
 .grade-ui { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 24px; }
 .grade-ui label { display: grid; gap: 8px; align-content: start; min-width: 0; }
 .exemplo-borda { display: flex; justify-content: end; margin-top: 24px; }
+
+.grade-de-botoes { display: grid; gap: 12px; margin-block: 16px; }
+.grade-de-botoes [role=row] { display: grid; grid-template-columns: 90px repeat(3, minmax(0, 1fr)); align-items: center; gap: 12px; }
+.grade-de-botoes [role=cell] { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.grade-de-botoes [role=columnheader], .grade-de-botoes [role=rowheader] { color: var(--texto-3); font: 500 12px var(--sans); }
+.exemplo-rodape { max-width: 420px; padding-top: 12px; border-top: 1px solid var(--borda); }
+@media (max-width: 700px) { .grade-de-botoes [role=row] { grid-template-columns: 1fr; } }

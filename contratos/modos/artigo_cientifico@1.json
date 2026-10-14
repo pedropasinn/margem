@@ -1,0 +1,84 @@
+{
+  "versao": 1,
+  "id": "artigo_cientifico",
+  "revisao": 1,
+  "nome": "Artigo científico",
+  "descricao": "Ler artigos científicos (psicologia, medicina, ciências naturais e sociais, computação) distinguindo a pergunta, a hipótese, o método, os resultados, a interpretação dos autores e as limitações. Resultado vem com amostra, medida, tamanho e incerteza; interpretação e especulação ficam separadas dele.",
+  "funcoes": [
+    {
+      "chave": "pergunta",
+      "rotulo": "Pergunta",
+      "pergunta": "Que pergunta ou lacuna o estudo enfrenta?",
+      "descricao": "Problema de pesquisa ou lacuna da literatura. Ex.: “Pouco se sabe sobre o efeito em adolescentes.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "hipotese",
+      "rotulo": "Hipótese",
+      "pergunta": "Que hipótese ou previsão o estudo testa?",
+      "descricao": "Hipótese declarada ou previsão do modelo. Ex.: “Esperávamos menor ansiedade no grupo tratado.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "metodo",
+      "rotulo": "Método",
+      "pergunta": "Como os dados foram obtidos e analisados?",
+      "descricao": "Delineamento, amostra, medidas, análise, conjunto de dados. Ex.: “Ensaio randomizado com 240 participantes.”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "resultado",
+      "rotulo": "Resultado",
+      "pergunta": "O que se observou, com que tamanho e incerteza?",
+      "descricao": "Resultado do próprio estudo, com números. Ex.: “A ansiedade caiu 0,4 desvio padrão (IC 95%: 0,2 a 0,6).”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "interpretacao",
+      "rotulo": "Interpretação",
+      "pergunta": "Como os autores leem o resultado?",
+      "descricao": "Leitura, mecanismo proposto ou implicação, atribuída. Ex.: “Isso sugere que o sono media o efeito.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "limitacao",
+      "rotulo": "Limitação",
+      "pergunta": "Que limite, viés ou alcance restrito o estudo tem?",
+      "descricao": "Limitação reconhecida pelos autores ou visível no texto. Ex.: “A amostra era só de universitários.”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

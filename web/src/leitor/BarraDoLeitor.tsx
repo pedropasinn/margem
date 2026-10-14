@@ -1,7 +1,7 @@
 /**
  * Peças da barra de leitura enxuta (Player v2, etapa 1): botões só com ícone, cada um com a dica e o
  * atalho; a posição no centro ("p. 17 de 191" ou "Cap. 3 de 10"), que vira − e + ao passar o mouse; e
- * os popovers pequenos da atenção e do ouvir. A composição da barra fica no `ReaderController`.
+ * o popover pequeno do ouvir. A composição da barra fica no `ReaderController`.
  */
 import { forwardRef, useEffect, useRef, useState, type ButtonHTMLAttributes, type FormEvent, type ReactNode } from 'react';
 import { Icon } from '../ui/Icon';
@@ -78,6 +78,8 @@ export interface AcaoDeOuvir {
   ativa?: boolean;
   desabilitada?: boolean;
   executar: () => void;
+  /** Na aba Estudo do painel: em que grupo a ação entra. */
+  grupo?: 'Entender' | 'Praticar' | 'Ver';
 }
 
 export function OuvirNaBarra({ acoes }: { acoes: readonly AcaoDeOuvir[] }): ReactNode {
@@ -96,12 +98,11 @@ export function OuvirNaBarra({ acoes }: { acoes: readonly AcaoDeOuvir[] }): Reac
   </>;
 }
 
-/** O popover da atenção: os quatro pontos, pequeno, abaixo do botão. */
-export function AtencaoNaBarra({ children, nivel }: { children: ReactNode; nivel: number }): ReactNode {
-  const [aberto, abrir] = useState(false);
-  const botao = useRef<HTMLButtonElement>(null);
-  return <>
-    <BotaoDaBarra ref={botao} rotulo="Atenção" aria-label={`Atenção: nível ${String(nivel)}`} icone="atencao" aria-expanded={aberto} onClick={() => abrir(!aberto)} />
-    {aberto && <Popover ancora={botao} aoFechar={() => abrir(false)} rotulo="Atenção" largura={260} className="menu-da-barra popover-atencao">{children}</Popover>}
-  </>;
+/**
+ * "Marcas" (V-T3): mostra ou esconde todas as marcas do documento aberto, de uma vez. Substitui os níveis
+ * de atenção; como o leitor abre vem da opção "Mostrar todas as marcas ao abrir" (Configurações).
+ */
+export function MarcasNaBarra({ visiveis, aoMudar }: { visiveis: boolean; aoMudar: (visiveis: boolean) => void }): ReactNode {
+  return <BotaoDaBarra rotulo={visiveis ? 'Ocultar as marcas' : 'Mostrar as marcas'} aria-label="Marcas" aria-pressed={visiveis}
+    icone="grifo" className={visiveis ? undefined : 'marcas-ocultas'} onClick={() => aoMudar(!visiveis)} />;
 }

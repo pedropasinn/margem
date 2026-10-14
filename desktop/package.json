@@ -1,0 +1,43 @@
+{
+  "name": "margem-desktop",
+  "productName": "Margem",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Margem: leitor de textos marcados, como app de computador.",
+  "author": "Pedro Pasin <pedropasinn@users.noreply.github.com>",
+  "license": "AGPL-3.0-only",
+  "homepage": "https://margem.dev",
+  "type": "module",
+  "main": "dist/principal/main.cjs",
+  "desktopName": "margem.desktop",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "node scripts/construir.mjs",
+    "dev": "node scripts/construir.mjs --dev && electron . --dev",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.janela.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "recursos": "node recursos/preparar.mjs",
+    "empacotar:linux": "node scripts/construir.mjs --com-web && node scripts/empacotar.mjs --linux",
+    "empacotar:win": "node scripts/construir.mjs --com-web && node scripts/empacotar.mjs --win",
+    "empacotar:mac": "node scripts/construir.mjs --com-web && node scripts/empacotar.mjs --mac",
+    "fumaca": "node scripts/fumaca.mjs"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9",
+    "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "@types/pg": "8.23.1",
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.28.2",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.0",
+    "vitest": "3.2.7"
+  }
+}

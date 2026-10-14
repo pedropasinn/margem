@@ -9,8 +9,12 @@
  * - Os limites espelham o serviço: 200 MB por documento (`LIMITE_UPLOAD_BYTES`) e 4 GB por mídia
  *   (`MARGEM_LIMITE_MIDIA`, padrão). O serviço continua sendo quem decide; aqui só se evita mandar
  *   para longe o que certamente volta recusado.
+ * - Cada tipo tem a sua aba em Adicionar (V-D2): documentos, vídeo e áudio, e a imagem de uma obra,
+ *   que vai para Quadros e só é enviada com confirmação. Imagem nunca vira questão por aqui; resolver
+ *   uma questão é coisa do leitor, dentro do documento.
  */
-import { ErroDaApi, escrever, listarDocumentos, obterDocumento, pedir } from './api';
+import { ErroDaApi, escrever, obterDocumento, pedir } from './api';
+import type { AbaDeAdicionar } from './rotas';
 import type { DetalheDoDocumento } from './tipos';
 import type { ImportacaoYoutubeV1 } from '@margem/contratos';
 
@@ -18,7 +22,7 @@ export const LIMITE_DOCUMENTO_BYTES = 200 * 1024 * 1024;
 export const LIMITE_MIDIA_BYTES = 4 * 1024 ** 3;
 
 export type FormatoDeDocumento = 'pdf' | 'epub' | 'md' | 'txt';
-export type TipoDeArquivo = FormatoDeDocumento | 'video' | 'audio' | 'transcricao' | 'desconhecido';
+export type TipoDeArquivo = FormatoDeDocumento | 'video' | 'audio' | 'transcricao' | 'imagem' | 'desconhecido';
 
 const POR_EXTENSAO: Readonly<Record<string, TipoDeArquivo>> = {
   pdf: 'pdf', epub: 'epub', md: 'md', markdown: 'md', txt: 'txt', text: 'txt',
@@ -26,14 +30,39 @@ const POR_EXTENSAO: Readonly<Record<string, TipoDeArquivo>> = {
   mp4: 'video', m4v: 'video', mov: 'video', webm: 'video', mkv: 'video',
   mp3: 'audio', m4a: 'audio', aac: 'audio', ogg: 'audio', oga: 'audio', opus: 'audio',
   json: 'transcricao',
+  png: 'imagem', jpg: 'imagem', jpeg: 'imagem', webp: 'imagem', heic: 'imagem', heif: 'imagem',
 };
 
-/** O `accept` do seletor: tudo o que a área única de soltar entende. */
-export const ACEITOS = [
-  '.pdf', '.epub', '.md', '.markdown', '.txt',
-  '.mp4', '.m4v', '.mov', '.webm', '.mkv', '.mp3', '.m4a', '.aac', '.ogg', '.oga', '.opus', '.json',
-  'application/pdf', 'application/epub+zip', 'text/markdown', 'text/plain', 'video/*', 'audio/*',
-].join(',');
+/** O `accept` do seletor de cada aba: só o que ela recebe (a de Quadro fica com o formulário da obra). */
+export const ACEITOS_POR_ABA: Readonly<Record<Exclude<AbaDeAdicionar, 'quadro'>, string>> = {
+  documento: ['.pdf', '.epub', '.md', '.markdown', '.txt', 'application/pdf', 'application/epub+zip', 'text/markdown', 'text/plain'].join(','),
+  video: ['.mp4', '.m4v', '.mov', '.webm', '.mkv', '.mp3', '.m4a', '.aac', '.ogg', '.oga', '.opus', '.json', 'video/*', 'audio/*', 'application/json'].join(','),
+};
+
+/** A aba de cada tipo; `null` para o que nenhuma recebe (fica onde foi solto, recusado). */
+export function abaDoTipo(tipo: TipoDeArquivo | 'colado' | 'youtube'): AbaDeAdicionar | null {
+  if (ehDocumento(tipo) || tipo === 'colado') return 'documento';
+  if (ehMidia(tipo) || tipo === 'transcricao' || tipo === 'youtube') return 'video';
+  if (tipo === 'imagem') return 'quadro';
+  return null;
+}
+
+const CHAVE_DA_ABA = 'margem:aba-adicionar';
+/** A última aba usada em Adicionar: `/adicionar` sem aba volta a ela. */
+export function abaPreferida(): AbaDeAdicionar {
+  try { const valor = localStorage.getItem(CHAVE_DA_ABA); return valor === 'video' || valor === 'quadro' ? valor : 'documento'; } catch { return 'documento'; }
+}
+export function guardarAba(aba: AbaDeAdicionar): void {
+  try { localStorage.setItem(CHAVE_DA_ABA, aba); } catch { /* Armazenamento indisponível: vale a aba desta sessão. */ }
+}
+
+/** Para onde um lote solto fora de Adicionar leva: imagens a Quadro, mídias a Vídeo, o resto a Documento. */
+export function abaDosArquivos(arquivos: readonly Pick<File, 'name' | 'type'>[]): AbaDeAdicionar {
+  const abas = arquivos.map((arquivo) => abaDoTipo(tipoDoArquivo(arquivo)));
+  if (abas.includes('documento')) return 'documento';
+  if (abas.includes('video')) return 'video';
+  return abas.includes('quadro') ? 'quadro' : 'documento';
+}
 
 export function extensaoDe(nome: string): string {
   const partes = nome.split('.');
@@ -52,8 +81,12 @@ export function tipoDoArquivo(arquivo: Pick<File, 'name' | 'type'>): TipoDeArqui
   if (mime.startsWith('video/')) return 'video';
   if (mime.startsWith('audio/')) return 'audio';
   if (mime === 'application/json') return 'transcricao';
+  if (TIPOS_DE_IMAGEM.includes(mime)) return 'imagem';
   return 'desconhecido';
 }
+
+/** As imagens que o Margem lê (as da obra, em Quadros); GIF, SVG e outras ficam de fora. */
+export const TIPOS_DE_IMAGEM: readonly string[] = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'];
 
 export const ehDocumento = (tipo: string): tipo is FormatoDeDocumento => tipo === 'pdf' || tipo === 'epub' || tipo === 'md' || tipo === 'txt';
 export const ehMidia = (tipo: string): tipo is 'video' | 'audio' => tipo === 'video' || tipo === 'audio';
@@ -64,7 +97,7 @@ export const aceitaPoesia = (tipo: string): boolean => tipo === 'md' || tipo ===
 
 export const ROTULO_DO_TIPO: Readonly<Record<TipoDeArquivo | 'colado' | 'youtube', string>> = {
   pdf: 'PDF', epub: 'EPUB', md: 'Markdown', txt: 'TXT', video: 'Vídeo', audio: 'Áudio',
-  transcricao: 'Transcrição', desconhecido: 'Arquivo', colado: 'Texto colado', youtube: 'YouTube',
+  transcricao: 'Transcrição', imagem: 'Imagem', desconhecido: 'Arquivo', colado: 'Texto colado', youtube: 'YouTube',
 };
 
 export function tituloDoNome(nome: string): string {
@@ -87,7 +120,7 @@ export function tamanhoLegivel(bytes: number): string {
 
 /** Recusa local, antes de enviar: formato fora do que o serviço lê ou tamanho acima do limite. */
 export function recusaLocal(arquivo: Pick<File, 'name' | 'type' | 'size'>, tipo = tipoDoArquivo(arquivo)): string | null {
-  if (tipo === 'desconhecido') return 'Formato não aceito. Use PDF, EPUB, Markdown, TXT, vídeo ou áudio.';
+  if (tipo === 'desconhecido') return 'Formato não aceito. Documentos: PDF, EPUB, Markdown ou TXT. Vídeo e áudio, com a transcrição .json. Quadros: JPEG, PNG ou WebP.';
   if (ehDocumento(tipo) && arquivo.size > LIMITE_DOCUMENTO_BYTES) return `Maior que ${tamanhoLegivel(LIMITE_DOCUMENTO_BYTES)}, o limite por documento.`;
   if (ehMidia(tipo) && arquivo.size > LIMITE_MIDIA_BYTES) return `Maior que ${tamanhoLegivel(LIMITE_MIDIA_BYTES)}, o limite por vídeo ou áudio.`;
   if (arquivo.size === 0) return 'O arquivo está vazio.';
@@ -110,6 +143,55 @@ export function emparelharTranscricoes(midias: File[], transcricoes: File[]): { 
   const semPar = midias.filter((midia) => !pares.has(midia));
   if (semPar.length === 1 && livres.length === 1) { pares.set(semPar[0]!, livres[0]!); livres.length = 0; }
   return { pares, sobras: livres };
+}
+
+// ------------------------------------------------------------------ imagens coladas
+
+/** As imagens de um evento de colar (Ctrl/Cmd+V de um print ou de uma obra), já com nome. */
+export function imagensColadas(dados: DataTransfer | null): File[] {
+  if (!dados) return [];
+  const arquivos = Array.from(dados.files ?? []);
+  const itens = arquivos.length > 0 ? arquivos : Array.from(dados.items ?? []).filter((item) => item.kind === 'file').map((item) => item.getAsFile()).filter((arquivo): arquivo is File => arquivo !== null);
+  return itens.filter((arquivo) => tipoDoArquivo(arquivo) === 'imagem').map((arquivo, indice) => {
+    // O print colado chega como "image.png" (ou sem nome): o nome vira o da questão.
+    if (arquivo.name && arquivo.name !== 'image.png') return arquivo;
+    const extensao = arquivo.type === 'image/jpeg' ? 'jpg' : (arquivo.type.split('/')[1] ?? 'png');
+    return new File([arquivo], `print${indice > 0 ? `-${String(indice + 1)}` : ''}.${extensao}`, { type: arquivo.type || 'image/png' });
+  });
+}
+
+/**
+ * PNG e JPEG vão como estão; WebP, HEIC (onde o navegador abre) e outros viram PNG num canvas, na
+ * resolução natural. O serviço só lê PNG e JPEG, sem dependência nova para decodificar o resto.
+ */
+export async function normalizarImagem(arquivo: File): Promise<File> {
+  const assinatura = new Uint8Array(await lerBytes(arquivo.slice(0, 8)));
+  const png = [0x89, 0x50, 0x4e, 0x47].every((valor, i) => assinatura[i] === valor);
+  const jpeg = assinatura[0] === 0xff && assinatura[1] === 0xd8 && assinatura[2] === 0xff;
+  if (png || jpeg) return arquivo;
+  let bitmap: ImageBitmap;
+  try { bitmap = await createImageBitmap(arquivo); } catch {
+    throw new Error(/hei[cf]$/i.test(arquivo.name) || /heic|heif/.test(arquivo.type)
+      ? 'Este navegador não abre HEIC. Exporte a foto como JPEG ou PNG e tente de novo.'
+      : 'Não foi possível ler a imagem. Use PNG, JPEG ou WebP.');
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width; canvas.height = bitmap.height;
+  canvas.getContext('2d')?.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((resolver) => canvas.toBlob(resolver, 'image/png'));
+  if (!blob) throw new Error('Não foi possível converter a imagem em PNG.');
+  return new File([blob], `${tituloDoNome(arquivo.name)}.png`, { type: 'image/png' });
+}
+
+function lerBytes(parte: Blob): Promise<ArrayBuffer> {
+  if (typeof parte.arrayBuffer === 'function') return parte.arrayBuffer();
+  return new Promise((resolver, rejeitar) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolver(leitor.result as ArrayBuffer);
+    leitor.onerror = () => rejeitar(leitor.error ?? new Error('Não foi possível ler o arquivo.'));
+    leitor.readAsArrayBuffer(parte);
+  });
 }
 
 // ------------------------------------------------------------------ transcrição de mídia
@@ -181,8 +263,6 @@ export interface ServicosDaImportacao {
   publicarMidia: (documentoId: string, corpo: unknown) => Promise<unknown>;
   obterDocumento: (id: string) => Promise<Pick<DetalheDoDocumento, 'id' | 'versao_id' | 'estado' | 'detalhe' | 'formato' | 'texto_disponivel' | 'paginas_sem_texto'>>;
   transcrever: (id: string) => Promise<{ job_id: string; paginas: number }>;
-  importarMarcas: (documentoId: string, corpo: unknown) => Promise<{ contagem: { total: number; resolvidas: number; reconciliadas: number } }>;
-  listarDocumentos: () => Promise<{ documentos: { id: string; titulo: string; versao_id: string | null }[] }>;
   /** Intervalo da consulta do estado do texto (ms). */
   intervalo: number;
 }
@@ -196,8 +276,6 @@ export const SERVICOS_PADRAO: ServicosDaImportacao = {
   publicarMidia: (id, corpo) => escrever(`/api/documentos/${id}/midias`, corpo),
   obterDocumento,
   transcrever: (id) => pedir(`/api/documentos/${id}/transcrever`, { method: 'POST' }),
-  importarMarcas: (id, corpo) => escrever(`/api/documentos/${id}/importar-legado`, corpo),
-  listarDocumentos: () => listarDocumentos(),
   intervalo: 2500,
 };
 

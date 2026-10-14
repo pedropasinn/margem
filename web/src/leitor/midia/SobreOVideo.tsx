@@ -75,22 +75,30 @@ export function useConceitosDoVideo(midiaId: Id | null): Conceitos {
   return { ...dados, preparar };
 }
 
-/** A linha do popover do player: o botão "Preparar conceitos do vídeo" e o estado. */
+/**
+ * A linha do popover do player: o estado das partes e dos momentos do vídeo. Eles vêm do "Analisar" da
+ * página do documento (J142); o botão aqui só aparece quando ainda não foram feitos (ou falharam).
+ */
 export function PrepararConceitos({ conceitos }: { conceitos: Conceitos }): ReactNode {
   const { estado } = conceitos;
   const n = conceitos.conceitos?.conceitos.length ?? 0;
+  const partes = conceitos.conceitos?.partes?.length ?? 0;
+  const contagem = [partes === 0 ? null : partes === 1 ? '1 parte' : `${String(partes)} partes`,
+    n === 0 ? 'nenhum momento' : n === 1 ? '1 momento' : `${String(n)} momentos`].filter(Boolean).join(' e ');
   return <div className="preparar-conceitos">
-    <span>Conceitos sobre o vídeo</span>
-    {estado === 'pronto' ? <p>{n === 0 ? 'Nenhum conceito escolhido.' : n === 1 ? '1 conceito programado.' : `${String(n)} conceitos programados.`}</p>
-      : estado === 'preparando' ? <p>Preparando os conceitos…</p>
+    <span>Partes e momentos do vídeo</span>
+    {estado === 'pronto' ? <p>{`${contagem.charAt(0).toUpperCase()}${contagem.slice(1)}.`}</p>
+      : estado === 'preparando' ? <p>Separando as partes e os momentos…</p>
         : estado === 'carregando' ? <p>…</p>
           : <>
-            {estado === 'falhou' && <p>A última preparação falhou.</p>}
-            {estado === 'erro' && <p>Não deu para ver os conceitos agora.</p>}
-            <Button variante="secundario" onClick={conceitos.preparar}>{estado === 'falhou' ? 'Tentar de novo' : 'Preparar conceitos do vídeo'}</Button>
+            {estado === 'falhou' && <p>A última análise do vídeo falhou.</p>}
+            {estado === 'erro' && <p>Não deu para ver os momentos agora.</p>}
+            <Button variante="secundario" onClick={conceitos.preparar}>{estado === 'falhou' ? 'Tentar de novo' : 'Preparar partes e momentos'}</Button>
           </>}
   </div>;
 }
+
+const ROTULO_DO_TIPO: Record<NonNullable<ConceitoDoVideoV1['tipo']>, string> = { conceito: 'Conceito', dado: 'Dado', contexto: 'Contexto', pergunta: 'Pergunta' };
 
 // ---------------------------------------------------------------- conceitos: a pílula
 
@@ -241,6 +249,7 @@ function PilulaDoConceito({ conceito, cor, tocando, aoSair, aoIrAoTrecho }: Prop
   /** Ao fechar o cartão, o foco volta para a pílula (se estava nele). */
   const devolverFoco = useRef(false);
   const curto = rotuloCurto(conceito);
+  const tipo = ROTULO_DO_TIPO[conceito.tipo ?? 'conceito'];
 
   // A bolinha se transforma na pílula.
   useEffect(() => {
@@ -284,7 +293,7 @@ function PilulaDoConceito({ conceito, cor, tocando, aoSair, aoIrAoTrecho }: Prop
     onPointerEnter={() => definirSobre(true)} onPointerLeave={() => definirSobre(false)}>
     {fase === 'aberto'
       ? <div ref={cartao} className="cartao-do-conceito" role="group" aria-labelledby={idDoTitulo} tabIndex={-1}>
-        <div className="cabeca-do-cartao"><Pizza passou={passou} /><p id={idDoTitulo} className="titulo-do-conceito">{conceito.titulo}</p></div>
+        <div className="cabeca-do-cartao"><Pizza passou={passou} /><p className="titulo-do-conceito"><span className="tipo-do-momento">{tipo}</span>{' '}<span id={idDoTitulo}>{conceito.titulo}</span></p></div>
         <p>{conceito.explicacao}</p>
         <blockquote>“{conceito.ancora.citacao}”</blockquote>
         <div className="acoes-do-conceito">
@@ -292,7 +301,7 @@ function PilulaDoConceito({ conceito, cor, tocando, aoSair, aoIrAoTrecho }: Prop
           <Button variante="ghost" onClick={fechar}>Fechar</Button>
         </div>
       </div>
-      : <button ref={botao} type="button" className="pilula-do-conceito" aria-label={`Conceito: ${conceito.titulo}`}
+      : <button ref={botao} type="button" className="pilula-do-conceito" aria-label={`${tipo}: ${conceito.titulo}`}
         tabIndex={fase === 'saindo' ? -1 : undefined} onClick={() => { if (fase === 'pilula' || fase === 'bolinha') definirFase('aberto'); }}>
         <Pizza passou={passou} />
         <span className="rotulo-da-pilula">{curto}</span>

@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/ConexaoV3.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "origem",
+    "destino",
+    "relacao",
+    "justificativa",
+    "autor",
+    "estado",
+    "criada_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 3
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "origem": {
+      "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+    },
+    "destino": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "ancora"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "trecho"
+            },
+            "ancora": {
+              "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "documento_id"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "documento"
+            },
+            "documento_id": {
+              "type": "string",
+              "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tipo",
+            "caminho",
+            "titulo"
+          ],
+          "properties": {
+            "tipo": {
+              "const": "nota_externa"
+            },
+            "caminho": {
+              "type": "string",
+              "maxLength": 1000,
+              "pattern": "^(?![/~])(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*[\\\\\\u0000-\\u001f\\u007f]).+\\.md$"
+            },
+            "titulo": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "pattern": "\\S"
+            }
+          }
+        }
+      ]
+    },
+    "relacao": {
+      "type": "string",
+      "enum": [
+        "semelhanca",
+        "contraste",
+        "tensao",
+        "prerequisito",
+        "desenvolve",
+        "exemplo"
+      ]
+    },
+    "relacao_semantica": {
+      "type": "string",
+      "enum": [
+        "suporta",
+        "desenvolve",
+        "pressupoe",
+        "contrasta",
+        "exemplifica",
+        "retoma",
+        "responde",
+        "tensiona",
+        "ecoa"
+      ]
+    },
+    "origem_compreensao": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelo_id",
+        "relacao_id"
+      ],
+      "properties": {
+        "modelo_id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "relacao_id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        }
+      }
+    },
+    "justificativa": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "pattern": "\\S"
+    },
+    "autor": {
+      "type": "string",
+      "enum": [
+        "ia",
+        "leitor"
+      ]
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "sugerida",
+        "aceita",
+        "rejeitada"
+      ]
+    },
+    "conversa_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decidida_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "autor": {
+            "const": "leitor"
+          }
+        },
+        "required": [
+          "autor"
+        ]
+      },
+      "then": {
+        "properties": {
+          "estado": {
+            "const": "aceita"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "estado": {
+            "const": "sugerida"
+          }
+        },
+        "required": [
+          "estado"
+        ]
+      },
+      "then": {
+        "not": {
+          "properties": {
+            "decidida_em": true
+          },
+          "required": [
+            "decidida_em"
+          ]
+        }
+      },
+      "else": {
+        "properties": {
+          "decidida_em": true
+        },
+        "required": [
+          "decidida_em"
+        ]
+      }
+    }
+  ]
+}

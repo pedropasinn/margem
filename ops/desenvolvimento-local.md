@@ -48,7 +48,7 @@ executor falso e determinístico (`servico/src/executor/fake.ts`).
 Algumas partes do código dependem de infraestrutura que uma instalação comum não tem e ficam
 desligadas por padrão. A arte (Quadros) faz parte da V0 e vem **ligada**; sem acervo em disco,
 `/api/arte` mostra as duas obras de exemplo de `fixtures/arte` (`MARGEM_ARTE_FIXTURES=0` as tira) e a
-tela Quadros explica como instalar o pacote do acervo (`npm run arte:instalar`).
+tela Quadros oferece "Adicionar obra" (a pessoa envia as próprias imagens; J118).
 
 Tudo é controlado por uma variável única, lida pela API, pelo worker, pelo portão e pelas ferramentas
 de voz (`servico/src/recursos.ts`). Ela **acrescenta** ao padrão; `-nome` tira (por exemplo

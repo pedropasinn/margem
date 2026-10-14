@@ -2,7 +2,8 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buscarDossieAutomatico, idDeFonte } from './dossie-auto';
+import { REDE_DA_EDUCACAO, RESPOSTAS_DA_REDE, redeDeFixture } from '../../../testes/quadros.js';
+import { acharArquivoNoCommons, artigoDoArtistaNoCommons, buscarDossieAutomatico, buscarDossiePorIdentificacao, idDeFonte, ObraNaoEncontrada } from './dossie-auto';
 
 const respostas: Record<string, unknown> = {
   'action=query&prop=imageinfo': { query: { pages: [{ pageid: 42, imageinfo: [{ extmetadata: { ObjectName: { value: 'The Kiss' }, Artist: { value: '<a href="x">Gustav Klimt</a>' } } }] }] } },
@@ -46,5 +47,45 @@ describe('dossiê automático', () => {
       expect(d.qid).toBe('Q698487');
       expect(d.identidade.titulo_original).toBe('Liebespaar');
     } finally { await rm(pasta, { recursive: true, force: true }); }
+  });
+});
+
+describe('V-T2: obra sem item no Wikidata, com a reprodução no Commons', () => {
+  it('"Educação Obrigatória": o Wikidata não acha; o dossiê sai do Commons, com o artigo do artista que ele liga', async () => {
+    const pasta = await mkdtemp(join(tmpdir(), 'dossie-commons-'));
+    try {
+      const urls: string[] = [];
+      const d = await buscarDossiePorIdentificacao(pasta, { titulo: 'Compulsory Education', artista: 'Briton Rivière', ano: '1887' }, redeDeFixture(urls, REDE_DA_EDUCACAO), '2026-10-14');
+      expect(urls.filter((u) => u.includes('www.wikidata.org')).length).toBe(3); // busca textual + rótulo pt e en
+      expect(d.qid).toBeNull();
+      expect(d.identidade).toMatchObject({ titulo: 'Compulsory Education', titulo_original: 'Compulsory Education', artista: 'Briton Rivière', data: '1887' });
+      expect(d.fontes.map((f) => [f.arquivo, f.url])).toEqual([
+        ['auto-commons.txt', 'https://commons.wikimedia.org/wiki/File:Briton_Rivi%C3%A8re_Compulsory_Education.jpg'],
+        ['auto-wp-artista-en.txt', 'https://en.wikipedia.org/wiki/Briton_Rivi%C3%A8re'],
+      ]);
+      expect(await readFile(join(pasta, 'fontes', 'auto-commons.txt'), 'utf8')).toContain("Credit: Sotheby's, London");
+      expect(await readFile(join(pasta, 'fontes', 'auto-wp-artista-en.txt'), 'utf8')).toContain('British artist of Huguenot descent');
+    } finally { await rm(pasta, { recursive: true, force: true }); }
+  });
+
+  it('a busca no Commons exige o artista e um título parecido, e só arquivos de imagem', async () => {
+    expect(await acharArquivoNoCommons({ titulo: 'Compulsory Education', artista: 'Riviere' }, redeDeFixture([], REDE_DA_EDUCACAO))).toMatchObject({ arquivo: 'File:Briton Rivière Compulsory Education.jpg', artista: 'Briton Rivière', miniatura: expect.stringContaining('640px') as unknown });
+    expect(await acharArquivoNoCommons({ titulo: 'Compulsory Education', artista: 'John Everett Millais' }, redeDeFixture([], REDE_DA_EDUCACAO))).toBeNull();
+    expect(await acharArquivoNoCommons({ titulo: 'Sympathy', artista: 'Briton Rivière' }, redeDeFixture([], REDE_DA_EDUCACAO))).toBeNull();
+    const soPdf = { ...REDE_DA_EDUCACAO, 'list=search&srnamespace=6': { query: { search: [{ title: 'File:Compulsory Education Briton Riviere.pdf' }] } } };
+    expect(await acharArquivoNoCommons({ titulo: 'Compulsory Education', artista: 'Briton Rivière' }, redeDeFixture([], soPdf))).toBeNull();
+  });
+
+  it('nem Wikidata nem Commons: ObraNaoEncontrada, como antes', async () => {
+    const pasta = await mkdtemp(join(tmpdir(), 'dossie-nada-'));
+    try {
+      await expect(buscarDossiePorIdentificacao(pasta, { titulo: 'Obra Inventada', artista: 'Ninguém' }, redeDeFixture([], RESPOSTAS_DA_REDE))).rejects.toBeInstanceOf(ObraNaoEncontrada);
+    } finally { await rm(pasta, { recursive: true, force: true }); }
+  });
+
+  it('o link da Wikipédia no campo Artist do Commons', () => {
+    expect(artigoDoArtistaNoCommons('<a href="https://en.wikipedia.org/wiki/en:Briton_Rivi%C3%A8re">B</a>')).toEqual({ lingua: 'en', artigo: 'Briton Rivière' });
+    expect(artigoDoArtistaNoCommons('<a href="https://pt.wikipedia.org/wiki/Tarsila_do_Amaral">T</a>')).toEqual({ lingua: 'pt', artigo: 'Tarsila do Amaral' });
+    expect(artigoDoArtistaNoCommons('Unknown author')).toBeNull();
   });
 });

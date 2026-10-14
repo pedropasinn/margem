@@ -14,6 +14,7 @@
  * ~/.local/share/margem/j71-alinhar/venv/bin/python); sem ele, a narração sai só com frases.
  */
 import { execFile } from 'node:child_process';
+import { ffprobe } from '../plataforma/executaveis.js';
 import { createHash } from 'node:crypto';
 import { access, copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
@@ -71,7 +72,7 @@ async function enviar(execucao: Id, secao: Id, receita: string): Promise<void> {
 interface AulaImportada { base: string; hashes: Map<string, string>; job: string; receita: string }
 
 async function sondar(caminho: string): Promise<{ duracao: number; taxa: number }> {
-  const { stdout } = await executar('ffprobe', ['-v', 'error', '-show_entries', 'format=duration:stream=codec_name,sample_rate', '-of', 'json', caminho], { timeout: 60_000 });
+  const { stdout } = await executar(ffprobe(), ['-v', 'error', '-show_entries', 'format=duration:stream=codec_name,sample_rate', '-of', 'json', caminho], { timeout: 60_000 });
   const sonda = JSON.parse(stdout) as { format?: { duration?: string }; streams?: { codec_name?: string; sample_rate?: string }[] };
   const faixa = sonda.streams?.length === 1 ? sonda.streams[0] : undefined;
   const duracao = Number(sonda.format?.duration);

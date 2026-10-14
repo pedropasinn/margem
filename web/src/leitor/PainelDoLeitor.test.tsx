@@ -56,17 +56,17 @@ test('Caderno segue a ordem da margem, inclui pessoais e fixa a nota ao rolar at
   const leitor = createRef<ApiDoLeitor>();
   const snapshot = { ...capituloExemplo, marcas: [...capituloExemplo.marcas].reverse() };
   const { container } = render(<ReaderController snapshot={snapshot} documento_id={documento} leitorRef={leitor}
-    pessoais={[{ id: 'pessoal', ancora: snapshot.marcas[0]!.ancora, conteudo: <p>Minha hipótese.</p> }]} />);
+    pessoais={[{ id: 'pessoal', ancora: snapshot.marcas[0]!.ancora, conteudo: <p>Minha hipótese.</p>, resumo: 'Minha hipótese.' }]} />);
   const esperadas = [...container.querySelectorAll<HTMLElement>('[data-nota]')].map((nota) => nota.dataset['nota']);
   vi.spyOn(leitor.current!, 'localizar').mockReturnValue(new DOMRect(300, 400, 500, 30));
   fireEvent.click(screen.getByRole('button', nomePainel));
   fireEvent.click(screen.getByRole('tab', { name: /Caderno/ }));
   const caderno = screen.getByRole('tabpanel');
   // O Caderno traz todos os grifos na ordem do texto; os que têm nota levam o número da margem, na mesma ordem.
-  const notas = [...caderno.querySelectorAll<HTMLElement>('li[data-tipo="grifo"] .painel-leitor-trecho')].filter((botao) => botao.querySelector('.painel-leitor-rotulo > span') !== null);
+  const notas = [...caderno.querySelectorAll<HTMLElement>('li[data-tipo="grifo"] .painel-leitor-trecho')].filter((botao) => botao.querySelector('.painel-leitor-numero') !== null);
   expect(notas.map((botao) => botao.querySelector('.painel-leitor-citacao')?.textContent)).toEqual(esperadas.map((id) => snapshot.marcas.find((marca) => marca.id === id)!.ancora.citacao));
   expect(within(caderno).getByText('Minha hipótese.')).toBeTruthy();
-  expect(within(caderno).getByText('P')).toBeTruthy();
+  expect(within(caderno).getByText('Nota')).toBeTruthy();
   fireEvent.click(notas[0]!);
   expect(notas[0]!.getAttribute('aria-pressed')).toBe('true');
   expect(rolar).toHaveBeenLastCalledWith({ top: 328, behavior: 'smooth' });
@@ -101,15 +101,23 @@ test('Info apresenta documento, autor, capítulo e tempo; abas respondem às set
   expect(screen.getByRole('tab', { name: /Caderno/ }).getAttribute('aria-selected')).toBe('true');
 });
 
-test('abrir estudo fecha o painel e impede empilhamento com o drawer', () => {
+test('o painel do trecho ocupa o mesmo trilho: o do documento sai e volta quando o trecho fecha; ] troca um pelo outro', () => {
   const { rerender } = render(<ReaderController snapshot={capituloExemplo} documento_id={documento} />);
   fireEvent.click(screen.getByRole('button', nomePainel));
   rerender(<ReaderController snapshot={capituloExemplo} documento_id={documento} estudoAberto painel={<aside aria-label="Conversa no trecho">Conversa</aside>} />);
   expect(screen.queryByRole('complementary', nomePainel)).toBeNull();
   expect(screen.getByRole('complementary', { name: 'Conversa no trecho' })).toBeTruthy();
+  // Sem quem feche o trecho, ] não empilha os dois.
   fireEvent.keyDown(window, { key: ']' });
   expect(screen.queryByRole('complementary', nomePainel)).toBeNull();
-  expect(localStorage.getItem('margem:painel-leitor')).toBe('fechado');
+  rerender(<ReaderController snapshot={capituloExemplo} documento_id={documento} />);
+  expect(screen.getByRole('complementary', nomePainel)).toBeTruthy();
+  // Com quem feche o trecho, ] fecha o trecho e abre o do documento.
+  const fecharTrecho = vi.fn();
+  rerender(<ReaderController snapshot={capituloExemplo} documento_id={documento} estudoAberto aoFecharPainel={fecharTrecho} painel={<aside aria-label="Conversa no trecho">Conversa</aside>} />);
+  fireEvent.keyDown(window, { key: ']' });
+  expect(fecharTrecho).toHaveBeenCalledOnce();
+  expect(localStorage.getItem('margem:painel-leitor')).toBe('aberto');
 });
 
 test('J107: Info conta só o que o texto desenha — sem oculta, ambígua, rejeitada nem a IA sem função', () => {

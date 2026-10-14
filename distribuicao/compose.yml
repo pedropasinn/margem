@@ -17,11 +17,7 @@ x-app: &app
     # A mesma porta dentro e fora do container: Host e Origin chegam com ela.
     MARGEM_PORTA: ${PORTA:-8730}
     MARGEM_DADOS: /dados
-    # Acervo de quadros dentro do volume de dados (sobrevive a atualizações e entra no backup).
-    # `<projeto> arte instalar` grava aqui.
-    MARGEM_ARTE_DIR: /dados/arte/obras
-    # Nome do comando da instalação, para as instruções da interface (ex.: "<comando> arte instalar").
-    MARGEM_COMANDO: ${COMPOSE_PROJECT_NAME:-}
+    # Os quadros que a pessoa adiciona ficam em /dados/quadros (MARGEM_DADOS), dentro do volume de dados.
     CODEX_HOME: /home/app/.codex
     MARGEM_MODELO: ${MODELO:-conta}
     MARGEM_SLOTS: ${SLOTS:-2}

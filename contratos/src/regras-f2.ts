@@ -1,4 +1,5 @@
-import type { AncoraV1, AnotacaoV1, ConexaoV1, ConexaoV2, ConversaV1, ConversaV2, MarcaGeradaV2, MarcaV2, ModoDeLeituraV1 } from './tipos';
+import { FAMILIA_DA_RELACAO_SEMANTICA } from './relacoes';
+import type { AncoraV1, AnotacaoV1, DificuldadeV1, NotaDoGrifoV1, ConexaoV1, ConexaoV2, ConexaoV3, ConversaV1, ConversaV2, MarcaGeradaV2, MarcaV2, ModoDeLeituraV1 } from './tipos';
 import { regrasAncora, regrasMarcaGerada, regrasSubfaixas } from './regras';
 
 /** Limites em unidades UTF-16, a mesma unidade dos offsets (o `maxLength` do Ajv conta code points). */
@@ -47,11 +48,33 @@ export function regrasConversa(conversa: ConversaV1 | ConversaV2): boolean {
       regrasAncora(citacao) && citacao.versao_id === conversa.versao_id && (!blocos || blocos.has(citacao.bloco_id)));
   });
 }
-export function regrasConexao(conexao: ConexaoV1 | ConexaoV2): boolean {
+/** V3: as regras da V2, o tipo fino da família certa e a origem da compreensão só com o tipo. */
+export function regrasConexaoV3(conexao: ConexaoV3): boolean {
+  if (!regrasConexao(conexao)) return false;
+  if (conexao.relacao_semantica !== undefined && FAMILIA_DA_RELACAO_SEMANTICA[conexao.relacao_semantica] !== conexao.relacao) return false;
+  return conexao.origem_compreensao === undefined || conexao.relacao_semantica !== undefined;
+}
+export function regrasConexao(conexao: ConexaoV1 | ConexaoV2 | ConexaoV3): boolean {
   if (!regrasAncora(conexao.origem)) return false;
   if (conexao.destino.tipo === 'trecho' && (!regrasAncora(conexao.destino.ancora) || mesmoIntervalo(conexao.origem, conexao.destino.ancora))) return false;
   if (conexao.decidida_em === undefined) return true;
   const criada = instante(conexao.criada_em);
   const decidida = instante(conexao.decidida_em);
   return autorHumano(conexao.autor) ? decidida === criada : decidida >= criada;
+}
+
+// Modelo D dos grifos (J138): a nota do grifo e o sinal de dificuldade.
+export function regrasNotaDoGrifo(nota: NotaDoGrifoV1): boolean {
+  return Date.parse(nota.criada_em) <= Date.parse(nota.atualizada_em);
+}
+
+/**
+ * A âncora é da versão; a do Codex aponta para a dificuldade do modelo que o leitor decidiu; a do
+ * leitor nasce confirmada (sugerida é só do Codex).
+ */
+export function regrasDificuldade(dificuldade: DificuldadeV1): boolean {
+  if (!regrasAncora(dificuldade.ancora) || dificuldade.ancora.versao_id !== dificuldade.versao_id) return false;
+  if (Date.parse(dificuldade.criada_em) > Date.parse(dificuldade.atualizada_em)) return false;
+  if ((dificuldade.origem === 'codex') !== (dificuldade.codex !== undefined)) return false;
+  return dificuldade.origem === 'codex' || dificuldade.estado !== 'sugerida';
 }

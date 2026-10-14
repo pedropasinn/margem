@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/contratos/DificuldadeV1.schema.json",
+  "title": "Sinal de dificuldade num trecho: sugerido pelo Codex ou marcado pelo leitor; não é cor, função nem etiqueta",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "versao",
+    "id",
+    "versao_id",
+    "ancora",
+    "origem",
+    "estado",
+    "criada_em",
+    "atualizada_em"
+  ],
+  "properties": {
+    "versao": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "versao_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "ancora": {
+      "$ref": "https://margem.local/contratos/AncoraV1.schema.json"
+    },
+    "origem": {
+      "type": "string",
+      "enum": [
+        "codex",
+        "leitor"
+      ]
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "sugerida",
+        "confirmada",
+        "descartada"
+      ]
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "premissa_implicita",
+        "mudanca_de_notacao",
+        "sintaxe_complexa",
+        "conceito_sem_definicao",
+        "salto_argumentativo",
+        "referencia_externa",
+        "ambiguidade"
+      ],
+      "description": "Detalhe opcional: uma das sete categorias do método, escolhida depois."
+    },
+    "descricao": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "pattern": "\\S"
+    },
+    "marca_id": {
+      "type": "string",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "description": "O grifo em que o leitor marcou a dificuldade, quando há."
+    },
+    "codex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelo_id",
+        "dificuldade_id"
+      ],
+      "description": "A dificuldade do modelo do capítulo (ModeloDoCapituloV1.dificuldades) que o leitor decidiu.",
+      "properties": {
+        "modelo_id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        },
+        "dificuldade_id": {
+          "type": "string",
+          "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+        }
+      }
+    },
+    "criada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "atualizada_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

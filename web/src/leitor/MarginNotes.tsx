@@ -34,12 +34,21 @@ export interface PropsDaMargem {
   recolhida?: boolean;
   pessoais?: readonly NotaPessoal[] | undefined;
   conexaoDaNota?: ((ancora: AncoraV1) => ReactNode) | undefined;
+  /** J138: a nota do leitor de cada grifo (por marca): aparece como uma linha ✎ dentro da nota do grifo, não como outro card. */
+  notasDoLeitor?: ReadonlyMap<Id, string> | undefined;
 }
 
 interface Medida {
   topo: number;
   resumo: boolean;
+  /** Margem recolhida (J132): a posição na fileira da linha, como as pilhas do celular. */
+  esquerda?: number;
 }
+/** Recolhida, o que começa na mesma linha do texto (até esta distância) entra na mesma fileira. */
+const MESMA_LINHA = 18;
+/** Passo entre as bolinhas de uma fileira e o máximo por fileira. */
+const PASSO_NA_FILEIRA = 30;
+const MAXIMO_NA_FILEIRA = 6;
 
 /** Topo do primeiro retângulo do trecho, por `Range.getClientRects()` sobre os segmentos. */
 export function topoDoTrecho(artigo: HTMLElement, marcaId: Id): number | null {
@@ -54,10 +63,15 @@ export function topoDoTrecho(artigo: HTMLElement, marcaId: Id): number | null {
   return retangulo.top;
 }
 
+/** Aberta, só a altura; recolhida, também a posição na fileira. */
+function posicao(medida: Medida | undefined): string {
+  return medida?.esquerda ? `translate(${String(medida.esquerda)}px, ${String(medida.topo)}px)` : `translateY(${String(medida?.topo ?? 0)}px)`;
+}
+
 function iguais(a: Record<Id, Medida>, b: Record<Id, Medida>): boolean {
   const chaves = Object.keys(a);
   if (chaves.length !== Object.keys(b).length) return false;
-  return chaves.every((chave) => a[chave]?.topo === b[chave]?.topo && a[chave]?.resumo === b[chave]?.resumo);
+  return chaves.every((chave) => a[chave]?.topo === b[chave]?.topo && a[chave]?.resumo === b[chave]?.resumo && a[chave]?.esquerda === b[chave]?.esquerda);
 }
 
 /**
@@ -65,8 +79,8 @@ function iguais(a: Record<Id, Medida>, b: Record<Id, Medida>): boolean {
  * respeita `topo = máximo(topo_do_trecho, fim_da_anterior + ESPACO_ENTRE_NOTAS)`. A margem nunca empurra o
  * texto: as notas são posicionadas em absoluto dentro da própria coluna.
  */
-export function MarginNotes({ leitor, notas, artigo, ativa, fixada, acoes, perguntas, recolhida = false, pessoais = SEM_PESSOAIS, conexaoDaNota }: PropsDaMargem): ReactNode {
-  const { daMarca, funcoes } = usarFuncoes();
+export function MarginNotes({ leitor, notas, artigo, ativa, fixada, acoes, perguntas, recolhida = false, pessoais = SEM_PESSOAIS, conexaoDaNota, notasDoLeitor }: PropsDaMargem): ReactNode {
+  const { daMarca, rotuloDaMarca } = usarFuncoes();
   const coluna = useRef<HTMLDivElement>(null);
   const elementos = useRef(new Map<Id, HTMLElement>());
   const [medidas, definirMedidas] = useState<Record<Id, Medida>>({});
@@ -86,14 +100,24 @@ export function MarginNotes({ leitor, notas, artigo, ativa, fixada, acoes, pergu
         return { id: nota.id, desejado: (leitor?.current?.localizar(nota.ancora.bloco_id, nota.ancora.inicio_utf16)?.top ?? (intervalo ? retanguloDoIntervalo(intervalo)?.top ?? base : base)) - base };
       }),
     ].sort((a, b) => a.desejado - b.desejado);
+    // Recolhida (J132): as bolinhas da mesma linha ficam lado a lado, na altura do trecho, em vez de
+    // descerem uma abaixo da outra; só a nota aberta (ativa ou fixada) ocupa a altura toda.
+    let fileira: { topo: number; quantos: number; aberta: boolean } | null = null;
     for (const item of itens) {
+      const aberta = item.id === ativa || item.id === fixada;
+      if (recolhida && !aberta && fileira && !fileira.aberta && item.desejado - fileira.topo < MESMA_LINHA && fileira.quantos < MAXIMO_NA_FILEIRA) {
+        novas[item.id] = { topo: fileira.topo, resumo: false, esquerda: fileira.quantos * PASSO_NA_FILEIRA };
+        fileira.quantos += 1;
+        continue;
+      }
       const topo = Math.max(item.desejado, piso);
-      novas[item.id] = { topo, resumo: topo - item.desejado > DESLOCAMENTO_MAXIMO };
-      piso = topo + (elementos.current.get(item.id)?.getBoundingClientRect().height ?? 0) + ESPACO_ENTRE_NOTAS;
+      novas[item.id] = { topo, resumo: topo - item.desejado > DESLOCAMENTO_MAXIMO, ...(recolhida ? { esquerda: 0 } : {}) };
+      fileira = { topo, quantos: 1, aberta };
+      piso = topo + (elementos.current.get(item.id)?.getBoundingClientRect().height ?? 0) + (recolhida && !aberta ? 6 : ESPACO_ENTRE_NOTAS);
     }
     definirMedidas((anteriores) => (iguais(anteriores, novas) ? anteriores : novas));
     definirFim((anterior) => (anterior === piso ? anterior : piso));
-  }, [artigo, notas, pessoais, leitor]);
+  }, [artigo, notas, pessoais, leitor, recolhida, ativa, fixada]);
 
   // Só mudanças que afetam a geometria das notas.
   useLayoutEffect(medir, [medir, ativa, fixada, recolhida]);
@@ -141,14 +165,15 @@ export function MarginNotes({ leitor, notas, artigo, ativa, fixada, acoes, pergu
             data-nota={id}
             tabIndex={0}
             ref={(elemento) => { registrar(id, elemento); }}
-            style={{ transform: `translateY(${String(medida?.topo ?? 0)}px)` }}
+            style={{ transform: posicao(medida) }}
           >
             <p className="nota-cabeca">
-              <span style={estiloDoNumero(daMarca(nota.marca))} className={`nota-numero funcao-${nota.marca.funcao}${'saliencia' in nota.marca && nota.marca.saliencia === 3 ? ' periferica' : ''}`} tabIndex={soNumero ? 0 : undefined} role={soNumero ? 'button' : undefined} aria-label={soNumero ? `Nota ${nota.numero}${nota.marca.visivel ? '' : ' (oculta)'}: ${nota.comentario.rotulo}` : undefined}>{nota.numero}</span>
-              <span className="nota-rotulo">{funcoes.find((f) => f.chave === nota.marca.funcao)?.rotulo ?? nota.marca.funcao.replaceAll("_", " ")}</span>
+              <span style={estiloDoNumero(daMarca(nota.marca))} className={`nota-numero funcao-${nota.marca.funcao}`} tabIndex={soNumero ? 0 : undefined} role={soNumero ? 'button' : undefined} aria-label={soNumero ? `Nota ${nota.numero}${nota.marca.visivel ? '' : ' (oculta)'}: ${nota.comentario.rotulo}` : undefined}>{nota.numero}</span>
+              <span className="nota-rotulo">{rotuloDaMarca(nota.marca)}</span>
               {conexaoDaNota?.(nota.marca.ancora)}
             </p>
             <p className="nota-texto">{nota.comentario.texto}</p>
+            {notasDoLeitor?.has(id) && <p className="nota-do-leitor-resumo"><span aria-hidden="true">✎</span><span className="balao-oculto">Sua anotação: </span>{notasDoLeitor.get(id)}</p>}
             {fixada === id && acoes !== undefined && (
               <p className="nota-acoes">
                 <span className="grupo-de-icones" role="group" aria-label="Avaliar esta marca">
@@ -171,7 +196,11 @@ export function MarginNotes({ leitor, notas, artigo, ativa, fixada, acoes, pergu
           </aside>
         );
       })}
-      {pessoais.map((nota) => <aside key={nota.id} data-pessoal={nota.id} className="nota nota-pessoal" ref={(el) => registrar(nota.id, el)} style={{ transform: `translateY(${medidas[nota.id]?.topo ?? 0}px)` }}>{nota.conteudo}</aside>)}
+      {pessoais.map((nota) => <aside key={nota.id} data-pessoal={nota.id} className={`nota nota-pessoal${recolhida && nota.sinal ? ' com-sinal' : ''}`} ref={(el) => registrar(nota.id, el)} style={{ transform: posicao(medidas[nota.id]) }}>
+        {recolhida && nota.sinal && nota.aoAbrir
+          ? <button type="button" className={`nota-numero sinal-pessoal${nota.sinal === '!' ? ' sinal-de-falha' : ''}`} aria-label={nota.descricao ?? 'Abrir'} title={nota.descricao} onClick={nota.aoAbrir}>{nota.sinal === '!' ? '' : nota.sinal}</button>
+          : nota.conteudo}
+      </aside>)}
       {perguntas !== undefined && perguntas.length > 0 && (
         <details className="recuperacao" style={{ transform: `translateY(${String(fimDasNotas)}px)` }}>
           <summary>Recuperação da seção</summary>

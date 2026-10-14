@@ -1,0 +1,84 @@
+{
+  "versao": 1,
+  "id": "computacao",
+  "revisao": 1,
+  "nome": "Computação",
+  "descricao": "Ler livros técnicos de computação (engenharia de software, dados, sistemas, programação) distinguindo conceitos, problemas, soluções e seus mecanismos, compromissos, práticas recomendadas e exemplos. Código é evidência literal; garantias e condições fazem parte da solução.",
+  "funcoes": [
+    {
+      "chave": "conceito",
+      "rotulo": "Conceito",
+      "pergunta": "O que preciso entender para acompanhar o trecho?",
+      "descricao": "Definição técnica ou abstração. Ex.: “Um log é uma sequência ordenada só de acréscimos.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "problema",
+      "rotulo": "Problema",
+      "pergunta": "Que problema ou requisito o trecho enfrenta?",
+      "descricao": "Necessidade, falha ou requisito. Ex.: “Duas réplicas podem aceitar escritas conflitantes.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "solucao",
+      "rotulo": "Solução e mecanismo",
+      "pergunta": "Que estrutura, algoritmo ou arquitetura resolve o problema, e como?",
+      "descricao": "Mecanismo descrito com suas garantias. Ex.: “O líder ordena as escritas e as replica.”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "compromisso",
+      "rotulo": "Compromisso",
+      "pergunta": "Que custo, limite ou troca a solução implica?",
+      "descricao": "Trade-off de latência, consistência, custo ou complexidade. Ex.: “Ganha-se consistência ao custo de disponibilidade.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "pratica",
+      "rotulo": "Prática recomendada",
+      "pergunta": "Que prática, padrão ou regra o autor recomenda?",
+      "descricao": "Recomendação ou anti-padrão, atribuído. Ex.: “Nunca confie no relógio do cliente.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "exemplo",
+      "rotulo": "Exemplo",
+      "pergunta": "Que código, caso ou incidente ilustra a ideia?",
+      "descricao": "Trecho de código, sistema real ou incidente. Ex.: “No Cassandra, …”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

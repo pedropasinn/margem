@@ -1,8 +1,8 @@
 {
   "name": "margem-obsidian",
   "private": true,
-  "version": "0.1.0",
-  "description": "Plugin do Obsidian que traz as marcas, notas e perguntas do Margem para o cofre.",
+  "version": "0.2.0",
+  "description": "Plugin do Obsidian que traz os grifos, as notas, as perguntas e as relações do Margem para o cofre, uma nota por item.",
   "type": "module",
   "main": "main.js",
   "scripts": {

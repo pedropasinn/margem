@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Button, IconButton, Input, Textarea, Switch, Checkbox, Select, SegmentedControl, Popover, Drawer } from './Primitives';
+import { Button, Chip, IconButton, Input, Textarea, Switch, Checkbox, Select, SegmentedControl, Popover, Drawer, classesDoBotao, posicaoDoPopover } from './Primitives';
 afterEach(cleanup);
 describe('primitives acessíveis', () => {
   test('Button e IconButton têm nome, foco e tipo que não envia formulário sem intenção', () => {
@@ -89,4 +89,57 @@ test('Select no Popover usa portal sem fechar o painel ao escolher; Escape fecha
   fireEvent.keyDown(combo, { key: 'Escape' });
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Opções' }));
+});
+
+test('Popover num portal do body: nenhum painel com camada própria ou rolagem o corta (V-T1)', () => {
+  function Exemplo() {
+    const ancora = useRef<HTMLButtonElement>(null);
+    const [aberto, abrir] = useState(false);
+    return <div className="barra-com-camada" style={{ position: 'sticky', zIndex: 60, overflow: 'hidden' }}><Button ref={ancora} onClick={() => abrir(true)}>Mais</Button>
+      {aberto && <Popover ancora={ancora} aoFechar={() => abrir(false)} rotulo="Mais opções"><Button>Notas do livro</Button></Popover>}</div>;
+  }
+  render(<Exemplo />);
+  fireEvent.click(screen.getByRole('button', { name: 'Mais' }));
+  const menu = screen.getByRole('dialog', { name: 'Mais opções' });
+  expect(menu.parentElement).toBe(document.body);
+  expect(menu.closest('.barra-com-camada')).toBeNull();
+  expect(menu.style.position).toBe('fixed');
+  // Os eventos continuam no React do dono: clicar dentro não fecha; fora, fecha.
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'Notas do livro' }));
+  expect(screen.getByRole('dialog', { name: 'Mais opções' })).toBeDefined();
+  fireEvent.pointerDown(document.body);
+  expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+test('posição do popover: abaixo e à esquerda da âncora; perto da borda direita, alinha pela direita; sem altura embaixo, sobe', () => {
+  const janela = { largura: 1280, altura: 800 };
+  const caixa = (left: number, top: number, largura = 40, altura = 40) => ({ left, right: left + largura, top, bottom: top + altura });
+  expect(posicaoDoPopover(caixa(100, 10), { largura: 260, altura: 300 }, janela)).toEqual({ left: 100, top: 58 });
+  // O "…" da barra do leitor encostado no vídeo: o menu não passa da janela e fecha pela direita do botão.
+  expect(posicaoDoPopover(caixa(1200, 10), { largura: 260, altura: 300 }, janela)).toEqual({ left: 980, top: 58 });
+  // Botão na base (o player): abre para cima.
+  expect(posicaoDoPopover(caixa(600, 720), { largura: 260, altura: 300 }, janela)).toEqual({ left: 600, top: 412 });
+  // Mais alto que a janela: fica a 12 px do topo.
+  expect(posicaoDoPopover(caixa(600, 400), { largura: 260, altura: 900 }, janela).top).toBe(12);
+  expect(posicaoDoPopover(null, { largura: 260, altura: 100 }, janela)).toEqual({ left: 12, top: 48 });
+});
+
+test('sistema de botões: tamanhos e variantes por classe, IconButton com ícone (sem glifo de texto) e um chip só', () => {
+  render(<><Button variante="primario" tamanho="md">Salvar</Button><Button variante="perigo" tamanho="sm">Apagar</Button><Button>Padrão</Button>
+    <IconButton icone="xis" aria-label="Fechar" /><IconButton tamanho="sm" icone="reticencias" aria-label="Mais" />
+    <Chip pressionado cor="#f00" conta={3}>Tese</Chip><a className={classesDoBotao({ tamanho: 'md' })} href="/x">Notas</a></>);
+  expect(screen.getByRole('button', { name: 'Salvar' }).className).toContain('ui-primario ui-md');
+  expect(screen.getByRole('button', { name: 'Apagar' }).className).toContain('ui-perigo ui-sm');
+  expect(screen.getByRole('button', { name: 'Padrão' }).className).not.toMatch(/ui-(sm|md|lg)/);
+  const fechar = screen.getByRole('button', { name: 'Fechar' });
+  expect(fechar.className).toContain('ui-icon');
+  expect(fechar.className).toContain('ui-md');
+  expect(fechar.querySelector('svg')).not.toBeNull();
+  expect(fechar.textContent).toBe('');
+  expect(screen.getByRole('button', { name: 'Mais' }).className).toContain('ui-sm');
+  const chip = screen.getByRole('button', { name: /Tese/ });
+  expect(chip.className).toContain('ui-chip ui-chip-sm');
+  expect(chip.getAttribute('aria-pressed')).toBe('true');
+  expect(chip.querySelector('.ui-chip-conta')?.textContent).toBe('3');
+  expect(screen.getByRole('link', { name: 'Notas' }).className).toBe('ui-button ui-secundario ui-md');
 });

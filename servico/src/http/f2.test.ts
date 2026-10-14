@@ -11,7 +11,7 @@ import type pg from 'pg';
 import { ulid } from 'ulid';
 import { afterEach, expect, test } from 'vitest';
 import {
-  lerModosDeLeitura, validarAnotacao, validarConexaoV2, validarConversaV2, validarEtiqueta, validarExecucaoLeitura, validarMarca, validarMarcaV2,
+  lerModosDeLeitura, validarAnotacao, validarDificuldade, validarNotaDoGrifo, type DificuldadeV1, type NotaDoGrifoV1, validarConexaoV2, validarConversaV2, validarEtiqueta, validarExecucaoLeitura, validarMarca, validarMarcaV2,
   type AncoraV1, type AnotacaoV1, type EtiquetaV1, type Bloco, type CanonicoV1, type ConexaoV2, type ConversaV2, type ExecucaoLeituraV1,
   type Id, type MarcaV1, type MarcaV2,
 } from '@margem/contratos';
@@ -378,6 +378,89 @@ test('grifos do leitor: numa camada própria que não é de leitura, em qualquer
     expect((await capitulo(api, m)).marcas.map((item) => item.id)).not.toContain(marca.id);
   }));
 
+test('modelo D (J138): a nota é do grifo, um por grifo, sem tipo; sai com o grifo; outro olhar muda o modo do grifo', async () =>
+  comBanco('j138_nota_do_grifo', async (banco) => {
+    const m = await preparar(banco);
+    const api = montar(banco);
+    const { marca } = await corpo<{ marca: MarcaV2 }>(await escrever(api, 'POST', '/api/grifos', { ancora: ancora(m.versaoId, m.bloco(3), 'fecha o argumento'), funcao: 'tese' }));
+    const url = `/api/marcas/${marca.id}/nota-do-leitor`;
+    const criada = await escrever(api, 'PUT', url, { texto: '  Por que isto fecha.  ' });
+    expect(criada.status).toBe(200);
+    const { nota } = await corpo<{ nota: NotaDoGrifoV1 }>(criada);
+    expect(validarNotaDoGrifo(nota), JSON.stringify(validarNotaDoGrifo.errors)).toBe(true);
+    expect(nota).toMatchObject({ marca_id: marca.id, texto: 'Por que isto fecha.', revisao_edicao: 1 });
+    expect(nota).not.toHaveProperty('tipo');
+    // Salvar de novo troca o texto da mesma nota (o debounce da tela manda a revisão que viu).
+    const trocada = await corpo<{ nota: NotaDoGrifoV1 }>(await escrever(api, 'PUT', url, { texto: 'Fecha porque retoma a tese.', revisao: 1 }));
+    expect(trocada.nota).toMatchObject({ id: nota.id, texto: 'Fecha porque retoma a tese.', revisao_edicao: 2 });
+    expect((await escrever(api, 'PUT', url, { texto: 'Velha.', revisao: 1 })).status).toBe(409);
+    expect((await escrever(api, 'PUT', url, { texto: '   ' })).status).toBe(400);
+    expect((await escrever(api, 'PUT', url, { texto: 'x', tipo: 'duvida' })).status).toBe(400);
+    expect((await escrever(api, 'PUT', `/api/marcas/${ulid()}/nota-do-leitor`, { texto: 'Sem grifo.' })).status).toBe(404);
+    // A nota do grifo é a anotação dele: o capítulo a traz; uma segunda nota no mesmo grifo é recusada.
+    expect((await capitulo(api, m)).anotacoes.filter((a) => a.marca_id === marca.id).map((a) => a.id)).toEqual([nota.id]);
+    expect((await escrever(api, 'POST', '/api/anotacoes', { ancora: marca.ancora, tipo: 'nota', texto: 'Outra.', marca_id: marca.id })).status).toBe(422);
+    // Tirar a nota deixa o grifo.
+    expect((await escrever(api, 'DELETE', url, { revisao: 2 })).status).toBe(200);
+    expect((await capitulo(api, m)).marcas.map((item) => item.id)).toContain(marca.id);
+    expect((await escrever(api, 'DELETE', url, { revisao: 2 })).status).toBe(404);
+    // Apagar o grifo leva a nota junto.
+    await escrever(api, 'PUT', url, { texto: 'De novo.' });
+    expect((await escrever(api, 'DELETE', `/api/grifos/${marca.id}`)).status).toBe(200);
+    expect((await banco.query('SELECT count(*)::int AS n FROM anotacao WHERE texto=$1', ['De novo.'])).rows[0]).toEqual({ n: 0 });
+
+    // Outros olhares: a função de outro modo leva o grifo para aquele modo; grifos de modos diferentes convivem.
+    const outro = lerModosDeLeitura().find((modo) => modo.id !== 'argumentativa' && modo.funcoes.length > 0)!;
+    const { marca: grifo } = await corpo<{ marca: MarcaV2 }>(await escrever(api, 'POST', '/api/grifos', { ancora: ancora(m.versaoId, m.bloco(2), 'atenção'), funcao: 'conceito' }));
+    await escrever(api, 'POST', '/api/grifos', { ancora: ancora(m.versaoId, m.bloco(1), 'ler devagar'), funcao: 'tese' });
+    const olhar = await escrever(api, 'PUT', `/api/marcas/${grifo.id}/funcao`, { funcao: outro.funcoes[0]!.chave, modo: { id: outro.id, revisao: outro.revisao } });
+    expect(olhar.status).toBe(200);
+    const movido = (await corpo<{ marca: MarcaV2 }>(olhar)).marca;
+    expect(movido).toMatchObject({ id: grifo.id, funcao: outro.funcoes[0]!.chave, modo: { id: outro.id, revisao: outro.revisao } });
+    expect(validarMarcaV2(movido)).toBe(true);
+    const modos = new Set((await capitulo(api, m)).marcas.filter((item) => item.origem === 'manual').map((item) => item.modo.id));
+    expect(modos).toEqual(new Set(['argumentativa', outro.id]));
+    expect((await escrever(api, 'PUT', `/api/marcas/${grifo.id}/funcao`, { funcao: 'nao_existe', modo: { id: outro.id, revisao: outro.revisao } })).status).toBe(422);
+    expect((await escrever(api, 'PUT', `/api/marcas/${grifo.id}/funcao`, { funcao: 'tese', modo: { id: 'inexistente', revisao: 1 } })).status).toBe(422);
+    const daIa = (await capitulo(api, m)).marcas.find((item) => item.origem !== 'manual')!;
+    expect((await escrever(api, 'PUT', `/api/marcas/${daIa.id}/funcao`, { funcao: outro.funcoes[0]!.chave, modo: { id: outro.id, revisao: outro.revisao } })).status).toBe(422);
+  }));
+
+test('modelo D (J138): o sinal de dificuldade, do leitor (confirmado) e do Codex (confirmar ou descartar), sem apagar nada', async () =>
+  comBanco('j138_dificuldade', async (banco) => {
+    const m = await preparar(banco);
+    const api = montar(banco);
+    const trecho = ancora(m.versaoId, m.bloco(2), 'atenção');
+    const marcada = await escrever(api, 'POST', '/api/dificuldades', { ancora: trecho });
+    expect(marcada.status).toBe(201);
+    const { dificuldade } = await corpo<{ dificuldade: DificuldadeV1 }>(marcada);
+    expect(validarDificuldade(dificuldade), JSON.stringify(validarDificuldade.errors)).toBe(true);
+    expect(dificuldade).toMatchObject({ origem: 'leitor', estado: 'confirmada' });
+    expect(dificuldade).not.toHaveProperty('tipo');
+    // A categoria é um detalhe escolhido depois; descartar é um estado; a do leitor não vira "sugerida".
+    const comTipo = await corpo<{ dificuldade: DificuldadeV1 }>(await escrever(api, 'PATCH', `/api/dificuldades/${dificuldade.id}`, { tipo: 'conceito_sem_definicao' }));
+    expect(comTipo.dificuldade.tipo).toBe('conceito_sem_definicao');
+    expect((await escrever(api, 'PATCH', `/api/dificuldades/${dificuldade.id}`, { tipo: 'cor' })).status).toBe(400);
+    expect((await escrever(api, 'PATCH', `/api/dificuldades/${dificuldade.id}`, { estado: 'sugerida' })).status).toBe(422);
+    expect((await corpo<{ dificuldade: DificuldadeV1 }>(await escrever(api, 'PATCH', `/api/dificuldades/${dificuldade.id}`, { estado: 'descartada', tipo: null }))).dificuldade)
+      .toMatchObject({ estado: 'descartada' });
+    expect((await escrever(api, 'POST', '/api/dificuldades', { ancora: { ...trecho, prefixo: 'x' } })).status).toBe(422);
+    // A sugestão do Codex: a primeira decisão grava a linha; a seguinte muda o estado.
+    const modeloId = ulid(); const sugeridaId = ulid();
+    const outro = ancora(m.versaoId, m.bloco(3), 'justificativa');
+    await banco.query(`INSERT INTO modelo_capitulo (id,execucao_id,secao_id,revisao,estagio,conteudo) VALUES ($1,$2,$3,2,'revisao',$4)`,
+      [modeloId, m.recente, m.capitulo, JSON.stringify({ id: modeloId, dificuldades: [{ id: sugeridaId, tipo: 'salto_argumentativo', ancoras: [outro], descricao: 'O passo do meio falta.', origem: { estagio: 'revisao', job_id: ulid() } }] })]);
+    const decidida = await corpo<{ dificuldade: DificuldadeV1 }>(await escrever(api, 'POST', '/api/dificuldades/codex', { modelo_id: modeloId, dificuldade_id: sugeridaId, estado: 'confirmada' }));
+    expect(decidida.dificuldade).toMatchObject({ origem: 'codex', estado: 'confirmada', tipo: 'salto_argumentativo', codex: { modelo_id: modeloId, dificuldade_id: sugeridaId } });
+    const descartada = await corpo<{ dificuldade: DificuldadeV1 }>(await escrever(api, 'POST', '/api/dificuldades/codex', { modelo_id: modeloId, dificuldade_id: sugeridaId, estado: 'descartada' }));
+    expect(descartada.dificuldade).toMatchObject({ id: decidida.dificuldade.id, estado: 'descartada' });
+    expect((await escrever(api, 'POST', '/api/dificuldades/codex', { modelo_id: modeloId, dificuldade_id: ulid(), estado: 'confirmada' })).status).toBe(422);
+    const doCapitulo = (await capitulo(api, m)) as unknown as { dificuldades: DificuldadeV1[]; modo_principal: unknown };
+    expect(doCapitulo.dificuldades.map((d) => d.id).sort()).toEqual([dificuldade.id, decidida.dificuldade.id].sort());
+    expect(doCapitulo.modo_principal).toBeNull();
+    expect((await banco.query('SELECT count(*)::int AS n FROM dificuldade')).rows[0]).toEqual({ n: 2 });
+  }));
+
 test('primeiro eu: sem anotação do leitor no capítulo, marcas vêm vazias e continuam no banco; a primeira anotação libera', async () =>
   comBanco('j16_primeiro_eu', async (banco) => {
     const m = await preparar(banco);
@@ -402,6 +485,18 @@ test('primeiro eu: sem anotação do leitor no capítulo, marcas vêm vazias e c
     // Desligar a preferência mostra tudo de novo, mesmo sem anotação.
     await escrever(api, 'PUT', `/api/documentos/${m.documentoId}/preferencias`, { primeiro_eu: false });
     expect((await capitulo(api, m)).primeiro_eu).toEqual({ ativo: false, liberado: true });
+  }));
+
+test('primeiro eu: um grifo do leitor no capítulo também libera as marcas da IA (a nota agora é do grifo)', async () =>
+  comBanco('j132_grifo_libera', async (banco) => {
+    const m = await preparar(banco);
+    const api = montar(banco);
+    expect((await escrever(api, 'PUT', `/api/documentos/${m.documentoId}/preferencias`, { primeiro_eu: true })).status).toBe(200);
+    expect((await capitulo(api, m)).primeiro_eu).toEqual({ ativo: true, liberado: false });
+    expect((await escrever(api, 'POST', '/api/grifos', { ancora: ancora(m.versaoId, m.bloco(2), 'atenção'), funcao: 'nenhuma' })).status).toBe(201);
+    const livre = await capitulo(api, m);
+    expect(livre.primeiro_eu).toEqual({ ativo: true, liberado: true });
+    expect(livre.marcas.filter((marca) => marca.origem !== 'manual')).toHaveLength(2);
   }));
 
 // ---------------------------------------------------------------- conexões

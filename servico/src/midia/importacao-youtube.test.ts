@@ -9,9 +9,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type pg from 'pg';
-import { expect, test, vi } from 'vitest';
+import { beforeAll, expect, test, vi } from 'vitest';
 import { validarVideoYoutube, type Id, type MidiaV1, type VideoYoutubeV1 } from '@margem/contratos';
-import { comBanco } from '../../testes/apoio';
+import { comBanco, exigirMotorPython } from '../../testes/apoio';
 import { raizDoRepositorio } from '../dados';
 import { criarApi } from '../http/app';
 import { CABECALHO_MARGEM } from '../http/ambiente';
@@ -23,6 +23,9 @@ import { metadadosDoYtDlp } from './youtube';
 import { LEGENDA_AUTOMATICA } from './youtube.casos';
 
 const executar = promisify(execFile);
+
+// Canoniza com o motor Python de verdade: sem o venv, a causa aparece aqui, não num 409 adiante.
+beforeAll(exigirMotorPython, 30_000);
 const JSON_ESCRITA = { [CABECALHO_MARGEM]: '1', 'Content-Type': 'application/json' };
 const COM_LEGENDA = 'dO8EW2LqBfU';
 const SEM_LEGENDA = 'a-b_c1D2e3F';

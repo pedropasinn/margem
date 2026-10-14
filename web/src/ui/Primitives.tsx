@@ -1,14 +1,36 @@
-import { Children, forwardRef, isValidElement, useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type RefObject, type TextareaHTMLAttributes } from 'react';
+import { Children, forwardRef, isValidElement, useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type RefObject, type TextareaHTMLAttributes } from 'react';
 import { createPortal } from 'react-dom';
+import { Icon } from './Icon';
 import './primitives.css';
 
-type PropsBotao = ButtonHTMLAttributes<HTMLButtonElement> & { variante?: 'primario' | 'secundario' | 'ghost' };
-export const Button = forwardRef<HTMLButtonElement, PropsBotao>(function Button({ variante = 'secundario', className = '', type = 'button', ...props }, ref) {
-  return <button {...props} ref={ref} type={type} className={`ui-button ui-${variante} ${className}`} />;
+/**
+ * O sistema de botões (J132): três tamanhos — `sm` 32 px (44 com toque) para ações de item e de lista,
+ * `md` 40 px para formulários e cabeçalhos, `lg` 44 px para a ação principal da página — e quatro
+ * variantes: `primario` (uma por formulário ou página), `secundario` (o 3D do cânone), `ghost` (Cancelar,
+ * ações por item) e `perigo` (Apagar, só dentro de menu ou confirmação). Sem tamanho, vale o 44 de antes.
+ */
+export type VarianteDoBotao = 'primario' | 'secundario' | 'ghost' | 'perigo';
+export type TamanhoDoBotao = 'sm' | 'md' | 'lg';
+type PropsBotao = ButtonHTMLAttributes<HTMLButtonElement> & { variante?: VarianteDoBotao; tamanho?: TamanhoDoBotao | undefined };
+/** As classes de um botão, para um link (`<a>`) com a mesma cara. */
+export function classesDoBotao({ variante = 'secundario', tamanho }: { variante?: VarianteDoBotao; tamanho?: TamanhoDoBotao | undefined } = {}): string {
+  return `ui-button ui-${variante}${tamanho ? ` ui-${tamanho}` : ''}`;
+}
+export const Button = forwardRef<HTMLButtonElement, PropsBotao>(function Button({ variante = 'secundario', tamanho, className = '', type = 'button', ...props }, ref) {
+  return <button {...props} ref={ref} type={type} className={`${classesDoBotao({ variante, tamanho })} ${className}`} />;
 });
-export const IconButton = forwardRef<HTMLButtonElement, PropsBotao & { 'aria-label': string }>(function IconButton({ className = '', ...props }, ref) {
-  return <Button {...props} variante="ghost" ref={ref} className={`ui-icon ${className}`} />;
+/** Botão só de ícone: `icone` desenha o `Icon` do sistema (nunca um glifo de texto como × ou •••). */
+export const IconButton = forwardRef<HTMLButtonElement, Omit<PropsBotao, 'variante'> & { 'aria-label': string; icone?: string }>(function IconButton({ className = '', tamanho = 'md', icone, children, ...props }, ref) {
+  return <Button {...props} variante="ghost" tamanho={tamanho} ref={ref} className={`ui-icon ${className}`}>{icone ? <Icon name={icone} size={tamanho === 'sm' ? 16 : 18} /> : children}</Button>;
 });
+/** O chip único (filtros, etiquetas, dificuldades): `sm` 28 px, `md` 32 px; ligado, o fundo de destaque. */
+export const Chip = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { tamanho?: 'sm' | 'md'; pressionado?: boolean; cor?: string | undefined; conta?: number | undefined }>(
+  function Chip({ tamanho = 'sm', pressionado, cor, conta, className = '', type = 'button', children, style, ...props }, ref) {
+    return <button {...props} ref={ref} type={type} aria-pressed={pressionado ?? props['aria-pressed']} className={`ui-chip ui-chip-${tamanho} ${className}`}
+      style={cor ? { ...style, '--cor-chip': cor } as CSSProperties : style}>
+      {cor && <span className="ui-chip-ponto" aria-hidden="true" />}{children}{conta !== undefined && <span className="ui-chip-conta">{conta}</span>}
+    </button>;
+  });
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className = '', ...props }, ref) {
   return <input {...props} ref={ref} className={`ui-input ${className}`} />;
 });
@@ -56,6 +78,12 @@ export function usarFoco(raiz: RefObject<HTMLElement>, fechar: () => void, ancor
     };
   }, [raiz, ancora]);
 }
+/**
+ * Popover e menu ancorado num botão. Renderiza num portal no `body`, na camada de sobreposição (acima
+ * dos painéis laterais, do vídeo e das gavetas): nenhum contêiner com rolagem ou com camada própria o
+ * corta, e o iframe do vídeo nunca fica por cima dele (V-T1). Abre abaixo do botão, alinhado à esquerda
+ * dele; se não couber, alinha pela direita do botão e, se faltar altura embaixo, abre acima.
+ */
 export function Popover({ ancora, aoFechar, children, rotulo, largura = 280, className = '' }: { ancora: RefObject<HTMLElement>; aoFechar: () => void; children: ReactNode; rotulo: string; largura?: number; className?: string }) {
   const raiz = useRef<HTMLDivElement>(null);
   const [posicao, posicionar] = useState({ left: 12, top: 60 });
@@ -64,19 +92,36 @@ export function Popover({ ancora, aoFechar, children, rotulo, largura = 280, cla
     const medir = () => {
       const caixa = ancora.current?.getBoundingClientRect();
       const altura = raiz.current?.getBoundingClientRect().height ?? 0;
-      const topo = (caixa?.bottom ?? 48) + 8;
-      posicionar({ left: Math.max(12, Math.min(caixa?.left ?? 12, window.innerWidth - Math.min(largura, window.innerWidth - 24) - 12)), top: Math.max(12, Math.min(topo, window.innerHeight - altura - 12)) });
+      posicionar(posicaoDoPopover(caixa ?? null, { largura: Math.min(largura, window.innerWidth - 24), altura }, { largura: window.innerWidth, altura: window.innerHeight }));
     };
     medir(); window.addEventListener('resize', medir); window.addEventListener('scroll', medir, true);
     const observador = typeof ResizeObserver === 'function' ? new ResizeObserver(medir) : null;
     if (raiz.current) observador?.observe(raiz.current);
     return () => { window.removeEventListener('resize', medir); window.removeEventListener('scroll', medir, true); observador?.disconnect(); };
   }, [ancora, largura]);
-  return <div ref={raiz} role="dialog" aria-label={rotulo} tabIndex={-1} className={`ui-popover ${className}`} style={{ ...posicao, width: largura }}>{children}</div>;
+  return createPortal(<div ref={raiz} role="dialog" aria-label={rotulo} tabIndex={-1} className={`ui-popover ${className}`} style={{ ...posicao, position: 'fixed', width: largura }}>{children}</div>, document.body);
+}
+
+type Caixa = Pick<DOMRect, 'left' | 'right' | 'top' | 'bottom'>;
+/**
+ * Onde o popover abre, em px da janela: logo abaixo da âncora e alinhado à esquerda dela; se passar da
+ * borda direita, alinhado à direita da âncora; se faltar altura embaixo e houver mais em cima, acima
+ * dela. Sempre a 12 px das bordas da janela.
+ */
+export function posicaoDoPopover(ancora: Caixa | null, popover: { largura: number; altura: number }, janela: { largura: number; altura: number }): { left: number; top: number } {
+  const margem = 12; const distancia = 8;
+  const base = ancora ?? { left: margem, right: margem, top: 40, bottom: 40 };
+  const maxLeft = janela.largura - popover.largura - margem;
+  const left = base.left + popover.largura <= janela.largura - margem ? base.left : base.right - popover.largura;
+  const abaixo = janela.altura - base.bottom - distancia - margem;
+  const acima = base.top - distancia - margem;
+  const subir = popover.altura > abaixo && acima > abaixo;
+  const top = subir ? base.top - distancia - popover.altura : base.bottom + distancia;
+  return { left: Math.max(margem, Math.min(left, maxLeft)), top: Math.max(margem, Math.min(top, janela.altura - popover.altura - margem)) };
 }
 export function Drawer({ rotulo, aoFechar, children, lado = 'direita' }: { rotulo: string; aoFechar: () => void; children: ReactNode; lado?: 'esquerda' | 'direita' }) {
   const raiz = useRef<HTMLDivElement>(null); usarFoco(raiz, aoFechar);
-  return <div className="ui-veu"><div ref={raiz} role="dialog" aria-modal="true" aria-label={rotulo} tabIndex={-1} className={`ui-drawer ui-drawer-${lado}`}><header><h2>{rotulo}</h2><IconButton aria-label="Fechar" onClick={aoFechar}>×</IconButton></header>{children}</div></div>;
+  return <div className="ui-veu"><div ref={raiz} role="dialog" aria-modal="true" aria-label={rotulo} tabIndex={-1} className={`ui-drawer ui-drawer-${lado}`}><header><h2>{rotulo}</h2><IconButton aria-label="Fechar" icone="xis" onClick={aoFechar} /></header>{children}</div></div>;
 }
 interface Opcao { value: string; rotulo: ReactNode; disabled: boolean }
 function opcoesDosFilhos(children: ReactNode): Opcao[] {

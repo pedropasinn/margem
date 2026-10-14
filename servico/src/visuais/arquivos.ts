@@ -6,9 +6,10 @@
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { copyFile, link, mkdir, open, readFile, rm, stat } from 'node:fs/promises';
+import { copyFile, link, mkdir, readFile, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { raizDeDados } from '../dados.js';
+import { sincronizarArquivo, sincronizarPasta } from '../plataforma/disco.js';
 
 /** Teto de um PNG gerado (os do Codex ficam em 1–4 MB). */
 export const TETO_DA_IMAGEM = 25 * 1024 * 1024;
@@ -33,11 +34,6 @@ export function dimensoesDoPng(bytes: Buffer): { largura: number; altura: number
   return largura > 0 && altura > 0 ? { largura, altura } : null;
 }
 
-async function sincronizar(caminho: string): Promise<void> {
-  const arquivo = await open(caminho, 'r');
-  try { await arquivo.sync(); } finally { await arquivo.close(); }
-}
-
 /** Confere o PNG gerado e o guarda pelo hash. Devolve o que a publicação grava. */
 export async function guardarImagem(origem: string): Promise<ImagemGuardada> {
   const informacao = await stat(origem);
@@ -53,12 +49,12 @@ export async function guardarImagem(origem: string): Promise<ImagemGuardada> {
   try {
     await copyFile(origem, temporario, constants.COPYFILE_EXCL);
     if (createHash('sha256').update(await readFile(temporario)).digest('hex') !== sha256) throw new Error('Imagem alterada durante a cópia.');
-    await sincronizar(temporario);
+    await sincronizarArquivo(temporario);
     try { await link(temporario, destino); } catch (erro) {
       if (!(erro instanceof Error && 'code' in erro && erro.code === 'EEXIST')) throw erro;
     }
     if (createHash('sha256').update(await readFile(destino)).digest('hex') !== sha256) throw new Error('Arquivo de imagem adulterado.');
-    await sincronizar(pastaDasImagens());
+    await sincronizarPasta(pastaDasImagens());
   } finally {
     await rm(temporario, { force: true });
   }

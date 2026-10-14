@@ -247,6 +247,53 @@ describe('PlayerDeMidia com vídeo do YouTube', () => {
     expect(screen.getByText('Arquivo local')).toBeTruthy();
   });
 
+  test('J142: partes e momentos da análise no vídeo do YouTube (o arquivo é só o áudio) e o vídeo troca de lado', async () => {
+    const analise = {
+      estado: 'pronto',
+      conceitos: {
+        partes: [
+          { id: 'P1', instante_s: 0, titulo: 'A China compra ouro', resumo: 'Por que o banco central compra.', ancora: { bloco_id: B1, citacao: '' } },
+          { id: 'P2', instante_s: 3, titulo: 'Juros nos EUA', resumo: 'O efeito no dólar.', ancora: { bloco_id: B2, citacao: '' } },
+        ],
+        conceitos: [{ id: 'C1', instante_s: 3.5, tipo: 'dado', titulo: 'O que diz o número', curto: 'Frase', explicacao: 'Um dado para situar.', ancora: { bloco_id: B2, citacao: 'frase' } }],
+      },
+    };
+    const pedidos: string[] = [];
+    vi.stubGlobal('fetch', (url: string) => { pedidos.push(url); return Promise.resolve(new Response(JSON.stringify(analise), { status: 200 })); });
+    const fonte = fonteDaMidia(midia);
+    expect(fonte.tipoDoArquivo).toBe('audio');
+    const { unmount } = render(<PlayerDeMidia fontes={[fonte]} raiz={artigo()} snapshot={snapshot} aoFechar={vi.fn()} carregarApiDoYoutube={carregarApi} />);
+    await esperarApi();
+    act(() => player().pronto());
+    expect(pedidos).toContain(`/api/midias/${midia.id}/conceitos`);
+    // As partes da análise substituem os capítulos do canal no índice; os momentos vêm logo abaixo.
+    const lateral = await screen.findByRole('region', { name: 'Partes' });
+    expect([...lateral.querySelectorAll('h3')].map((h) => h.textContent)).toEqual(['Partes', 'Momentos']);
+    expect(lateral.textContent).toContain('Por que o banco central compra.');
+    expect(screen.queryByRole('button', { name: /Segundo bloco/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Juros nos EUA/ }));
+    expect(player().chamadas.at(-2)).toBe('seek:3.05');
+    // O momento: na lista e, no instante, a pílula logo abaixo da moldura (nada por cima do YouTube).
+    expect(screen.getByRole('button', { name: /Dado O que diz o número/ })).toBeTruthy();
+    player().tempo = 3.6;
+    await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
+    expect(document.querySelector('.sob-o-video .pilula-do-conceito')?.getAttribute('aria-label')).toBe('Dado: O que diz o número');
+    expect(document.querySelector('.quadro-do-video .pilula-do-conceito')).toBeNull();
+
+    // Trocar de lado: o vídeo vai para a esquerda, a preferência fica lembrada e volta ao abrir de novo.
+    expect(document.querySelector('.player-midia')!.getAttribute('data-lado')).toBe('direita');
+    fireEvent.click(screen.getByRole('button', { name: 'Pôr o vídeo à esquerda do texto' }));
+    expect(document.querySelector('.player-midia')!.getAttribute('data-lado')).toBe('esquerda');
+    expect(document.documentElement.classList.contains('com-video-a-esquerda')).toBe(true);
+    expect(localStorage.getItem(CHAVES.lado)).toBe('esquerda');
+    unmount();
+    expect(document.documentElement.classList.contains('com-video-a-esquerda')).toBe(false);
+    render(<PlayerDeMidia fontes={[fonte]} raiz={null} snapshot={snapshot} aoFechar={vi.fn()} carregarApiDoYoutube={carregarApi} />);
+    expect(document.querySelector('.player-midia')!.getAttribute('data-lado')).toBe('esquerda');
+    fireEvent.click(screen.getByRole('button', { name: 'Pôr o vídeo à direita do texto' }));
+    expect(localStorage.getItem(CHAVES.lado)).toBe('direita');
+  });
+
   test('sem arquivo local, o aviso só leva ao YouTube', async () => {
     const video: VideoYoutubeV1 = { versao: 1, documento_id: '0000000000000000000000D001', video_id: ID, url: `https://www.youtube.com/watch?v=${ID}`, titulo: 'Sem legendas', capitulos: [], transcricao: { estado: 'sem_transcricao' } };
     const [fonte] = fontesDasMidias([], video, V);

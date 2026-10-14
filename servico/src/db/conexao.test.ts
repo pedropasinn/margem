@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from 'vitest';
-import { comBancoDeTeste, pool } from './conexao.js';
+import { comBancoDeTeste, OCIOSA_MS, pool } from './conexao.js';
 
 afterAll(async () => { await pool.end(); });
 
@@ -30,4 +30,10 @@ test('remove o banco mesmo quando a função falha', async () => {
     throw new Error('Falha intencional da função de teste.');
   })).rejects.toThrow('Falha intencional');
   await conferirRemocao(nome);
+});
+
+test('o pool do processo mantém conexões ociosas por minutos, não 10 s (V-W7: postgres.exe girando no Windows)', () => {
+  expect(pool.options.idleTimeoutMillis).toBe(OCIOSA_MS);
+  expect(OCIOSA_MS).toBeGreaterThanOrEqual(300_000);
+  expect(pool.options.min).toBe(1);
 });

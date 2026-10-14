@@ -84,3 +84,19 @@ test('a raiz vem de MARGEM_ARTEFATOS quando existe', () => {
   expect(raizDaAuditoria({ MARGEM_ARTEFATOS: '/tmp/x' })).toBe('/tmp/x/auditoria');
   expect(raizDaAuditoria({})).toMatch(/\.cache\/margem\/auditoria$/);
 });
+
+test('falha do Codex grava stderr.txt redigido e código de saída e classe em resultado.json (V-W2)', async () => {
+  const raiz = join(base, 'auditoria');
+  const executor = executorAuditado(() => Promise.resolve({
+    estado: 'falhou' as const, codigo: 'processo' as const, mensagem: 'A CLI terminou com código 1.', duracao_ms: 4912,
+    detalhe: { codigo_saida: 1, classe: 'desconhecido', stderr_resumo: 'ERROR: unexpected status 400: invalid_json_schema', causa: null },
+  }), { commit: () => 'x' });
+  await comAuditoria({ job_id: 'J3', tipo: 'revisar_consistencia', attempt: 1, raiz }, () => executor({
+    diretorioEntrada: base, prompt: 'p', schema, prazoMs: 5_000,
+  }));
+  const dir = diretorioDaTentativa(raiz, 'J3', 1);
+  expect(await readFile(join(dir, 'stderr.txt'), 'utf8')).toBe('ERROR: unexpected status 400: invalid_json_schema\n');
+  expect(JSON.parse(await readFile(join(dir, 'resultado.json'), 'utf8'))).toEqual({
+    estado: 'falhou', codigo: 'processo', mensagem: 'A CLI terminou com código 1.', duracao_ms: 4912, codigo_saida: 1, classe: 'desconhecido', causa: null,
+  });
+});

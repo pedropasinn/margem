@@ -26,6 +26,7 @@ export const REGRAS_DE_TAXA: readonly Regra[] = [
     '/api/visuais',
     `/api/visuais/${ID}/regenerar`,
     `/api/documentos/${ID}/resolucoes`,
+    '/api/importacoes/questao',
     `/api/resolucoes/${ID}/perguntas`,
     `/api/jobs/${ID}/reenfileirar`,
     `/api/midias/${ID}/conceitos`,

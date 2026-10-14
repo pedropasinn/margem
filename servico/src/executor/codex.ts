@@ -1,13 +1,17 @@
 import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { copyFile, mkdir, mkdtemp, readdir, realpath, rm, stat, symlink } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readdir, realpath, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { ambienteSaneado } from './ambiente.js';
 import { conferirResposta, diretorioArtefatosPadrao, escreverSchemaDoCodex, guardarArtefato, sha256 } from './artefato.js';
-import { classificarSaida, esforcoDaSaida, horarioDeVolta, modeloDaSaida } from './classificacao.js';
+import { ARQUIVO_PROMPT, PONTEIRO_DO_PROMPT, promptCabeNaLinha } from './entrada.js';
+import { classificarSaida, esforcoDaSaida, horarioDeVolta, modeloDaSaida, trechoDecisivo } from './classificacao.js';
+import { causaDoStderr, resumirStderr } from './stderr.js';
 import { detectarCapacidades } from './capacidades.js';
-import { ambienteConfinado, confinamentoDisponivel, lerCredencial, montarConfinamento, pastaDoMotor, prepararCasa } from './confinamento.js';
+import { ambienteConfinado, confinamentoDisponivel, lerCredencial, montarConfinamento, pastaDoMotor, prepararCasa, prepararNativo, tipoDoConfinamento } from './confinamento.js';
+import { encerrarArvore, opcoesDeProcesso } from '../plataforma/processos.js';
+import { codexCli } from '../plataforma/executaveis.js';
 import type { Confinamento } from './confinamento.js';
 import type { Capacidades } from './capacidades.js';
 import { falhou } from './tipos.js';
@@ -36,14 +40,16 @@ export interface ArgumentosCodex {
   imagens?: string[];
   /** Eventos JSONL no stdout (`--json`): é de onde sai o `thread_id` da sessão (J70). */
   json?: boolean;
+  /** V-T2: busca na web do Codex ligada (`web_search="live"`); padrão, desligada. */
+  buscaNaWeb?: boolean;
 }
 
 /**
  * Monta a linha de comando do motor de leitura. Perfil restrito: só leitura,
- * sem aprovação interativa, sem busca na web, sem MCPs e sem documentos de projeto.
+ * sem aprovação interativa, sem busca na web (salvo `buscaNaWeb`), sem MCPs e sem documentos de projeto.
  */
 export function montarArgumentos(argumentos: ArgumentosCodex): string[] {
-  const { diretorio, schema, saida, prompt, modelo, esforco, imagens = [], json = false } = argumentos;
+  const { diretorio, schema, saida, prompt, modelo, esforco, imagens = [], json = false, buscaNaWeb = false } = argumentos;
   const lista = [
     'exec',
     '--sandbox', 'read-only',
@@ -51,7 +57,7 @@ export function montarArgumentos(argumentos: ArgumentosCodex): string[] {
     '--skip-git-repo-check',
     '--dangerously-bypass-hook-trust',
     '-c', 'approval_policy="never"',
-    '-c', 'web_search="disabled"',
+    '-c', `web_search="${buscaNaWeb ? 'live' : 'disabled'}"`,
     '-c', 'mcp_servers={}',
     '-c', 'project_doc_max_bytes=0',
     // Credencial em arquivo: no confinamento não há chaveiro do sistema.
@@ -90,6 +96,8 @@ export interface OpcoesExecutor {
    * encenado), o processo roda direto.
    */
   confinamento?: Confinamento;
+  /** Sistema para o teto da linha de comando (V-W4); padrão: o do confinamento ou o do processo. */
+  plataforma?: NodeJS.Platform;
 }
 
 /** Copia para o diretório da execução apenas os arquivos comuns da entrada (sem recursão). */
@@ -114,6 +122,8 @@ const NOME_DO_ANEXO = /^[a-z0-9][a-z0-9-]{0,40}$/u;
  * monta por cima com `--ro-bind`). Sem confinamento: um link simbólico para a origem.
  */
 async function prepararAnexos(anexos: readonly { nome: string; origem: string }[], diretorio: string, confinado: boolean): Promise<{ origem: string; destino: string }[]> {
+  // No Windows, link simbólico de pasta exige privilégio; a junção não.
+  const tipoDoLink = process.platform === 'win32' ? 'junction' : 'dir';
   const montagens: { origem: string; destino: string }[] = [];
   for (const anexo of anexos) {
     if (!NOME_DO_ANEXO.test(anexo.nome)) throw new Error(`Nome de anexo inválido: ${anexo.nome}`);
@@ -121,23 +131,15 @@ async function prepararAnexos(anexos: readonly { nome: string; origem: string }[
     if (!(await stat(origem)).isDirectory()) throw new Error('O anexo precisa ser uma pasta.');
     const destino = join(diretorio, anexo.nome);
     if (confinado) await mkdir(destino);
-    else await symlink(origem, destino, 'dir');
+    else await symlink(origem, destino, tipoDoLink);
     montagens.push({ origem, destino });
   }
   return montagens;
 }
 
+/** Encerra o Codex e os comandos que ele abriu (grupo no Linux/macOS, `taskkill /T` no Windows). */
 function matarArvore(filho: ChildProcess): void {
-  if (filho.pid === undefined || filho.exitCode !== null) return;
-  try {
-    process.kill(-filho.pid, 'SIGKILL');
-  } catch {
-    try {
-      filho.kill('SIGKILL');
-    } catch {
-      // O processo já morreu; nada a fazer.
-    }
-  }
+  void encerrarArvore(filho, 'forcado', { grupo: true });
 }
 
 interface FimDoProcesso {
@@ -172,7 +174,8 @@ function rodarProcesso(
       // stdin fechado: o prompt vai por argumento, nunca por tubo.
       stdio: ['ignore', lerSessao ? 'pipe' : 'ignore', 'pipe'],
       env: ambiente,
-      detached: true,
+      // Líder de grupo (fora do Windows) para o prazo e o cancelamento levarem a árvore inteira.
+      ...opcoesDeProcesso(process.platform, true),
     });
     // Do stdout só interessa o `thread_id`; nada dele é guardado (as mensagens do modelo passam por aqui).
     filho.stdout?.on('data', (pedaco: Buffer) => {
@@ -214,6 +217,15 @@ function rodarProcesso(
     filho.on('close', (codigo) => { encerrar(codigo); });
     if (sinal?.aborted) cancelar();
   });
+}
+
+/** Falha do `spawn` (a CLI nem começou), em frase para a pessoa; `null` quando não se sabe. */
+function causaDoErroDeInicio(erro: string | undefined): string | null {
+  if (erro === undefined) return null;
+  if (/ENAMETOOLONG|E2BIG/u.test(erro)) return 'A linha de comando do Codex ficou longa demais para este sistema.';
+  if (/ENOENT/u.test(erro)) return 'O Codex não foi encontrado neste computador.';
+  if (/EACCES|EPERM/u.test(erro)) return 'O sistema não deixou o Margem abrir o Codex (permissão ou antivírus).';
+  return null;
 }
 
 /** Uma sessão do Codex tem id no formato UUID; nada mais entra no caminho da pasta de imagens. */
@@ -264,7 +276,7 @@ export async function executarCodex(
   pedido: PedidoExecucao,
   opcoes: OpcoesExecutor = {},
 ): Promise<ResultadoExecutor> {
-  const { binario = 'codex', registrar, gerar = spawn } = opcoes;
+  const { binario = codexCli(), registrar, gerar = spawn } = opcoes;
   const inicio = Date.now();
   const capacidades = opcoes.capacidades ?? await detectarCapacidades({ binario });
   if (capacidades.faltando.length > 0) {
@@ -294,21 +306,31 @@ export async function executarCodex(
   };
   try {
     await montarEntrada(pedido.diretorioEntrada, diretorio);
-    const anexos = await prepararAnexos(pedido.anexos ?? [], diretorio, confinamento !== undefined);
+    const comBwrap = confinamento !== undefined && tipoDoConfinamento(confinamento) === 'bwrap';
+    const anexos = await prepararAnexos(pedido.anexos ?? [], diretorio, comBwrap);
     // O schema que viaja para a CLI perde as palavras-chave que a API recusa; a
     // conferência da resposta continua sendo feita contra o schema original.
     const schema = join(diretorio, ARQUIVO_SCHEMA);
     await escreverSchemaDoCodex(pedido.schema, schema);
     const saida = join(diretorio, ARQUIVO_SAIDA);
-    const argumentos = montarArgumentos({
-      diretorio, schema, saida,
-      prompt: pedido.prompt,
+    const montar = (prompt: string) => montarArgumentos({
+      diretorio, schema, saida, prompt,
       modelo: pedido.modelo,
       esforco: pedido.esforco,
       // As imagens só vão se a CLI local conhecer `--image`; o prompt traz sempre o texto do recorte.
       imagens: capacidades.flags['--image'] === true ? (pedido.imagens ?? []).map((nome) => join(diretorio, basename(nome))) : [],
       json: pedido.gerarImagem === true,
+      buscaNaWeb: pedido.buscaNaWeb === true,
     });
+    let argumentos = montar(pedido.prompt);
+    // V-W4: acima do teto da plataforma (no Windows, a linha inteira), o prompt vai para
+    // `prompt.md` no diretório da execução e o argumento só aponta para ele.
+    const plataforma = opcoes.plataforma ?? confinamento?.plataforma ?? process.platform;
+    const motorDaLinha = confinamento !== undefined && !comBwrap ? confinamento.motor : binario;
+    if (!promptCabeNaLinha(pedido.prompt, [motorDaLinha, ...argumentos], plataforma)) {
+      await writeFile(join(diretorio, ARQUIVO_PROMPT), pedido.prompt, { flag: 'wx', mode: 0o600 });
+      argumentos = montar(PONTEIRO_DO_PROMPT);
+    }
     let comando = binario;
     let linha = argumentos;
     let ambiente = ambienteSaneado();
@@ -316,10 +338,20 @@ export async function executarCodex(
     if (confinamento !== undefined && casa !== undefined) {
       const casaCodex = await prepararCasa(casa, confinamento);
       credencialAntes = await lerCredencial(casaCodex);
-      const motor = await pastaDoMotor(confinamento.motor);
-      comando = confinamento.bwrap;
-      linha = [...montarConfinamento({ motor: motor.real, pastaDoMotor: motor.pasta, diretorio, casa, somenteLeitura: anexos }), ...argumentos];
-      ambiente = ambienteConfinado(casa, ambiente);
+      if (comBwrap) {
+        const motor = await pastaDoMotor(confinamento.motor);
+        comando = confinamento.bwrap;
+        linha = [...montarConfinamento({ motor: motor.real, pastaDoMotor: motor.pasta, diretorio, casa, somenteLeitura: anexos }), ...argumentos];
+        ambiente = ambienteConfinado(casa, ambiente);
+      } else {
+        // Sem bwrap (macOS, Windows): o sandbox do próprio Codex, com a política escrita na casa.
+        const nativo = await prepararNativo({
+          confinamento, casa, diretorio: await realpath(diretorio), leituras: anexos.map((anexo) => anexo.origem), argumentos,
+        });
+        comando = nativo.comando;
+        linha = nativo.argumentos;
+        ambiente = nativo.ambiente;
+      }
     }
     const fim = await rodarProcesso(comando, linha, diretorio, pedido.prazoMs, pedido.sinal, gerar, pedido.gerarImagem === true, ambiente);
     // Se o Codex renovou o token na casa temporária, a renovação volta ao login comum.
@@ -338,23 +370,38 @@ export async function executarCodex(
     };
 
     if (fim.motivo === 'cancelado') { anotar('cancelado'); return falhou('cancelado', 'Cancelamento pedido para o job.', duracao_ms); }
-    if (fim.motivo === 'timeout') { anotar('timeout'); return falhou('timeout', `Prazo de ${String(pedido.prazoMs)} ms estourado; árvore de processos encerrada.`, duracao_ms); }
-    if (fim.motivo === 'erro') { anotar('processo'); return falhou('processo', fim.erro ?? 'Falha ao iniciar a CLI.', duracao_ms); }
+    if (fim.motivo === 'timeout') {
+      anotar('timeout');
+      return {
+        ...falhou('timeout', `Prazo de ${String(pedido.prazoMs)} ms estourado; árvore de processos encerrada.`, duracao_ms),
+        detalhe: { codigo_saida: fim.codigo, classe: 'timeout', stderr_resumo: resumirStderr(fim.stderr), causa: null },
+      };
+    }
+    if (fim.motivo === 'erro') {
+      anotar('processo');
+      const causa = causaDoErroDeInicio(fim.erro);
+      return {
+        ...falhou('processo', causa ?? fim.erro ?? 'Falha ao iniciar a CLI.', duracao_ms),
+        detalhe: { codigo_saida: null, classe: 'processo', stderr_resumo: resumirStderr(fim.erro ?? ''), causa },
+      };
+    }
 
     if (fim.codigo !== 0) {
       const classe = classificarSaida(fim.stderr, fim.codigo);
+      const detalhe = { codigo_saida: fim.codigo, classe, stderr_resumo: resumirStderr(fim.stderr), causa: causaDoStderr(fim.stderr) };
       if (classe === 'cota') {
         anotar('adiado');
         return {
           estado: 'adiado', codigo: 'cota',
-          not_before: horarioDeVolta(fim.stderr),
+          // Só o desfecho anunciado: os registros internos com hora não são o horário de volta.
+          not_before: horarioDeVolta(trechoDecisivo(fim.stderr)),
           mensagem: 'Cota da conta esgotada; execução adiada.',
-          duracao_ms,
+          duracao_ms, detalhe,
         };
       }
-      if (classe === 'auth') { anotar('auth'); return falhou('auth', 'Conta do Codex sem sessão válida.', duracao_ms); }
+      if (classe === 'auth') { anotar('auth'); return { ...falhou('auth', 'Conta do Codex sem sessão válida.', duracao_ms), detalhe }; }
       anotar('processo');
-      return falhou('processo', `A CLI terminou com código ${String(fim.codigo)}.`, duracao_ms);
+      return { ...falhou('processo', detalhe.causa ?? `A CLI terminou com código ${String(fim.codigo)}.`, duracao_ms), detalhe };
     }
 
     const conferencia = await conferirResposta(saida, pedido.schema);

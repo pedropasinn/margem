@@ -20,7 +20,7 @@ import { ancoraDoBloco } from '../leitor/compreensao/geometria';
 import { Icon } from '../ui/Icon';
 import { BotaoDaBarra } from '../leitor/BarraDoLeitor';
 import { BuscaNoDocumento, type Ocorrencia } from '../leitor/BuscaNoDocumento';
-import { TourDoLeitor, type SituacaoDasMarcas } from '../onboarding/TourDoLeitor';
+import { TourDoLeitor, TourDoPlayer, type SituacaoDasMarcas } from '../onboarding/TourDoLeitor';
 import { usarOnboarding } from '../onboarding/ContextoDoOnboarding';
 import { pedirFlashcardsComAviso } from '../flashcards/api';
 
@@ -77,6 +77,8 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
   const [autor, definirAutor] = useState<string | null>(null);
   const [tipo, definirTipo] = useState<{ icone: string; rotulo: string } | null>(null);
   const [estadoDoDocumento, definirEstadoDoDocumento] = useState<DetalheDoDocumento['estado'] | null>(null);
+  /** Vídeo ou áudio: o tour é o do player, não o do texto (V-D4). */
+  const [midia, definirMidia] = useState<'video' | 'audio' | null>(null);
   const onboarding = usarOnboarding();
 
   useEffect(() => {
@@ -101,6 +103,7 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
       if (!vivo) return;
       definirAutor(documento.autor);
       definirEstadoDoDocumento(documento.estado);
+      definirMidia(documento.midia?.tipo ?? null);
       definirTipo(tipoDoDocumento(documento, carregada.capitulos.length));
       definirArvore(carregada);
       definirConcluidos(progresso.progresso?.capitulos_concluidos ?? []);
@@ -203,7 +206,8 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
     // Depois da retomada do progresso, que também rola o capítulo ao abrir: o trecho pedido vence.
     if (pedida.ancora) { const ancora = pedida.ancora; setTimeout(() => definirDestino(ancora), 700); }
     const blocoDaIntencao = pedida.bloco;
-    if (blocoDaIntencao) setTimeout(() => mostrarTrecho(blocoDaIntencao), 700);
+    const faixaDaIntencao = pedida.faixa ?? null;
+    if (blocoDaIntencao) setTimeout(() => mostrarTrecho(blocoDaIntencao, faixaDaIntencao), 700);
     if (pedida.pagina) definirPaginaDestino(pedida.pagina);
     definirIntencao(pedida);
   }, [documento_id, secaoCarregada, mostrarTrecho]);
@@ -350,7 +354,7 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
   const irAoCapitulo = (indice: number) => { const alvo = arvore.capitulos[indice]; if (alvo) ir({ nome: 'leitura', documento_id, secao_id: alvo.id }); };
   // O que a primeira dica do tour pode prometer: marcas presentes, uma leitura em curso, ou nenhuma.
   const situacao: SituacaoDasMarcas = snapshot.marcas.length > 0 ? 'com_marcas'
-    : estadoDoDocumento === 'marcando' || estadoDoDocumento === 'revisando' ? 'lendo' : 'sem_marcas';
+    : estadoDoDocumento === 'marcando' || estadoDoDocumento === 'revisando' || estadoDoDocumento === 'preparando' ? 'lendo' : 'sem_marcas';
   const posicao: PosicaoNaLeitura | undefined = arvore.capitulos.length > 1 && indiceDoCapitulo >= 0 ? {
     tipo: 'capitulo', atual: indiceDoCapitulo + 1, total: arvore.capitulos.length,
     anterior: indiceDoCapitulo > 0 ? () => irAoCapitulo(indiceDoCapitulo - 1) : undefined,
@@ -362,7 +366,7 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
     <div className={forma === 'texto' ? 'leitura texto-unico' : 'leitura'}>
       {aviso && <p className="aviso-estudo" role="status">{aviso}</p>}
       {buscaAberta && <BuscaNoDocumento documentoId={documento_id} campoRef={campoDaBusca} aoIr={irAoAchado} aoFechar={() => abrirBusca(false)} />}
-      <TourDoLeitor situacao={situacao} pdf={usaPdf(snapshot)} ir={ir} />
+      {midia ? <TourDoPlayer video={midia === 'video'} ir={ir} /> : <TourDoLeitor situacao={situacao} pdf={usaPdf(snapshot)} ir={ir} />}
       <Controlador
         voltar={{ href: `/documentos/${documento_id}`, rotulo: 'Voltar ao documento', aoVoltar: () => ir({ nome: 'documento', documento_id }) }}
         comandos={comandosDasNotas}
@@ -370,7 +374,7 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
           <li><a className="ui-button ui-ghost" href={`/documentos/${documento_id}/notas`} onClick={(evento) => { evento.preventDefault(); ir({ nome: 'notas', documento_id }); }}><Icon name="caderno" size={18} /><span><span className="acao-rotulo">Notas do livro</span></span></a></li>
           <li><Button variante="ghost" onClick={criarFlashcards}><Icon name="cartoes" size={18} /><span><span className="acao-rotulo">Criar flashcards</span><span className="acao-detalhe">deste capítulo, pelo Codex</span></span></Button></li>
           <li><a className="ui-button ui-ghost" href={`/documentos/${documento_id}/flashcards`} onClick={(evento) => { evento.preventDefault(); ir({ nome: 'flashcards', documento_id }); }}><Icon name="cartoes" size={18} /><span><span className="acao-rotulo">Flashcards do livro</span></span></a></li>
-          {onboarding.ativo && <li><Button variante="ghost" onClick={() => onboarding.despachar({ tipo: 'rever_tour' })}><Icon name="explicar" size={18} /><span><span className="acao-rotulo">Rever as dicas do leitor</span></span></Button></li>}
+          {onboarding.ativo && <li><Button variante="ghost" onClick={() => onboarding.despachar({ tipo: 'rever_tour', tour: midia ? 'video' : 'texto' })}><Icon name="explicar" size={18} /><span><span className="acao-rotulo">{midia ? (midia === 'video' ? 'Rever as dicas do vídeo' : 'Rever as dicas do áudio') : 'Rever as dicas do leitor'}</span></span></Button></li>}
         </>}
         sumario={sumario}
         posicao={posicao}

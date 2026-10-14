@@ -20,6 +20,8 @@ const METODOS_DE_ESCRITA = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const ROTAS_DA_EXTENSAO: Readonly<Record<string, readonly string[]>> = {
   '/api/importacoes/web': ['GET', 'POST'],
   '/api/documentos': ['POST'],
+  // V-W9: a extensão procura o Margem nas portas 8730–8739 e confere a identificação.
+  '/api/saude': ['GET'],
 };
 
 /** Cabeçalhos que a extensão manda numa escrita; entram na resposta ao preflight do CORS. */

@@ -15,7 +15,7 @@
  *   aceitas numa lista.
  */
 import type {
-  AncoraV1, AnotacaoV1, Bloco, ConexaoV2, ConversaV2, EtiquetaV1, Id, MarcaV2, Secao,
+  AncoraV1, AnotacaoV1, Bloco, ConexaoV2, ConexaoV3, ConversaV2, EtiquetaV1, Id, MarcaV2, Secao,
 } from '@margem/contratos';
 
 export const INICIO_GERENCIADO = '%% margem:inicio %%';
@@ -71,15 +71,15 @@ const RELACOES: Readonly<Record<ConexaoV2['relacao'], string>> = {
   semelhanca: 'Semelhança', contraste: 'Contraste', tensao: 'Tensão',
   prerequisito: 'Pré-requisito', desenvolve: 'Desenvolve', exemplo: 'Exemplo',
 };
-const TIPOS_DE_NOTA: Readonly<Record<AnotacaoV1['tipo'], string>> = {
+export const TIPOS_DE_NOTA: Readonly<Record<AnotacaoV1['tipo'], string>> = {
   impressao: 'Impressão', observacao: 'Observação', hipotese: 'Hipótese', duvida: 'Dúvida', fonte: 'Fonte', nota: '',
 };
-const TIPOS_DE_COMENTARIO: Readonly<Record<string, string>> = {
+export const TIPOS_DE_COMENTARIO: Readonly<Record<string, string>> = {
   AUTOR: 'Do autor', LEITURA: 'Leitura', INVESTIGAR: 'Investigar', OBJECAO: 'Objeção',
   CONEXAO: 'Conexão', TENSAO: 'Tensão', PREREQUISITO: 'Pré-requisito',
 };
 /** Função → tipo de callout do Obsidian. O que não está aqui é citação. */
-const CALLOUTS: Readonly<Record<string, string>> = {
+export const CALLOUTS: Readonly<Record<string, string>> = {
   tese: 'important', hipotese: 'important', enunciado: 'important',
   conceito: 'info', definicao: 'info', distincao: 'info',
   justificativa: 'example', argumento: 'example', mecanismo: 'example', evidencia: 'example',
@@ -106,7 +106,7 @@ function escaparLinha(linha: string): string {
 }
 
 /** Uma linha só, para títulos de callout e de seção. */
-function umaLinha(texto: string, limite?: number): string {
+export function umaLinha(texto: string, limite?: number): string {
   const corrida = texto.replace(/\s+/g, ' ').trim();
   const letras = Array.from(corrida);
   const cortada = limite !== undefined && letras.length > limite ? `${letras.slice(0, limite - 1).join('').trimEnd()}…` : corrida;
@@ -114,7 +114,7 @@ function umaLinha(texto: string, limite?: number): string {
 }
 
 /** Alvo de wikilink: sem os caracteres que o Obsidian usa na sintaxe do link. */
-function alvoDeLink(texto: string): string {
+export function alvoDeLink(texto: string): string {
   return texto.replace(/[[\]|#^\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
@@ -126,31 +126,33 @@ export function nomeDoArquivo(titulo: string, id: Id): string {
   const limpo = titulo.normalize('NFC').replace(/:/g, ' -').replace(/[\\/*?"<>|#^[\]\u0000-\u001f]/g, ' ')
     .replace(/\s+/g, ' ').trim().replace(/^\.+/, '').trim();
   const letras = Array.from(limpo);
-  const nome = (letras.length > 200 ? letras.slice(0, 200).join('').trimEnd() : limpo) || `Documento ${id}`;
+  // O Windows também recusa nome terminado em ponto ou espaço e os nomes de dispositivo (CON, NUL, COM1…).
+  let nome = (letras.length > 200 ? letras.slice(0, 200).join('').trimEnd() : limpo).replace(/[. ]+$/u, '') || `Documento ${id}`;
+  if (/^(con|prn|aux|nul|com[0-9¹²³]|lpt[0-9¹²³])$/iu.test(nome)) nome = `${nome} (documento)`;
   return `${nome}.md`;
 }
 
-function blocoDeId(id: Id): string {
+export function blocoDeId(id: Id): string {
   return `^margem-${id.toLowerCase()}`;
 }
 
-function citar(linhas: readonly string[]): string {
+export function citar(linhas: readonly string[]): string {
   return linhas.map((linha) => (linha === '' ? '>' : `> ${linha}`)).join('\n');
 }
 
-function dataLocal(instante: string): string {
+export function dataLocal(instante: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: FUSO_DA_NOTA, year: 'numeric', month: '2-digit', day: '2-digit' })
     .format(new Date(instante));
 }
 
-function rotuloDaChave(chave: string): string {
+export function rotuloDaChave(chave: string): string {
   const texto = chave.replace(/_/g, ' ');
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
 // ------------------------------------------------------------------ itens
 
-interface Item {
+export interface Item {
   /** Id do trecho: o da marca, ou o da primeira coisa ancorada nele. */
   id: Id;
   /** Bloco `^margem-…` do trecho. Sem marca, leva `trecho-` para não repetir o da nota (ou pergunta) que o abriu. */
@@ -160,16 +162,21 @@ interface Item {
   marca?: MarcaV2;
   notas: AnotacaoV1[];
   conversas: ConversaV2[];
-  conexoes: ConexaoV2[];
+  conexoes: (ConexaoV2 | ConexaoV3)[];
 }
 
-const mesmaFaixa = (a: AncoraV1, b: AncoraV1): boolean =>
+/** O que `montarItens` lê da entrada (a V1 e a V2 da exportação a compartilham). */
+export type EntradaDosItens = Pick<EntradaDaExportacao, 'versao_id' | 'marcas' | 'anotacoes' | 'conversas'> & {
+  conexoes: readonly (ConexaoV2 | ConexaoV3)[];
+};
+
+export const mesmaFaixa = (a: AncoraV1, b: AncoraV1): boolean =>
   a.versao_id === b.versao_id && a.bloco_id === b.bloco_id && a.inicio_utf16 === b.inicio_utf16 && a.fim_utf16 === b.fim_utf16;
-const porId = <T extends { id: Id }>(a: T, b: T): number => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-const porCriacao = <T extends { id: Id; criada_em: string }>(a: T, b: T): number =>
+export const porId = <T extends { id: Id }>(a: T, b: T): number => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+export const porCriacao = <T extends { id: Id; criada_em: string }>(a: T, b: T): number =>
   a.criada_em < b.criada_em ? -1 : a.criada_em > b.criada_em ? 1 : porId(a, b);
 
-function montarItens(entrada: EntradaDaExportacao, indiceDoBloco: ReadonlyMap<Id, number>): Item[] {
+export function montarItens(entrada: EntradaDosItens, indiceDoBloco: ReadonlyMap<Id, number>): Item[] {
   const itens: Item[] = [];
   const naVersao = (ancora: AncoraV1) => ancora.versao_id === entrada.versao_id && indiceDoBloco.has(ancora.bloco_id);
   const novo = (id: Id, ancora: AncoraV1): Item => {
@@ -229,7 +236,7 @@ function urlDoTrecho(contexto: Contexto, blocoId: Id): string {
   return capitulo === undefined ? base : `${base}/${capitulo.id}?bloco=${blocoId}`;
 }
 
-function paginaDoBloco(bloco: Bloco | undefined): string | null {
+export function paginaDoBloco(bloco: Bloco | undefined): string | null {
   const origem = bloco?.origens.find((candidata) => candidata.tipo === 'pdf');
   if (origem?.tipo !== 'pdf') return null;
   return `p. ${origem.impressa !== undefined && origem.impressa.trim() !== '' ? umaLinha(origem.impressa) : String(origem.pagina)}`;
@@ -293,7 +300,7 @@ function renderizarConversa(conversa: ConversaV2): string {
   return `${citar([titulo, ...corpo])}\n\n${blocoDeId(conversa.id)}`;
 }
 
-function renderizarConexao(contexto: Contexto, conexao: ConexaoV2): string {
+function renderizarConexao(contexto: Contexto, conexao: ConexaoV2 | ConexaoV3): string {
   const { entrada } = contexto;
   const relacao = RELACOES[conexao.relacao];
   const destino = conexao.destino;

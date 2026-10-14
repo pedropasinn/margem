@@ -4,7 +4,10 @@ export * from './validadores';
 export * from './invariantes';
 export * from './invariantes-f2';
 export * from './modos';
+export * from './tipos-de-texto';
 export * from './leitor';
+export * from './relacoes';
+export * from './grifo';
 export { hashEstrutural, hashMarcas, projetarRawText } from './serializacao';
 export type { ProjecaoRawText } from './serializacao';
 export { faixasDosVersos, versosValidos } from './regras';
@@ -14,12 +17,14 @@ export { operacaoCoerente } from './regras-compreensao';
 export type { Contrato, Local, Imutavel, DiagnosticoContrato, ResultadoContrato } from './contrato';
 
 export type { AudioV1, AudioV2, AudioNarrado, OrigemDoAudioV2, TrechoDoAudio } from './audio';
-export type { ConceitoDoVideoV1, ConceitosDoVideoV1, MidiaV1, TrechoTemporizado } from './midia';
+export type { ConceitoDoVideoV1, ConceitosDoVideoV1, MidiaV1, ParteDoVideoV1, TipoDoMomentoV1, TrechoTemporizado } from './midia';
 export { regrasMidia, FOLGA_DO_FIM_S } from './midia';
 export type { ImportacaoWebV1 } from './importacao-web';
 export { regrasImportacaoWeb } from './importacao-web';
 export type { EstadoDaTranscricaoDoYoutube, ImportacaoYoutubeV1, VideoYoutubeV1 } from './youtube';
 export { regrasVideoYoutube } from './youtube';
+export type { EstadoDoQuadroDaPessoa, EtapaDoQuadroDaPessoa, FormatoDaImagemDoQuadro, IdentificacaoDaObraV1, QuadroDaPessoaV1 } from './quadros';
+export { regrasQuadroDaPessoa } from './quadros';
 export { conferirProveniencia } from './proveniencia';
 export type { ProvenienciaV1 } from './proveniencia';
 export type {
@@ -34,10 +39,14 @@ export type {
 export { MAXIMO_DE_PARADAS, TIPOS_DE_PARADA, regrasRoteiroGuiado, regrasNarracaoDaVisita } from './visita';
 export type { LeituraComentadaV1, TrechoLidoV1, PausaDaLeituraV1, FonteDoComentarioV1, NarracaoDaLeituraV1 } from './leitura-comentada';
 export { falasDaLeitura, regrasLeituraComentada, regrasNarracaoDaLeitura } from './leitura-comentada';
-export type { IndiceObsidianV1, DocumentoDoIndiceObsidianV1, MarcasDaExportacao } from './obsidian';
-export { regrasIndiceObsidian } from './obsidian';
-export type { ExecucoesDoCodexV1, ExecucaoDoCodexV1, EstadoDaExecucaoV1 } from './execucoes';
-export { ESTADOS_DA_EXECUCAO, regrasExecucoesDoCodex } from './execucoes';
+export type {
+  IndiceObsidianV1, DocumentoDoIndiceObsidianV1, MarcasDaExportacao, IndiceObsidianV2, NotaDoIndiceObsidianV2, TipoDeNotaDoObsidian,
+} from './obsidian';
+export { PASTAS_DO_OBSIDIAN, TIPOS_DE_NOTA_DO_OBSIDIAN, regrasIndiceObsidian, regrasIndiceObsidianV2 } from './obsidian';
+export type {
+  ExecucoesDoCodexV1, ExecucaoDoCodexV1, EstadoDaExecucaoV1, ExecucoesDoCodexV2, ExecucaoDoCodexV2, AvisoDaExecucaoV2,
+} from './execucoes';
+export { ESTADOS_DA_EXECUCAO, regrasExecucoesDoCodex, regrasExecucoesDoCodexV2 } from './execucoes';
 export type {
   FormularioDaSalaV1, PerguntaDaSalaV1, TipoDePerguntaDaSala, RespostaDaSalaV1, ValorDaRespostaDaSala,
   ComentarioDaSalaV1, SalaDeTesteV1, ProblemaDaResposta,

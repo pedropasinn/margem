@@ -65,21 +65,43 @@ export function regrasMidia(m: MidiaV1): boolean {
  * serviço confere a citação, resolve a âncora e o instante (o tempo da primeira palavra citada).
  * Gravado como derivado imutável da mídia (`0022_conceitos_do_video.sql`).
  */
+/**
+ * O que o momento traz (desde `conceitos-do-video@3`): um conceito para explicar, um dado para situar,
+ * o contexto de um fato ou uma pergunta para pensar. Momentos antigos (sem `tipo`) são conceitos.
+ */
+export type TipoDoMomentoV1 = 'conceito' | 'dado' | 'contexto' | 'pergunta';
+
 export interface ConceitoDoVideoV1 {
   id: Id;
   instante_s: number;
+  tipo?: TipoDoMomentoV1;
   titulo: string;
   /** Rótulo da pílula sobre o vídeo (1–3 palavras, ≤ 20 caracteres), desde `conceitos-do-video@2`. */
   curto?: string;
   explicacao: string;
   ancora: AncoraV1;
 }
+/**
+ * Uma parte do vídeo por assunto (desde `conceitos-do-video@3`): um vídeo de notícias com vários assuntos
+ * vira partes. Começa no primeiro parágrafo do assunto (a âncora é o começo desse parágrafo).
+ */
+export interface ParteDoVideoV1 {
+  id: Id;
+  instante_s: number;
+  titulo: string;
+  resumo: string;
+  ancora: AncoraV1;
+}
+
 export interface ConceitosDoVideoV1 {
   versao: 1;
   id: Id;
   midia_id: Id;
   versao_id: Id;
+  /** Os momentos sobre o vídeo (popups), em ordem de tempo. */
   conceitos: ConceitoDoVideoV1[];
+  /** As partes por assunto, em ordem de tempo; ausente nos derivados anteriores à @3. */
+  partes?: ParteDoVideoV1[];
   diagnosticos: { codigo: string; mensagem: string }[];
   execucao: { modelo: string; esforco: string; prompt: string };
   job_id: Id;

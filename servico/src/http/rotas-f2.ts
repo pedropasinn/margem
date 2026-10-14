@@ -9,8 +9,8 @@ import type { Hono } from 'hono';
 import type pg from 'pg';
 import { ulid } from 'ulid';
 import {
-  validarAnotacao, validarConexaoV2, validarConversaV2, validarEtiqueta,
-  MODO_F1, type AncoraV1, type ConversaV2, type Id, type MensagemDoLeitorV2, type ReferenciaModo,
+  validarAnotacao, validarConexaoV2, validarConversaV2, validarEtiqueta, notaDoGrifoDaAnotacao, TIPOS_DE_DIFICULDADE,
+  MODO_F1, type TipoDificuldadeTextual, type AncoraV1, type ConversaV2, type Id, type MensagemDoLeitorV2, type ReferenciaModo,
 } from '@margem/contratos';
 import { comTransacao, type Transacao } from '../db/transacao.js';
 import { enfileirarResposta } from '../conversa/responder.js';
@@ -20,6 +20,7 @@ import { DadoRecusado } from '../repos/anotacoes.js';
 import * as camadasRepo from '../repos/camadas.js';
 import * as conexoesRepo from '../repos/conexoes.js';
 import * as conversasRepo from '../repos/conversas.js';
+import * as dificuldadesRepo from '../repos/dificuldades.js';
 import * as etiquetasRepo from '../repos/etiquetas.js';
 import * as marcasRepo from '../repos/marcas.js';
 import { chaveDaRevisao, enfileirarRevisao } from '../notas/revisar.js';
@@ -187,9 +188,12 @@ export function registrarRotasF2(api: Hono, apoio: ApoioDasRotas): void {
 
   api.put('/api/marcas/:id/funcao', async (c) => {
     const id = exigirUlid(c.req.param('id'), 'marca');
-    const corpo = objeto(await corpoJson(c), ['funcao']);
+    const corpo = objeto(await corpoJson(c), ['funcao', 'modo']);
     if (typeof corpo.funcao !== 'string') throw new ErroDaApi(400, 'funcao_ausente', 'Envie a função.');
-    const marca = await comGrifo(() => comTransacao(banco, (cliente) => marcasRepo.trocarFuncao(cliente, id, corpo.funcao as string)));
+    // `modo` (J138, "Outros olhares"): a função de outro modo; o grifo do leitor passa para aquele modo.
+    const modo = corpo.modo === undefined ? undefined : corpo.modo as ReferenciaModo;
+    if (modo !== undefined && !modoOuNada(modo)) throw new ErroDaApi(422, 'modo_inexistente', 'O modo não existe.');
+    const marca = await comGrifo(() => comTransacao(banco, (cliente) => marcasRepo.trocarFuncao(cliente, id, corpo.funcao as string, modo)));
     if (!marca) throw new ErroDaApi(404, 'marca_inexistente');
     return c.json({ marca });
   });
@@ -202,6 +206,85 @@ export function registrarRotasF2(api: Hono, apoio: ApoioDasRotas): void {
     const marca = await comGrifo(() => comTransacao(banco, (cliente) => marcasRepo.editarComentario(cliente, id, corpo.texto === null ? null : (corpo.texto as string).trim())));
     if (!marca) throw new ErroDaApi(404, 'marca_inexistente');
     return c.json({ marca });
+  });
+
+  // ------------------------------------------------------------------ a nota do grifo (J138, modelo D)
+
+  /** A nota do leitor sobre o grifo: cria ou troca o texto (salva sozinha, com debounce, na tela). */
+  api.put('/api/marcas/:id/nota-do-leitor', async (c) => {
+    const id = exigirUlid(c.req.param('id'), 'grifo');
+    const corpo = objeto(await corpoJson(c), ['texto', 'revisao']);
+    if (typeof corpo.texto !== 'string' || corpo.texto.trim() === '' || corpo.texto.length > 8000) {
+      throw new ErroDaApi(400, 'texto_invalido', 'Escreva a nota (até 8000 caracteres); para tirá-la, apague-a.');
+    }
+    const revisao = corpo.revisao === undefined ? undefined : exigirRevisao(corpo.revisao);
+    const anotacao = await comDados(() => comTransacao(banco, async (cliente) => {
+      try {
+        return await anotacoesRepo.gravarNotaDoGrifo(cliente, { marca_id: id, texto: (corpo.texto as string).trim(), id: ulid(), agora: agora(), ...(revisao === undefined ? {} : { revisao }) });
+      } catch (erro) {
+        if (erro instanceof anotacoesRepo.GrifoInexistente) throw new ErroDaApi(404, 'marca_inexistente');
+        throw erro;
+      }
+    }));
+    return c.json({ nota: notaDoGrifoDaAnotacao(anotacao) });
+  });
+
+  /** Tira a nota do grifo; o grifo fica. */
+  api.delete('/api/marcas/:id/nota-do-leitor', async (c) => {
+    const id = exigirUlid(c.req.param('id'), 'grifo');
+    const corpo = objeto(await corpoJson(c), ['revisao']);
+    const revisao = exigirRevisao(corpo.revisao);
+    const apagada = await comTransacao(banco, (cliente) => anotacoesRepo.apagarNotaDoGrifo(cliente, id, revisao));
+    if (!apagada) throw new ErroDaApi(404, 'nota_inexistente');
+    return c.json({ marca_id: id, apagada: true });
+  });
+
+  // ------------------------------------------------------------------ o sinal de dificuldade (J138)
+
+  const tipoDaDificuldade = (valor: unknown): TipoDificuldadeTextual | null | undefined => {
+    if (valor === undefined || valor === null) return valor;
+    if (typeof valor !== 'string' || !TIPOS_DE_DIFICULDADE.includes(valor as TipoDificuldadeTextual)) throw new ErroDaApi(400, 'tipo_invalido', 'Use uma das sete categorias de dificuldade.');
+    return valor as TipoDificuldadeTextual;
+  };
+  const estadoDaDificuldade = (valor: unknown) => {
+    if (valor !== 'sugerida' && valor !== 'confirmada' && valor !== 'descartada') throw new ErroDaApi(400, 'estado_invalido', 'Use sugerida, confirmada ou descartada.');
+    return valor;
+  };
+
+  /** O leitor marca uma dificuldade num trecho (pelo "⋯" do balão do grifo, ou sem grifo). */
+  api.post('/api/dificuldades', async (c) => {
+    const corpo = objeto(await corpoJson(c), ['ancora', 'tipo', 'marca_id']);
+    const tipo = tipoDaDificuldade(corpo.tipo);
+    if (corpo.marca_id !== undefined) exigirUlid(typeof corpo.marca_id === 'string' ? corpo.marca_id : '', 'grifo');
+    if (typeof corpo.ancora !== 'object' || corpo.ancora === null) throw new ErroDaApi(422, 'ancora_invalida', 'A âncora não é válida.');
+    const dificuldade = await comDados(() => comTransacao(banco, (cliente) => dificuldadesRepo.marcarDoLeitor(cliente, {
+      id: ulid(), ancora: corpo.ancora as AncoraV1, agora: agora(), ...(tipo ? { tipo } : {}), ...(corpo.marca_id === undefined ? {} : { marca_id: corpo.marca_id as Id }),
+    })));
+    return c.json({ dificuldade }, 201);
+  });
+
+  /** O leitor confirma ou descarta (ou volta a deixar sugerida) uma dificuldade que o Codex sugeriu. */
+  api.post('/api/dificuldades/codex', async (c) => {
+    const corpo = objeto(await corpoJson(c), ['modelo_id', 'dificuldade_id', 'estado']);
+    const modeloId = exigirUlid(String(corpo.modelo_id), 'modelo');
+    const dificuldadeId = exigirUlid(String(corpo.dificuldade_id), 'dificuldade');
+    const estado = estadoDaDificuldade(corpo.estado);
+    const dificuldade = await comDados(() => comTransacao(banco, (cliente) => dificuldadesRepo.decidirDoCodex(cliente, {
+      id: ulid(), modelo_id: modeloId, dificuldade_id: dificuldadeId, estado, agora: agora(),
+    })));
+    return c.json({ dificuldade });
+  });
+
+  /** Estado e categoria (detalhe opcional). Nada se apaga: descartar é um estado. */
+  api.patch('/api/dificuldades/:id', async (c) => {
+    const id = exigirUlid(c.req.param('id'), 'dificuldade');
+    const corpo = objeto(await corpoJson(c), ['estado', 'tipo']);
+    if (corpo.estado === undefined && corpo.tipo === undefined) throw new ErroDaApi(400, 'sem_mudanca', 'Envie o estado ou a categoria.');
+    const tipo = tipoDaDificuldade(corpo.tipo);
+    const dificuldade = await comDados(() => comTransacao(banco, (cliente) => dificuldadesRepo.mudar(cliente, id, {
+      agora: agora(), ...(corpo.estado === undefined ? {} : { estado: estadoDaDificuldade(corpo.estado) }), ...(tipo === undefined ? {} : { tipo }),
+    })));
+    return c.json({ dificuldade });
   });
 
   // ------------------------------------------------------------------ etiquetas

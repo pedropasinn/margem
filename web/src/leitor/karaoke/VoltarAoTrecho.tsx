@@ -11,7 +11,8 @@ import { Karaoke } from './karaoke';
 export function useKaraoke(opcoes: { filete?: boolean } = {}): { karaoke: RefObject<Karaoke | null>; fora: boolean } {
   const karaoke = useRef<Karaoke | null>(null);
   const [fora, definirFora] = useState(false);
-  const filete = opcoes.filete !== false;
+  // J142: sem filete por padrão (nenhuma faixa lateral colorida no Margem).
+  const filete = opcoes.filete === true;
   useLayoutEffect(() => {
     const instancia = new Karaoke({ filete });
     karaoke.current = instancia;

@@ -90,9 +90,10 @@ try {
     await pagina.screenshot({ path: join(pasta, `j24-${width}-${colorScheme}.png`) });
     await pagina.evaluate(() => { const span = [...document.querySelectorAll('[data-pagina="1"] .textLayer span')].find((s) => s.textContent?.includes('O primeiro paragrafo'))!; const r = document.createRange(); r.selectNodeContents(span); const s = window.getSelection()!; s.removeAllRanges(); s.addRange(r); document.dispatchEvent(new Event('selectionchange')); });
     await pagina.getByRole('toolbar', { name: 'Ações da seleção' }).waitFor();
-    await pagina.getByRole('button', { name: 'Anotar a' }).click();
-    await pagina.getByRole('dialog', { name: 'Sua anotação' }).waitFor();
-    assert.ok((await pagina.getByRole('dialog', { name: 'Sua anotação' }).textContent())?.includes('O primeiro paragrafo'));
+    // J132: sem Anotar na seleção; a citação aparece uma vez, no topo do painel do trecho.
+    await pagina.getByRole('button', { name: 'Perguntar' }).click();
+    await pagina.getByRole('complementary', { name: 'Perguntar' }).waitFor();
+    assert.ok((await pagina.getByRole('complementary', { name: 'Perguntar' }).textContent())?.includes('O primeiro paragrafo'));
     await pagina.keyboard.press('Escape');
     if (width === 1680) {
       // Seleção entre páginas não pode incluir a caixa inteira do canvas.
@@ -104,8 +105,8 @@ try {
         const s = window.getSelection()!; s.removeAllRanges(); s.addRange(r); document.dispatchEvent(new Event('selectionchange'));
       });
       await pagina.getByRole('toolbar', { name: 'Ações da seleção' }).waitFor();
-      await pagina.getByRole('button', { name: 'Anotar a' }).click();
-      const citacao = await pagina.getByRole('dialog', { name: 'Sua anotação' }).locator('blockquote').first().textContent();
+      await pagina.getByRole('button', { name: 'Perguntar' }).click();
+      const citacao = await pagina.getByRole('complementary', { name: 'Perguntar' }).locator('blockquote').first().textContent();
       assert.ok(citacao?.startsWith('Um paragrafo continua'), citacao ?? 'sem citação');
       assert.ok(citacao?.includes('upfront sem perder'), citacao ?? 'sem continuação');
       await pagina.keyboard.press('Escape');

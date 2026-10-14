@@ -182,7 +182,6 @@ figure.bloco {
 .filtros { position: sticky; top: var(--altura-casca-leitor, 0px); z-index: 60; display: flex; align-items: center; gap: 10px; padding-block: 8px; padding-inline: 24px; background: var(--surface-1); font: 13px var(--sans); }
 .filtros > .ui-button, .filtros > .voltar { flex-shrink: 0; font-size: 13px; }
 .filtros > .ui-button:not(.ui-icon) { padding-inline: 8px; }
-.atencao-na-barra { flex-shrink: 0; margin-left: auto; }  /* abre o grupo da direita */
 .capitulo-na-barra { color: var(--texto-3); white-space: nowrap; font-size: 13px; }
 .barra-camada { margin-left: auto; flex-shrink: 0; }
 .barra-camada .controle-camada > span:first-child { display: none; }
@@ -193,14 +192,6 @@ figure.bloco {
 .controle-camada { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; }
 .controle-camada .ui-select { min-width: 0; }
 .controle-camada .ui-button { background: var(--bg-2); }
-.controle-atencao { position: relative; display: flex; gap: 6px; align-items: center; font-size: 13px; }
-.valor-atencao { display: none; position: absolute; top: 100%; right: 0; padding: 6px 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--surface-2); white-space: nowrap; }
-.controle-atencao:hover .valor-atencao, .controle-atencao:focus-within .valor-atencao { display: block; }
-.pontos-atencao { background: transparent; gap: 0; padding: 0; }
-.pontos-atencao > .ui-button { padding: 0; width: 24px; min-height: 40px; font-size: 15px; }
-.ponto-atencao { display: block; width: 7px; height: 7px; border: 1px solid currentColor; border-radius: 50%; }
-.ponto-atencao[data-preenchido=true] { background: currentColor; }
-.pontos-atencao [aria-checked=true] { background: transparent; }
 .controles-moveis { display: grid; gap: 12px; }
 .tipos-marcas { display: grid; grid-template-columns: 1fr 1fr; }
 .legenda-funcoes { display: flex; flex-wrap: wrap; gap: 8px 12px; font: 12px/1.5 var(--sans); color: var(--texto-2); }
@@ -248,8 +239,6 @@ figure.bloco {
   color: color-mix(in srgb, var(--justificativa) var(--mistura-do-numero, 50%), var(--texto-1, #000));
 }
 
-/* Marca periférica (saliência 3, só sublinhada no texto): o círculo fica tracejado, como o das dificuldades. */
-.nota-numero.periferica { border-style: dashed; }
 .nota-rotulo {
   color: var(--texto);
   font-weight: 600;
@@ -458,7 +447,6 @@ figure.bloco {
 .numeros-na-lateral .numero-lateral::after { content: ''; position: absolute; inset: -7px; }
 .numeros-na-lateral .mais-numeros { border: 0; background: var(--chip-lateral, var(--superficie-2, #ececea)); color: var(--chip-lateral-texto, var(--texto-2)); font-weight: 600; letter-spacing: -.02em; }
 @media (prefers-reduced-motion: reduce) { .numeros-na-lateral .numero-lateral { transition: none; } }
-.numeros-na-lateral .numero-lateral.periferica { border-style: dashed; }
 .numeros-na-lateral .nota-numero-dificuldade { color: var(--aviso-lateral, var(--aviso-texto, #b26b00)); border-color: currentColor; }
 /* Com a folha aberta, a lateral dela fica por cima da outra (e das bolinhas das chaves). */
 .numeros-na-lateral:has(.folha), .braquetes.compactas:has(.folha) { z-index: 61; }
@@ -471,28 +459,77 @@ body:has(.numeros-na-lateral .folha, .folha[aria-label='Nota do trecho']) .braqu
 .numeros-na-lateral.sobre-pagina, .braquetes.compactas.sobre-pagina { --tinta-dos-numeros: #000; --mistura-do-numero: 50%; --fundo-lateral: #fff; --chip-lateral: #ececea; --chip-lateral-texto: #555; --aviso-lateral: #b26b00; }
 
 /* Balão sobre o grifo: uma pílula escura com quatro botões redondos; etiquetas e "mais" num cartão logo abaixo. */
-.balao-da-marca { position: fixed; z-index: 70; display: flex; flex-direction: column-reverse; align-items: flex-start; gap: 6px; font: 14px/1.5 var(--sans); pointer-events: auto; }
-.balao-botoes { display: flex; gap: 2px; padding: 3px; border-radius: var(--r-pilula); background: var(--texto-1); color: var(--bg); box-shadow: 0 6px 20px #0003; }
-.balao-botoes .balao-botao { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; min-height: 34px; box-shadow: none; transform: none; }
-.balao-botoes .balao-botao:hover, .balao-botoes .balao-botao:focus-visible, .balao-botoes .balao-botao[aria-expanded="true"] { background: color-mix(in srgb, var(--bg) 14%, transparent); outline: none; }
-.balao-botoes .balao-botao:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
-.balao-menu, .balao-etiquetas { min-width: 240px; max-width: min(320px, calc(100vw - 16px)); margin: 0; padding: 6px; list-style: none; border-radius: 12px; background: var(--painel); color: var(--texto-1); box-shadow: 0 10px 28px #0004; font-size: 14px; }
-.balao-da-marca.abaixo { flex-direction: column; }
-.balao-menu button { display: flex; justify-content: space-between; gap: 16px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.balao-menu button:hover, .balao-menu button:focus-visible { background: var(--bg-hover); outline: none; }
-.balao-menu kbd { font: 500 12px var(--sans); color: var(--texto-3); }
-.balao-etiquetas { min-width: 280px; padding: 10px; }
-.balao-rotulo { margin: 0 0 6px; color: var(--texto-3); font: 500 12px var(--sans); letter-spacing: .02em; }
-.balao-rotulo + .chips-de-funcao, .balao-rotulo + .chips-de-dificuldade { margin-bottom: 10px; }
+.balao-da-marca { box-sizing: border-box; }
+/* O balão do grifo (J138, modelo D): um cartão só, perto do trecho. De cima para baixo: as funções (chips
+   do modo do grifo, "sem função", "Outros olhares"), a nota do leitor, o comentário do Codex, a dificuldade
+   e o rodapé (conexões, Perguntar, ⋯). Divisões só por espaço e fio superior, nunca faixa lateral. */
+.balao-da-marca { position: fixed; z-index: 70; display: flex; flex-direction: column; gap: 10px; width: min(360px, calc(100vw - 16px)); max-height: calc(100vh - 80px); overflow-y: auto; scrollbar-width: thin;
+  padding: 12px; border: 1px solid var(--borda); border-radius: 14px; background: var(--painel); color: var(--texto-1); box-shadow: 0 12px 32px #0003; font: 14px/1.45 var(--sans); pointer-events: auto; }
+.balao-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.balao-funcoes { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .chips-de-funcao, .chips-de-dificuldade { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.balao-etiquetas .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--borda-3d); border-radius: 999px; background: none; color: var(--texto-2); font: 13px var(--sans); cursor: pointer; }
-.balao-etiquetas .chip:hover:not(:disabled), .balao-etiquetas .chip:focus-visible { border-color: var(--texto-2); outline: none; }
-.balao-etiquetas .chip[aria-checked="true"], .balao-etiquetas .chip[aria-pressed="true"] { border-color: transparent; background: var(--accent-suave); color: var(--accent-texto); }
-.balao-etiquetas .chip:disabled { opacity: .5; cursor: default; }
-.chip-cor { width: 10px; height: 10px; border-radius: 50%; }
-.balao-nota-de-edicao { margin: -4px 0 10px; color: var(--texto-3); font: 12px var(--sans); }
+.balao-funcoes .ui-chip[aria-checked="true"] { background: color-mix(in srgb, var(--cor-chip) 22%, transparent); border-color: color-mix(in srgb, var(--cor-chip) 70%, transparent); color: var(--texto-1); }
+.balao-funcoes .chip-sem-funcao { border-style: dashed; color: var(--texto-3); }
+.balao-funcoes .chip-recente { font-style: italic; }
+.balao-olhares.ui-button { min-height: 28px; padding: 2px 6px; color: var(--texto-2); font: 500 12.5px var(--sans); }
+.balao-olhares svg { transition: transform .12s; }
+.balao-olhares[aria-expanded="true"] svg { transform: rotate(180deg); }
+.balao-olhares-lista { display: flex; flex-direction: column; gap: 6px; }
+.balao-olhares-lista .ui-input { min-height: 32px; font-size: 13px; }
+.balao-olhares-grupos { max-height: 240px; overflow-y: auto; scrollbar-width: thin; margin: 0 -4px; padding: 0 4px; }
+.balao-grupo { margin: 8px 0 2px; color: var(--texto-3); font: 600 11.5px var(--sans); letter-spacing: .02em; text-transform: uppercase; }
+.balao-grupo:first-child { margin-top: 2px; }
+.balao-olhar { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 30px; padding: 4px 6px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: 13.5px var(--sans); text-align: left; cursor: pointer; }
+.balao-olhar:hover, .balao-olhar:focus-visible { background: var(--bg-hover); outline: none; }
+.balao-olhar[aria-selected="true"] { background: var(--accent-suave); }
+.balao-olhar-modo { margin-left: auto; color: var(--texto-3); font-size: 12px; }
+.balao-vazio { margin: 6px 0; color: var(--texto-3); font-size: 13px; }
+.chip-cor { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; }
+.campo-da-nota { display: flex; flex-direction: column; gap: 4px; padding-top: 10px; border-top: 1px solid var(--borda); }
+.campo-da-nota-cabeca { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.campo-da-nota label { color: var(--texto-2); font: 600 12.5px var(--sans); }
+.campo-da-nota-estado { color: var(--texto-3); font: 12px var(--sans); }
+.campo-da-nota .ui-textarea { min-height: 56px; resize: vertical; field-sizing: content; max-height: 40vh; font: 14.5px/1.5 var(--sans); }
+.balao-assistente { padding-top: 10px; border-top: 1px solid var(--borda); }
+.balao-voz { margin: 0 0 4px; color: var(--texto-3); font: 600 12px var(--sans); letter-spacing: .01em; }
+.balao-assistente-texto { margin: 0; color: var(--texto-2); font: 14px/1.5 var(--serif); white-space: pre-wrap; }
+.balao-dificuldade { display: flex; flex-direction: column; gap: 4px; padding-top: 10px; border-top: 1px solid var(--borda); }
+.balao-dificuldade-cabeca { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; font-size: 13.5px; }
+.balao-dificuldade-origem { color: var(--texto-3); font-size: 12px; }
+.balao-dificuldade-texto { margin: 0; color: var(--texto-2); font-size: 13.5px; }
+.balao-dificuldade-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.balao-dificuldade-acoes .ui-select { min-height: 30px; font-size: 13px; }
+.balao-dificuldade.descartada { flex-direction: row; align-items: center; justify-content: space-between; color: var(--texto-3); }
+/* O sinal de dificuldade: um "!" no tamanho das bolinhas da margem, na cor de aviso (nunca a cor de uma função). */
+.sinal-de-dificuldade { display: inline-grid; place-items: center; width: 18px; height: 18px; flex-shrink: 0; border: 1.5px solid var(--aviso-texto); border-radius: 50%; color: var(--aviso-texto); font: 800 11px/1 var(--sans); }
+.balao-confirmacao { padding-top: 10px; border-top: 1px solid var(--borda); }
+.balao-confirmacao p { margin: 0 0 8px; }
+.balao-rodape { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 8px; border-top: 1px solid var(--borda); }
+.balao-acoes { display: inline-flex; align-items: center; gap: 2px; }
+.balao-rodape .menu-da-barra { top: auto; bottom: calc(100% + 6px); }
+.balao-da-marca.abaixo .balao-rodape .menu-da-barra { bottom: calc(100% + 6px); }
+.balao-conexoes.ui-button { color: var(--texto-2); }
+.balao-nota-de-edicao { margin: 0; color: var(--texto-3); font: 12px var(--sans); }
 .balao-nota-de-edicao button { border: 0; background: none; color: var(--texto-2); font: 600 12px var(--sans); text-decoration: underline; cursor: pointer; padding: 0; }
-.balao-erro { margin: 8px 0 0; color: var(--aviso-texto); font-size: 13px; }
+.balao-erro { margin: 0; color: var(--aviso-texto); font-size: 13px; }
+/* A nota do leitor na margem (J138): uma linha ✎ ligada ao grifo, dentro da nota dele ou sozinha. */
+.nota-do-leitor-resumo { display: flex; gap: 6px; margin: 4px 0 0; color: var(--texto-2); font: 13px/1.4 var(--sans); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.nota-do-grifo-linha { display: flex; align-items: baseline; gap: 6px; width: 100%; padding: 2px 0; border: 0; background: none; color: var(--texto-2); font: 13px/1.4 var(--sans); text-align: left; cursor: pointer; }
+.nota-do-grifo-linha:hover, .nota-do-grifo-linha:focus-visible { color: var(--texto-1); }
+.nota-do-grifo-sinal { flex-shrink: 0; color: var(--texto-3); }
+.nota-do-grifo-texto { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.margem.recolhida .nota-do-grifo-texto { display: none; }
+/* O "!" da dificuldade na margem e o cartão que ele abre. */
+.sinal-na-margem { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.sinal-de-dificuldade-botao.nota-numero { border: 1.5px solid var(--aviso-texto); background: var(--bg); color: var(--aviso-texto); font: 800 12px/1 var(--sans); cursor: pointer; padding: 0; }
+.sinal-de-dificuldade-botao.nota-numero[data-estado="sugerida"] { border-style: dashed; }
+.sinal-na-margem.aberto .balao-dificuldade { width: 100%; padding: 10px; border: 1px solid var(--borda); border-radius: 10px; background: var(--painel); }
+.numeros-na-lateral .numero-dificuldade { color: var(--aviso-lateral, var(--aviso-texto, #b26b00)); border-color: currentColor; }
+@media (max-width: 799.98px) {
+  /* No celular, o balão é uma folha baixa, por cima da barra de seleção. */
+  .balao-da-marca { left: 8px !important; right: 8px; top: auto !important; bottom: calc(8px + env(safe-area-inset-bottom)); width: auto; max-height: 70dvh; }
+  .balao-funcoes .ui-chip { min-height: 36px; }
+}
 .aviso-desfazer { position: fixed; z-index: 72; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 12px 10px 18px; border-radius: 999px; background: #262a33; color: #e8eaf0; font: 14px var(--sans); box-shadow: 0 8px 24px #0004; }
 .aviso-desfazer button { border: 0; background: none; color: #fff; font: 600 14px var(--sans); cursor: pointer; }
 .aviso-desfazer kbd { font: 500 12px var(--sans); color: #9aa0ad; margin-left: 4px; }
@@ -503,9 +540,18 @@ body:has(.numeros-na-lateral .folha, .folha[aria-label='Nota do trecho']) .braqu
 
 /* O percorrer (Player v2) é o player central inferior: o texto não se desloca nem perde os números. */
 
-.etiqueta-livre-entrada { display: flex; gap: 6px; }
-.etiqueta-livre-entrada input { min-width: 0; width: 100%; border: 1px solid var(--borda-3d); border-radius: 6px; padding: 6px; background: var(--painel); color: var(--texto-1); font: 13px var(--sans); }
-.etiqueta-livre + .chips-de-dificuldade { margin-top: 8px; }
 
 .sintese-capitulo p { white-space: pre-wrap; }
 .sintese-capitulo li + li { margin-top: .5em; }
+
+
+/* Margem recolhida (J132): fileiras de bolinhas por linha, como no celular; notas, conversas e conexões
+   do leitor viram bolinhas com um sinal (N, C, ↗) e a falha de um visual, um triângulo vermelho. */
+.margem.recolhida .nota:not(.ativa) { width: max-content; max-width: 100%; }
+.margem.recolhida .nota-pessoal.com-sinal { width: max-content; }
+.sinal-pessoal.nota-numero { border: 1.5px solid var(--borda-hover); background: var(--bg); color: var(--texto-2); font: 700 11px/1 var(--sans); cursor: pointer; padding: 0; }
+.sinal-pessoal.nota-numero:hover { border-color: var(--texto-2); color: var(--texto-1); }
+.sinal-pessoal.sinal-de-falha { position: relative; border: 0; background: none; }
+.sinal-pessoal.sinal-de-falha::before { content: '!'; display: grid; place-items: end center; width: 24px; height: 22px; padding-bottom: 2px; box-sizing: border-box; background: var(--error-texto); color: var(--bg); clip-path: polygon(50% 0, 100% 100%, 0 100%); font: 800 12px/1 var(--sans); }
+.numeros-na-lateral .numero-falha { border: 0; border-radius: 0; box-shadow: none; background: var(--error-texto); color: var(--bg); clip-path: polygon(50% 0, 100% 100%, 0 100%); padding-top: 3px; }
+.margem.recolhida .nota:not(.ativa) .conexao-da-nota { display: none; }

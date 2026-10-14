@@ -10,8 +10,8 @@ export type Rota =
   | { nome: 'noticias'; edicao_id?: string }
   | { nome: 'inicio' }
   | { nome: 'biblioteca'; tipo?: TipoDaBiblioteca; aba?: 'todos' | 'lendo' | 'novos' | 'arquivados'; buscar?: boolean }
-  | { nome: 'adicionar'; entrada?: 'colado' }
-  | { nome: 'primeiros-passos' }
+  /** Adicionar por aba (V-D2); sem aba, a última usada. `modo: 'colar'` abre o Documento no campo de colar. */
+  | { nome: 'adicionar'; aba?: AbaDeAdicionar; modo?: 'colar' }
   | { nome: 'ajuda'; pagina: PaginaDeAjuda }
   | { nome: 'documento'; documento_id: string }
   | { nome: 'notas'; documento_id?: string }
@@ -26,14 +26,21 @@ export type Rota =
   | { nome: 'quadro'; slug: string }
   /** Página "Perguntar": o agente com acesso à biblioteca inteira; `conversa_id` abre um fio. */
   | { nome: 'perguntar'; conversa_id?: string }
-  /** Configurações da instalação; hoje, o áudio com a chave da ElevenLabs (J106). */
-  | { nome: 'configuracoes' };
+  /** Configurações: a preparação e o áudio (J106) e, como seção própria, os Primeiros passos (V-T1). */
+  | { nome: 'configuracoes'; secao?: SecaoDasConfiguracoes };
+
+export type SecaoDasConfiguracoes = 'primeiros-passos';
+
+export type AbaDeAdicionar = 'documento' | 'video' | 'quadro';
+export const ABAS_DE_ADICIONAR: readonly AbaDeAdicionar[] = ['documento', 'video', 'quadro'];
+const ehAbaDeAdicionar = (valor: string | undefined): valor is AbaDeAdicionar => (ABAS_DE_ADICIONAR as readonly (string | undefined)[]).includes(valor);
 
 export type PaginaDeAjuda = 'instalar' | 'extensao' | 'obsidian';
 const PAGINAS_DE_AJUDA: readonly PaginaDeAjuda[] = ['instalar', 'extensao', 'obsidian'];
 
-export type TipoDaBiblioteca = 'livros' | 'textos' | 'pdfs' | 'videos' | 'quadros';
-export const TIPOS_DA_BIBLIOTECA: readonly TipoDaBiblioteca[] = ['livros', 'textos', 'pdfs', 'videos', 'quadros'];
+/** Categorias pelo tipo de arquivo (V-D1); o antigo `?tipo=livros` cai em "Todos". */
+export type TipoDaBiblioteca = 'pdfs' | 'epubs' | 'textos' | 'markdowns' | 'videos' | 'quadros';
+export const TIPOS_DA_BIBLIOTECA: readonly TipoDaBiblioteca[] = ['pdfs', 'epubs', 'textos', 'markdowns', 'videos', 'quadros'];
 export const ehTipoDaBiblioteca = (valor: string | null): valor is TipoDaBiblioteca => (TIPOS_DA_BIBLIOTECA as readonly (string | null)[]).includes(valor);
 
 export function rotaDoCaminho(caminho: string): Rota {
@@ -62,8 +69,14 @@ export function rotaDoCaminho(caminho: string): Rota {
   if (partes[0] === 'perguntar') return partes[1] !== undefined && /^[0-9A-HJKMNP-TV-Z]{26}$/u.test(partes[1]) ? { nome: 'perguntar', conversa_id: partes[1] } : { nome: 'perguntar' };
   if (partes[0] === 'documentos' && partes[1] !== undefined && partes[2] === 'notas') return { nome: 'notas', documento_id: partes[1] };
   if (partes[0] === 'documentos' && partes[1] !== undefined && partes[2] === 'exercicios') return { nome: 'exercicios', documento_id: partes[1] };
-  if (partes[0] === 'adicionar') return parametros.get('entrada') === 'colado' ? { nome: 'adicionar', entrada: 'colado' } : { nome: 'adicionar' };
-  if (partes[0] === 'primeiros-passos') return { nome: 'primeiros-passos' };
+  if (partes[0] === 'adicionar') {
+    // `?entrada=colado` é o endereço antigo do texto colado: vira a aba Documento no campo de colar.
+    if (parametros.get('entrada') === 'colado') return { nome: 'adicionar', aba: 'documento', modo: 'colar' };
+    if (!ehAbaDeAdicionar(partes[1])) return { nome: 'adicionar' };
+    return partes[1] === 'documento' && parametros.get('modo') === 'colar' ? { nome: 'adicionar', aba: 'documento', modo: 'colar' } : { nome: 'adicionar', aba: partes[1] };
+  }
+  // Os Primeiros passos moram nas Configurações; o endereço antigo (`/primeiros-passos`) leva até lá.
+  if (partes[0] === 'primeiros-passos' || (partes[0] === 'configuracoes' && partes[1] === 'primeiros-passos')) return { nome: 'configuracoes', secao: 'primeiros-passos' };
   if (partes[0] === 'configuracoes') return { nome: 'configuracoes' };
   if (partes[0] === 'ajuda' && PAGINAS_DE_AJUDA.includes(partes[1] as PaginaDeAjuda)) return { nome: 'ajuda', pagina: partes[1] as PaginaDeAjuda };
   // Quadros (acervo de arte): `/quadros/<slug>` abre o quadro; `/quadros` e o antigo `/arte` são a lista.
@@ -90,9 +103,8 @@ export function caminhoDaRota(rota: Rota): string {
       if (rota.aba) parametros.set('aba', rota.aba);
       return `/biblioteca${parametros.size ? `?${parametros}` : ''}`;
     }
-    case 'adicionar': return rota.entrada === 'colado' ? '/adicionar?entrada=colado' : '/adicionar';
-    case 'primeiros-passos': return '/primeiros-passos';
-    case 'configuracoes': return '/configuracoes';
+    case 'adicionar': return rota.aba === undefined ? '/adicionar' : `/adicionar/${rota.aba}${rota.modo === 'colar' ? '?modo=colar' : ''}`;
+    case 'configuracoes': return rota.secao === undefined ? '/configuracoes' : `/configuracoes/${rota.secao}`;
     case 'ajuda': return `/ajuda/${rota.pagina}`;
     case 'quadro': return `/quadros/${rota.slug}`;
     case 'perguntar': return rota.conversa_id === undefined ? '/perguntar' : `/perguntar/${rota.conversa_id}`;
@@ -110,6 +122,17 @@ export function caminhoDaRota(rota: Rota): string {
   }
 }
 
+/**
+ * O caminho canônico de um endereço antigo (`/biblioteca?tipo=livros`, `/arte`, `/adicionar?entrada=colado`, `/primeiros-passos`), para
+ * trocar a barra de endereço sem criar entrada no histórico; `null` quando o endereço já é o canônico.
+ */
+export function caminhoCanonico(caminho: string): string | null {
+  const rota = rotaDoCaminho(caminho);
+  if (rota.nome !== 'biblioteca' && rota.nome !== 'adicionar' && rota.nome !== 'configuracoes') return null;
+  const canonico = caminhoDaRota(rota);
+  return canonico === caminho ? null : canonico;
+}
+
 export interface Navegacao {
   rota: Rota;
   ir: (destino: Rota, substituir?: boolean) => void;
@@ -117,6 +140,10 @@ export interface Navegacao {
 
 export function usarRota(): Navegacao {
   const [rota, definir] = useState<Rota>(() => rotaDoCaminho(window.location.pathname + window.location.search));
+  useEffect(() => {
+    const canonico = caminhoCanonico(window.location.pathname + window.location.search);
+    if (canonico !== null) window.history.replaceState(null, '', canonico);
+  }, [rota]);
   useEffect(() => {
     const aoVoltar = () => { definir(rotaDoCaminho(window.location.pathname + window.location.search)); };
     window.addEventListener('popstate', aoVoltar);

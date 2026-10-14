@@ -7,8 +7,9 @@
  * publicação acrescenta o que sobrou depois do resolvedor (`registrarNaAuditoria`). Nada
  * disso muda a assinatura dos manipuladores.
  *
- * O que nunca entra: stderr da CLI (pode conter credencial) e o ambiente. O prompt só tem
- * instruções e texto do documento.
+ * O que nunca entra: o stderr cru da CLI (pode conter credencial) e o ambiente. Desde a V-W2
+ * entra o resumo redigido (`stderr.txt`, ver `stderr.ts`) das execuções que falharam, com o
+ * código de saída e a classe em `resultado.json`. O prompt só tem instruções e texto do documento.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { execFileSync } from 'node:child_process';
@@ -17,7 +18,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { sha256 } from './artefato.js';
 import { ARQUIVO_PROMPT, PONTEIRO_DO_PROMPT } from './entrada.js';
-import type { Executor, PedidoExecucao, ResultadoExecutor } from './tipos.js';
+import type { DetalheDaSaida, Executor, PedidoExecucao, ResultadoExecutor } from './tipos.js';
 
 export interface ContextoDeAuditoria {
   job_id: string;
@@ -143,6 +144,9 @@ export function executorAuditado(executor: Executor, opcoes: OpcoesDaAuditoria =
       await gravar(diretorio, 'metadados.json', json({
         job_id: contexto.job_id, tipo: contexto.tipo, attempt: contexto.attempt,
         modelo_pedido: pedido.modelo ?? null, esforco_pedido: pedido.esforco ?? null, prazo_ms: pedido.prazoMs,
+        ...(pedido.buscaNaWeb === true ? { busca_na_web: true } : {}), ...(pedido.imagens?.length ? { imagens: pedido.imagens } : {}),
+        // V-T10: categoria e escolha da pessoa, quando ela trocou o padrão (o efetivo vai em resultado.json).
+        preferencia: pedido.preferencia ?? null,
         sha256_prompt: sha256(prompt), tamanho_prompt: prompt.length, prompt_em_arquivo: pedido.prompt !== prompt,
         entrada, commit: commit(), inicio: inicio.toISOString(),
       }));
@@ -152,6 +156,9 @@ export function executorAuditado(executor: Executor, opcoes: OpcoesDaAuditoria =
     const resultado: ResultadoExecutor = await executor(pedido);
     try {
       await gravar(diretorio, 'resultado.json', json(resumoDoResultado(resultado)));
+      if (resultado.estado !== 'ok' && resultado.detalhe !== undefined && resultado.detalhe.stderr_resumo !== '') {
+        await gravar(diretorio, 'stderr.txt', `${resultado.detalhe.stderr_resumo}\n`);
+      }
       if (resultado.estado === 'ok') await copyFile(resultado.artefato, join(diretorio, 'resposta.bruta.json'));
     } catch {
       // Idem.
@@ -168,8 +175,13 @@ function resumoDoResultado(resultado: ResultadoExecutor): Record<string, unknown
         duracao_ms: resultado.duracao_ms, sha256_resposta: resultado.sha256,
       };
     case 'adiado':
-      return { estado: 'adiado', codigo: resultado.codigo, not_before: resultado.not_before.toISOString(), duracao_ms: resultado.duracao_ms };
+      return { estado: 'adiado', codigo: resultado.codigo, not_before: resultado.not_before.toISOString(), duracao_ms: resultado.duracao_ms, ...saida(resultado.detalhe) };
     default:
-      return { estado: 'falhou', codigo: resultado.codigo, mensagem: resultado.mensagem, duracao_ms: resultado.duracao_ms };
+      return { estado: 'falhou', codigo: resultado.codigo, mensagem: resultado.mensagem, duracao_ms: resultado.duracao_ms, ...saida(resultado.detalhe) };
   }
+}
+
+/** Código de saída, classe e causa da CLI, quando o executor os conhece. */
+function saida(detalhe: DetalheDaSaida | undefined): Record<string, unknown> {
+  return detalhe === undefined ? {} : { codigo_saida: detalhe.codigo_saida, classe: detalhe.classe, causa: detalhe.causa };
 }

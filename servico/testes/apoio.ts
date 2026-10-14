@@ -6,6 +6,7 @@ import { comBancoDeTeste } from '../src/db/conexao.js';
 import { migrar } from '../src/db/migrar.js';
 import type { TextosDoPacote, VersoesDoPacote } from '../src/leitura/pacote.js';
 import type { TextosDaRevisao } from '../src/leitura/manipuladores.js';
+import { verificarMotor } from '../src/primeira-execucao/estado.js';
 
 /** ULID determinístico e legível: `0…B0001`. Só dígitos e a letra do prefixo. */
 export function idTeste(prefixo: string, numero: number): Id {
@@ -62,6 +63,17 @@ export function canonicoDeTeste(entrada: CanonicoDeTeste): CanonicoV1 {
   };
   if (!validarCanonico(canonico)) throw new Error('Canônico de teste inválido.');
   return canonico;
+}
+
+/**
+ * Pré-condição dos testes que canonizam com o motor Python de verdade. Sem o venv (`motor/.venv`, ver
+ * `motor/README.md`) o job de canonização falha dentro do worker e o teste quebrava muito adiante, com
+ * um 409 ou um título trocado, sem dizer a causa (as duas falhas "pré-existentes" do J130). Aqui a
+ * causa aparece de uma vez.
+ */
+export async function exigirMotorPython(): Promise<void> {
+  const motor = await verificarMotor();
+  if (!motor.ok) throw new Error(`Este teste canoniza com o motor Python e ele não respondeu (${(motor.mensagem ?? 'sem detalhe').replace(/\.$/u, '')}). Crie o venv conforme motor/README.md.`);
 }
 
 export function comBanco(nome: string, fn: (banco: pg.Pool) => Promise<void>): Promise<void> {

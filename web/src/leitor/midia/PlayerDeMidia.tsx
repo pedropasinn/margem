@@ -18,18 +18,24 @@
  * posição lembrada e teclado. Nada fica por cima da moldura do YouTube: legenda dos grifos e conceitos
  * descem para baixo dela. Se o dono não deixa incorporar, o aviso oferece "Assistir no YouTube" e, se
  * houver, o arquivo local.
+ *
+ * J142: a análise do vídeo traz as **partes** por assunto (o índice ao lado do vídeo, no lugar dos
+ * capítulos do canal) e os **momentos** (popups) também para o vídeo do YouTube, cujo arquivo local é só
+ * o áudio; a lista dos momentos fica sob as partes. O vídeo pode ficar à esquerda ou à direita do texto
+ * (preferência lembrada neste navegador).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as EventoDePonteiro, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { capituloNoInstante, formatarTempo, indiceNoInstante } from '@margem/core/midia';
 import { completarPalavras, estimarPalavras, palavraDaFraseNoInstante, type FraseComTexto } from '@margem/core/karaoke';
-import { Button, IconButton, SegmentedControl, Select } from '../../ui/Primitives';
+import { Button, IconButton, SegmentedControl, Select, classesDoBotao } from '../../ui/Primitives';
 import type { SnapshotCapitulo } from '../tipos';
 import { urlDeAssistirNoYoutube } from '@margem/core/youtube';
 import { CHAVES, gravarLocal, lerLocal, posicaoGuardada, rotuloDaVelocidade, VELOCIDADES, velocidadeGuardada, type FonteDeReproducao } from './fontes';
 import { controleDoYoutube, controleLocal, velocidadeMaisProxima, type ApiDoYoutube, type ControleDeReproducao, type ErroDoControle, type EventosDoControle } from './controle-de-reproducao';
 import { indicePorBloco, intervaloDoTrecho, pontoNoClique, trechoNoPonto, type ModoDoDestaque } from '../karaoke/karaoke';
 import { useKaraoke, VoltarAoTrecho } from '../karaoke/VoltarAoTrecho';
+import type { ConceitoDoVideoV1 } from '@margem/contratos';
 import { ConceitosNoVideo, LegendaDosGrifos, PrepararConceitos, useConceitosDoVideo } from './SobreOVideo';
 import { linhasDosGrifos } from './sobre-o-video';
 import './player.css';
@@ -54,6 +60,7 @@ const RECOLHER_MS = 2600;
 const CLASSE_DA_BARRA = 'com-leitura-guiada';
 const CLASSE_DO_VIDEO = 'com-video';
 const CLASSE_DO_VIDEO_NO_TOPO = 'com-video-no-topo';
+const CLASSE_DO_VIDEO_A_ESQUERDA = 'com-video-a-esquerda';
 const LARGURA_MINIMA_VIDEO = 320;
 /** O YouTube exige ao menos 200×200 px de moldura: em 16:9, 356 px de largura. */
 const LARGURA_MINIMA_DO_YOUTUBE = 360;
@@ -95,6 +102,11 @@ function movimentoReduzido(): boolean {
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+/** Um item do índice ao lado do vídeo: parte da análise (com resumo) ou capítulo do canal. */
+interface ItemDoIndice { inicio_s: number; titulo: string; resumo?: string }
+
+const ROTULO_DO_TIPO: Record<NonNullable<ConceitoDoVideoV1['tipo']>, string> = { conceito: 'Conceito', dado: 'Dado', contexto: 'Contexto', pergunta: 'Pergunta' };
+
 const Icone = {
   tocar: <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" /></svg>,
   pausar: <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M7 5h3.6v14H7zm6.4 0H17v14h-3.6z" /></svg>,
@@ -104,11 +116,12 @@ const Icone = {
   capitulos: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" /><circle cx="4.5" cy="6" r="1" fill="currentColor" /><circle cx="4.5" cy="12" r="1" fill="currentColor" /><circle cx="4.5" cy="18" r="1" fill="currentColor" /></svg>,
   video: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="5.5" width="14" height="13" rx="2" /><path d="m16.5 10 5-3v10l-5-3" /></svg>,
   soVideo: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4" /></svg>,
+  lados: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 7h12M16 4l3 3-3 3M17 17H5M8 14l-3 3 3 3" /></svg>,
   legendas: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M10 10.2a2.2 2.2 0 1 0 0 3.6M17 10.2a2.2 2.2 0 1 0 0 3.6" strokeLinecap="round" /></svg>,
 };
 
-/** Lista de capítulos da mídia, com o tempo e o ativo aceso; clicar vai ao tempo. */
-function CapitulosDaMidia({ capitulos, ativo, aoIr }: { capitulos: FonteDeReproducao['capitulos']; ativo: number; aoIr: (s: number) => void }): ReactNode {
+/** Lista de partes (ou capítulos) da mídia, com o tempo e o ativo aceso; clicar vai ao tempo. */
+function CapitulosDaMidia({ capitulos, ativo, aoIr }: { capitulos: readonly ItemDoIndice[]; ativo: number; aoIr: (s: number) => void }): ReactNode {
   const lista = useRef<HTMLOListElement>(null);
   useEffect(() => {
     lista.current?.querySelector<HTMLElement>('[aria-current="true"]')?.scrollIntoView?.({ block: 'nearest' });
@@ -116,7 +129,20 @@ function CapitulosDaMidia({ capitulos, ativo, aoIr }: { capitulos: FonteDeReprod
   return <ol ref={lista} className="capitulos-da-midia">
     {capitulos.map((c, i) => <li key={`${String(c.inicio_s)}-${c.titulo}`}>
       <button type="button" aria-current={i === ativo ? 'true' : undefined} onClick={() => aoIr(c.inicio_s)}>
-        <span className="tempo-do-capitulo">{formatarTempo(c.inicio_s)}</span><span className="titulo-do-capitulo">{c.titulo}</span>
+        <span className="tempo-do-capitulo">{formatarTempo(c.inicio_s)}</span>
+        <span className="titulo-do-capitulo">{c.titulo}{c.resumo && <span className="resumo-da-parte">{c.resumo}</span>}</span>
+      </button>
+    </li>)}
+  </ol>;
+}
+
+/** Os momentos da análise (os popups), em ordem de tempo; clicar vai a um segundo antes. */
+function MomentosDoVideo({ momentos, tempo, aoIr }: { momentos: readonly ConceitoDoVideoV1[]; tempo: number; aoIr: (s: number) => void }): ReactNode {
+  return <ol className="capitulos-da-midia momentos-do-video">
+    {momentos.map((m) => <li key={m.id}>
+      <button type="button" data-passou={m.instante_s <= tempo + 0.4 ? 'sim' : undefined} title={m.explicacao} onClick={() => aoIr(Math.max(0, m.instante_s - 1))}>
+        <span className="tempo-do-capitulo">{formatarTempo(m.instante_s)}</span>
+        <span className="titulo-do-capitulo"><span className="tipo-do-momento">{ROTULO_DO_TIPO[m.tipo ?? 'conceito']}</span>{' '}{m.titulo}</span>
       </button>
     </li>)}
   </ol>;
@@ -164,7 +190,17 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
   const telaDeVideo = comVideo && soVideo;
   const [legendas, definirLegendas] = useState(() => lerLocal(CHAVES.legendas) !== 'off');
   const videoAoLado = comVideo && !celular && !telaDeVideo;
-  const conceitos = useConceitosDoVideo(fonte.origem === 'midia' && fonte.tipo === 'video' && fonte.tipoDoArquivo === 'video' ? fonte.id : null);
+  // J142: o vídeo do YouTube também (o arquivo dele é só o áudio, mas a fonte é vídeo); antes ficava de fora.
+  const comMomentos = fonte.origem === 'midia' && fonte.tipo === 'video';
+  const conceitos = useConceitosDoVideo(comMomentos ? fonte.id : null);
+  const momentos = conceitos.conceitos?.conceitos ?? [];
+  const partesDaAnalise = conceitos.conceitos?.partes ?? [];
+  /** O índice ao lado do vídeo: as partes da análise; sem elas, os capítulos do canal. */
+  const indice: readonly ItemDoIndice[] = useMemo(() => (partesDaAnalise.length > 0
+    ? partesDaAnalise.map((p) => ({ inicio_s: p.instante_s, titulo: p.titulo, resumo: p.resumo })) : fonte.capitulos), [partesDaAnalise, fonte.capitulos]);
+  const nomeDoIndice = partesDaAnalise.length > 0 ? 'Partes' : 'Capítulos';
+  /** Vídeo à esquerda ou à direita do texto (computador). */
+  const [lado, definirLado] = useState<'direita' | 'esquerda'>(() => (lerLocal(CHAVES.lado) === 'esquerda' ? 'esquerda' : 'direita'));
 
   const { karaoke, fora } = useKaraoke();
   /** Cada palavra do texto com tempo: as alinhadas com o tempo real, as outras interpoladas (ou, sem alinhamento, estimadas na frase). */
@@ -391,15 +427,16 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
     const html = document.documentElement;
     if (!videoAoLado || html.classList.contains(CLASSE_DA_BARRA)) { aoMudarLateral?.(0); return; }
     html.classList.add(CLASSE_DA_BARRA, CLASSE_DO_VIDEO);
+    html.classList.toggle(CLASSE_DO_VIDEO_A_ESQUERDA, lado === 'esquerda');
     html.style.setProperty('--largura-guiada', `${String(larguraVideo)}px`);
     html.style.setProperty('--largura-guiada-alvo', `${String(larguraVideo)}px`);
     aoMudarLateral?.(larguraVideo);
     return () => {
-      html.classList.remove(CLASSE_DA_BARRA, CLASSE_DO_VIDEO);
+      html.classList.remove(CLASSE_DA_BARRA, CLASSE_DO_VIDEO, CLASSE_DO_VIDEO_A_ESQUERDA);
       html.style.removeProperty('--largura-guiada'); html.style.removeProperty('--largura-guiada-alvo');
       aoMudarLateral?.(0);
     };
-  }, [videoAoLado, larguraVideo, aoMudarLateral]);
+  }, [videoAoLado, larguraVideo, aoMudarLateral, lado]);
   // No celular o vídeo fica logo abaixo da barra do leitor, e o texto começa depois dele.
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -432,7 +469,9 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
     let largura = larguraVideo;
     const minima = usaYoutube ? LARGURA_MINIMA_DO_YOUTUBE : LARGURA_MINIMA_VIDEO;
     const mover = (ev: PointerEvent): void => {
-      largura = Math.round(Math.max(minima, Math.min(window.innerWidth - ev.clientX, window.innerWidth - 560, 900)));
+      // A alça fica do lado do texto: à direita do vídeo quando ele está à esquerda.
+      const pedida = lado === 'esquerda' ? ev.clientX : window.innerWidth - ev.clientX;
+      largura = Math.round(Math.max(minima, Math.min(pedida, window.innerWidth - 560, 900)));
       definirLarguraVideo(largura);
     };
     const soltar = (): void => {
@@ -464,21 +503,21 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
     return () => { document.removeEventListener('pointerdown', fora); document.removeEventListener('keydown', esc, true); };
   }, [painel]);
 
-  const capituloAtual = capituloNoInstante(fonte.capitulos, tempo);
+  const capituloAtual = capituloNoInstante(indice, tempo);
   useSessaoDeMidia({
     titulo: tituloDocumento ?? fonte.titulo,
-    capitulo: fonte.capitulos[capituloAtual]?.titulo ?? snapshot.secao.titulo,
+    capitulo: indice[capituloAtual]?.titulo ?? snapshot.secao.titulo,
     tocando, tempo, duracao, velocidade, buscar: irPara,
     instante: () => controle.current?.tempo() ?? tempo,
     tocar: () => { const c = controle.current; if (c) { if (c.terminado()) irPara(0); c.tocar(); } },
     pausar: () => controle.current?.pausar(),
-    anterior: () => irPara(fonte.capitulos[Math.max(0, capituloAtual - 1)]?.inicio_s ?? 0),
-    proximo: () => irPara(fonte.capitulos[capituloAtual + 1]?.inicio_s ?? duracao),
+    anterior: () => irPara(indice[Math.max(0, capituloAtual - 1)]?.inicio_s ?? 0),
+    proximo: () => irPara(indice[capituloAtual + 1]?.inicio_s ?? duracao),
   });
   const restante = Math.max(0, duracao - tempo);
-  const titulo = fonte.capitulos[capituloAtual]?.titulo ?? fonte.titulo;
+  const titulo = indice[capituloAtual]?.titulo ?? fonte.titulo;
   const subtituloBruto = !usaYoutube && fonte.youtube !== null ? 'Arquivo local'
-    : fonte.capitulos.length > 0 ? fonte.titulo : fonte.fonte?.canal ?? (fonte.origem === 'audio' ? 'Narração' : fonte.frases.length === 0 && fonte.tipo === 'video' ? 'Sem transcrição' : '');
+    : indice.length > 0 ? fonte.titulo : fonte.fonte?.canal ?? (fonte.origem === 'audio' ? 'Narração' : fonte.frases.length === 0 && fonte.tipo === 'video' ? 'Sem transcrição' : '');
   const subtitulo = subtituloBruto === titulo ? '' : subtituloBruto;
   const irECantar = (s: number): void => { irPara(s + 0.05, true); if (celular) abrirPainel(null); };
   // Os eventos do elemento chegam pelo controle (`controleLocal`); aqui só o elemento.
@@ -492,14 +531,14 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
         : <audio key={fonte.id} ref={elemento} src={fonte.url} preload="metadata" />;
   const legendaEConceitos = <>
     {telaDeVideo && legendas && <LegendaDosGrifos linhas={linhasDaLegenda} marcas={snapshot.marcas} tempo={tempo} />}
-    {comVideo && conceitos.conceitos && conceitos.conceitos.conceitos.length > 0 && <ConceitosNoVideo conceitos={conceitos.conceitos.conceitos} tempo={tempo} tocando={tocando}
+    {comVideo && momentos.length > 0 && <ConceitosNoVideo conceitos={momentos} tempo={tempo} tocando={tocando}
       marcas={snapshot.marcas} linhas={linhasDaLegenda} {...(usaYoutube ? {} : { video: elemento })} comLegenda={telaDeVideo && legendas}
       aoIrAoTrecho={(c) => { definirSoVideo(false); irPara(Math.max(0, c.instante_s - 1)); }} />}
   </>;
-  const temSobreposicao = (telaDeVideo && legendas) || (conceitos.conceitos?.conceitos.length ?? 0) > 0;
+  const temSobreposicao = (telaDeVideo && legendas) || momentos.length > 0;
 
   const estilo = { '--largura-do-video': `${String(larguraVideo)}px` } as CSSProperties;
-  return createPortal(<div className="player-midia" data-tipo={fonte.tipo} data-video={telaDeVideo ? 'so' : comVideo ? (celular ? 'topo' : 'lado') : 'nenhum'} data-recolhido={recolhido && tocando ? 'sim' : undefined} style={estilo}>
+  return createPortal(<div className="player-midia" data-tipo={fonte.tipo} data-lado={videoAoLado ? lado : undefined} data-video={telaDeVideo ? 'so' : comVideo ? (celular ? 'topo' : 'lado') : 'nenhum'} data-recolhido={recolhido && tocando ? 'sim' : undefined} style={estilo}>
     {apresentaVideo
       ? <aside ref={painelVideo} className="painel-video" aria-label="Vídeo" hidden={!comVideo} data-controle={usaYoutube ? 'youtube' : 'local'}>
         {!celular && <div className="alca-do-video" role="separator" aria-orientation="vertical" aria-label="Largura do vídeo" onPointerDown={redimensionar} />}
@@ -512,13 +551,19 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
         {erroAtual && <div className="aviso-do-video" role="status">
           <p>{AVISO_DO_ERRO[erroAtual.motivo]}</p>
           <div className="acoes-do-aviso">
-            <a className="button primary small" href={urlDeAssistirNoYoutube(fonte.youtube!.id, tempo)} target="_blank" rel="noopener noreferrer">Assistir no YouTube</a>
+            <a className={classesDoBotao({ variante: 'primario', tamanho: 'md' })} href={urlDeAssistirNoYoutube(fonte.youtube!.id, tempo)} target="_blank" rel="noopener noreferrer">Assistir no YouTube</a>
             {fonte.url !== null && <Button className="small" onClick={() => { guardarPosicao(); pedirLocal(fonte.id); }}>{fonte.tipoDoArquivo === 'audio' ? 'Ouvir o áudio local' : 'Tocar o arquivo local'}</Button>}
           </div>
         </div>}
-        {!celular && !telaDeVideo && fonte.capitulos.length > 0 && <section className="capitulos-ao-lado" aria-label="Capítulos">
-          <h3>Capítulos</h3>
-          <CapitulosDaMidia capitulos={fonte.capitulos} ativo={capituloAtual} aoIr={irECantar} />
+        {!celular && !telaDeVideo && (indice.length > 0 || momentos.length > 0) && <section className="capitulos-ao-lado" aria-label={nomeDoIndice}>
+          {indice.length > 0 && <>
+            <h3>{nomeDoIndice}</h3>
+            <CapitulosDaMidia capitulos={indice} ativo={capituloAtual} aoIr={irECantar} />
+          </>}
+          {momentos.length > 0 && <>
+            <h3>Momentos</h3>
+            <MomentosDoVideo momentos={momentos} tempo={tempo} aoIr={(s) => irPara(s, true)} />
+          </>}
         </section>}
       </aside>
       : midia}
@@ -532,7 +577,7 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
           onPointerMove={(e) => { if (arrastando.current) irParaX(e.clientX); }}
           onPointerUp={() => { arrastando.current = false; }} onPointerCancel={() => { arrastando.current = false; }}
           onKeyDown={(e) => { if (e.key === 'Home') { e.preventDefault(); irPara(0); } else if (e.key === 'End') { e.preventDefault(); irPara(duracao); } }}>
-          {fonte.capitulos.slice(1).map((c) => <span key={c.inicio_s} className="marca-de-capitulo" style={{ left: `${String((c.inicio_s / Math.max(duracao, 1)) * 100)}%` }} />)}
+          {indice.slice(1).map((c) => <span key={c.inicio_s} className="marca-de-capitulo" style={{ left: `${String((c.inicio_s / Math.max(duracao, 1)) * 100)}%` }} />)}
           <div ref={preenchida} className="trilha-preenchida" style={{ '--progresso': String(duracao > 0 ? tempo / duracao : 0) } as CSSProperties}><span className="trilha-botao" /></div>
         </div>
         <span className="tempo restante">-{formatarTempo(restante)}</span>
@@ -554,7 +599,7 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
               <div className="atalhos-de-velocidade">{VELOCIDADES.filter((v) => taxas === null || taxas.includes(v)).map((v) => <button key={v} type="button" aria-pressed={velocidade === v} onClick={() => mudarVelocidade(v)}>{rotuloDaVelocidade(v)}</button>)}</div>
               <SegmentedControl rotulo="Destaque no texto" valor={destaque} opcoes={[{ valor: 'palavra', rotulo: 'Palavra' }, { valor: 'frase', rotulo: 'Frase' }, { valor: 'nenhum', rotulo: 'Nenhum' }]}
                 aoMudar={(v) => { const modo = v as ModoDoDestaque; definirDestaque(modo); gravarLocal(CHAVES.destaque, modo); }} />
-              {fonte.origem === 'midia' && fonte.tipo === 'video' && fonte.tipoDoArquivo === 'video' && <PrepararConceitos conceitos={conceitos} />}
+              {comMomentos && <PrepararConceitos conceitos={conceitos} />}
               {fontes.length > 1 && <label className="escolha-da-fonte"><span>Fonte</span><Select aria-label="Fonte da reprodução" value={String(escolhida)} onChange={(e) => { guardarPosicao(); escolher(Number(e.target.value)); abrirPainel(null); }}>
                 {fontes.map((f, i) => <option key={f.id} value={String(i)}>{f.titulo}</option>)}
               </Select></label>}
@@ -564,15 +609,17 @@ export function PlayerDeMidia({ fontes, tituloDocumento, raiz, snapshot, aoFecha
         <div className="direita">
           {telaDeVideo && <IconButton aria-label={legendas ? 'Desligar as legendas dos grifos' : 'Ligar as legendas dos grifos'} aria-pressed={legendas}
             onClick={() => { definirLegendas(!legendas); gravarLocal(CHAVES.legendas, legendas ? 'off' : 'on'); }}>{Icone.legendas}</IconButton>}
-          {fonte.capitulos.length > 0 && (celular || !comVideo || telaDeVideo) && <div className="ancora-do-popover">
-            <IconButton ref={botaoCapitulos} aria-label="Capítulos" aria-expanded={painel === 'capitulos'} onClick={() => abrirPainel(painel === 'capitulos' ? null : 'capitulos')}>{Icone.capitulos}</IconButton>
-            {painel === 'capitulos' && <div className="popover-do-player popover-de-capitulos" role="dialog" aria-label="Capítulos">
-              <CapitulosDaMidia capitulos={fonte.capitulos} ativo={capituloAtual} aoIr={irECantar} />
+          {indice.length > 0 && (celular || !comVideo || telaDeVideo) && <div className="ancora-do-popover">
+            <IconButton ref={botaoCapitulos} aria-label={nomeDoIndice} aria-expanded={painel === 'capitulos'} onClick={() => abrirPainel(painel === 'capitulos' ? null : 'capitulos')}>{Icone.capitulos}</IconButton>
+            {painel === 'capitulos' && <div className="popover-do-player popover-de-capitulos" role="dialog" aria-label={nomeDoIndice}>
+              <CapitulosDaMidia capitulos={indice} ativo={capituloAtual} aoIr={irECantar} />
             </div>}
           </div>}
+          {videoAoLado && <IconButton aria-label={lado === 'direita' ? 'Pôr o vídeo à esquerda do texto' : 'Pôr o vídeo à direita do texto'}
+            onClick={() => { const outro = lado === 'direita' ? 'esquerda' : 'direita'; definirLado(outro); gravarLocal(CHAVES.lado, outro); }}>{Icone.lados}</IconButton>}
           {comVideo && <IconButton aria-label={telaDeVideo ? 'Voltar ao texto' : 'Só o vídeo'} aria-pressed={telaDeVideo} onClick={() => definirSoVideo(!telaDeVideo)}>{Icone.soVideo}</IconButton>}
           {apresentaVideo && !usaYoutube && <IconButton aria-label={videoVisivel ? 'Esconder o vídeo' : 'Mostrar o vídeo'} aria-pressed={videoVisivel} onClick={() => { mostrarVideo(!videoVisivel); gravarLocal(CHAVES.video, videoVisivel ? 'off' : 'on'); }}>{Icone.video}</IconButton>}
-          <IconButton aria-label="Fechar o player" onClick={() => { controle.current?.pausar(); aoFechar(); }}>×</IconButton>
+          <IconButton aria-label="Fechar o player" onClick={() => { controle.current?.pausar(); aoFechar(); }} icone="xis" />
         </div>
       </div>
     </div>

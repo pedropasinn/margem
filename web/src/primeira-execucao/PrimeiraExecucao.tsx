@@ -13,13 +13,15 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button, IconButton, usarFoco } from '../ui/Primitives';
+import { Assinatura } from '../ui/Assinatura';
 import type { Rota } from '../biblioteca/rotas';
 import { usarOnboarding } from '../onboarding/ContextoDoOnboarding';
+import { TresJeitos } from '../onboarding/BoasVindas';
 import '../onboarding/onboarding.css';
 import './primeira-execucao.css';
 import { usarInstalacao } from './ContextoDaInstalacao';
 import {
-  abrirExemploDaInstalacao, avisoDaInstalacao, concluirPrimeiraExecucao, situacaoDoCodex,
+  abrirExemploDaInstalacao, avisoDaInstalacao, avisosDoApp, concluirPrimeiraExecucao, ferramentasDaChecagem, situacaoDoCodex,
   type AvisoDaInstalacao as Aviso, type EstadoDaInstalacao,
 } from './estado';
 
@@ -65,13 +67,14 @@ function itens(estado: EstadoDaInstalacao): Item[] {
           : { nome: 'Conectado à sua conta', ok: null, detalhe: 'não deu para conferir agora' };
   return [
     { nome: 'Banco de dados', ok: estado.banco.ok, detalhe: estado.banco.ok ? 'seus textos e marcas ficam neste computador' : 'sem resposta' },
-    { nome: 'Preparação de textos', ok: estado.motor.ok, detalhe: estado.motor.ok ? 'PDF, EPUB, Markdown e texto colado' : 'indisponível' },
+    { nome: 'Preparação dos documentos', ok: estado.motor.ok, detalhe: estado.motor.ok ? 'PDF, EPUB, Markdown, TXT e texto colado' : 'indisponível' },
     instalado,
     conectado,
+    ...ferramentasDaChecagem(estado),
   ];
 }
 
-/** A checagem: quatro linhas, o que fazer quando falta algo e "Verificar de novo". */
+/** A checagem: as quatro linhas (e as ferramentas de mídia, quando verificadas), os avisos do app, o que fazer quando falta algo e "Verificar de novo". */
 export function ChecagemDaInstalacao({ estado }: { estado: EstadoDaInstalacao }): ReactNode {
   const { verificar, verificando } = usarInstalacao();
   const aviso = avisoDaInstalacao(estado);
@@ -84,8 +87,11 @@ export function ChecagemDaInstalacao({ estado }: { estado: EstadoDaInstalacao })
         <div><span className="titulo">{item.nome}</span><div className="linha-meta"><span>{item.ok === true ? 'Pronto' : item.ok === false ? 'Falta' : 'A conferir'}</span><span>{item.detalhe}</span></div></div>
       </li>)}
     </ul>
-    {aviso && aviso.tipo !== 'cota' && <div className="instrucao" role="status"><p className="instrucao-titulo">{aviso.titulo}</p><InstrucoesDoAviso aviso={aviso} /></div>}
+    {aviso && aviso.tipo !== 'cota' && aviso.tipo !== 'app' && <div className="instrucao" role="status"><p className="instrucao-titulo">{aviso.titulo}</p><InstrucoesDoAviso aviso={aviso} /></div>}
+    {avisosDoApp(estado).length > 0 && <ul className="avisos-do-app" aria-label="Avisos sobre esta instalação">
+      {avisosDoApp(estado).map((texto) => <li key={texto} className="aviso">{texto}</li>)}</ul>}
     {aviso?.tipo === 'cota' && <p className="aviso" role="status">{aviso.titulo} {aviso.texto}</p>}
+    {estado.instancia && <p className="identificacao-da-instalacao">Identificação deste Margem: <code>{estado.instancia.id}</code> · porta {estado.instancia.porta}</p>}
     <p className="verificar-de-novo"><Button variante="ghost" className="small" disabled={verificando} onClick={() => void verificar(true)}>
       <Icon name="restaurar" size={16} /> {verificando ? 'Verificando…' : 'Verificar de novo'}</Button></p>
   </div>;
@@ -127,20 +133,27 @@ export function BoasVindasDaInstalacao({ estado, ir, aoFechar }: { estado: Estad
     try { await concluir(); } catch { definirErro('Não foi possível registrar agora. Tente de novo em instantes.'); ocupar(null); }
   };
   const prontoParaLer = estado.pronto;
+  // No app de computador, a janela de abertura já conferiu a pasta e o login: aqui fica só a apresentação.
+  // A checagem continua em Primeiros passos e no aviso do topo, quando algo falta (V-D5).
+  const doDesktop = estado.origem === 'desktop';
   return <div className="ui-veu veu-boas-vindas">
     <div ref={raiz} role="dialog" aria-modal="true" aria-labelledby={titulo} tabIndex={-1} className="card boas-vindas boas-vindas-da-instalacao">
       <header className="boas-vindas-topo">
         <span className="eyebrow">Primeira execução</span>
         <Button variante="ghost" className="small pular" onClick={aoFechar}>Depois</Button>
       </header>
+      <Assinatura lema className="boas-vindas-assinatura" />
       <h2 id={titulo} tabIndex={-1}>Boas-vindas ao Margem</h2>
-      <p className="boas-vindas-lead">Um leitor que devolve o texto <strong>marcado pelo que cada trecho faz</strong>, com uma nota curta na margem.
-        Seus textos ficam neste computador; as marcas são feitas pelo Codex, com a sua conta do ChatGPT.</p>
+      <p className="boas-vindas-lead">Um lugar para estudar o que você <strong>lê, assiste e observa</strong>: textos marcados pelo que cada trecho faz,
+        vídeos com a transcrição ao lado e quadros com uma leitura guiada. Tudo fica neste computador; as marcas são feitas pelo Codex, com a sua conta do ChatGPT.</p>
 
-      <section className="secao-da-instalacao" aria-labelledby={`${titulo}-codex`}>
+      {doDesktop ? <section className="secao-da-instalacao" aria-labelledby={`${titulo}-jeitos`}>
+        <h3 id={`${titulo}-jeitos`}>Três jeitos de estudar</h3>
+        <TresJeitos />
+      </section> : <section className="secao-da-instalacao" aria-labelledby={`${titulo}-codex`}>
         <h3 id={`${titulo}-codex`}>{prontoParaLer ? 'Tudo pronto para ler' : 'Antes de pedir a primeira leitura'}</h3>
         <ChecagemDaInstalacao estado={estado} />
-      </section>
+      </section>}
 
       <section className="secao-da-instalacao" aria-labelledby={`${titulo}-exemplo`}>
         <h3 id={`${titulo}-exemplo`}>Um texto para começar</h3>
@@ -154,7 +167,7 @@ export function BoasVindasDaInstalacao({ estado, ir, aoFechar }: { estado: Estad
 
       {erro && <p className="aviso" role="alert">{erro}</p>}
       <footer className="boas-vindas-rodape">
-        <span className="rodape-nota">{prontoParaLer ? 'Você pode trazer seus próprios textos pela tela Adicionar.' : 'Dá para concluir agora e conectar o Codex depois: um aviso lembra no topo.'}</span>
+        <span className="rodape-nota">{prontoParaLer || doDesktop ? 'Traga PDFs, EPUBs, textos, vídeos e quadros pela tela Adicionar.' : 'Dá para concluir agora e conectar o Codex depois: um aviso lembra no topo.'}</span>
         <div className="button-row">
           <Button variante="primario" disabled={ocupado !== null} onClick={() => void terminar()}>{ocupado === 'concluir' ? 'Concluindo…' : 'Concluir'}</Button>
         </div>
@@ -174,7 +187,7 @@ export function AvisoDaInstalacao({ ir }: { ir: (destino: Rota) => void }): Reac
     <div className="aviso-corpo">
       <p className="aviso-titulo">{aviso.titulo}</p>
       <InstrucoesDoAviso aviso={aviso} />
-      {aviso.tipo !== 'cota' && <p className="aviso-link"><a href="/primeiros-passos#instalacao" onClick={(e) => { e.preventDefault(); ir({ nome: 'primeiros-passos' }); }}>Ver a checagem completa</a></p>}
+      {aviso.tipo !== 'cota' && aviso.tipo !== 'app' && <p className="aviso-link"><a href="/configuracoes/primeiros-passos#instalacao" onClick={(e) => { e.preventDefault(); ir({ nome: 'configuracoes', secao: 'primeiros-passos' }); }}>Ver a checagem completa</a></p>}
     </div>
     <IconButton aria-label="Dispensar o aviso" title="Dispensar" onClick={() => dispensarAviso(aviso.tipo)}><Icon name="xis" size={16} /></IconButton>
   </section>;
@@ -188,7 +201,7 @@ export function AvisoDoCodexCurto(): ReactNode {
   const { estado, ativo, avisoDispensado } = usarInstalacao();
   if (!ativo || estado === null) return null;
   const aviso = avisoDaInstalacao(estado);
-  if (aviso === null || aviso.tipo === 'banco' || aviso.tipo === 'motor') return null;
+  if (aviso === null || aviso.tipo === 'banco' || aviso.tipo === 'motor' || aviso.tipo === 'app') return null;
   const faixaVisivel = estado.primeira_execucao.concluida && avisoDispensado !== aviso.tipo;
   if (aviso.tipo === 'cota') {
     return <p className="aviso aviso-do-codex-curto" role="status" data-tipo="cota">

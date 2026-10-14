@@ -32,6 +32,7 @@ a.botao-da-barra { text-decoration: none; }
 
 /* A dica: rótulo e, quando há, o atalho. Aparece sob o botão, como no Readwise. */
 .barra-do-leitor [data-dica]:is(:hover, :focus-visible)::after,
+.ui-popover [data-dica]:is(:hover, :focus-visible)::after,
 .painel-esquerdo [data-dica]:is(:hover, :focus-visible)::after,
 .pilula-de-leitura [data-dica]:is(:hover, :focus-visible)::after,
 .dicas-acima [data-dica]:is(:hover, :focus-visible)::after {
@@ -42,11 +43,12 @@ a.botao-da-barra { text-decoration: none; }
   font: 500 12px/1.3 var(--sans); white-space: pre; pointer-events: none;
 }
 .barra-do-leitor [data-dica][data-atalho]:is(:hover, :focus-visible)::after,
+.ui-popover [data-dica][data-atalho]:is(:hover, :focus-visible)::after,
 .painel-esquerdo [data-dica][data-atalho]:is(:hover, :focus-visible)::after,
 .pilula-de-leitura [data-dica][data-atalho]:is(:hover, :focus-visible)::after,
 .dicas-acima [data-dica][data-atalho]:is(:hover, :focus-visible)::after { content: attr(data-dica) "   " attr(data-atalho); }
 /* Nos controles da base da tela (pílula, players), a dica sobe. */
-.pilula-de-leitura [data-dica], .dicas-acima [data-dica] { position: relative; }
+.pilula-de-leitura [data-dica], .dicas-acima [data-dica], .ui-popover [data-dica] { position: relative; }
 .pilula-de-leitura [data-dica]::after, .dicas-acima [data-dica]::after { top: auto !important; bottom: calc(100% + 8px); }
 .pilula-de-leitura > :last-child[data-dica]::after { left: auto; right: 0; transform: none; }
 .barra-direita > :last-child[data-dica]::after, .barra-direita > :nth-last-child(2)[data-dica]::after { left: auto; right: 0; transform: none; }
@@ -73,9 +75,9 @@ a.botao-da-barra { text-decoration: none; }
 
 /* Popovers pequenos da barra: atenção e ouvir. */
 .menu-da-barra.ui-popover { padding: 8px; }
-.popover-atencao.ui-popover { padding: 14px 16px; }
-.popover-atencao .controle-atencao { justify-content: space-between; }
-.popover-atencao .valor-atencao { display: inline; position: static; padding: 0; border: 0; background: none; color: var(--texto-3); }
+/* "Marcas" (V-T3): com as marcas à vista, um botão como os outros; ocultas, ele se destaca para trazê-las de volta. */
+.botao-da-barra.ui-icon[aria-label="Marcas"][aria-pressed="true"]:not(:hover, :focus-visible) { background: none; color: var(--texto-2); }
+.botao-da-barra.ui-icon.marcas-ocultas { color: var(--texto-1); background: var(--bg-hover); }
 .lista-de-acoes { list-style: none; margin: 0; padding: 0; }
 .lista-de-acoes .ui-button { width: 100%; justify-content: flex-start; gap: 12px; padding: 10px 12px; text-align: left; white-space: normal; font-weight: 500; }
 .lista-de-acoes .ui-button > span { display: grid; gap: 2px; }

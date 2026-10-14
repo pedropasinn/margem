@@ -1,5 +1,11 @@
-/* Demonstração do leitor: uma folha com a barra de leitura, o texto em serifa e a margem de notas. */
+/*
+ * O recorte do leitor na página inicial. As regras com nome do app (`camada-de-marcas`, `traco-*`,
+ * `nota*`, `braquetes`, `relacao-braquete`, `alvo-braquete`, `popover-braquete`) são cópias das do app,
+ * com a origem anotada; o resto é a janela da demonstração.
+ */
 .demo {
+  --serif-leitor: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; /* web/src/leitor/reader.css */
+  --fundo: var(--folha);
   position: relative;
   border: 2px solid var(--borda-3d);
   border-radius: var(--r-24);
@@ -15,19 +21,6 @@
 }
 .demo-documento { display: inline-flex; gap: 6px; white-space: nowrap; }
 .demo-controles { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-.demo-atencao { display: inline-flex; align-items: center; gap: 2px; }
-.demo-rotulo { margin-right: 6px; color: var(--texto-1); }
-.demo-ponto {
-  display: grid; place-items: center; width: 24px; height: 24px; padding: 0;
-  border: 0; border-radius: 50%; background: transparent; cursor: pointer;
-}
-.demo-ponto::before {
-  content: ''; width: 8px; height: 8px; border-radius: 50%;
-  border: 1.5px solid var(--texto-1); background: transparent; transition: background .15s;
-}
-.demo-ponto[data-cheio="true"]::before { background: var(--texto-1); }
-.demo-ponto:hover::before { border-color: var(--accent); }
-
 .demo-segmentado { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-pilula); background: var(--painel); }
 .demo-segmentado button {
   min-height: 30px; padding: 4px 12px; border: 0; border-radius: var(--r-pilula);
@@ -37,87 +30,133 @@
 
 .demo-corpo {
   display: grid;
-  grid-template-columns: minmax(0, 600px) minmax(220px, 280px);
+  grid-template-columns: minmax(0, 620px) minmax(220px, 280px);
   justify-content: center;
   gap: 48px;
   padding: clamp(24px, 4vw, 48px) clamp(20px, 4vw, 56px) clamp(28px, 4vw, 52px);
 }
+.demo-lateral { display: none; }
 
+/* O texto do leitor: serifa do app, sem nada que uma marca mude nas letras. */
 .demo-texto {
-  position: relative;
-  isolation: isolate;
-  font: 400 20px/1.65 var(--serif);
+  position: relative; isolation: isolate;
+  font: 400 21px/1.6 var(--serif-leitor);
   color: var(--texto-1);
-  font-optical-sizing: auto;
 }
-.demo-titulo { margin-bottom: 20px; font: 600 26px/1.25 var(--serif); letter-spacing: -.005em; }
-.demo-paragrafo { margin-bottom: 1em; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+.demo-titulo { margin: 0 0 22px; font: 600 26px/1.25 var(--serif-leitor); letter-spacing: 0; }
+.demo-paragrafo { margin: 0 0 1.05rem; text-align: justify; hyphens: auto; -webkit-hyphens: auto; transition: opacity .2s ease; }
 .demo-elipse { color: var(--texto-3); }
 .demo-fonte { margin-top: 8px; font: 500 12.5px/1.4 var(--sans); color: var(--texto-3); }
-.demo-trecho { cursor: default; }
 
-.demo-marcas {
+/* web/src/ui/marcador/marcador.css */
+.camada-de-marcas {
   position: absolute; inset: 0; width: 100%; height: 100%;
   overflow: visible; pointer-events: none; z-index: -1;
-  mix-blend-mode: var(--mistura-marca);
+  mix-blend-mode: var(--mistura-marca, multiply);
 }
-.demo-marcas g { transition: opacity .2s; }
-.demo-marcas .faixa { fill: var(--cor); }
-.demo-marcas .linha { fill: none; stroke: var(--cor); stroke-width: 2.4; stroke-linecap: round; }
-@media (prefers-color-scheme: dark) { .demo-marcas .linha { stroke-width: 2; } }
-.demo-marcas [data-estado="oculta"], .demo-marcas [data-estado="aguardando"] { visibility: hidden; }
-.demo-marcas [data-estado="desenhada"] .faixa { animation: desenhar-faixa .8s ease-out both; }
-.demo-marcas [data-estado="desenhada"] .linha { stroke-dasharray: 1; animation: desenhar-linha .8s ease-out both; }
+[data-animacao="desenhando"] .traco-faixa { animation: desenhar-faixa 800ms ease-out both; }
+[data-animacao="desenhando"] .traco-linha { animation: desenhar-linha 800ms ease-out both; }
 @keyframes desenhar-faixa { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-@keyframes desenhar-linha { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes desenhar-linha { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
 
-.demo-margem { position: relative; font: 400 14px/1.5 var(--sans); }
-.demo-nota { position: absolute; left: 0; right: 0; transition: opacity .4s ease, transform .4s ease; }
-.demo-nota[data-estado="aguardando"] { opacity: 0; transform: translateY(6px); }
-.demo-nota[data-estado="oculta"] { opacity: 0; visibility: hidden; }
-.demo-nota[data-ativa="true"] .demo-nota-texto { color: var(--texto-1); }
-.demo-nota-cabeca {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
-  font: 700 11.5px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--texto-1);
+/* A margem (web/src/leitor/reader.css: .nota, .nota-numero, .nota-rotulo, .nota-texto). */
+.demo-margem { position: relative; font: 400 14px/1.45 var(--sans); color: var(--texto-2); }
+.nota { position: absolute; inset-inline: 0; top: 0; max-width: 38ch; margin: 0; }
+.nota-cabeca { margin: 0; display: flex; align-items: center; }
+.nota-numero {
+  display: inline-grid; place-items: center; min-width: 24px; height: 24px; margin-inline-end: .5rem; padding: 0 5px;
+  border: 1.5px solid var(--borda); border-radius: 999px; background: transparent;
+  font: 700 12px/1 var(--sans); font-variant-numeric: tabular-nums; cursor: pointer;
 }
-.demo-numero {
-  display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
-  border: 2px solid var(--cor); font: 700 11px/1 var(--sans); letter-spacing: 0;
-}
-.demo-nota-texto { color: var(--texto-2); transition: color .15s; }
+.nota-numero.periferica { border-style: dashed; }
+/* Com a margem ao lado (margem "recolher" do app), só o número fica à vista; a nota abre na marca ativa.
+   No celular, embaixo do texto, as notas ficam abertas, como a folha de notas do app. */
+@media (min-width: 900px) { .demo-margem .nota:not(.ativa) :is(.nota-rotulo, .nota-texto) { display: none; } }
+.nota:not(.ativa) .nota-rotulo { text-decoration: none; }
+.nota-rotulo { color: var(--texto-1); font-weight: 600; text-decoration-line: underline; text-decoration-thickness: 2px; text-underline-offset: .18em; }
+.nota-texto { margin: .2rem 0 0 calc(24px + .5rem); line-height: 1.45; }
+.nota-conversa { display: grid; gap: 6px; margin: 10px 0 0 calc(24px + .5rem); padding-top: 10px; border-top: 1px solid var(--borda); }
+.nota-pergunta { color: var(--texto-1); }
+.nota-quem { display: block; font: 700 11px/1.4 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); }
 
-.demo-conversa {
-  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--borda);
-  display: grid; gap: 8px; animation: surgir .5s ease both;
+/* As braquetes (web/src/leitor/compreensao/compreensao.css). */
+.demo .cor-0 { --cor-relacao: #d4524a; }
+.demo .cor-1 { --cor-relacao: #e08a26; }
+.demo .cor-2 { --cor-relacao: #2f9e8f; }
+.demo .cor-3 { --cor-relacao: #7c63cc; }
+.demo .cor-4 { --cor-relacao: #3a82c4; }
+.braquetes-desenho { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.relacao-braquete { color: var(--cor-relacao); opacity: .28; transition: opacity .18s ease; }
+.braquetes-desenho[data-acesa] .relacao-braquete:not(.acesa) { opacity: .08; }
+.relacao-braquete.acesa { opacity: 1; }
+.braquete { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.relacao-braquete.acesa .braquete { stroke-width: 2.2; }
+.alvo-braquete {
+  position: absolute; z-index: 2; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent;
+  color: var(--cor-relacao); opacity: .35; cursor: pointer; transition: opacity .18s ease;
 }
-.demo-conversa p { color: var(--texto-2); }
-.demo-quem { display: block; font: 700 11px/1.4 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--texto-3); }
-.demo-pergunta { color: var(--texto-1) !important; }
-@keyframes surgir { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.alvo-braquete::after { content: ''; position: absolute; inset: 5px; border: 2px solid currentColor; border-radius: 50%; background: var(--fundo); transition: opacity .12s ease; }
+.alvo-braquete.acesa::after { opacity: 0; }
+.demo-corpo[data-relacao-acesa] .alvo-braquete:not(.acesa) { opacity: .1; }
+.alvo-braquete.acesa, .alvo-braquete:focus-visible { opacity: 1; }
+.alvo-braquete:hover { opacity: .75; }
+.popover-braquete {
+  --relation-color: var(--cor-relacao);
+  position: absolute; z-index: 3; box-sizing: border-box; min-width: 160px; min-height: 76px; margin: 0; padding: 14px 20px 18px; pointer-events: none;
+  transform: translateY(-50%);
+  background: var(--fundo); border: .5px solid var(--relation-color); border-radius: 5px;
+  animation: abrir-do-braquete .18s cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes abrir-do-braquete { from { opacity: 0; clip-path: inset(40% 25% 40% 75% round 5px); } to { opacity: 1; clip-path: inset(0 0 0 0 round 5px); } }
+.popover-braquete legend {
+  padding: 0 5px; margin-left: -3px; background: var(--fundo); color: var(--relation-color);
+  font: 500 11px/13px var(--sans); letter-spacing: .08em; text-transform: uppercase;
+}
+.popover-braquete p { margin: 6px 0 0; font: 400 15px/23px var(--sans); color: color-mix(in srgb, var(--texto-1) 88%, var(--bg)); }
+.popover-braquete.estatico { position: static; transform: none; width: 100%; }
+
+/* O véu da relação acesa: o resto esmaece e os dois trechos ficam em destaque (a máscara do app, em CSS). */
+.demo-paragrafo[data-veu="cheio"] { opacity: .14; }
+.demo-paragrafo[data-veu="leve"] > span:not([data-citada]) { opacity: .45; transition: opacity .2s ease; }
+.demo-corpo[data-relacao-acesa] .demo-margem { opacity: .3; transition: opacity .2s ease; }
+
+.demo-relacao-estreita { display: none; padding: 0 20px 24px; min-height: 120px; }
+.demo-relacao-dica { font: 400 13px/1.45 var(--sans); color: var(--texto-3); }
 
 .demo-legenda {
   padding: 14px 24px 18px; border-top: 1px solid var(--borda);
   font: 400 13px/1.45 var(--sans); color: var(--texto-3);
 }
 
-/* Abaixo de 900 px a margem passa para baixo do texto, como a folha de notas do app no celular. */
-@media (max-width: 899px) {
-  .demo-corpo { grid-template-columns: minmax(0, 1fr); gap: 28px; }
-  .demo-margem { min-height: 0 !important; display: grid; gap: 18px; padding-top: 20px; border-top: 1px solid var(--borda); }
-  .demo-nota { position: static; }
-  .demo-nota[data-estado="oculta"] { display: none; }
+/* Largo: a coluna da esquerda guarda as braquetes e o card, como a lateral do leitor. */
+@media (min-width: 1180px) {
+  .demo-corpo { grid-template-columns: 300px minmax(0, 600px) minmax(200px, 250px); gap: 0 44px; padding-inline: 24px 40px; }
+  .demo-lateral { display: block; }
 }
-@media (max-width: 520px) {
-  .demo-texto { font-size: 18px; line-height: 1.6; }
+@media (max-width: 1179.98px) {
+  .demo-texto { margin-left: 76px; }
+  .demo-relacao-estreita { display: block; padding-inline: clamp(20px, 4vw, 56px); }
+  .demo-texto .popover-braquete:not(.estatico) { display: none; }
+}
+/* Abaixo de 900 px a margem vai para baixo do texto, como a folha de notas do app no celular. */
+@media (max-width: 899px) {
+  .demo-corpo { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .demo-margem { min-height: 0 !important; display: grid; gap: 14px; padding-top: 18px; border-top: 1px solid var(--borda); }
+  .nota { position: static; max-width: none; }
+}
+@media (max-width: 760px) {
+  .demo-texto { margin-left: 30px; font-size: 18px; line-height: 1.6; }
   .demo-titulo { font-size: 22px; }
   .demo-paragrafo { text-align: left; }
   .demo-barra { padding: 12px 16px; }
   .demo-documento { display: none; }
   .demo-controles { width: 100%; justify-content: space-between; gap: 12px; }
   .demo-legenda { padding: 12px 16px 16px; }
+  .demo-relacao-estreita { padding-inline: 16px; min-height: 140px; }
 }
 
+@keyframes surgir { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-  .demo-marcas path, .demo-conversa { animation: none !important; }
-  .demo-nota { transition: none; }
+  .demo path, .popover-braquete { animation: none !important; }
+  .demo-paragrafo, .relacao-braquete, .alvo-braquete { transition: none; }
 }

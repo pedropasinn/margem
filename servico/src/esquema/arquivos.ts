@@ -5,7 +5,8 @@
  * A escrita é atômica (temporário + `rename`); um pedido nunca vê um arquivo pela metade.
  */
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { renomearComRetentativa } from '../plataforma/disco.js';
 import { dirname, join } from 'node:path';
 import { validarEsquemaDoCapitulo, type EsquemaDoCapituloV1, type Id } from '@margem/contratos';
 import { ehUlid, pastaDaVersao } from '../dados.js';
@@ -27,7 +28,7 @@ export async function gravarEsquema(documentoId: Id, esquema: EsquemaDoCapituloV
   const temporario = join(dirname(destino), `.tentativa-${randomUUID()}`);
   try {
     await writeFile(temporario, `${JSON.stringify(esquema, null, 2)}\n`, { mode: 0o644 });
-    await rename(temporario, destino);
+    await renomearComRetentativa(temporario, destino);
   } finally {
     await rm(temporario, { force: true });
   }

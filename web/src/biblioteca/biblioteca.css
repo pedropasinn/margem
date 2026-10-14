@@ -13,9 +13,15 @@
 .detalhe .voltar { margin-bottom: 16px; }
 .detalhe-topo h1 { margin-top: 16px; }
 .detalhe-topo .button-row { margin-top: 8px; }
+/* V-T3: os atalhos do documento (Notas, Exercícios, Flashcards) são links discretos, abaixo das ações. */
+.atalhos-do-documento { display: flex; flex-wrap: wrap; gap: 4px 22px; margin-top: 14px; font: 500 14px/1.4 var(--sans); }
+.atalhos-do-documento a { display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; color: var(--texto-2); text-decoration: none; }
+.atalhos-do-documento a:is(:hover, :focus-visible) { color: var(--texto-1); text-decoration: underline; text-underline-offset: 3px; }
+@media (pointer: coarse) { .atalhos-do-documento a { min-height: 44px; } }
 .detalhe-grade { margin-top: 24px; }
 .dados { margin: 0; color: var(--texto-2); font-size: 15px; }
 .limites { margin: 10px 0 0; padding-inline-start: 1.1rem; color: var(--texto-2); font-size: 14px; }
+.avisos-do-trabalho { margin: 4px 0 2px; padding-inline-start: 1.1rem; color: var(--aviso-texto); font-size: 13px; }
 .limites li + li { margin-top: 4px; }
 @media (max-width: 1000px) { .detalhe-grade { grid-template-columns: minmax(0, 1fr); } }
 
@@ -38,6 +44,9 @@
 .falha-antiga { color: var(--texto-3); }
 .mais-limites { margin-top: 8px; font-size: 14px; color: var(--texto-2); }
 .mais-limites summary { cursor: pointer; font-weight: 600; }
+.mais-limites .limites { font-size: 13px; overflow-wrap: anywhere; }
+/* O resumo dos limites: o que se perdeu em cor de aviso; o esperado, discreto. */
+.resumo-dos-limites li[data-nivel="aviso"] { color: var(--aviso-texto); }
 
 .preparar-leitura { margin-top: 24px; max-width: 650px; }
 .limites li button { margin-left: 10px; }
@@ -207,8 +216,35 @@
   .biblioteca-ferramentas { flex-shrink: 1; }
   .busca-compacta .ui-input { width: clamp(120px, 14vw, 200px); }
 }
-@media (min-width: 800px) and (max-width: 1500px) {
-  .com-painel .biblioteca-cabecalho { flex-wrap: wrap; }
+.ordenacao .ui-button > span:first-child { display: inline-flex; align-items: center; gap: 8px; }
+.ordenacao .ui-button > span:first-child > svg { flex: none; }
+
+/*
+ * Cabeçalho da Biblioteca pela largura da própria coluna, não da janela (V-T1): com o painel do item
+ * aberto a coluna encolhe e nada se espreme. Larga, tudo numa linha (título, abas, ferramentas). Mais
+ * estreita, duas linhas: título e ferramentas em cima, as abas embaixo (roláveis de lado). Mais ainda,
+ * a ordenação vira só o ícone e a busca encolhe até um mínimo que ainda se lê.
+ */
+@media (min-width: 800px) {
+  .lista-biblioteca .biblioteca-cabecalho { container: cabecalho-da-lista / inline-size; flex-wrap: wrap; }
+  .lista-biblioteca .busca-compacta { flex: 0 1 240px; min-width: 150px; }
+  .lista-biblioteca .ordenacao { flex: none; }
+  .lista-biblioteca .busca-compacta .ui-input { width: 100%; }
+  .lista-biblioteca .ordenacao .ui-button > span:first-child > svg { display: none; }
+  @container cabecalho-da-lista (max-width: 1099px) {
+    .biblioteca-cabecalho > h1 { order: 1; flex: 0 1 auto; min-width: 0; min-height: 64px; }
+    .biblioteca-cabecalho > .biblioteca-ferramentas { order: 2; flex: 1 1 auto; justify-content: flex-end; }
+    .biblioteca-cabecalho > .alternar-painel { order: 3; }
+    .biblioteca-cabecalho > .biblioteca-abas { order: 4; flex: 1 0 100%; margin-inline: -10px; }
+    .biblioteca-cabecalho > .biblioteca-abas .ui-button { min-height: 44px; }
+    .lista-biblioteca .busca-compacta { flex: 1 1 260px; max-width: 320px; }
+  }
+  @container cabecalho-da-lista (max-width: 619px) {
+    .lista-biblioteca .biblioteca-ferramentas { gap: 8px; }
+    .lista-biblioteca .ordenacao .ui-button { width: 36px; padding: 0; justify-content: center; }
+    .lista-biblioteca .ordenacao .ui-button > span:first-child > svg { display: block; }
+    .lista-biblioteca .ordenacao .rotulo-da-ordem, .lista-biblioteca .ordenacao .ui-chevron { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  }
 }
 .linha-conteudo .linha-meta > span { white-space: nowrap; }
 /* Hover: as ações rápidas tomam o lugar da data, centradas na linha (como no Readwise). */
@@ -252,7 +288,7 @@
   .capa-cartao .capa-filete { margin: 8px 0; }
   .fileira-cartoes { margin-inline: -16px; padding-inline: 16px; gap: 16px; scroll-padding-inline: 16px; }
   .secao-inicio > header p, .setas-fileira { display: none; }
-  .biblioteca-abas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; }
+  .biblioteca-abas { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); overflow: visible; }
   .biblioteca-abas .ui-button { padding-inline: 2px; font-size: clamp(10px, 2.9vw, 12px); letter-spacing: 0; min-width: 0; }
   .linha-documento { height: 84px; min-height: 84px; padding-block: 8px; }
   .linha-conteudo .linha-meta { display: flex; flex-wrap: wrap; max-height: 34px; line-height: 17px; overflow: hidden; column-gap: 8px; }
@@ -289,12 +325,7 @@
 .lista-de-capitulos .session-dot { width: 26px; height: 26px; font-size: 12px; flex: none; }
 .lista-de-capitulos .titulo { flex: 1; min-width: 0; font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lista-de-capitulos .linha-meta { margin: 0; font-size: 13px; color: var(--texto-3); white-space: nowrap; }
-.lista-de-capitulos .acao-do-capitulo { min-height: 28px; padding: 2px 8px; font-size: 13px; }
 .producao-do-documento .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.producao-do-documento .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 4px 10px; border: 1px solid var(--borda); border-radius: var(--r-pilula); background: transparent; color: var(--texto-3); font: 500 12.5px/1.2 var(--sans); cursor: pointer; }
-.producao-do-documento .chip[aria-pressed="true"] { background: var(--bg-2); border-color: var(--borda-hover); color: var(--texto-1); }
-.producao-do-documento .chip-ponto { width: 8px; height: 8px; border-radius: 50%; background: var(--cor-chip, var(--texto-3)); }
-.producao-do-documento .chip-conta { color: var(--texto-3); font-weight: 400; }
 .lista-da-producao { list-style: none; margin: 0; padding: 0; display: grid; }
 .lista-da-producao > li + li { border-top: 1px solid var(--borda); }
 .item-producao { display: grid; gap: 6px; width: 100%; padding: 12px 6px; border: 0; border-radius: var(--r-8); background: none; color: var(--texto-1); text-align: left; cursor: pointer; font: 14px/1.5 var(--sans); }
@@ -309,8 +340,7 @@
 .miniatura-da-producao:hover { border-color: var(--borda-hover); }
 .miniatura-da-producao img { width: 100%; height: 110px; object-fit: contain; background: #fff; border-radius: 6px; }
 .icone-da-miniatura { display: grid; place-items: center; height: 110px; border-radius: 6px; background: var(--bg-2); color: var(--texto-3); }
-.ver-todos.ui-button { margin-top: 8px; padding-inline: 6px; font-size: 13px; }
-.acao-do-capitulo.ui-button { display: inline-flex; gap: 6px; font-size: 13px; }
+.ver-todos.ui-button { margin-top: 8px; }
 
 /* Capa que vira no hover do card (Flip Card do React Bits): mesma proporção da capa, verso com o resumo. */
 .capa-que-vira .flip-card { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; }
@@ -323,6 +353,8 @@
 
 .capa.capa-real { padding: 0; }
 .capa-real img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+/* A miniatura do vídeo (16:9) preenche a capa, cortada nas laterais. */
+.capa-video img { object-fit: cover; }
 
 /* Busca no texto da biblioteca: abaixo dos títulos achados, os trechos por documento. */
 .busca-no-texto { padding: 8px 30px 24px; }
@@ -339,7 +371,7 @@
 @media (max-width: 640px) { .busca-no-texto { padding: 8px 16px 24px; } }
 
 /* Notas do livro e da biblioteca */
-.notas { max-width: 760px; margin-inline: auto; }
+.notas { width: 100%; }
 .notas-cabecalho .voltar { margin-bottom: 16px; }
 .notas-cabecalho h1 { font-size: clamp(28px, 2.5vw, 34px); overflow-wrap: anywhere; text-wrap: pretty; margin: 0 0 16px; }
 .notas-ferramentas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
@@ -361,6 +393,9 @@
 .nota-trecho blockquote { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 1.5; text-wrap: pretty; }
 .nota-trecho:hover blockquote, .nota-trecho:focus-visible blockquote { text-decoration: underline; text-decoration-color: var(--borda); text-underline-offset: 4px; }
 .nota-texto { margin: 10px 0 0; color: var(--texto-2); font-size: 15px; line-height: 1.5; white-space: pre-wrap; }
+/* O comentário do Codex: outra voz, abaixo da nota do leitor, mais discreto e com o nome de quem fala. */
+.nota-codex { margin: 8px 0 0; color: var(--texto-3); font-size: 14px; line-height: 1.5; white-space: pre-wrap; max-width: 80ch; }
+.nota-voz { margin-right: 6px; font: 600 12px/1.4 var(--sans); color: var(--texto-2); letter-spacing: .01em; }
 .nota-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; color: var(--texto-3); font-size: 13px; }
 .nota-meta .nota-copiar { margin-left: auto; min-height: 32px; padding: 4px 10px; font-size: 13px; }
 @media (max-width: 640px) { .notas-ferramentas .busca-compacta { flex: 1 1 100%; } .notas-ferramentas .busca-compacta .ui-input { width: 100%; } }
@@ -393,25 +428,23 @@
 .producao-do-documento .cabeca-da-secao h2 { margin: 0; font-size: 20px; }
 
 /* ---------- Adicionar (J108) ---------- */
-/* Arquivos à esquerda (a área de soltar e a fila), link e texto colado à direita; outras fontes embaixo. */
+/* Uma aba por tipo (V-D2): o principal à esquerda, o complemento à direita; nada estica para encher. */
 .importar { display: grid; gap: 32px; min-width: 0; }
 .importar-topo .page-title { margin-bottom: 8px; }
 .importar-sub { margin: 0; color: var(--texto-2); font-size: 16px; max-width: 60ch; }
-.importar-grade { display: grid; gap: 24px; align-items: stretch; min-width: 0; }
+.importar-grade { display: grid; gap: 24px; align-items: start; min-width: 0; }
 .importar-lado { display: grid; gap: 24px; align-content: start; min-width: 0; }
 @media (min-width: 1100px) { .importar-grade { grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr); } }
 .importar-principal { display: grid; gap: 24px; align-content: start; min-width: 0; }
-/* Sem fila, a área de soltar ocupa a altura da coluna ao lado. */
-.importar-principal:not(:has(.fila)) { align-content: stretch; }
-.importar-soltar { min-height: 280px; align-content: center; gap: 10px; padding: 36px 24px; background: var(--bg-2); }
+.importar-soltar { min-height: 260px; align-content: center; gap: 10px; padding: 36px 24px; background: var(--bg-2); }
 .importar-soltar-icone { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 4px; border-radius: 50%; background: var(--painel); color: var(--texto-1); }
 .importar-soltar[data-arrastando=true] .importar-soltar-icone { background: var(--accent); color: var(--accent-cheio-texto); }
 .importar-soltar-titulo { font-size: 20px; font-weight: 700; color: var(--texto-1); }
 .importar-soltar-texto { color: var(--texto-2); }
 .importar-soltar .ui-button { margin-top: 8px; }
 .importar-limites { color: var(--texto-3); font-size: 13px; }
-.importar-entrada { display: grid; gap: 14px; min-width: 0; }
-.importar-entrada h2, .importar-outras h2 { font-size: 20px; }
+.importar-entrada { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.importar-entrada h2 { font-size: 20px; }
 .importar-linha { display: flex; gap: 10px; min-width: 0; }
 .importar-linha .ui-input { flex: 1; min-width: 0; }
 .importar-linha .ui-button { flex-shrink: 0; }
@@ -422,7 +455,18 @@
 .importar-extensao a { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: inherit; text-decoration: underline; }
 .importar-colado { gap: 14px; }
 .importar-colado textarea { min-height: 140px; }
-.importar code, .importar-outras code { font-size: .92em; overflow-wrap: anywhere; }
+.importar code { font-size: .92em; overflow-wrap: anywhere; }
+/* Abas de Adicionar (V-D2): as da Biblioteca, sem a altura do cabeçalho. */
+.importar-abas { border-bottom: 1px solid var(--borda); margin-top: -16px; }
+.importar-abas .ui-button { min-height: 48px; }
+.importar-desvio { display: grid; gap: 6px; margin-top: -16px; padding: 10px 16px; border-radius: var(--r-8); background: var(--bg-2); color: var(--texto-2); }
+.importar-desvio p { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; }
+/* Vídeo: uma coluna só; o arquivo próprio fica atrás de um botão (opção avançada). */
+.importar-coluna { display: grid; gap: 24px; align-content: start; max-width: 760px; min-width: 0; }
+.importar-mais { justify-self: start; }
+.importar-obra-enviada { display: grid; gap: 16px; align-content: center; min-height: 240px; }
+.importar-obra-enviada p { margin: 0; color: var(--texto-2); }
+.importar-obra-enviada strong { color: var(--texto-1); }
 
 .fila { display: grid; gap: 8px; min-width: 0; }
 .fila-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; }
@@ -462,14 +506,133 @@
   .importar-linha .ui-button { flex: 1 0 100%; }
 }
 
-.importar-outras { display: grid; gap: 16px; min-width: 0; }
-.importar-cartoes { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
-.cartao-fonte { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 14px; align-content: start; padding: 18px 20px; border: 2px solid var(--borda-3d); border-radius: var(--r-16); background: var(--surface-1); }
-.cartao-fonte h3 { font-size: 16px; }
-.cartao-fonte p { margin: 4px 0 0; color: var(--texto-2); font-size: 14px; }
-.cartao-fonte > .button { grid-column: 2; justify-self: start; margin-top: 6px; }
-.cartao-fonte-icone { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--painel); color: var(--texto-1); }
-.importar-avancado { display: grid; gap: 12px; justify-items: start; }
-.importar-avancado-corpo { display: grid; gap: 12px; width: 100%; max-width: 860px; }
-.importar-avancado-corpo h3 { font-size: 17px; }
 .escolher-arquivo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; font-weight: 400; color: var(--texto-2); overflow-wrap: anywhere; }
+
+/* "Preparar leitura" (v0.1): o estado da preparação, logo abaixo dos botões do documento. */
+.estado-da-preparacao { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 16px; }
+.estado-da-preparacao > .dados { margin: 0; color: var(--texto-2); }
+.estado-da-preparacao > .aviso { flex-basis: 100%; margin: 0; }
+.tipo-do-texto { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; flex-basis: 100%; }
+/* O chip do tipo é o .ui-chip único (J132), só para leitura: sem cursor de botão. */
+.chip-tipo { color: var(--texto-1); cursor: default; }
+.chip-tipo:hover:not(:disabled) { border-color: var(--borda); }
+.chip-tipo-grupo { color: var(--texto-3); font-weight: 400; }
+.seletor-de-tipo { display: grid; gap: 12px; flex-basis: 100%; max-width: 720px; padding: 16px; border: 1px solid var(--borda); border-radius: var(--radius-md); background: var(--bg-2); }
+.seletor-de-tipo > label { font-weight: 500; }
+.grupos-de-tipo { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 16px; max-height: 52vh; overflow: auto; }
+.grupos-de-tipo ul { display: grid; gap: 2px; margin: 6px 0 0; padding: 0; list-style: none; }
+.opcao-de-tipo { display: grid; gap: 2px; width: 100%; padding: 6px 8px; border: 1px solid transparent; border-radius: var(--radius-sm, 6px); background: transparent; color: var(--texto-1); font: 400 14px/1.3 var(--sans); text-align: left; cursor: pointer; }
+.opcao-de-tipo:hover, .opcao-de-tipo:focus-visible { border-color: var(--borda-hover); }
+.opcao-de-tipo[aria-pressed="true"] { border-color: var(--borda-hover); background: var(--bg); }
+.exemplos-do-tipo { color: var(--texto-3); font-size: 12.5px; }
+/* Janela "Preparar leitura": o que criar de uma vez; e o andamento de cada item na página. */
+.janela-da-preparacao { display: grid; gap: 16px; padding: 4px 0 8px; }
+.janela-da-preparacao > .dados { margin: 0; }
+.opcoes-da-preparacao { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.opcoes-da-preparacao li { display: grid; gap: 2px; }
+.opcoes-da-preparacao li > .dados { margin: 0 0 0 34px; color: var(--texto-3); font-size: 13.5px; }
+.em-breve { color: var(--texto-3); font-weight: 400; }
+.tipo-discreto { color: var(--texto-3); font-size: 13.5px; }
+.itens-da-preparacao { display: flex; flex-wrap: wrap; gap: 6px 18px; flex-basis: 100%; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.itens-da-preparacao li { display: inline-flex; gap: 6px; }
+.itens-da-preparacao li[data-estado="falhou"] .dados { color: var(--error-texto, var(--aviso-texto)); }
+.configuracao-da-preparacao { display: grid; gap: 12px; margin-bottom: 24px; }
+.configuracao-das-marcas { display: grid; gap: 12px; }
+
+/*
+ * Biblioteca de altura fixa (V-U2): a lista rola sozinha, com o cabeçalho (título, abas, busca)
+ * preso no topo dela; o painel do item rola por dentro. Nada de a janela inteira rolar ao lado do
+ * painel (eram duas barras lado a lado).
+ */
+.altura-fixa .biblioteca-grade { min-height: 0; height: 100%; }
+.altura-fixa .lista-biblioteca { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-top: 72px; }
+.altura-fixa .biblioteca-cabecalho { position: sticky; top: 0; z-index: 5; background: var(--bg); }
+@media (min-width: 1200px) { .altura-fixa .painel-biblioteca { position: static; height: 100%; min-height: 0; } }
+@media (max-width: 799px) { .altura-fixa .lista-biblioteca { padding-bottom: 24px; scroll-padding-top: 160px; } .altura-fixa .contagem-biblioteca { bottom: calc(80px + env(safe-area-inset-bottom)); } }
+
+/* Largura única (V-U4): as páginas ocupam a área de conteúdo como a Biblioteca; a prosa longa (citação,
+ * enunciado, nota) mantém uma medida de leitura dentro da linha larga. */
+.nota-trecho blockquote, .nota-texto, .exercicio-enunciado, .exercicio-trecho { max-width: 80ch; }
+
+/*
+ * Notas como central (J145): o mesmo cabeçalho da Biblioteca (título, abas dos tipos, busca e ordem), uma linha de
+ * filtros e a lista, que é a única coisa que rola. Largura da área de conteúdo, como a Biblioteca (J136).
+ */
+.central-notas { display: flex; flex-direction: column; min-width: 0; min-height: 100dvh; }
+.app-shell.altura-fixa > main > .central-notas { flex: 1 1 auto; min-height: 0; height: 100%; }
+.central-cabecalho { min-height: 64px; display: flex; align-items: center; flex-wrap: wrap; gap: 0 16px; padding: 0 24px; border-bottom: 1px solid var(--borda); flex-shrink: 0; }
+.central-cabecalho h1 { font-size: 20px; display: flex; align-items: center; gap: 10px; margin: 0; min-width: 0; }
+.central-titulo { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.central-do-documento { color: var(--texto-2); font-weight: 400; }
+.central-identidade { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.central-voltar { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--r-8); color: var(--texto-2); }
+.central-voltar:hover { background: var(--bg-hover); color: var(--texto-1); }
+.central-abas { min-width: 0; flex: 0 1 auto; scrollbar-width: none; }
+.central-abas::-webkit-scrollbar { display: none; }
+.central-abas .ui-button { flex-shrink: 0; }
+.central-filtros .busca-compacta .ui-input { width: 240px; }
+.central-opcoes { display: contents; }
+.central-ordem { margin-left: auto; }
+.janela-desktop .central-cabecalho { padding-right: calc(var(--reserva-direita) + 16px); }
+@media (min-width: 800px) { .janela-desktop .app-shell:not(.com-barra) .central-cabecalho { padding-left: calc(var(--reserva-esquerda) + 60px); } }
+.central-filtros { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 12px 24px; border-bottom: 1px solid var(--borda); flex-shrink: 0; }
+.central-filtros .ui-segmented { flex: 0 0 auto; }
+.central-filtros .ui-segmented > .ui-button { min-height: 30px; height: 30px; padding-inline: 12px; }
+.central-filtros .ui-select > .ui-button { min-height: 36px; height: 36px; font-size: 13px; max-width: 260px; }
+.central-filtros .ui-select > .ui-button > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.central-filtros .ui-escolha .ui-button { font-size: 13px; }
+.central-contagem { color: var(--texto-3); font-size: 13px; white-space: nowrap; }
+.central-limpar { font-size: 13px; }
+.central-lista { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 24px 64px; }
+.central-itens { list-style: none; margin: 0; padding: 0; }
+.central-item { padding: 20px 0; border-bottom: 1px solid var(--borda); }
+.central-alto { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 6px; }
+.central-alto .eyebrow { margin: 0; }
+.central-estado { padding: 1px 8px; border-radius: var(--r-pilula); background: var(--painel); color: var(--texto-2); font-size: 12px; line-height: 1.6; }
+.central-abrir { display: block; color: var(--texto-1); text-decoration: none; border-radius: var(--r-8); }
+.central-abrir:hover { text-decoration: none; }
+.central-abrir blockquote { margin: 0; max-width: 80ch; font-family: var(--serif); font-size: 19px; line-height: 1.5; text-wrap: pretty;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; overflow-wrap: anywhere; }
+.central-abrir:hover blockquote, .central-abrir:focus-visible blockquote { text-decoration: underline; text-decoration-color: var(--borda); text-underline-offset: 4px; }
+.central-sem-trecho { font-size: 15px; color: var(--texto-2); }
+.central-destino { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0; max-width: 80ch; color: var(--texto-2); font-family: var(--serif); font-size: 17px; line-height: 1.5; }
+.central-destino > svg { flex-shrink: 0; margin-top: 4px; color: var(--texto-3); }
+.central-destino > span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; }
+.central-onde { font-family: var(--sans); font-size: 13px; color: var(--texto-3); }
+.central-nota, .central-texto, .central-codex { margin: 10px 0 0; max-width: 80ch; font-size: 15px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.central-nota { color: var(--texto-1); }
+.central-texto { color: var(--texto-2); }
+.central-codex { margin-top: 8px; color: var(--texto-3); font-size: 14px; }
+.central-voz { margin-right: 6px; font: 600 12px/1.4 var(--sans); color: var(--texto-2); letter-spacing: .01em; }
+.central-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; color: var(--texto-3); font-size: 13px; }
+.central-documento { color: var(--texto-2); font-weight: 500; }
+.central-mais { margin-left: auto; }
+.central-grupo { margin-top: 28px; }
+.central-grupo h2 { font-size: 20px; margin: 0 0 4px; }
+.central-autor { color: var(--texto-2); font-weight: 400; }
+.central-fim { display: flex; justify-content: center; padding: 24px 0 0; min-height: 1px; }
+.menu-da-nota.ui-popover { padding: 6px; }
+.menu-da-nota ul { list-style: none; margin: 0; padding: 0; }
+.menu-da-nota [role=menuitem] { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--r-8); background: none; color: var(--texto-1); font: 500 14px var(--sans); text-align: left; text-decoration: none; cursor: pointer; }
+.menu-da-nota [role=menuitem]:hover, .menu-da-nota [role=menuitem]:focus-visible { background: var(--bg-hover); }
+.menu-da-nota [role=menuitem].perigo { color: var(--error-texto); }
+@media (max-width: 799px) {
+  .central-notas { min-height: 0; }
+  .central-cabecalho { display: block; padding: 16px 16px 0; }
+  .central-cabecalho > .central-ferramentas { position: absolute; top: 10px; right: 8px; padding: 0; margin: 0; width: auto; }
+  .central-cabecalho { position: relative; }
+  /* A grade de colunas iguais das abas da Biblioteca no celular não cabe com dez tipos: aqui elas correm de lado. */
+  .central-cabecalho .central-abas { display: flex; margin-top: 8px; overflow-x: auto; }
+  .central-cabecalho .central-abas .ui-button { min-width: auto; padding-inline: 8px; letter-spacing: .02em; }
+  .central-abas .ui-button { min-height: 44px; padding-inline: 8px; font-size: 12px; }
+  .central-filtros { display: block; padding: 10px 16px; }
+  .central-filtros .busca-compacta { width: 100%; }
+  .central-filtros .busca-compacta .ui-input { width: 100%; }
+  /* No celular as escolhas ficam numa linha que corre de lado, abaixo da busca. */
+  .central-opcoes { display: flex; align-items: center; gap: 8px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
+  .central-opcoes::-webkit-scrollbar { display: none; }
+  .central-opcoes > * { flex-shrink: 0; }
+  .central-ordem { margin-left: 0; }
+  .central-lista { padding: 0 16px 24px; }
+  .central-abrir blockquote { font-size: 18px; }
+}

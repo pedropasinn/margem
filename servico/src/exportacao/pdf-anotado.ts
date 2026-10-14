@@ -7,10 +7,12 @@
  * `sem_geometria`, que a API devolve num cabeçalho.
  */
 import { spawn } from 'node:child_process';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { quadsDaAncora } from '@margem/core';
 import type { AncoraV1, AnotacaoV1, GeometriaV1, MarcaV2, QuadPdf } from '@margem/contratos';
 import { ambienteSaneado } from '../executor/ambiente.js';
+import { comandoDoMotor } from '../plataforma/executaveis.js';
+import { encerrarArvore, opcoesDeProcesso } from '../plataforma/processos.js';
 import { modoOuNada } from '../modos.js';
 
 export interface AnotacaoPdf {
@@ -91,18 +93,19 @@ export function montarPedido(marcas: readonly MarcaV2[], notas: readonly Anotaca
 
 export const PRAZO_PDF_ANOTADO_MS = 120_000;
 
-/** Roda `python -m margem_motor.pdf_anotado` com o pedido no stdin. */
+/** Roda o motor (`pdf-anotado`, ou `python -m margem_motor.pdf_anotado`) com o pedido no stdin. */
 export function gerarPdfAnotado(raiz: string, entrada: string, saida: string, anotacoes: readonly AnotacaoPdf[],
   prazoMs = PRAZO_PDF_ANOTADO_MS): Promise<void> {
   raiz = resolve(raiz);
   return new Promise((resolver, rejeitar) => {
-    const processo = spawn(join(raiz, 'motor/.venv/bin/python'), ['-m', 'margem_motor.pdf_anotado'], {
-      cwd: join(raiz, 'motor'), env: ambienteSaneado(), stdio: ['pipe', 'ignore', 'pipe'],
+    const comando = comandoDoMotor('pdf-anotado', [], { raiz });
+    const processo = spawn(comando.programa, comando.argumentos, {
+      cwd: comando.cwd, env: ambienteSaneado(), stdio: ['pipe', 'ignore', 'pipe'], ...opcoesDeProcesso(),
     });
     let erro = '';
     processo.stderr.setEncoding('utf8');
     processo.stderr.on('data', (pedaco: string) => { erro = `${erro}${pedaco}`.slice(-2_000); });
-    const prazo = setTimeout(() => { processo.kill('SIGKILL'); }, prazoMs);
+    const prazo = setTimeout(() => { void encerrarArvore(processo, 'forcado'); }, prazoMs);
     prazo.unref();
     processo.on('error', (falha) => { clearTimeout(prazo); rejeitar(falha); });
     processo.on('close', (codigo) => {

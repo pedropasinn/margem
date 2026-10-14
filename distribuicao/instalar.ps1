@@ -11,9 +11,6 @@
     restaurar d  restaura um backup feito por "backup"
     logs         acompanha os registros (Ctrl+C sai)
     desinstalar  remove os containers; com -ApagarDados remove também banco, livros e login
-    arte instalar [arquivo|url] [-Sha256 hex]
-                 instala o acervo de quadros (obras em domínio público); sem argumento baixa o
-                 pacote publicado. Um arquivo local é copiado para dentro do container e apagado depois
 
   Equivale a instalar.sh. Variáveis de ambiente já definidas têm precedência:
   $env:PORTA = 8731; .\instalar.ps1
@@ -24,8 +21,6 @@
 param(
   [Parameter(Position = 0)] [string] $Comando = 'iniciar',
   [Parameter(Position = 1)] [string] $Pasta = '',
-  [Parameter(Position = 2)] [string] $Alvo = '',
-  [string] $Sha256 = '',
   [switch] $ApagarDados
 )
 $ErrorActionPreference = 'Stop'
@@ -298,33 +293,6 @@ function Cmd-Desinstalar {
   }
 }
 
-function Cmd-Arte {
-  if ($Pasta -ne 'instalar') { Falhar 'uso: .\instalar.ps1 arte instalar [arquivo.tar.gz|url] [-Sha256 <hex>]' }
-  ConferirDocker; ExigirInstalacao
-  $argumentos = @()
-  $temporario = ''
-  if ($Alvo -match '^https?://') {
-    $argumentos += $Alvo
-  } elseif ($Alvo) {
-    if (-not (Test-Path -LiteralPath $Alvo -PathType Leaf)) { Falhar "arquivo não encontrado: $Alvo" }
-    # O arquivo está no computador, não no container: vai para a pasta temporária do app e é apagado no fim.
-    # Cópia binária pelo `docker compose cp` (o redirecionamento do PowerShell 5.1 corrompe bytes).
-    $temporario = "/home/app/tmp/acervo-$PID.tar.gz"
-    Info "Copiando $Alvo para o container..."
-    Compose cp (Resolve-Path -LiteralPath $Alvo).Path "app:$temporario"
-    Compose exec -T -u root app chown app:app $temporario
-    $argumentos += $temporario
-  }
-  if ($Sha256) { $argumentos += @('--sha256', $Sha256) }
-  Push-Location $Instalacao
-  try {
-    & docker compose exec -T app npm run --silent arte:instalar -- @argumentos
-    $saida = $LASTEXITCODE
-    if ($temporario) { & docker compose exec -T app rm -f $temporario 2>$null | Out-Null }
-  } finally { Pop-Location }
-  if ($saida -ne 0) { exit $saida }
-}
-
 switch ($Comando) {
   { $_ -in 'iniciar', 'instalar' } { Cmd-Iniciar; break }
   'login' { ConferirDocker; ExigirInstalacao; Compose exec worker codex login --device-auth; break }
@@ -340,7 +308,6 @@ switch ($Comando) {
   'restaurar' { Cmd-Restaurar $Pasta; break }
   'logs' { ConferirDocker; ExigirInstalacao; Compose logs -f --tail 100; break }
   'desinstalar' { Cmd-Desinstalar; break }
-  'arte' { Cmd-Arte; break }
   { $_ -in 'ajuda', '-h', '--help' } { Get-Help $PSCommandPath; break }
   default { Falhar "comando desconhecido: $Comando (veja .\instalar.ps1 ajuda)" }
 }

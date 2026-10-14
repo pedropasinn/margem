@@ -19,9 +19,13 @@ export type CodigoFalha =
   | 'cli_incompativel'
   /** J70: a execução de imagem terminou sem PNG na pasta da sessão. */
   | 'sem_imagem'
+  /** V-W1: o resultado existia, mas não pôde ser guardado no disco (ex.: imagem gerada que não foi copiada). */
+  | 'publicacao'
   /** J106: falhas do provedor de voz (ElevenLabs), com mensagem clara para a pessoa. */
   | 'sem_chave' | 'chave_invalida' | 'sem_creditos' | 'limite' | 'permissao' | 'voz_inexistente'
   | 'pedido_recusado' | 'indisponivel' | 'resposta_invalida'
+  /** J118: preparo de um quadro enviado pela pessoa (imagem ilegível, obra não reconhecida ou não achada, análise recusada). */
+  | 'imagem_invalida' | 'obra_nao_reconhecida' | 'obra_nao_encontrada' | 'analise_recusada'
   | 'desconhecido';
 
 export interface PedidoExecucao {
@@ -53,6 +57,16 @@ export interface PedidoExecucao {
    * sem ele (testes), um link simbólico. `nome` é uma palavra simples, sem barra.
    */
   anexos?: { nome: string; origem: string }[];
+  /**
+   * V-T2: liga a busca na web do próprio Codex (`web_search="live"`, a ferramenta nativa do modelo, sem
+   * rede no sandbox). Só a identificação de um quadro pede; todo o resto continua sem busca.
+   */
+  buscaNaWeb?: boolean;
+  /**
+   * V-T10: a escolha da pessoa em Configurações → Modelos que trocou `modelo`/`esforco` deste pedido
+   * (`null` = padrão do Margem naquele campo). Só registro: vai para a auditoria, nunca para a CLI.
+   */
+  preferencia?: { categoria: string; modelo: string | null; esforco: string | null };
 }
 
 export interface ExecucaoOk {
@@ -71,11 +85,26 @@ export interface ExecucaoOk {
   imagens?: string[];
 }
 
+/**
+ * O que se sabe do fim do processo do Codex (V-W2). Vai para a auditoria (`stderr.txt` e
+ * `resultado.json`) e, a frase legível, para o diagnóstico do job.
+ */
+export interface DetalheDaSaida {
+  codigo_saida: number | null;
+  /** Classe atribuída pelo stderr (`cota`, `auth`, `processo`, `desconhecido`…). */
+  classe: string;
+  /** Resumo redigido (sem credencial, e-mail nem caminho da casa), até 4 KB. */
+  stderr_resumo: string;
+  /** Frase para a pessoa quando a causa é conhecida (`causaDoStderr`). */
+  causa: string | null;
+}
+
 export interface ExecucaoFalhou {
   estado: 'falhou';
   codigo: CodigoFalha;
   mensagem: string;
   duracao_ms: number;
+  detalhe?: DetalheDaSaida;
 }
 
 export interface ExecucaoAdiada {
@@ -85,6 +114,7 @@ export interface ExecucaoAdiada {
   not_before: Date;
   mensagem: string;
   duracao_ms: number;
+  detalhe?: DetalheDaSaida;
 }
 
 export type ResultadoExecutor = ExecucaoOk | ExecucaoFalhou | ExecucaoAdiada;

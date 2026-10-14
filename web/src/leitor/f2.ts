@@ -16,41 +16,30 @@ export interface TracoPessoal {
   /** Dificuldade textual da compreensão (nível 3): sublinhado tracejado, na cor de aviso. */
   dificuldade?: boolean;
 }
-export type NivelDeAtencao = 0 | 1 | 2 | 3;
-export function reduzirAtencao(_estado: NivelDeAtencao, valor: number): NivelDeAtencao {
-  return [0, 1, 2, 3].includes(valor) ? valor as NivelDeAtencao : _estado;
-}
-export function filtrarSaliencia(marcas: readonly MarcaDoLeitor[], nivel: NivelDeAtencao): MarcaDoLeitor[] {
-  // Os grifos do leitor (J37) aparecem em qualquer nível com marcas; só o "Texto puro" os esconde.
-  return nivel === 0 ? [] : marcas.filter((m) => m.origem === 'manual' || ('saliencia' in m ? m.saliencia : 2) <= nivel);
-}
-/** O que cada nível de atenção é para quem lê: o nome aparece na barra e na dica dos pontos. */
-export const NOMES_DOS_NIVEIS = ['Texto puro', 'Esqueleto', 'Estudo', 'Aprofundar'] as const;
-/** "Estudo · 9 marcas", "Aprofundar · 9 marcas · 3 dificuldades · sublinhado = periférico": o que o nível mostra antes do clique. */
-export function dicaDoNivel(nivel: NivelDeAtencao, marcas: number, dificuldades = 0): string {
-  const nome = NOMES_DOS_NIVEIS[nivel];
-  if (nivel === 0) return `${nome} · sem marcas`;
-  const partes = [nome, `${String(marcas)} ${marcas === 1 ? 'marca' : 'marcas'}`];
-  if (nivel === 3 && dificuldades > 0) partes.push(`${String(dificuldades)} ${dificuldades === 1 ? 'dificuldade' : 'dificuldades'}`);
-  // Legenda do único traço que o nível 3 acrescenta: o sublinhado (e o círculo tracejado) é o periférico.
-  if (nivel === 3) partes.push('sublinhado = periférico');
-  return partes.join(' · ');
+/**
+ * V-T3: não há mais níveis de atenção. Todas as marcas aparecem juntas, ou nenhuma: a opção "Mostrar
+ * todas as marcas ao abrir" (Configurações) decide como o leitor abre, e o botão "Marcas" da barra as
+ * mostra ou esconde. A saliência continua nos dados (contrato e banco), fora da tela e do filtro.
+ */
+export function marcasVisiveis(marcas: readonly MarcaDoLeitor[], visiveis: boolean): MarcaDoLeitor[] {
+  return visiveis ? [...marcas] : [];
 }
 
-/**
- * Como a saliência pesa no desenho: 1 é o marca-texto cheio, 2 o mesmo traço mais claro e 3 só um
- * sublinhado fino. Assim o nível 3 acrescenta detalhe sem apagar o esqueleto. Marca sem saliência
- * (leitura de F1) desenha como 1.
- */
-export interface PesoDaSaliencia { saliencia: 1 | 2 | 3; fator: number; soSublinhado: boolean; espessura: number }
+/** Como uma marca pesa no desenho: todas iguais (a saliência não muda mais o traço; V-T3). */
+export interface PesoDaSaliencia { fator: number; soSublinhado: boolean; espessura: number }
+const PESO_UNICO: PesoDaSaliencia = { fator: 1, soSublinhado: false, espessura: 1.5 };
 export function pesoDaSaliencia(marca: MarcaDoLeitor): PesoDaSaliencia {
-  const saliencia = 'saliencia' in marca ? marca.saliencia : 1;
-  if (saliencia === 3) return { saliencia, fator: .8, soSublinhado: true, espessura: 1 };
-  if (saliencia === 2) return { saliencia, fator: .55, soSublinhado: false, espessura: 1.5 };
-  return { saliencia: 1, fator: 1, soSublinhado: false, espessura: 1.5 };
+  void marca;
+  return PESO_UNICO;
 }
-export function liberarPrimeiroEu(ativo: boolean, anotacoes: readonly AnotacaoV1[], blocos: readonly { id: string }[]): boolean {
-  return !ativo || anotacoes.some((a) => blocos.some((b) => b.id === a.ancora.bloco_id));
+/**
+ * "Primeiro eu": as marcas da IA esperam o primeiro gesto do leitor no capítulo. Vale um grifo seu
+ * (a nota agora é sempre de um grifo) ou uma anotação antiga, de antes de a nota ir para o grifo.
+ */
+export function liberarPrimeiroEu(ativo: boolean, anotacoes: readonly AnotacaoV1[], blocos: readonly { id: string }[],
+  marcas: readonly Pick<MarcaDoLeitor, 'origem' | 'ancora'>[] = []): boolean {
+  const noCapitulo = (ancora: AncoraV1) => blocos.some((b) => b.id === ancora.bloco_id);
+  return !ativo || anotacoes.some((a) => noCapitulo(a.ancora)) || marcas.some((m) => m.origem === 'manual' && noCapitulo(m.ancora));
 }
 export function rotuloCamada(camada: CamadaResumida): string {
   const data = new Date(camada.criada_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
@@ -68,7 +57,7 @@ export function desenhaMarca(marca: Pick<MarcaDoLeitor, 'funcao' | 'origem'>): b
 }
 /**
  * A marca que o texto desenha: visível, resolvida, não rejeitada e com cor (ou grifo do leitor). É o recorte
- * das contagens, no leitor e na biblioteca (`servico/src/http/consultas.ts`, J107), em qualquer nível de atenção.
+ * das contagens, no leitor e na biblioteca (`servico/src/http/consultas.ts`, J107), com as marcas à vista ou não.
  */
 export function grifoNoTexto(marca: Pick<MarcaDoLeitor, 'funcao' | 'origem' | 'visivel' | 'validade' | 'avaliacao'>): boolean {
   return marca.visivel && marca.validade === 'resolvida' && marca.avaliacao !== 'rejeitada' && desenhaMarca(marca);

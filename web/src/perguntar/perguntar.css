@@ -1,25 +1,48 @@
-/* Página "Perguntar": mesma casca das Notas (coluna de leitura de ~760 px), lista de conversas à esquerda. */
-.perguntar { display: grid; grid-template-columns: 220px minmax(0, 760px); gap: 48px; justify-content: center; align-items: start; }
-.perguntar-conversas { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
-.perguntar-conversas ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.perguntar-conversas a { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--r-8); color: var(--texto-2); text-decoration: none; overflow-wrap: anywhere; line-height: 1.35; }
-.perguntar-conversas a:hover { background: var(--bg-hover); color: var(--texto-1); }
-.perguntar-conversas a.active { background: var(--painel); color: var(--texto-1); font-weight: 600; }
-.perguntar-conversas .eyebrow { margin: 16px 10px 4px; }
-.perguntar-nova { font-weight: 600; }
+/*
+ * Página "Perguntar" como chat (V-U1, V-U2): cabeçalho fino no topo (o da Biblioteca), a conversa rola
+ * sozinha numa coluna de leitura no centro da página, e a caixa de texto fica fixa embaixo. Vazia, a
+ * boas-vindas e a caixa ficam no meio da tela, com as sugestões logo abaixo.
+ */
+.perguntar { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.perguntar-cabecalho { flex-shrink: 0; display: flex; align-items: center; gap: 8px; height: 64px; padding: 0 var(--pagina-margem); border-bottom: 1px solid var(--borda); }
+.perguntar-cabecalho h1 { flex: 1; min-width: 0; font-size: 17px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-wrap: nowrap; }
+.perguntar-rolagem { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.perguntar-coluna { box-sizing: border-box; width: 100%; max-width: calc(var(--largura-conversa) + 2 * var(--pagina-margem)); margin-inline: auto; padding-inline: var(--pagina-margem); }
+.perguntar-rodape { flex-shrink: 0; padding: 4px 0 14px; background: var(--bg); }
 
-.perguntar-cabecalho h1 { font-size: clamp(28px, 2.5vw, 34px); overflow-wrap: anywhere; text-wrap: pretty; margin: 0 0 8px; }
-.perguntar-sub { color: var(--texto-2); margin: 0 0 24px; max-width: 62ch; }
-
-.perguntar-mensagem { padding: 18px 0; border-bottom: 1px solid var(--borda); }
-.perguntar-mensagem .eyebrow { margin-bottom: 6px; }
-.perguntar-texto-leitor { white-space: pre-wrap; margin: 0; font-size: 17px; color: var(--texto-1); }
-.perguntar-estado { margin-top: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.perguntar-fio { display: flex; flex-direction: column; gap: 28px; padding: 32px 0 24px; }
+.perguntar-mensagem { position: relative; min-width: 0; }
+/* A pergunta: balão à direita, como nos apps de conversa. */
+.perguntar-leitor { align-self: flex-end; max-width: min(85%, 600px); padding: 10px 16px; border-radius: 20px; background: var(--painel); }
+.perguntar-texto-leitor { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; font-size: 16px; line-height: 1.5; color: var(--texto-1); }
+.perguntar-estado { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: -12px; }
 .perguntar-aviso { margin: 4px 0 10px; padding: 8px 12px; border-radius: var(--r-8); background: var(--aviso-bg); color: var(--aviso-texto); font-size: 14px; }
 .perguntar-erro { color: var(--error-texto); font-size: 14px; margin: 0; }
+.perguntar-rodape .perguntar-erro { margin-bottom: 8px; }
+
+/* Vazia: boas-vindas e caixa no meio da altura. */
+.perguntar-vazia .perguntar-rolagem { display: flex; flex-direction: column; justify-content: flex-end; }
+.perguntar-vazia .perguntar-rodape { flex: 1 1 auto; padding-top: 20px; }
+.perguntar-boas-vindas { padding: 32px 0 4px; text-align: center; }
+.perguntar-boas-vindas h2 { font-size: clamp(24px, 2.2vw, 30px); text-wrap: balance; }
+.perguntar-boas-vindas p { margin: 10px auto 0; max-width: 56ch; color: var(--texto-2); font-size: 15px; text-wrap: pretty; }
+
+/* A caixa de texto: arredondada, cresce com o texto, o botão de enviar dentro dela. */
+.compositor { display: flex; align-items: flex-end; gap: 8px; padding: 8px 8px 8px 20px; border: 1px solid var(--borda-3d); border-radius: 26px; background: var(--surface-1); box-shadow: 0 2px 14px #0000000f; cursor: text; transition: border-color .15s; }
+.compositor:focus-within { border-color: var(--borda-3d-hover); }
+.compositor-campo { flex: 1; min-width: 0; min-height: 40px; max-height: 240px; margin: 0; padding: 9px 0; border: 0; outline: 0; resize: none; overflow-y: hidden; background: transparent; color: var(--texto-1); font: 16px/22px var(--sans); }
+.compositor-campo::placeholder { color: var(--texto-3); }
+.compositor-campo:focus-visible { outline: 0; }
+.compositor .compositor-enviar.ui-icon { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; background: var(--botao-fundo); color: var(--botao-texto); }
+.compositor .compositor-enviar.ui-icon:hover:not(:disabled) { background: var(--botao-hover); }
+.compositor .compositor-enviar.ui-icon:disabled { opacity: 1; background: var(--painel); color: var(--texto-off); }
+.perguntar-dica { margin: 8px 0 0; color: var(--texto-3); font-size: 12px; text-align: center; }
+.perguntar-exemplos { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+.perguntar-exemplo { padding: 7px 14px; border: 1px solid var(--borda); border-radius: 999px; background: none; color: var(--texto-2); font-size: 14px; cursor: pointer; text-align: left; }
+.perguntar-exemplo:hover { border-color: var(--borda-hover); color: var(--texto-1); }
 
 /* Resposta: prosa em serifa, como o leitor. */
-.perguntar-agente .markdown { font-family: var(--serif); font-size: 19px; line-height: 1.6; color: var(--texto-1); }
+.perguntar-agente .markdown { font-family: var(--serif); font-size: 19px; line-height: 1.6; color: var(--texto-1); overflow-wrap: anywhere; }
 .markdown > :first-child { margin-top: 0; }
 .markdown p, .markdown ul, .markdown ol, .markdown blockquote { margin: 0 0 14px; }
 .markdown ul, .markdown ol { padding-left: 1.4em; }
@@ -63,17 +86,14 @@
 .perguntar-detalhes summary { cursor: pointer; }
 .perguntar-detalhes ul { margin: 6px 0; padding-left: 1.2em; }
 
-.perguntar-formulario { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
-.perguntar-formulario textarea { min-height: 84px; font-size: 16px; }
-.perguntar-formulario-pe { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.perguntar-dica { color: var(--texto-3); font-size: 13px; }
-.perguntar-exemplos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.perguntar-exemplo { padding: 7px 12px; border: 1px solid var(--borda); border-radius: 999px; background: none; color: var(--texto-2); font-size: 14px; cursor: pointer; text-align: left; }
-.perguntar-exemplo:hover { border-color: var(--borda-hover); color: var(--texto-1); }
-
-@media (max-width: 1000px) {
-  .perguntar { grid-template-columns: minmax(0, 1fr); gap: 24px; }
-  .perguntar-conversas { position: static; order: 2; border-top: 1px solid var(--borda); padding-top: 16px; }
+@media (min-width: 800px) {
+  .app-shell:not(.com-barra) .perguntar-cabecalho { padding-left: 68px; }
+}
+@media (max-width: 799px) {
+  .perguntar-cabecalho { height: 52px; gap: 4px; padding-left: 8px; }
   .perguntar-agente .markdown { font-size: 18px; }
   .perguntar-artefato { padding: 14px; }
+  .perguntar-fio { padding-top: 20px; gap: 22px; }
+  .perguntar-rodape { padding-bottom: 10px; }
+  .perguntar-vazia .perguntar-rodape { padding-top: 16px; }
 }

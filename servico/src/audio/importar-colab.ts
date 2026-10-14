@@ -1,5 +1,6 @@
 /** Importação local de um job concluído; caminhos não são recebidos pela API. */
 import { execFile } from 'node:child_process';
+import { ffprobe } from '../plataforma/executaveis.js';
 import { promisify } from 'node:util';
 import { dirname, join } from 'node:path';
 import { ulid } from 'ulid';
@@ -35,7 +36,7 @@ export async function importarAudioColab(jobId: string, secaoId: string, titulo:
   });
   if (!trechos.length || vistos.size !== Object.keys(mapa).length) throw new Error('Cenas não cobrem o roteiro pedido.');
   const caminho = join(base, 'audio/roteiro/aula.mp3');
-  const { stdout: sondagem } = await executar('ffprobe', ['-v', 'error', '-show_entries', 'format=duration:stream=codec_name,sample_rate', '-of', 'json', caminho], { timeout: 60_000 });
+  const { stdout: sondagem } = await executar(ffprobe(), ['-v', 'error', '-show_entries', 'format=duration:stream=codec_name,sample_rate', '-of', 'json', caminho], { timeout: 60_000, windowsHide: true });
   const sonda = objeto(JSON.parse(sondagem));
   const duracao = Number(objeto(sonda.format).duration);
   if (!Array.isArray(sonda.streams) || sonda.streams.length !== 1) throw new Error('Áudio precisa ter uma faixa.');

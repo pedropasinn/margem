@@ -60,7 +60,7 @@ export function PerfilDoLeitor({ aoSalvar, fontes = FONTES_DO_PERFIL }: { aoSalv
         <Select aria-label={`Nível em ${area.nome || 'área'}`} value={area.nivel} onChange={(evento) => mudarArea(indice, { nivel: evento.target.value as NivelDeArea })}>
           {NIVEIS.map((nivel) => <option key={nivel.valor} value={nivel.valor}>{nivel.rotulo}</option>)}
         </Select>
-        <IconButton aria-label={`Remover ${area.nome || 'área'}`} onClick={() => definirAreas((atuais) => atuais.filter((_, i) => i !== indice))}>×</IconButton>
+        <IconButton aria-label={`Remover ${area.nome || 'área'}`} onClick={() => definirAreas((atuais) => atuais.filter((_, i) => i !== indice))} icone="xis" tamanho="sm" />
       </div>)}
       <Button variante="ghost" onClick={() => definirAreas((atuais) => [...atuais, { nome: '', nivel: 'intermediario' }])}>+ Área</Button>
     </fieldset>

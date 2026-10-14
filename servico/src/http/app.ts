@@ -1,3 +1,4 @@
+import { identidadeDaSaude } from '../instancia.js';
 import { compressao } from './compressao.js';
 import { registrarRotasDeArte } from './rotas-arte.js';
 import { registrarComparacaoDeVersoes } from './rotas-versoes';
@@ -15,9 +16,13 @@ import { registrarRotasDaLeituraComentada } from './rotas-leitura-comentada.js';
 import { registrarBusca } from './rotas-busca.js';
 import { registrarRotasDasNotas } from './rotas-notas.js';
 import { registrarRotasDoObsidian } from './rotas-obsidian.js';
+import { registrarRotasDaMiniatura } from './rotas-miniatura.js';
 import { registrarRotasDasExecucoes } from './rotas-execucoes.js';
 import { registrarRotasDasSalas } from './rotas-salas.js';
 import { registrarRotasDaPrimeiraExecucao } from './rotas-primeira-execucao.js';
+import { registrarRotasDoApagar } from './rotas-apagar.js';
+import { registrarRotasDosModelos } from './rotas-modelos.js';
+import type { CatalogoDeModelos } from '../modelos/catalogo.js';
 import type { Verificadores } from '../primeira-execucao/estado.js';
 import { lerCorpoJson } from './entrada-json.js';
 import { criarLimiteDeTaxa } from './limite-de-taxa.js';
@@ -94,6 +99,8 @@ export interface OpcoesDaApi {
   provedorDeVoz?: (chave: string) => ProvedorDeVoz;
   /** Os testes trocam as verificações do `codex` e do motor da primeira execução (J103). */
   primeiraExecucao?: Partial<Verificadores>;
+  /** Os testes trocam a busca da lista de modelos da conta (Configurações → Modelos, V-T10). */
+  buscarModelos?: () => Promise<CatalogoDeModelos | null>;
 }
 
 /** Maior página aceita: a coluna é `integer`. */
@@ -205,9 +212,8 @@ const ROTAS_DOS_RECURSOS: Readonly<Record<Recurso, readonly string[]>> = {
 };
 
 /**
- * Recursos efetivamente ligados: `MARGEM_ARTE=0` ainda desliga a arte. Sem acervo em disco a arte fica
- * ligada (J110): as rotas respondem com a lista vazia e `acervo.instalado: false`, e a área de Quadros
- * explica o que é e como baixar o acervo, em vez de sumir sem explicação.
+ * Recursos efetivamente ligados: `MARGEM_ARTE=0` ainda desliga a arte. Sem nenhuma obra em disco a arte
+ * fica ligada: a área de Quadros explica o que é e convida a adicionar a primeira obra (J118).
  */
 export function recursosEfetivos(pedidos: ReadonlySet<Recurso>, ambiente: NodeJS.ProcessEnv = process.env): ReadonlySet<Recurso> {
   const efetivos = new Set(pedidos);
@@ -578,9 +584,9 @@ export function criarApi(opcoes: OpcoesDaApi): Hono {
 
   // ------------------------------------------------------------------ F2 (J16)
 
-  // Quadros: com o recurso `arte` e o acervo em disco (ou MARGEM_ARTE=1); MARGEM_ARTE=0 desliga.
+  // Quadros (ligados por padrão; MARGEM_ARTE=0 desliga): as obras que a pessoa adiciona, preparadas pelo worker (J118).
   // `MARGEM_ARTE_FIXTURES=0`: sem as duas obras de demonstração do J94 (como na imagem Docker, que não leva web/public).
-  if (recursos.has('arte')) registrarRotasDeArte(api, process.env.MARGEM_ARTE_FIXTURES === '0' ? { fixtures: false } : {});
+  if (recursos.has('arte')) registrarRotasDeArte(api, { banco, ...(process.env.MARGEM_ARTE_FIXTURES === '0' ? { fixtures: false } : {}) });
   registrarRotasF2(api, { banco, corpoJson, exigirUlid, ultimaVersao });
   registrarRotasDaCompreensao(api, {
     banco, corpoJson, exigirUlid, ultimaVersao,
@@ -608,27 +614,20 @@ export function criarApi(opcoes: OpcoesDaApi): Hono {
   registrarRotasDasNotas(api, { banco, exigirUlid });
   // Exportação para o Obsidian: nota por documento, índice e ZIP (só leitura).
   registrarRotasDoObsidian(api, { banco, exigirUlid });
+  registrarRotasDaMiniatura(api, { banco, exigirUlid });
   // Execuções do Codex para os avisos da interface.
   registrarRotasDasExecucoes(api, { banco, ouvinte, intervaloMs: intervaloEventosMs });
   // Primeira execução de uma instalação local: estado do Codex e do motor, exemplo e conclusão (J103).
   registrarRotasDaPrimeiraExecucao(api, { banco, ...(opcoes.primeiraExecucao ? { verificadores: opcoes.primeiraExecucao } : {}) });
+  // Configurações → Modelos: modelo e esforço por categoria de execução (V-T10).
+  registrarRotasDosModelos(api, { banco, corpoJson, recursos, ...(opcoes.buscarModelos ? { buscar: opcoes.buscarModelos } : {}) });
   // Salas de teste do beta, lado do dono (o testador fala só com o portão).
   if (recursos.has('sala')) registrarRotasDasSalas(api, { banco, corpoJson, exigirUlid });
 
   // ------------------------------------------------------------------ jobs
 
-  api.post('/api/jobs/:id/cancelar', async (c) => {
-    const id = exigirUlid(c.req.param('id'), 'job');
-    const antes = await comTransacao(banco, (cliente) => jobsRepo.obter(cliente, id));
-    if (!antes) throw new ErroDaApi(404, 'job_inexistente');
-    if (antes.estado === 'cancelado') return c.json({ job_id: id, estado: 'cancelado', alterado: false });
-    if (!jobsRepo.CANCELAVEIS.includes(antes.estado) || !(await jobsRepo.cancelar(banco, id))) {
-      const atual = await comTransacao(banco, (cliente) => jobsRepo.obter(cliente, id));
-      throw new ErroDaApi(409, 'job_nao_cancelavel',
-        `Só se cancela job pendente, adiado ou em execução; este está em ${atual?.estado ?? antes.estado}.`);
-    }
-    return c.json({ job_id: id, estado: 'cancelado', alterado: true, estado_anterior: antes.estado });
-  });
+  // Cancelar (um job, uma análise, tudo do documento) e apagar o que foi feito (V-T8).
+  registrarRotasDoApagar(api, { banco, exigirUlid });
 
   api.post('/api/jobs/:id/reenfileirar', async (c) => {
     const id = exigirUlid(c.req.param('id'), 'job');
@@ -645,13 +644,15 @@ export function criarApi(opcoes: OpcoesDaApi): Hono {
 
   // ------------------------------------------------------------------ eventos
 
-  // Saúde leve para monitor externo: só confirma que a API responde e o banco também.
+  // Saúde leve para monitor externo: só confirma que a API responde e o banco também. Diz também quem
+  // responde (V-W9): a extensão do navegador procura o Margem pelas portas 8730–8739 e confere a identificação.
+  const identidade = identidadeDaSaude();
   api.get('/api/saude', async (c) => {
     try {
       await banco.query('SELECT 1');
-      return c.json({ ok: true });
+      return c.json({ ok: true, ...identidade });
     } catch {
-      return c.json({ ok: false }, 503);
+      return c.json({ ok: false, ...identidade }, 503);
     }
   });
 

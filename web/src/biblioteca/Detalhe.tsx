@@ -1,13 +1,16 @@
 import { ComparacaoDeVersoes } from './ComparacaoDeVersoes';
-import { Button, IconButton, Popover, Drawer } from '../ui/Primitives';
-import { PrepararLeitura, PrimeiroEuDoDocumento } from './Operacoes';
+import { Button, IconButton, Popover, Drawer, classesDoBotao } from '../ui/Primitives';
+import {
+  EstadoDaPreparacao, FONTES_DA_PREPARACAO, JanelaDaPreparacao, PrimeiroEuDoDocumento, rotuloDeAnalisar, tipoDeAnalise, usePreparacao,
+  type FontesDaPreparacao, type TipoDeAnalise,
+} from './Operacoes';
 import type { CamadaResumida } from '../leitor/f2';
 import { rotuloCamada } from '../leitor/f2';
-import { criarCompreensao, escrever, gravarPreferenciasDoDocumento, pedir, type OpcoesDeLeitura } from './api';
+import { escrever, pedir } from './api';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Esqueleto } from '../ui/Esqueleto';
 import { Icon } from '../ui/Icon';
-import { arvoreDaVersao, lerProgresso, obterDocumento, prepararMarcas } from './api';
+import { arvoreDaVersao, lerProgresso, obterDocumento } from './api';
 import { fraseDoEstado, frasesDasMarcas } from './estado';
 import type { Rota } from './rotas';
 import type { DetalheDoDocumento } from './tipos';
@@ -16,6 +19,8 @@ import { TipoDoDocumento } from '../ui/TipoDoDocumento';
 import { ProducaoDoDocumento } from './ProducaoDoDocumento';
 import { EnviarParaObsidian } from './EnviarParaObsidian';
 import { pedirFlashcardsComAviso } from '../flashcards/api';
+import { CancelarAnalise, JanelaDeApagarEmLote, MenuDeApagar } from '../apagar/NoDocumento';
+import type { QuemApagar } from '../apagar/api';
 
 export interface CapitulosDoDocumento {
   capitulos: { id: string; titulo: string }[];
@@ -26,13 +31,20 @@ export interface PropsDoDetalhe {
   documento_id: string;
   ir: (destino: Rota) => void;
   carregar?: (id: string) => Promise<DetalheDoDocumento>;
-  preparar?: (id: string, opcoes?: OpcoesDeLeitura) => Promise<{ execucao_id: string; partes: number }>;
+  /** "Analisar": estado e pedido (a compreensão do texto, num clique). */
+  preparacao?: FontesDaPreparacao;
+  /**
+   * Ponto de extensão do "Analisar" por tipo de documento (V-T3). Sem entrada para o tipo, vale a análise
+   * do texto (a janela). O vídeo tem a análise própria (J142), ligada na rota do documento (`App.tsx`).
+   * Se devolver uma promessa, o botão espera e a página relê a situação no fim.
+   */
+  analisar?: Partial<Record<TipoDeAnalise, (documento: DetalheDoDocumento) => void | Promise<unknown>>>;
   /** Capítulos e progresso; sem ela (ou se falhar) o detalhe mostra só o resto. */
   capitulos?: (documento: DetalheDoDocumento) => Promise<CapitulosDoDocumento>;
 }
 
-/** Uma canonização de PDF grande lista centenas de limites; os primeiros bastam de saída. */
-const LIMITES_VISIVEIS = 4;
+/** Uma canonização de PDF grande lista centenas de limites técnicos; nos detalhes, os primeiros bastam. */
+const LIMITES_VISIVEIS = 20;
 
 async function capitulosDaApi(documento: DetalheDoDocumento): Promise<CapitulosDoDocumento> {
   if (documento.versao_id === null) return { capitulos: [], concluidos: [] };
@@ -61,8 +73,10 @@ function agruparLeituras(camadas: readonly CamadaResumida[]): { id: string; rotu
   }));
 }
 
+const SEM_ANALISES: NonNullable<PropsDoDetalhe['analisar']> = {};
+
 export function Detalhe({
-  documento_id, ir, carregar = obterDocumento, preparar = prepararMarcas, capitulos = capitulosDaApi,
+  documento_id, ir, carregar = obterDocumento, preparacao: fontesDaPreparacao = FONTES_DA_PREPARACAO, capitulos = capitulosDaApi, analisar = SEM_ANALISES,
 }: PropsDoDetalhe): ReactNode {
   const [camadas, definirCamadas] = useState<CamadaResumida[]>([]);
   const [menu, abrirMenu] = useState(false);
@@ -73,15 +87,21 @@ export function Detalhe({
   const [documento, definir] = useState<DetalheDoDocumento | null>(null);
   const [indice, definirIndice] = useState<CapitulosDoDocumento | null>(null);
   const [erro, definirErro] = useState<string | null>(null);
-  const [preparacao, abrirPreparacao] = useState(false);
   const [operando, operar] = useState(false);
+  const [janela, abrirJanela] = useState(false);
+  // Muda quando a preparação avança: as camadas e o que o Margem produziu são lidos de novo.
+  const [rodadaDaLeitura, novaRodadaDaLeitura] = useState(0);
   const [aviso, definirAviso] = useState<string | null>(null);
+  // Apagar em lote (V-T8): a janela de confirmação aberta pelo menu "…".
+  const [apagar, abrirApagar] = useState<QuemApagar | null>(null);
 
   const recarregar = useCallback(() => carregar(documento_id).then(definir, (falha: unknown) => {
     definirErro(falha instanceof Error ? falha.message : 'falha ao carregar');
   }), [carregar, documento_id]);
 
   useEffect(() => { void recarregar(); }, [recarregar]);
+  const aoMudarPreparacao = useCallback(() => { novaRodadaDaLeitura((atual) => atual + 1); void recarregar(); }, [recarregar]);
+  const preparacao = usePreparacao(documento_id, documento?.texto_disponivel === true, fontesDaPreparacao, aoMudarPreparacao);
 
   const versaoId = documento?.versao_id ?? null;
   useEffect(() => {
@@ -100,7 +120,7 @@ export function Detalhe({
     let vivo = true;
     void pedir<{ camadas: CamadaResumida[] }>(`/api/documentos/${documento_id}/camadas`).then((r) => { if (vivo) definirCamadas(r.camadas ?? []); }, () => {});
     return () => { vivo = false; };
-  }, [documento_id, versaoId]);
+  }, [documento_id, versaoId, rodadaDaLeitura]);
 
   if (erro !== null) return <p className="empty" role="alert">Não foi possível abrir o documento: {erro}</p>;
   if (documento === null) return <Esqueleto />;
@@ -108,6 +128,8 @@ export function Detalhe({
   // PDF escaneado: as páginas sem camada de texto podem ser transcritas por visão (job do worker).
   const semTexto = documento.formato === 'pdf' ? documento.paginas_sem_texto ?? 0 : 0;
   const concluidos = new Set(indice?.concluidos ?? []);
+  // Trabalhos concluídos com ressalvas (leitura parcial, marcas que ficaram de fora…): visíveis aqui, com os detalhes no Diagnóstico.
+  const avisosDosTrabalhos = [...new Set(documento.jobs.flatMap((job) => (job.estado === 'ok' ? job.avisos ?? [] : []).map((a) => a.mensagem)))];
   // Um texto sem capítulos (artigo, ensaio, texto colado) não tem índice: lê-se de uma vez.
   const textoUnico = indice !== null && indice.capitulos.length === 1;
   const lido = textoUnico && concluidos.size > 0;
@@ -117,30 +139,12 @@ export function Detalhe({
     : documento.midia?.tipo === 'audio'
       ? { uma: 'Ouvir', de_novo: 'Ouvir de novo', continuar: 'Continuar ouvindo', comecar: 'Começar a ouvir' }
       : { uma: 'Ler', de_novo: 'Reler', continuar: 'Continuar de onde parei', comecar: 'Começar a ler' };
+  const analise = rotuloDeAnalisar(preparacao.situacao);
   const lerCapitulo = (secao_id?: string) => {
     ir(secao_id === undefined
       ? { nome: 'leitura', documento_id: documento.id }
       : { nome: 'leitura', documento_id: documento.id, secao_id });
   };
-
-  /** A compreensão vira a camada padrão: abrir um capítulo o prepara, com o seguinte em segundo plano. */
-  async function aoCompreender(modo: { id: string; revisao: number }): Promise<void> {
-    const { compreensao } = await criarCompreensao(documento_id, modo);
-    await gravarPreferenciasDoDocumento(documento_id, { camada_padrao: compreensao.id });
-    definirAviso(textoUnico
-      ? 'Compreensão criada. O texto é preparado quando você o abre.'
-      : 'Compreensão criada. Cada capítulo é preparado quando você o abre, e o seguinte em segundo plano.');
-  }
-  async function aoPreparar(opcoes: OpcoesDeLeitura): Promise<void> {
-    definirAviso(null);
-    try {
-      const resposta = await preparar(documento_id, opcoes);
-      definirAviso(`Leitura enfileirada em ${String(resposta.partes)} parte(s).`);
-      await recarregar();
-    } catch (falha: unknown) {
-      throw falha;
-    }
-  }
 
   async function operacao(caminho: string): Promise<void> {
     if (operando) return;
@@ -167,38 +171,38 @@ export function Detalhe({
           )}
           <span>{documento.marcas.total} marcas · {rotuloDoDocumento(documento, { md: 'Markdown' })}</span>
         </div>
-        <div className="button-row">
+        {/* V-T3: "Analisar" é a ação principal; ler vem ao lado, secundário; Notas, Exercícios e Flashcards
+            descem para uma linha de atalhos discretos, abaixo. */}
+        <div className="button-row acoes-do-documento">
+          {documento.texto_disponivel && analise !== null && (
+            <Button variante="primario" tamanho="lg" disabled={analise.desabilitado || preparacao.ocupado || operando} className="botao-analisar"
+              onClick={() => {
+                const propria = analisar[tipoDeAnalise(documento)];
+                if (propria) {
+                  operar(true); definirAviso(null);
+                  void Promise.resolve(propria(documento))
+                    .then(() => { preparacao.recarregar(); aoMudarPreparacao(); },
+                      (falha: unknown) => { definirAviso(falha instanceof Error ? falha.message : 'Não foi possível começar a análise.'); })
+                    .finally(() => { operar(false); });
+                }
+                else if (preparacao.situacao?.estado === 'falhou') void preparacao.preparar();
+                else abrirJanela(true);
+              }}>
+              <Icon name="spark" size={18} /> {analise.rotulo}
+            </Button>
+          )}
           {documento.texto_disponivel && (
             <a
-              className="button primary"
+              // Sem "Analisar" à vista (ainda sem texto para analisar), ler volta a ser a ação principal.
+              className={classesDoBotao({ variante: analise === null ? 'primario' : 'secundario', tamanho: 'lg' })}
               href={`/ler/${documento.id}`}
               onClick={(evento) => { evento.preventDefault(); lerCapitulo(); }}
             >
               {textoUnico ? (lido ? verbo.de_novo : verbo.uma) : concluidos.size > 0 || documento.progresso ? verbo.continuar : verbo.comecar}
             </a>
           )}
-          {documento.versao_id !== null && (
-            <a className="button" href={`/documentos/${documento.id}/notas`} onClick={(evento) => { evento.preventDefault(); ir({ nome: 'notas', documento_id: documento.id }); }}>
-              <Icon name="caderno" size={18} /> Notas
-            </a>
-          )}
-          {documento.versao_id !== null && (
-            <a className="button" href={`/documentos/${documento.id}/exercicios`} onClick={(evento) => { evento.preventDefault(); ir({ nome: 'exercicios', documento_id: documento.id }); }}>
-              <Icon name="resolver" size={18} /> Exercícios
-            </a>
-          )}
-          {documento.versao_id !== null && (
-            <a className="button" href={`/documentos/${documento.id}/flashcards`} onClick={(evento) => { evento.preventDefault(); ir({ nome: 'flashcards', documento_id: documento.id }); }}>
-              <Icon name="cartoes" size={18} /> Flashcards
-            </a>
-          )}
-          {documento.texto_disponivel && (
-            <Button type="button" className="button" onClick={() => abrirPreparacao(!preparacao)}>
-              <Icon name="spark" size={18} /> Preparar leitura
-            </Button>
-          )}
         <div className="operacoes-documento">
-          <IconButton ref={botaoMenu} aria-label="Opções do documento" aria-expanded={menu} onClick={() => abrirMenu(!menu)}>•••</IconButton>
+          <IconButton ref={botaoMenu} aria-label="Opções do documento" aria-expanded={menu} onClick={() => abrirMenu(!menu)} icone="reticencias" />
           {menu && <Popover ancora={botaoMenu} rotulo="Opções do documento" aoFechar={() => abrirMenu(false)} className="formulario">
             <div><span className="eyebrow">Marcas por função</span><p className="dados">{frasesDasMarcas(documento).map((frase) => frase.replace(' ', '\u00a0')).join(' · ') || `${documento.marcas.total} marcas`}</p></div>
             {documento.versao_id && <PrimeiroEuDoDocumento documentoId={documento_id} />}
@@ -208,28 +212,50 @@ export function Detalhe({
               abrirMenu(false);
               if (versao && secao) void pedirFlashcardsComAviso(versao, secao).then(definirAviso);
             }}>Criar flashcards</Button>}
-            {documento.versao_id && <Button variante="ghost" onClick={() => { abrirMenu(false); abrirObsidian(true); }}>Enviar para o Obsidian</Button>}
+            {documento.versao_id && <Button variante="ghost" onClick={() => { abrirMenu(false); abrirObsidian(true); }}>Exportar para o Obsidian</Button>}
             {documento.versoes.length > 1 && <Button variante="ghost" onClick={() => { abrirMenu(false); abrirComparacao(true); }}>Comparar versões</Button>}
             <Button variante="ghost" onClick={() => { abrirMenu(false); abrirDiagnostico(true); }}>Diagnóstico</Button>
+            {documento.versao_id && <MenuDeApagar aoEscolher={(quem) => { abrirMenu(false); abrirApagar(quem); }} />}
           </Popover>}
         </div>
         </div>
+        {documento.versao_id !== null && (
+          <nav className="atalhos-do-documento" aria-label="Do documento">
+            {([['notas', 'caderno', 'Notas'], ['exercicios', 'resolver', 'Exercícios'], ['flashcards', 'cartoes', 'Flashcards']] as const).map(([nome, icone, rotulo]) => (
+              <a key={nome} href={`/documentos/${documento.id}/${nome}`} onClick={(evento) => { evento.preventDefault(); ir({ nome, documento_id: documento.id }); }}>
+                <Icon name={icone} size={16} /> {rotulo}
+              </a>
+            ))}
+          </nav>
+        )}
         {semTexto > 0 && documento.estado !== 'transcrevendo' && (
           <p className="aviso">
             {semTexto === 1 ? '1 página sem texto' : `${String(semTexto)} páginas sem texto`} —{' '}
             <Button variante="ghost" disabled={operando} onClick={() => void operacao(`/api/documentos/${documento_id}/transcrever`)}>transcrever</Button>
           </p>
         )}
-        {preparacao && <PrepararLeitura preparar={aoPreparar} compreender={aoCompreender} textoUnico={textoUnico} aoFechar={() => abrirPreparacao(false)} />}
+        {documento.texto_disponivel && <EstadoDaPreparacao preparacao={preparacao} textoUnico={textoUnico} />}
+        {documento.texto_disponivel && <CancelarAnalise documentoId={documento_id} situacao={preparacao.situacao} aoCancelar={() => { preparacao.recarregar(); aoMudarPreparacao(); }} />}
+        {janela && <JanelaDaPreparacao preparacao={preparacao} documentoId={documento_id} textoUnico={textoUnico} aoFechar={() => abrirJanela(false)} />}
+        {avisosDosTrabalhos.length > 0 && (
+          <p className="aviso aviso-dos-trabalhos" role="status">
+            Concluído com avisos: {avisosDosTrabalhos[0]}
+            {avisosDosTrabalhos.length > 1 && ` (e mais ${String(avisosDosTrabalhos.length - 1)})`} —{' '}
+            <Button variante="ghost" onClick={() => abrirDiagnostico(true)}>ver detalhes</Button>
+          </p>
+        )}
         {aviso !== null && <p className="aviso">{aviso}</p>}
       </section>
 
       <div className="detalhe-grade">
-        {indice !== null && <ProducaoDoDocumento documento={documento} capitulos={indice.capitulos} concluidos={concluidos} camadas={camadas} ir={ir} />}
+        {indice !== null && <ProducaoDoDocumento documento={documento} capitulos={indice.capitulos} concluidos={concluidos} camadas={camadas} ir={ir}
+          preparacao={preparacao.situacao} />}
 
 
       </div>
-      {obsidian && <Drawer rotulo="Enviar para o Obsidian" aoFechar={() => abrirObsidian(false)}><EnviarParaObsidian documentoId={documento.id} /></Drawer>}
+      {apagar && <JanelaDeApagarEmLote documentoId={documento.id} quem={apagar} aoFechar={() => abrirApagar(null)}
+        aoApagar={() => { preparacao.recarregar(); aoMudarPreparacao(); }} />}
+      {obsidian && <Drawer rotulo="Exportar para o Obsidian" aoFechar={() => abrirObsidian(false)}><EnviarParaObsidian documentoId={documento.id} /></Drawer>}
       {comparacao && <Drawer rotulo="Comparar versões" aoFechar={() => abrirComparacao(false)}><ComparacaoDeVersoes versoes={documento.versoes} /></Drawer>}
       {diagnostico && <Drawer rotulo="Diagnóstico" aoFechar={() => abrirDiagnostico(false)}>
         {documento.detalhe && <p>Último resultado: {documento.detalhe}</p>}
@@ -241,16 +267,18 @@ export function Detalhe({
                 versão {String(versao.numero)} · {String(versao.blocos)} blocos · {String(versao.secoes)} seções
                 {versao.assets > 0 && ` · ${String(versao.assets)} imagens`} · {versao.motor}
               </p>
-              {versao.limites.length > 0 && (
-                <ul className="limites">
-                  {versao.limites.slice(0, LIMITES_VISIVEIS).map((limite, posicao) => <li key={`${String(posicao)}-${limite}`}>{limite}</li>)}
+              {(versao.resumo_dos_limites ?? []).length > 0 && (
+                <ul className="limites resumo-dos-limites">
+                  {(versao.resumo_dos_limites ?? []).map((item) => <li key={`${item.nivel}-${item.codigo}-${item.mensagem}`} data-nivel={item.nivel}>{item.mensagem}</li>)}
                 </ul>
               )}
-              {versao.limites.length > LIMITES_VISIVEIS && (
+              {versao.limites.length > 0 && (
+                // O texto técnico do motor, recolhido: o resumo acima é o que importa a quem lê.
                 <details className="mais-limites">
-                  <summary>mais {versao.limites.length - LIMITES_VISIVEIS} limites</summary>
+                  <summary>Detalhes técnicos ({versao.limites.length})</summary>
                   <ul className="limites">
-                    {versao.limites.slice(LIMITES_VISIVEIS).map((limite, posicao) => <li key={`${String(posicao)}-${limite}`}>{limite}</li>)}
+                    {versao.limites.slice(0, LIMITES_VISIVEIS).map((limite, posicao) => <li key={`${String(posicao)}-${limite}`}>{limite}</li>)}
+                    {versao.limites.length > LIMITES_VISIVEIS && <li>… e mais {versao.limites.length - LIMITES_VISIVEIS}</li>}
                   </ul>
                 </details>
               )}
@@ -282,12 +310,13 @@ export function Detalhe({
               <span className="eyebrow">Trabalhos</span>
               <ul className="limites">
                 {documento.jobs.map((job) => (
-                  <li key={job.id}>
-                    {job.tipo} · {job.estado}
+                  <li key={job.id} data-avisos={(job.avisos?.length ?? 0) > 0 ? '' : undefined}>
+                    {job.tipo} · {(job.avisos?.length ?? 0) > 0 ? 'concluído com avisos' : job.estado}
                     {job.error_code !== null && ` · ${job.error_code}`}
                     {job.not_before !== null && ` · retoma em ${job.not_before}`}
                     {['fila', 'reservado', 'adiado'].includes(job.estado) && <Button type="button" disabled={operando} onClick={() => void operacao(`/api/jobs/${job.id}/cancelar`)}>Cancelar</Button>}
                     {['falhou', 'cancelado'].includes(job.estado) && <Button type="button" disabled={operando} onClick={() => void operacao(`/api/jobs/${job.id}/reenfileirar`)}>Reenfileirar</Button>}
+                    {(job.avisos?.length ?? 0) > 0 && <ul className="avisos-do-trabalho">{job.avisos?.map((aviso) => <li key={aviso.codigo}>{aviso.mensagem}</li>)}</ul>}
                   </li>
                 ))}
               </ul>

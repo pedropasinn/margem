@@ -7,7 +7,8 @@ export type FormaDaRegiao =
 export type TipoDeAfirmacaoDaObra = 'observacao' | 'fato' | 'interpretacao_documentada' | 'inferencia_ia' | 'intencao_desconhecida';
 export interface FonteDaObra {
   id: string; titulo: string; url: string;
-  categoria: 'instituicao_proprietaria' | 'museu' | 'catalogo' | 'academica' | 'arquivo' | 'leilao' | 'google_arts' | 'secundaria' | 'popular';
+  /** `imagem_enviada` (V-W5): a própria imagem que a pessoa enviou, única fonte de uma obra não identificada. */
+  categoria: 'instituicao_proprietaria' | 'museu' | 'catalogo' | 'academica' | 'arquivo' | 'leilao' | 'google_arts' | 'secundaria' | 'popular' | 'imagem_enviada';
   consultado_em: string;
 }
 export interface AfirmacaoDaObra {

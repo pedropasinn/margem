@@ -33,6 +33,10 @@
   --aviso-texto: #7a4f00;
   --aviso-bg: #fff4d6;
 
+  /* Assinatura (docs/identidade/README.md): a palavra e o lema; o arco tem cores fixas. */
+  --marca-palavra: #2B2B2B;
+  --marca-lema: #6E6E73;
+
   --botao-fundo: #000;
   --botao-texto: #fff;
   --botao-base: #4d4d4d;
@@ -47,6 +51,8 @@
   --f-distincao: #2ec4b6;
   --opacidade-marca: .32;
   --mistura-marca: multiply;
+  /* Quanto da cor da função entra no algarismo do número da nota (`web/src/ui/tokens.css`). */
+  --mistura-do-numero: 50%;
   --folha: #fff;
   --sombra-folha: 0 1px 2px rgba(0, 0, 0, .06), 0 12px 40px rgba(0, 0, 0, .08);
 
@@ -63,6 +69,8 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
+    --marca-palavra: #FFFFFF;
+    --marca-lema: #A1A1AA;
     --bg: #141414;
     --bg-2: #1a1a1a;
     --painel: #222;
@@ -93,7 +101,30 @@
 
     --opacidade-marca: .42;
     --mistura-marca: screen;
+    --mistura-do-numero: 70%;
     --folha: #1c1c1c;
     --sombra-folha: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 40px rgba(0, 0, 0, .35);
+  }
+}
+
+/*
+ * Os tokens do app que só as demonstrações usam (os componentes reais de `web/src`), com os
+ * valores de `web/src/ui/tokens.css`.
+ */
+:root {
+  --accent-cheio: #456dff;
+  --accent-cheio-texto: #fff;
+  --texto-off: rgba(0, 0, 0, .3);
+  --surface-1: var(--bg); --surface-2: var(--painel);
+  --border-subtle: var(--borda); --border-strong: var(--borda-hover);
+  --text-primary: var(--texto-1); --text-secondary: var(--texto-2); --text-tertiary: var(--texto-3);
+  --radius-sm: var(--r-8); --radius-md: var(--r-12); --radius-lg: var(--r-24);
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px; --space-7: 48px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent-cheio: #9db2ff;
+    --accent-cheio-texto: #10162e;
+    --texto-off: rgba(255, 255, 255, .32);
   }
 }

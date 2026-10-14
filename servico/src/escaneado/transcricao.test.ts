@@ -84,6 +84,8 @@ test('limites sem_texto do motor viram os números das páginas', () => {
 });
 
 test('PDF escaneado: transcrever pelo app vira versão nova com camada de texto', async () => comBanco('escaneado', async (banco) => {
+  // Sem preparar a leitura sozinho ao importar (padrão das Configurações): aqui só a transcrição.
+  await banco.query(`INSERT INTO preferencia_geral (chave, valor) VALUES ('preparacao', '{"ao_importar": false, "itens": ["grifos_relacoes"]}')`);
   const antes = process.env.MARGEM_DADOS;
   const pasta = await mkdtemp(join(tmpdir(), 'margem-escaneado-'));
   process.env.MARGEM_DADOS = pasta;

@@ -1,9 +1,9 @@
 {
   "id": "margem",
   "name": "Margem",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "1.5.0",
-  "description": "Traz para o cofre as marcas, as notas e as perguntas do Margem, uma nota por documento, com links de volta para cada trecho.",
+  "description": "Traz para o cofre os grifos, as anotações, as perguntas e as relações do Margem, uma pasta por documento e uma nota por item, com links de volta para cada trecho.",
   "author": "Pedro Pasin",
   "isDesktopOnly": false
 }

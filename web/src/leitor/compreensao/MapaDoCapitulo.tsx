@@ -13,6 +13,7 @@ import { DesenhoDoEsquema } from './esquema/DesenhoDoEsquema';
 import type { MotorDeLayout } from './esquema/layout';
 import { emCurso, useEsquema, FONTES_DO_ESQUEMA, type FontesDoEsquema } from './esquema/useEsquema';
 import './esquema/esquema.css';
+import { ConfirmarApagar } from '../../apagar/ConfirmarApagar';
 import { nomeDaUnidade, usarForma } from '../forma';
 
 export interface PropsDoMapa {
@@ -47,14 +48,22 @@ function CascaDoMapa({ titulo, aoFechar, acoes, children }: { titulo: string; ao
 
 export function MapaDoCapitulo(props: PropsDoMapa): ReactNode {
   const { compreensaoId, secaoId, aoIr, fontesDoEsquema, motorDoLayout } = props;
-  const { situacao, erro, pedindo, gerar } = useEsquema(compreensaoId, secaoId, fontesDoEsquema ?? FONTES_DO_ESQUEMA);
+  const { situacao, erro, pedindo, gerar, apagar } = useEsquema(compreensaoId, secaoId, fontesDoEsquema ?? FONTES_DO_ESQUEMA);
   const andando = emCurso(situacao) || pedindo;
   const [avisoFechado, fecharAviso] = useState<string | null>(null);
+  const [confirmarApagar, abrirConfirmacao] = useState(false);
+  const [falhaAoCancelar, definirFalhaAoCancelar] = useState<string | null>(null);
   const pronto = situacao?.esquema ?? null;
+  // V-T8: o mapa sendo gerado se cancela (nada fica); o pronto se apaga, com confirmação.
+  const cancelar = emCurso(situacao) ? <Button variante="ghost" className="small cancelar-mapa" onClick={() => {
+    definirFalhaAoCancelar(null);
+    apagar(true).catch((falha: unknown) => definirFalhaAoCancelar(falha instanceof Error ? falha.message : 'Não foi possível cancelar.'));
+  }} title="Para o Codex agora; nada do mapa novo fica"><Icon name="xis" size={16} /><span>Cancelar</span></Button> : null;
   const acoes = pronto ? (andando
-    ? <span className="esquema-gerando" role="status"><ThoughtLine label="Gerando um mapa novo…" collapsible={false} showTimer={false} fontSize={13} color="var(--texto-2)" glyphColor="var(--accent)" /></span>
-    : <Button variante="ghost" className="small regenerar-mapa" onClick={gerar} title="Pede ao Codex um esquema novo; o atual continua guardado" aria-label="Regenerar o mapa">
-      <Icon name="restaurar" size={16} /><span>Regenerar</span></Button>) : null;
+    ? <><span className="esquema-gerando" role="status"><ThoughtLine label="Gerando um mapa novo…" collapsible={false} showTimer={false} fontSize={13} color="var(--texto-2)" glyphColor="var(--accent)" /></span>{cancelar}</>
+    : <><Button variante="ghost" className="small regenerar-mapa" onClick={gerar} title="Pede ao Codex um esquema novo; o atual continua guardado" aria-label="Regenerar o mapa">
+      <Icon name="restaurar" size={16} /><span>Regenerar</span></Button>
+      <Button variante="ghost" className="small apagar-mapa" onClick={() => abrirConfirmacao(true)} aria-label="Apagar o mapa"><Icon name="lixeira" size={16} /><span>Apagar</span></Button></>) : cancelar;
 
   let esquema: ReactNode;
   if (pronto) {
@@ -74,6 +83,7 @@ export function MapaDoCapitulo(props: PropsDoMapa): ReactNode {
         <ThoughtLine label="Desenhando o mapa do capítulo…" collapsible={false} fontSize={17} color="var(--texto-1)" glyphColor="var(--accent)"
           steps={['Lendo o modelo do capítulo', 'Separando as partes', 'Escolhendo as ideias principais', 'Ligando uma à outra']} />
         <p>Leva um ou dois minutos. Pode fechar e voltar: o mapa fica guardado.</p>
+        {falhaAoCancelar && <p className="esquema-aviso" role="alert">{falhaAoCancelar}</p>}
       </>;
     } else if (situacao === null && erro === null) {
       corpo = <ThoughtLine label="Abrindo o mapa…" collapsible={false} showTimer={false} fontSize={15} color="var(--texto-2)" glyphColor="var(--accent)" />;
@@ -92,5 +102,8 @@ export function MapaDoCapitulo(props: PropsDoMapa): ReactNode {
     }
     esquema = <div className="mapa-esquema"><div className="esquema-vazio" aria-live="polite">{corpo}</div></div>;
   }
-  return <CascaDoMapa titulo={props.titulo} aoFechar={props.aoFechar} acoes={acoes}>{esquema}</CascaDoMapa>;
+  return <CascaDoMapa titulo={props.titulo} aoFechar={props.aoFechar} acoes={acoes}>{esquema}
+    {confirmarApagar && <ConfirmarApagar titulo="Apagar o mapa?" itens={[`Mapa de “${props.titulo}”`]} texto="O mapa do Codex sai. Dá para pedir outro depois."
+      aoFechar={() => abrirConfirmacao(false)} aoConfirmar={() => apagar(false)} />}
+  </CascaDoMapa>;
 }

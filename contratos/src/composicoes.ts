@@ -1,5 +1,5 @@
 import { regrasMarca, regrasLote, regrasProgresso } from './regras';
-import { regrasAnotacao, regrasConversa, regrasConexao } from './regras-f2';
+import { regrasAnotacao, regrasDificuldade, regrasConversa, regrasConexao, regrasConexaoV3 } from './regras-f2';
 import { regrasRoteiroGuiado } from './visita';
 import { regrasLeituraComentada } from './leitura-comentada';
 import { regrasAudio } from './audio';
@@ -24,6 +24,7 @@ export function comporContratos(s: Record<string, Schema>): Record<string, Compo
   const marcaV1 = objeto(s.MarcaV1!, { ancora: refAncora }, regraBooleana(regrasMarca, 'marca_incoerente'));
   const progresso = objeto(s.ProgressoV1!, { ancora: refAncora }, regraBooleana(regrasProgresso, 'progresso_incoerente'));
   const anotacao = objeto(s.AnotacaoV1!, { ancora: refAncora }, regraBooleana(regrasAnotacao, 'anotacao_incoerente'));
+  const dificuldadeV1 = objeto(s.DificuldadeV1!, { ancora: refAncora }, regraBooleana(regrasDificuldade, 'dificuldade_incoerente'));
   // J101: V1 (autor humano `pedro`) e V2 (`leitor`) compõem igual; só o schema e a chave do ramo mudam.
   const comporConversa = (conversaSchema: Schema, humano: string): Componente => {
     const mensagemDaConversa = def(conversaSchema, 'mensagem');
@@ -37,13 +38,13 @@ export function comporContratos(s: Record<string, Schema>): Record<string, Compo
       mensagens: lista(p(conversaSchema, 'mensagens'), referenciar(mensagemComposta, '#/$defs/mensagem')),
     }, regraBooleana(regrasConversa, 'conversa_incoerente'));
   };
-  const comporConexao = (conexaoSchema: Schema): Componente => {
+  const comporConexao = (conexaoSchema: Schema, regra: (valor: never) => boolean = regrasConexao): Componente => {
     const destino = p(conexaoSchema, 'destino');
     const destinos = r(destino, 'oneOf');
     return objeto(conexaoSchema, {
       origem: refAncora,
       destino: alternativas(destino, 'oneOf', [objeto(destinos[0]!, { ancora: refAncora }), ...destinos.slice(1).map(v => folha(v))]),
-    }, regraBooleana(regrasConexao, 'conexao_incoerente'));
+    }, regraBooleana(regra, 'conexao_incoerente'));
   };
   const comporLoteRevisao = (loteSchema: Schema): Componente => {
     const opsRevisao = p(loteSchema, 'operacoes');
@@ -57,6 +58,7 @@ export function comporContratos(s: Record<string, Schema>): Record<string, Compo
   const conversaV2 = comporConversa(s.ConversaV2!, 'leitor');
   const conexao = comporConexao(s.ConexaoV1!);
   const conexaoV2 = comporConexao(s.ConexaoV2!);
+  const conexaoV3 = comporConexao(s.ConexaoV3!, regrasConexaoV3);
   const loteRevisao = comporLoteRevisao(s.LoteRevisaoV1!);
   const loteRevisaoV2 = comporLoteRevisao(s.LoteRevisaoV2!);
   const paradas = p(s.RoteiroGuiadoV1!, 'paradas');
@@ -178,6 +180,6 @@ export function comporContratos(s: Record<string, Schema>): Record<string, Compo
   const esquema = objeto<EsquemaDoCapituloV1>(esquemaSchema, {
     nos: lista(nosDoEsquema, objeto(nosDoEsquema.items as Schema, { ancora: refAncora })),
   }, regrasEsquemaDoCapitulo);
-  return { MarcaV1: marcaV1, ProgressoV1: progresso, AnotacaoV1: anotacao, ConversaV1: conversa, ConexaoV1: conexao, ConversaV2: conversaV2, ConexaoV2: conexaoV2, LoteRevisaoV2: loteRevisaoV2, ResolucaoV2: resolucaoV2,
+  return { DificuldadeV1: dificuldadeV1, MarcaV1: marcaV1, ProgressoV1: progresso, AnotacaoV1: anotacao, ConversaV1: conversa, ConexaoV1: conexao, ConversaV2: conversaV2, ConexaoV2: conexaoV2, ConexaoV3: conexaoV3, LoteRevisaoV2: loteRevisaoV2, ResolucaoV2: resolucaoV2,
     LoteRevisaoV1: loteRevisao, RoteiroGuiadoV1: roteiro, LeituraComentadaV1: leitura, EsquemaDoCapituloV1: esquema, VisualV1: visual, AudioV1: audio, AudioV2: audioV2, PlanoPedagogicoV1: plano, AncoraV1: ancora, MarcaV2: marca, ModeloDoCapituloV1: modelo, LoteDoModeloV1: lote, ResolucaoV1: resolucao };
 }

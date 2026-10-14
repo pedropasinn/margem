@@ -18,6 +18,8 @@ import * as visuaisRepo from '../repos/visuais.js';
 import { caminhoDaImagem } from '../visuais/arquivos.js';
 import { blocosDaSecao, enfileirarVisual } from '../visuais/manipuladores.js';
 import { ErroDaApi } from './erros.js';
+import * as jobsRepo from '../repos/jobs.js';
+import { cancelarOperacoes } from '../apagar/cancelar.js';
 
 type ContextoDeCorpo = { req: { raw: Request } };
 export interface ApoioDosVisuais {
@@ -127,7 +129,12 @@ export function registrarRotasDosVisuais(api: Hono, apoio: ApoioDosVisuais): voi
 
   api.delete('/api/visuais/:id', async (c) => {
     const id = exigirUlid(c.req.param('id'), 'visual');
-    const apagado = await comTransacao(banco, (cliente) => visuaisRepo.apagar(cliente, id));
+    const apagado = await comTransacao(banco, async (cliente) => {
+      // Ainda sendo desenhado: o Codex para (V-T8) e nada do que ele faria fica.
+      const job = (await cliente.query<{ id: Id; estado: jobsRepo.EstadoJob }>('SELECT j.id, j.estado FROM visual v JOIN job j ON j.id = v.job_id WHERE v.id=$1', [id])).rows[0];
+      if (job && jobsRepo.CANCELAVEIS.includes(job.estado)) await cancelarOperacoes(cliente, { job_id: job.id });
+      return visuaisRepo.apagar(cliente, id);
+    });
     if (!apagado) throw new ErroDaApi(404, 'visual_inexistente');
     return c.json({ visual_id: id, apagado: true });
   });

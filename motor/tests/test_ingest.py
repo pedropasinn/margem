@@ -2,6 +2,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import os
 import subprocess
 import sys
 
@@ -30,7 +31,10 @@ def fatiar(texto, inicio, fim):
 
 
 def executar(entrada, formato, saida, *opcoes):
-    return subprocess.run([sys.executable, "-m", "margem_motor.ingest", "--entrada", str(entrada),
+    # Com MARGEM_MOTOR (J114), os testes da linha de comando rodam no motor congelado.
+    congelado = os.environ.get("MARGEM_MOTOR", "").strip()
+    comando = [congelado, "ingest"] if congelado else [sys.executable, "-m", "margem_motor.ingest"]
+    return subprocess.run([*comando, "--entrada", str(entrada),
                            "--formato", formato, "--saida", str(saida), *opcoes],
                           cwd=RAIZ / "motor", capture_output=True, check=False)
 
@@ -76,6 +80,16 @@ def test_markdown_estrutura_inline_utf16_e_codigo_literal(tmp_path):
     assert next(b["texto"] for b in c["blocos"] if b["tipo"] == "lista") == "item um\nitem dois"
     assert next(b["texto"] for b in c["blocos"] if b["tipo"] == "citacao") == "uma citação em duas linhas"
     assert next(b["texto"] for b in c["blocos"] if b["tipo"] == "codigo").encode() == codigo
+    validar(tmp_path / "saida/canonico.json")
+
+
+def test_markdown_que_comeca_em_secao_tem_capitulo_de_nivel_1(tmp_path):
+    """V-A8 (v0.1): sem `#`, a primeira seção (`##`) vira capítulo; a compreensão nunca fica sem capítulo."""
+    entrada = tmp_path / "secoes.md"
+    entrada.write_text("## Seção um\n\nTexto.\n\n### Sub\n\nMais.\n\n## Seção dois\n\nOutro.\n", encoding="utf-8")
+    c, _ = canonizar(entrada, "md", tmp_path / "saida")
+    assert [(s["nivel"], s["titulo"]) for s in c["secoes"]] == [(1, "Seção um"), (2, "Sub"), (1, "Seção dois")]
+    assert [b["tipo"] for b in c["blocos"] if b["tipo"] in {"capitulo", "secao"}] == ["capitulo", "secao", "capitulo"]
     validar(tmp_path / "saida/canonico.json")
 
 

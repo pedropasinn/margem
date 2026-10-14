@@ -8,8 +8,8 @@ import type { SnapshotCapitulo } from './tipos';
 import { ChapterContent } from './ChapterContent';
 import { ancoraDaSelecao } from './selecao';
 import { ancoraDaFaixa } from './ancora';
-import { CONVERSA_VAZIA, corDaFuncao, dicaDoNivel, filtrarSaliencia, liberarPrimeiroEu, NOMES_DOS_NIVEIS, pesoDaSaliencia, reduzirAtencao, reduzirConversa } from './f2';
-import { APARENCIA_PADRAO, reduzirPreferencias } from './preferencias';
+import { CONVERSA_VAZIA, corDaFuncao, liberarPrimeiroEu, marcasVisiveis, pesoDaSaliencia, reduzirConversa } from './f2';
+import { APARENCIA_PADRAO, reduzirPreferencias, validarPreferencias } from './preferencias';
 import { FormularioDeAnotacao } from './FormularioDeAnotacao';
 import { FioDeConversa } from './FioDeConversa';
 import { ContextoDeAparencia } from './ContextoDeAparencia';
@@ -65,37 +65,37 @@ describe('âncora da seleção', () => {
     expect(ancoraDaFaixa(bloco, snapshot.versao_id, 8, 9)?.citacao).toBe('🧭');
   });
 });
-describe('atenção e primeiro eu', () => {
-  test('níveis filtram saliência sem confundir atenção com camada', () => {
-    expect([0, 1, 2, 3].map((n) => filtrarSaliencia(snapshot.marcas, reduzirAtencao(3, n)).length)).toEqual([0, 2, 3, 4]);
-    expect(reduzirAtencao(2, NaN)).toBe(2);
-    expect(reduzirAtencao(1, 9)).toBe(1);
-    const p = reduzirPreferencias(APARENCIA_PADRAO, { tipo: 'alterar', valores: { nivelDeAtencao: 1 } });
-    expect(p.nivelDeAtencao).toBe(1);
-    expect(reduzirPreferencias(p, { tipo: 'restaurar' }).nivelDeAtencao).toBe(2);
+describe('marcas à vista e primeiro eu', () => {
+  test('sem níveis de atenção: todas as marcas (qualquer saliência) ou nenhuma; a preferência decide como o leitor abre', () => {
+    expect(marcasVisiveis(snapshot.marcas, true)).toHaveLength(snapshot.marcas.length);
+    expect(marcasVisiveis(snapshot.marcas, false)).toEqual([]);
+    expect(APARENCIA_PADRAO.marcasAoAbrir).toBe(true);
+    const p = reduzirPreferencias(APARENCIA_PADRAO, { tipo: 'alterar', valores: { marcasAoAbrir: false } });
+    expect(p.marcasAoAbrir).toBe(false);
+    expect(reduzirPreferencias(p, { tipo: 'restaurar' }).marcasAoAbrir).toBe(true);
+    // O nível antigo guardado no navegador não vale mais: abre com todas as marcas.
+    expect(validarPreferencias({ nivelDeAtencao: 0 }).marcasAoAbrir).toBe(true);
+    expect('nivelDeAtencao' in validarPreferencias({ nivelDeAtencao: 0 })).toBe(false);
   });
-  test('a saliência pesa no desenho: 1 cheio, 2 mais claro, 3 só sublinhado fino', () => {
+  test('a saliência não muda mais o desenho: todas as marcas pesam igual', () => {
     const base = snapshot.marcas[0]!;
     const com = (saliencia: 1 | 2 | 3) => pesoDaSaliencia({ ...base, saliencia });
+    expect(com(3)).toEqual(com(1));
+    expect(com(2)).toEqual(com(1));
     expect(com(1)).toMatchObject({ fator: 1, soSublinhado: false });
-    expect(com(2).fator).toBeLessThan(1);
-    expect(com(2).soSublinhado).toBe(false);
-    expect(com(3)).toMatchObject({ soSublinhado: true, espessura: 1 });
-  });
-  test('cada nível tem nome, e a dica conta o que ele mostra', () => {
-    expect(NOMES_DOS_NIVEIS).toEqual(['Texto puro', 'Esqueleto', 'Estudo', 'Aprofundar']);
-    expect(dicaDoNivel(0, 5)).toBe('Texto puro · sem marcas');
-    expect(dicaDoNivel(1, 1)).toBe('Esqueleto · 1 marca');
-    expect(dicaDoNivel(2, 9, 3)).toBe('Estudo · 9 marcas');
-    expect(dicaDoNivel(3, 12, 3)).toBe('Aprofundar · 12 marcas · 3 dificuldades · sublinhado = periférico');
   });
   test('só a anotação deste capítulo libera; apagar a última volta a esconder', () => {
     expect(liberarPrimeiroEu(true, [], snapshot.blocos)).toBe(false);
     expect(liberarPrimeiroEu(true, [{ ...anotacao, ancora: { ...ancora, bloco_id: 'outro' } }], snapshot.blocos)).toBe(false);
     expect(liberarPrimeiroEu(true, [anotacao], snapshot.blocos)).toBe(true);
     expect(liberarPrimeiroEu(false, [], snapshot.blocos)).toBe(true);
+    // A nota agora é do grifo: um grifo do leitor no capítulo também libera; o da IA, não.
+    const marca = snapshot.marcas[0]!;
+    expect(liberarPrimeiroEu(true, [], snapshot.blocos, [{ ...marca, origem: 'manual' }])).toBe(true);
+    expect(liberarPrimeiroEu(true, [], snapshot.blocos, [{ ...marca, origem: 'manual', ancora: { ...marca.ancora, bloco_id: 'outro' } }])).toBe(false);
+    expect(liberarPrimeiroEu(true, [], snapshot.blocos, [{ ...marca, origem: 'parte' }])).toBe(false);
   });
-  test('primeira anotação libera no mesmo componente e nível zero tira marcas e notas', () => {
+  test('primeira anotação libera no mesmo componente e "Marcas" tira marcas e notas', () => {
     const props = { documento_id: dados.snapshot.documento_id, aoAtualizar: async () => {} };
     const { container, rerender } = render(<ContextoDeAparencia><EstudoDoCapitulo {...props} snapshot={{ ...snapshot, primeiro_eu: { ativo: true, liberado: false } }} /></ContextoDeAparencia>);
     expect(container.querySelector('[data-marcas]')).toBeNull();
@@ -103,10 +103,15 @@ describe('atenção e primeiro eu', () => {
     rerender(<ContextoDeAparencia><EstudoDoCapitulo {...props} snapshot={{ ...snapshot, anotacoes: [anotacao], primeiro_eu: { ativo: true, liberado: true } }} /></ContextoDeAparencia>);
     expect(container.querySelector('[data-marcas]')).not.toBeNull();
     expect(screen.queryByText(/As marcas da IA aparecem/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^Atenção: nível/ }));
-    fireEvent.click(screen.getByRole('radio', { name: '0 · Texto puro' }));
+    // "Marcas" na barra esconde todas (as do leitor também) e mostra de novo.
+    const botao = screen.getByRole('button', { name: 'Marcas' });
+    expect(botao.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(botao);
     expect(container.querySelector('[data-marcas]')).toBeNull();
     expect(container.querySelector('[data-pessoal]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Marcas' }).getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(screen.getByRole('button', { name: 'Marcas' }));
+    expect(container.querySelector('[data-marcas]')).not.toBeNull();
   });
 });
 test('estrofes preservam todos os versos e espaços, inclusive com marca atravessando linhas', () => {
@@ -184,7 +189,7 @@ function semLeiturasDeFundo(buscar: { mock: { calls: unknown[][] } }): unknown[]
   return semLeituraDosVisuais({ mock: { calls: semListasDeMidia(buscar) } });
 }
 
-test('seleção só abre ações; atalho a abre o formulário, Esc cancela sem escrever', async () => {
+test('seleção só abre ações, sem Anotar; a tecla a não faz nada, p pergunta e Esc cancela sem escrever', async () => {
   const buscar = vi.fn(); vi.stubGlobal('fetch', buscar);
   const { container } = render(<EstudoDoCapitulo documento_id={dados.snapshot.documento_id} snapshot={snapshot} aoAtualizar={async () => {}} />);
   const range = document.createRange();
@@ -194,12 +199,15 @@ test('seleção só abre ações; atalho a abre o formulário, Esc cancela sem e
   const barra = await screen.findByRole('toolbar', { name: 'Ações da seleção' });
   expect(barra.classList.contains('barra-selecao')).toBe(true);
   const acoes = within(barra).getAllByRole('button').map((botao) => botao.getAttribute('aria-label') ?? botao.textContent);
-  expect(acoes).toEqual(['Grifar', 'Anotar', 'Perguntar', 'Conectar', 'Criar flashcard', 'Criar imagem', 'Fluxograma', 'Resolver', 'Fechar seleção']);
+  expect(acoes).toEqual(['Grifar como Tese', 'Grifar como Conceito', 'Grifar como Justificativa', 'Grifar', 'Perguntar', 'Conectar', 'Mais ações', 'Fechar seleção']);
+  fireEvent.click(within(barra).getByRole('button', { name: 'Mais ações' }));
+  expect(within(barra).getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Grifar com outro olhar…', 'Criar flashcard', 'Criar imagem', 'Fluxograma', 'Resolver exercício', 'Copiar texto']);
   expect(semLeiturasDeFundo(buscar)).toEqual([]);
   fireEvent.keyDown(window, { key: 'a' });
-  expect(screen.getByRole('form', { name: 'Anotar trecho' })).toBeDefined();
-  fireEvent.keyDown(window, { key: 'Escape' });
   expect(screen.queryByRole('form')).toBeNull();
+  expect(screen.getByRole('toolbar', { name: 'Ações da seleção' })).toBeDefined();
+  fireEvent.keyDown(window, { key: 'Escape' });
+  expect(screen.queryByRole('toolbar', { name: 'Ações da seleção' })).toBeNull();
   expect(semLeiturasDeFundo(buscar)).toEqual([]);
 });
 
@@ -228,7 +236,7 @@ test('conexão externa envia caminho e título sem criar id, e recusa explícita
 });
 
 
-test('conversa curta preserva a pergunta não enviada ao ampliar para o drawer', async () => {
+test('perguntar abre o painel do trecho (não a margem), com a citação uma vez; trocar de aba guarda a pergunta não enviada', async () => {
   const buscar = vi.fn(); vi.stubGlobal('fetch', buscar);
   const { container } = render(<EstudoDoCapitulo documento_id={dados.snapshot.documento_id} snapshot={snapshot} aoAtualizar={async () => {}} />);
   const intervalo = document.createRange(); intervalo.selectNodeContents(container.querySelector('.bloco-estrofe .segmento')!);
@@ -236,11 +244,19 @@ test('conversa curta preserva a pergunta não enviada ao ampliar para o drawer',
   fireEvent(document, new Event('selectionchange'));
   await screen.findByRole('toolbar', { name: 'Ações da seleção' });
   fireEvent.keyDown(window, { key: 'p' });
-  expect(screen.getByRole('region', { name: 'Conversa no trecho' })).toBeDefined();
+  const painel = screen.getByRole('complementary', { name: 'Perguntar' });
+  expect(painel.classList.contains('painel-do-leitor')).toBe(true);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(painel.querySelectorAll('blockquote')).toHaveLength(1);
   fireEvent.change(screen.getByRole('textbox', { name: 'Sua pergunta' }), { target: { value: 'Por que este verso volta?' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Ampliar conversa' }));
-  expect(screen.getByRole('dialog', { name: 'Conversa no trecho' })).toBeDefined();
+  fireEvent.click(within(painel).getByRole('radio', { name: 'Nota' }));
+  expect(screen.getByRole('complementary', { name: 'Nota do trecho' })).toBeDefined();
+  // O trecho já é um grifo do fixture: a aba Nota mostra a nota dele (uma só, sem tipo).
+  expect(screen.getByRole('region', { name: 'Nota do grifo' })).toBeDefined();
+  fireEvent.click(screen.getByRole('radio', { name: 'Perguntar' }));
   expect(screen.getByRole('textbox', { name: 'Sua pergunta' })).toHaveProperty('value', 'Por que este verso volta?');
+  fireEvent.keyDown(window, { key: 'Escape' });
+  expect(screen.queryByRole('complementary', { name: 'Perguntar' })).toBeNull();
   expect(semLeiturasDeFundo(buscar)).toEqual([]);
 });
 
@@ -285,7 +301,7 @@ test('painel do documento lista conversas e abre o fio existente sem empilhar a 
   expect(screen.getByText('Selecione um trecho e use Perguntar (p) para conversar ancorado no texto.')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: new RegExp('aberta · 1 mensagens') }));
   expect(screen.queryByRole('complementary', { name: 'Painel do documento' })).toBeNull();
-  expect(screen.getByRole('dialog', { name: 'Conversa no trecho' })).toBeTruthy();
+  expect(screen.getByRole('complementary', { name: 'Perguntar' })).toBeTruthy();
   await waitFor(() => expect(screen.getByText('Por que volta?')).toBeTruthy());
   expect(semLeiturasDeFundo(buscar).length).toBeGreaterThan(0);
 });
@@ -305,8 +321,8 @@ test('notas-sync: duplo envio fica bloqueado e tentativa após falha conserva a 
   vi.stubGlobal('fetch', buscar);
   const salvar = vi.fn();
   render(<FormularioDeAnotacao ancora={ancora} aoSalvar={salvar} aoFechar={() => {}} />);
-  fireEvent.change(screen.getByRole('textbox', { name: 'Sua anotação' }), { target: { value: 'Minha nota' } });
-  const formulario = screen.getByRole('form', { name: 'Anotar trecho' });
+  fireEvent.change(screen.getByRole('textbox', { name: 'Sua nota' }), { target: { value: 'Minha nota' } });
+  const formulario = screen.getByRole('form', { name: 'Nota do grifo' });
   fireEvent.submit(formulario); fireEvent.submit(formulario);
   expect(buscar).toHaveBeenCalledTimes(1);
   falhar(new Error('Rede indisponível'));
@@ -337,24 +353,24 @@ test('notas-sync: edição obsoleta avisa, carrega texto atual e só reenvia por
   expect(JSON.parse((buscar.mock.calls[1]![1] as RequestInit).body as string)).toMatchObject({ texto: atual.texto, revisao: 2 });
 });
 
-test.each(['grifo', 'margem'] as const)('notas-sync: apagar na %s envia revisão e recarrega após conflito', async (local) => {
-  const { NotasDoGrifo } = await import('./NotasDoGrifo');
-  const buscar = vi.fn((url: string) => Promise.resolve(url.includes('/api/anotacoes/')
-    ? json({ erro: 'anotacao_obsoleta', anotacao: { ...anotacao, revisao_edicao: 2 } }, 409)
+test('nota do grifo: na margem é uma linha ✎ ligada ao grifo (sem card de tipo), que abre o balão; apagar o texto tira a nota com a revisão', async () => {
+  const marca = { ...snapshot.marcas[0]!, origem: 'manual', comentario: null } as typeof snapshot.marcas[number];
+  const nota: AnotacaoV1 = { ...anotacao, tipo: 'nota', marca_id: marca.id };
+  const buscar = vi.fn((url: string, opcoes?: RequestInit) => Promise.resolve(url.includes('/nota-do-leitor')
+    ? json(opcoes?.method === 'DELETE' ? { marca_id: marca.id, apagada: true } : {})
     : json({ visuais: [], midias: [], audios: [] })));
   vi.stubGlobal('fetch', buscar);
-  const recarregar = vi.fn(() => Promise.resolve());
-  render(local === 'grifo'
-    ? <NotasDoGrifo marca={snapshot.marcas[0]!} anotacoes={[anotacao]} pendentes={[]} aoMudar={() => { void recarregar(); }} />
-    : <EstudoDoCapitulo documento_id={dados.snapshot.documento_id} snapshot={{ ...snapshot, anotacoes: [anotacao] }} aoAtualizar={recarregar} />);
-  fireEvent.click(screen.getAllByRole('button', { name: 'Apagar' })[0]!);
-  await waitFor(() => expect(recarregar).toHaveBeenCalledOnce());
-  expect(screen.getAllByRole('alert').some((alerta) => alerta.textContent?.includes('mudou em outro lugar'))).toBe(true);
-  const escritas = buscar.mock.calls.filter((c) => c[0].includes('/api/anotacoes/'));
-  expect(escritas).toHaveLength(1);
-  const opcoes = (escritas[0] as unknown as [string, RequestInit])[1];
-  expect(opcoes.method).toBe('DELETE');
-  expect(JSON.parse(opcoes.body as string)).toEqual({ revisao: 1 });
+  render(<EstudoDoCapitulo documento_id={dados.snapshot.documento_id} snapshot={{ ...snapshot, marcas: [marca, ...snapshot.marcas.slice(1)], anotacoes: [nota] }} aoAtualizar={() => Promise.resolve()} />);
+  expect(screen.queryByText(/IMPRESSÃO|Impressão/)).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /^Sua anotação: O desejo não termina/ }));
+  const campo = await screen.findByRole('textbox', { name: 'Sua anotação' });
+  expect(campo).toHaveProperty('value', 'O desejo não termina.');
+  fireEvent.change(campo, { target: { value: '' } });
+  fireEvent.blur(campo);
+  await waitFor(() => expect(buscar.mock.calls.some((c) => c[0].includes('/nota-do-leitor'))).toBe(true));
+  const escrita = buscar.mock.calls.find((c) => c[0].includes('/nota-do-leitor')) as unknown as [string, RequestInit];
+  expect(escrita[1].method).toBe('DELETE');
+  expect(JSON.parse(escrita[1].body as string)).toEqual({ revisao: 1 });
 });
 
 test('PDF anotado: só documento PDF com geometria tem o botão; baixar avisa as marcas sem posição', async () => {
@@ -377,4 +393,42 @@ test('PDF anotado: só documento PDF com geometria tem o botão; baixar avisa as
   expect(clique).toHaveBeenCalledOnce();
   expect((clique.mock.contexts[0] as HTMLAnchorElement).download).toBe('Livro (anotado).pdf');
   clique.mockRestore();
+});
+
+test('conectar: o primeiro trecho fica marcado, escolhe-se o segundo (sem grifo) e um diálogo pequeno pede só a relação; flashcard no painel do trecho', async () => {
+  const { ContextoDeConexao } = await import('./ContextoDeConexao');
+  const corpos: { url: string; corpo: unknown }[] = [];
+  vi.stubGlobal('fetch', vi.fn((url: string, opcoes?: RequestInit) => {
+    if (opcoes?.method === 'POST') corpos.push({ url, corpo: JSON.parse(typeof opcoes.body === 'string' ? opcoes.body : '{}') });
+    return Promise.resolve(json(url === '/api/conexoes' ? { conexao: {} } : { midias: [], audios: [], visuais: [] }));
+  }));
+  const { container } = render(<ContextoDeConexao><EstudoDoCapitulo documento_id={dados.snapshot.documento_id} snapshot={snapshot} aoAtualizar={async () => {}} /></ContextoDeConexao>);
+  const selecionar = async (seletor: string) => {
+    const intervalo = document.createRange(); intervalo.selectNodeContents(container.querySelectorAll(seletor)[0]!);
+    window.getSelection()!.removeAllRanges(); window.getSelection()!.addRange(intervalo);
+    fireEvent(document, new Event('selectionchange'));
+    return screen.findByRole('toolbar', { name: 'Ações da seleção' });
+  };
+  expect(container.querySelectorAll('.bloco-estrofe').length).toBeGreaterThan(1);
+  fireEvent.click(within(await selecionar('.bloco-estrofe .segmento')).getByRole('button', { name: 'Conectar' }));
+  expect(document.querySelector('.painel-trecho')).toBeNull();
+  expect(screen.getByText(/Selecione o outro trecho/)).toBeDefined();
+  // O segundo trecho: outra estrofe.
+  const intervalo = document.createRange(); intervalo.selectNodeContents(container.querySelectorAll('.bloco-estrofe')[1]!.querySelector('.segmento')!);
+  window.getSelection()!.removeAllRanges(); window.getSelection()!.addRange(intervalo);
+  fireEvent(document, new Event('selectionchange'));
+  const barra = await screen.findByRole('toolbar', { name: 'Ações da seleção' });
+  fireEvent.click(within(barra).getByRole('button', { name: /Conectar estes dois/ }));
+  const dialogo = screen.getByRole('dialog', { name: 'Conectar estes dois trechos' });
+  expect(dialogo.querySelectorAll('.ui-primario')).toHaveLength(1);
+  fireEvent.submit(within(dialogo).getByRole('button', { name: 'Conectar' }).closest('form')!);
+  await waitFor(() => expect(corpos.some((c) => c.url === '/api/conexoes')).toBe(true));
+  expect(corpos.find((c) => c.url === '/api/conexoes')!.corpo).toMatchObject({ relacao: 'desenvolve', justificativa: 'Desenvolve', destino: { tipo: 'trecho' } });
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  const nova = await selecionar('.bloco-estrofe .segmento');
+  fireEvent.click(within(nova).getByRole('button', { name: 'Mais ações' }));
+  fireEvent.click(within(nova).getByRole('menuitem', { name: 'Criar flashcard' }));
+  const flashcard = screen.getByRole('complementary', { name: 'Novo flashcard' });
+  expect(flashcard.querySelectorAll('blockquote')).toHaveLength(1);
+  expect(flashcard.querySelectorAll('.ui-primario')).toHaveLength(1);
 });

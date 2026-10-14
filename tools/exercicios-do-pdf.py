@@ -423,10 +423,17 @@ def recortar(caminho: str, saida: Path, pedido: list[dict]) -> None:
             folha.save(saida / f"{item['chave']}.png")
 
 
-if __name__ == "__main__":
-    if len(sys.argv) != 4 or sys.argv[1] not in ("descobrir", "recortar"):
+def principal(argumentos: list[str]) -> None:
+    """A linha de comando, também chamada pelo motor congelado (`margem-motor exercicios …`, J114): importado
+    como módulo, o pool de processos acha `_abrir` e `_ler` pelo nome do módulo, inclusive no `spawn` do
+    macOS e do Windows."""
+    if len(argumentos) != 3 or argumentos[0] not in ("descobrir", "recortar"):
         sys.exit(__doc__)
-    if sys.argv[1] == "descobrir":
-        json.dump(descobrir(sys.argv[2], Path(sys.argv[3])), sys.stdout, ensure_ascii=False)
+    if argumentos[0] == "descobrir":
+        json.dump(descobrir(argumentos[1], Path(argumentos[2])), sys.stdout, ensure_ascii=False)
     else:
-        recortar(sys.argv[2], Path(sys.argv[3]), json.load(sys.stdin))
+        recortar(argumentos[1], Path(argumentos[2]), json.load(sys.stdin))
+
+
+if __name__ == "__main__":
+    principal(sys.argv[1:])

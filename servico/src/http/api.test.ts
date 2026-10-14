@@ -116,7 +116,7 @@ test('upload de Markdown vira job de canonização, versão publicada e snapshot
     const antes = await corpo<{ documentos: { id: Id; estado: string; texto_disponivel: boolean }[] }>(
       await api.request('/api/documentos'));
     expect(antes.documentos.find((item) => item.id === documento_id))
-      .toMatchObject({ estado: 'canonizando', texto_disponivel: false });
+      .toMatchObject({ estado: 'canonizando', texto_disponivel: false, capitulos_total: null });
 
     await rodarWorker(banco, config, 2);
 
@@ -131,6 +131,9 @@ test('upload de Markdown vira job de canonização, versão publicada e snapshot
     const arvore = await corpo<{ capitulos: { id: Id; titulo: string }[] }>(
       await api.request(`/api/versoes/${detalhe.versao_id}/secoes`));
     expect(arvore.capitulos.length).toBeGreaterThan(0);
+    // V-D1: a lista traz o número de capítulos, sem a árvore de cada documento.
+    const depois = await corpo<{ documentos: { id: Id; capitulos_total: number | null }[] }>(await api.request('/api/documentos'));
+    expect(depois.documentos.find((item) => item.id === documento_id)?.capitulos_total).toBe(arvore.capitulos.length);
     const capitulo = arvore.capitulos[0]?.id ?? '';
 
     const snapshot = await corpo<{ palavras_no_livro: { antes: number; total: number }; blocos: { texto: string }[]; marcas: unknown[]; revisao_marcas: string }>(
@@ -385,7 +388,9 @@ test('/api/saude responde 503 sem banco, sem tocar na biblioteca', async () => {
   const api = criarApi({ banco: semBanco, leitura: () => { throw new Error('não usado'); } });
   const resposta = await api.request('/api/saude');
   expect(resposta.status).toBe(503);
-  expect(await corpo<{ ok: boolean }>(resposta)).toEqual({ ok: false });
+  const saude = await corpo<{ ok: boolean; servico: string; instancia_id: string }>(resposta);
+  expect(saude).toMatchObject({ ok: false, servico: 'margem' });
+  expect(saude.instancia_id).toMatch(/^[0-9a-f]{4}-[0-9a-f]{4}$/);
 });
 
 test('HEAD nos fluxos de eventos responde sem abrir fluxo nem gastar a vaga do teto (auditoria 02/10)', async () => {
@@ -412,7 +417,7 @@ test('SSE com Last-Event-ID entrega os eventos perdidos e /api/estado resume o m
     });
     await iniciarExecucao(config, versao.id);
 
-    expect(await corpo<{ ok: boolean }>(await api.request('/api/saude'))).toEqual({ ok: true });
+    expect(await corpo<{ ok: boolean }>(await api.request('/api/saude'))).toMatchObject({ ok: true, servico: 'margem', app_de_computador: false });
     const estado = await corpo<{ ultimo_evento: string; jobs_abertos: { tipo: string; total: number }[] }>(
       await api.request('/api/estado'));
     expect(Number(estado.ultimo_evento)).toBeGreaterThan(0);

@@ -1,0 +1,88 @@
+/*
+ * Casca da janela no app de computador (V-U5): só vale com `.janela-desktop` na raiz, que o
+ * janela-desktop.ts liga quando a página roda no Electron. No navegador nada daqui se aplica.
+ *
+ * A janela não tem barra de título: a faixa `.topo-da-janela` (transparente, na altura dos botões
+ * nativos) arrasta a janela e, com duplo clique, maximiza. Os controles (que vêm depois dela no documento)
+ * recortam a área de arraste. À direita ficam os botões nativos (Window Controls Overlay, `titlebar-area-*`);
+ * à esquerda, o botão do menu (Windows e Linux) ou os semáforos (macOS). As barras do topo de cada tela
+ * só abrem espaço para esses dois cantos.
+ */
+.janela-desktop {
+  --altura-titulo: env(titlebar-area-height, var(--altura-titulo-padrao, 40px));
+  /* Sem o overlay (macOS, ou um Electron que não o exponha), o canto vale o padrão do sistema. */
+  --reserva-direita-padrao: 140px;
+  --reserva-direita: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100vw - var(--reserva-direita-padrao))));
+  --reserva-esquerda: 44px;
+}
+.janela-desktop[data-sistema-da-janela="darwin"] { --reserva-direita-padrao: 0px; --reserva-esquerda: 80px; }
+
+.topo-da-janela {
+  position: fixed; inset: 0 0 auto 0; z-index: 65; height: var(--altura-titulo);
+  pointer-events: none;
+  -webkit-app-region: drag; app-region: drag;
+}
+.janela-desktop :is(button, a, input, select, textarea, summary, label, iframe, video, audio, [role="button"], [role="tab"], [role="menuitem"], [role="option"], [role="slider"], [role="switch"], [contenteditable="true"], [tabindex]:not([tabindex="-1"])) {
+  -webkit-app-region: no-drag; app-region: no-drag;
+}
+
+.menu-da-janela {
+  position: absolute; left: 6px; top: calc((var(--altura-titulo) - 32px) / 2);
+  display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0;
+  border: 0; border-radius: var(--r-8); background: transparent; color: var(--texto-2); cursor: pointer;
+  pointer-events: auto;
+}
+/* Na linha da marca da barra lateral (80 px), alinhado com ela. Nas outras telas a área de título já tem a altura da barra do topo. */
+.janela-desktop:has(.app-shell.com-barra) .menu-da-janela { top: 24px; }
+.menu-da-janela:hover { background: var(--bg-hover); color: var(--texto-1); }
+.menu-da-janela:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Os dois cantos do topo nas barras de cada tela. */
+.janela-desktop .barra-lateral .barra-marca { padding-left: calc(var(--reserva-esquerda) + 4px); }
+/* No macOS os semáforos (y 14–26) ficam acima da marca, que desce um pouco na mesma linha de 80 px. */
+.janela-desktop[data-sistema-da-janela="darwin"] .barra-lateral .barra-marca { padding-left: 16px; padding-top: 30px; padding-bottom: 8px; }
+.janela-desktop .abrir-barra { left: calc(var(--reserva-esquerda) + 4px); }
+.janela-desktop .barra-do-leitor.filtros,
+.janela-desktop .leitor-de-quadro > .barra-do-quadro,
+.janela-desktop .topbar-inner {
+  padding-left: calc(var(--reserva-esquerda) + 8px);
+  padding-right: calc(var(--reserva-direita) + 8px);
+}
+/* No celular a barra do topo (`.topbar`) fica acima do cabeçalho da lista: ele não encosta no canto. */
+@media (min-width: 800px) { .janela-desktop .biblioteca-cabecalho { padding-right: calc(var(--reserva-direita) + 16px); } }
+.janela-desktop .app-shell > main > .inicio:first-child .inicio-secoes { padding-top: max(32px, calc(var(--altura-titulo) + 12px)); }
+@media (min-width: 800px) {
+  .janela-desktop .app-shell:not(.com-barra) .biblioteca-cabecalho { padding-left: calc(var(--reserva-esquerda) + 60px); }
+  /* Telas sem barra própria no topo: o começo da página desce o que falta para sair de baixo dos botões. */
+  .janela-desktop .app-shell:not(.lendo):not(.pagina-ampla) > main { padding-top: max(32px, calc(var(--altura-titulo) + 12px)); }
+  .janela-desktop .app-shell:not(.com-barra):not(.lendo):not(.pagina-ampla) > main { padding-top: 64px; }
+}
+/* O aviso da instalação abre as telas largas (Início, Biblioteca): desce para fora da área de título. */
+.janela-desktop .app-shell.pagina-ampla > main > .aviso-da-instalacao:first-child { margin-top: calc(var(--altura-titulo) + 8px); }
+
+/*
+ * Painéis encostados à direita que começam no topo da janela (V-T1): nada clicável fica sob os botões
+ * nativos. Eles ganham uma faixa da altura da área de título, no fundo do próprio painel (os botões
+ * nativos pegam essa cor), e o conteúdo começa abaixo dela. Quem passa o painel por baixo de uma barra
+ * do topo (o do leitor, o do quadro) não precisa: a barra já reserva o canto.
+ */
+@media (min-width: 900px) {
+  /* O vídeo ao lado do texto e a coluna dele (o painel do documento logo abaixo do quadro). */
+  .janela-desktop .painel-video,
+  .janela-desktop .painel-guiado,
+  .janela-desktop .sessao-de-resolucao { padding-top: var(--altura-titulo); }
+  .janela-desktop.com-video .painel-do-leitor { top: calc(var(--altura-casca-leitor, 0px) + var(--altura-titulo) + var(--largura-guiada, 400px) * 9 / 16); }
+}
+/* Só o vídeo (ocupa a área do leitor): o canto também é dele. */
+.janela-desktop .player-midia[data-video=so] .painel-video { padding-top: var(--altura-titulo); }
+/* Gavetas à direita (Diagnóstico, Preparar leitura, Perfil do leitor…): o cabeçalho, com o fechar, desce. */
+.janela-desktop .ui-veu > .ui-drawer-direita { padding-top: calc(var(--altura-titulo) + 12px); }
+.janela-desktop .atalhos-biblioteca .ui-drawer { padding-top: 24px; }
+/* Visual ampliado e mapa do capítulo: cobrem a janela; as ações do topo saem de baixo dos botões. */
+.janela-desktop .visual-ampliado { top: calc(var(--altura-titulo) + 8px); }
+.janela-desktop .mapa-barra { padding-right: calc(var(--reserva-direita) + 8px); }
+/* Biblioteca com o painel do item à vista: o painel é que encosta no canto, não o cabeçalho da lista. */
+@media (min-width: 1200px) {
+  .janela-desktop .painel-biblioteca { padding-top: var(--altura-titulo); }
+  .janela-desktop .biblioteca-grade.com-painel .biblioteca-cabecalho { padding-right: 24px; }
+}

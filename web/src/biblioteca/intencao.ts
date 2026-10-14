@@ -11,7 +11,16 @@ export interface IntencaoDeLeitura {
   ancora?: AncoraV1;
   /** Uma seção do capítulo (sumário): o bloco onde ela começa. */
   bloco?: string;
+  /** Com `bloco`: o trecho exato dentro dele (a página Notas leva ao grifo, não só ao parágrafo). */
+  faixa?: { inicio_utf16: number; fim_utf16: number };
   pagina?: number;
+  /** Notas (J145): o grifo cujo balão abre (com `nota`, já no campo da nota). */
+  marca?: string;
+  nota?: boolean;
+  /** Notas (J145): a conexão cujo painel abre, a relação da leitura que o Percorrer mostra, a conversa que reabre. */
+  conexao?: string;
+  relacao?: string;
+  conversa?: string;
   resolucao?: string;
   visual?: string;
   acao?: 'mapa' | 'visita' | 'comentada' | 'resolvidos';

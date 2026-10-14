@@ -90,7 +90,6 @@ visuais) falha com um aviso de autenticação.
 | `restaurar <pasta>` | volta um backup |
 | `desinstalar` | remove os containers (os dados ficam) |
 | `desinstalar --apagar-dados` (`-ApagarDados` no PowerShell) | remove tudo, inclusive livros e login |
-| `arte instalar [arquivo\|url] [--sha256 <hex>]` (`-Sha256` no PowerShell) | instala o acervo de quadros (ver abaixo) |
 
 Os containers voltam sozinhos quando o Docker reinicia (`restart: unless-stopped`), até você rodar
 `parar`.
@@ -129,24 +128,15 @@ MARGEM_EXTENSOES=chrome-extension://gbgnmhhgfmdgchhfhabdaneaehcamcma,moz-extensi
 Depois, `iniciar` de novo recria os containers com o valor novo. O servidor padrão da extensão é
 `http://localhost:8730`; se você mudou `PORTA`, ajuste também nas Opções da extensão.
 
-### Quadros (acervo de arte)
+### Quadros
 
-A área **Quadros** da Biblioteca mostra obras de arte em domínio público com análise guiada. O
-acervo (cerca de 137 obras, 490 MB) é um pacote à parte, para a imagem não carregar meio gigabyte
-que nem todo mundo quer. Sem ele, Quadros mostra duas obras de exemplo e explica como baixar.
-
-```
-margem arte instalar                         # baixa o pacote publicado e instala
-margem arte instalar ~/Downloads/acervo-de-quadros-<versão>.tar.gz --sha256 <hash>
-margem arte instalar https://…/acervo-de-quadros-<versão>.tar.gz
-```
-
-Um arquivo do seu computador é copiado para dentro do container, conferido e apagado depois. O
-instalador confere o manifesto, o SHA-256 de cada arquivo e a licença de cada obra antes de mover
-qualquer coisa, e rodar de novo não muda nada. As obras ficam no volume de dados
-(`MARGEM_ARTE_DIR=/dados/arte/obras`), entram no `backup` e sobrevivem ao `atualizar`. Os créditos e
-as licenças de cada imagem vão junto (`/dados/arte/obras/.pacote/CREDITOS.md`) e aparecem em cada
-quadro. Recarregue a página depois de instalar.
+A área **Quadros** da Biblioteca é para estudar obras de arte com análise guiada. O Margem não
+distribui acervo: em Quadros, **Adicionar obra** recebe a imagem (JPEG, PNG ou WebP, até 40 MB) e,
+se você quiser, título, artista e ano. O worker prepara a obra pela fila: identifica (o Codex propõe
+pela imagem, se você não disse), monta o dossiê com o Wikidata e a Wikipédia e escreve a análise com
+a sua conta do ChatGPT. Com a voz configurada (Configurações → Áudio), a análise também ganha
+narração. As obras ficam no volume de dados (`/dados/quadros`), entram no `backup` e sobrevivem ao
+`atualizar`.
 
 ### Ferramentas que vêm na imagem
 
@@ -167,7 +157,7 @@ exercícios em LaTeX; sem ele, a tela avisa que o LaTeX não está disponível).
 `backup` grava em `~/<projeto>/backups/<data>/` (ou na pasta indicada):
 
 - `banco.dump`: o banco inteiro (`pg_dump -Fc`);
-- `dados.tar`: originais, versões canonizadas, imagens, artefatos e o acervo de quadros.
+- `dados.tar`: originais, versões canonizadas, imagens, artefatos e os quadros que você adicionou.
 
 O login do Codex **não** entra no backup; depois de restaurar em outro computador, faça `login`.
 `atualizar` faz um backup antes de trocar a imagem.
@@ -241,8 +231,6 @@ docker push --all-tags ghcr.io/pedropasinn/margem
 Multiplataforma (Apple Silicon e Windows ARM): `docker buildx build --platform linux/amd64,linux/arm64 … --push`.
 Endereços definitivos (conta pessoal `pedropasinn`): repositório
 `https://github.com/pedropasinn/margem`, imagem `ghcr.io/pedropasinn/margem`, releases em
-`https://github.com/pedropasinn/margem/releases` com os assets `instalar.sh`, `instalar.ps1`,
-`compose.yml` e o pacote do acervo de quadros (`acervo-de-quadros-<versão>.tar.gz`, na tag
-`acervo-<versão>`). Estão em `produto.env` (com os padrões repetidos nos instaladores), em
-`site/src/config.ts` e em `servico/src/arte/pacote-publicado.ts`. Ao publicar: `publicado: true` no
-`config.ts` do site e no `pacote-publicado.ts`.
+`https://github.com/pedropasinn/margem/releases` com os assets `instalar.sh`, `instalar.ps1` e
+`compose.yml`. Estão em `produto.env` (com os padrões repetidos nos instaladores) e em
+`site/src/config.ts`. Ao publicar: `publicado: true` no `config.ts` do site.

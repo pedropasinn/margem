@@ -15,7 +15,7 @@ function rede(recursos: readonly Recurso[] | 'antiga') {
   vi.stubGlobal('fetch', vi.fn((caminho: string) => {
     pedidos.push(caminho);
     if (caminho === '/api/recursos') return Promise.resolve(recursos === 'antiga' ? json({ erro: 'nao_encontrado' }, 404) : json({ recursos }));
-    if (caminho.startsWith('/api/arte')) return Promise.resolve(json({ obras: [], acervo: { instalado: false, pacote: { versao: '2026.10.12', url: null, obras: 137, bytes: 488_500_000 }, comando: 'npm run arte:instalar' } }));
+    if (caminho.startsWith('/api/arte')) return Promise.resolve(json({ obras: [], preparando: [] }));
     if (caminho.startsWith('/api/salas')) return Promise.resolve(json({ salas: [], portao: { url: 'http://127.0.0.1:8760', configurada: true } }));
     return Promise.resolve(json({ documentos: [] }));
   }));
@@ -48,10 +48,12 @@ describe('instalação nova (nada ligado)', () => {
   test('a navegação não mostra Notícias, Quadros nem Salas de teste, e a API de arte nem é chamada', async () => {
     const pedidos = rede([]);
     app();
-    await screen.findByText('Nenhum texto ainda.');
+    await screen.findByText('Nenhum item ainda.');
     const nav = navegacao();
     expect(nav.getByText('Início')).toBeDefined();
-    expect(nav.getByText('Livros')).toBeDefined();
+    expect(nav.getByText('Biblioteca')).toBeDefined();
+    // Biblioteca vazia: as categorias de documento vazias não aparecem na barra.
+    await waitFor(() => { expect(nav.queryByText('PDFs')).toBeNull(); });
     expect(nav.queryByText('Notícias')).toBeNull();
     expect(nav.queryByText('Quadros')).toBeNull();
     expect(nav.queryByText('Salas de teste')).toBeNull();
@@ -75,10 +77,11 @@ describe('instalação nova (nada ligado)', () => {
   test('o filtro da biblioteca não oferece Quadros', async () => {
     rede([]);
     render(<ProvedorDosRecursos inicial={[]}><Lista ir={() => undefined} carregar={() => Promise.resolve({ documentos: [] })} /></ProvedorDosRecursos>);
-    await screen.findByText('Nenhum texto ainda.');
+    await screen.findByText('Nenhum item ainda.');
     fireEvent.click(within(screen.getByRole('heading', { level: 1 })).getByRole('combobox'));
     expect(screen.queryByRole('option', { name: 'Quadros' })).toBeNull();
-    expect(screen.getByRole('option', { name: 'Livros' })).toBeDefined();
+    expect(screen.getByRole('option', { name: 'PDFs' })).toBeDefined();
+    expect(screen.queryByRole('option', { name: 'Livros' })).toBeNull();
   });
 });
 
@@ -114,7 +117,7 @@ describe('e-ink (J102b)', () => {
     window.history.replaceState(null, '', '/eink/DOC/SEC');
     render(<ProvedorDosRecursos><RotaDoEink documento_id="DOC" secao_id="SEC" /></ProvedorDosRecursos>);
     await waitFor(() => { expect(window.location.pathname).toBe('/'); });
-    await screen.findByText('Nenhum texto ainda.');
+    await screen.findByText('Nenhum item ainda.');
     expect(pedidos.some((caminho) => caminho.includes('DOC'))).toBe(false);
     cleanup();
     render(<ProvedorDosRecursos inicial={[]}><ul><LinkDoEink documento_id="DOC" secao_id="SEC" /></ul></ProvedorDosRecursos>);
@@ -134,10 +137,10 @@ describe('e-ink (J102b)', () => {
 });
 
 describe('instalação nova padrão (só arte, J102b)', () => {
-  test('Quadros aparece; sem acervo instalado, mostra como baixar os quadros, sem erro', async () => {
+  test('Quadros aparece; sem obras, explica o que é e convida a adicionar a primeira, sem erro', async () => {
     const pedidos = rede(['arte']);
     app('/biblioteca?tipo=quadros');
-    // Sem acervo (J110), Quadros explica o que é e como baixar o pacote, em vez do convite de textos.
+    // Sem obras (J118: o Margem não distribui acervo), Quadros convida a adicionar uma, em vez do convite de textos.
     await screen.findByText('Nenhum quadro ainda.');
     expect(screen.queryByRole('alert')).toBeNull();
     expect(`${window.location.pathname}${window.location.search}`).toBe('/biblioteca?tipo=quadros');

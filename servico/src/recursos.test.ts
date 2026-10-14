@@ -45,7 +45,7 @@ describe('MARGEM_RECURSOS', () => {
     expect(() => { exigirRecurso('sala', { MARGEM_RECURSOS: 'sala' }); }).not.toThrow();
   });
 
-  test('MARGEM_ARTE=0 desliga a arte; sem a pasta do acervo ela continua ligada (estado vazio explica como baixar)', () => {
+  test('MARGEM_ARTE=0 desliga a arte; sem nenhuma obra em disco ela continua ligada (estado vazio convida a adicionar)', () => {
     const pedidos = new Set<Recurso>(['arte', 'sala']);
     expect(listaDeRecursos(recursosEfetivos(pedidos, {}))).toEqual(['arte', 'sala']);
     expect(listaDeRecursos(recursosEfetivos(pedidos, { MARGEM_ARTE_DIR: '/nao/existe' }))).toEqual(['arte', 'sala']);
@@ -119,7 +119,7 @@ test('API ligada: tudo como antes', async () => comBanco('recursos_ligados', asy
   }
 }));
 
-test('instalação nova: a arte vem ligada sem acervo em disco; mostra as duas obras de exemplo e diz que o acervo não foi instalado', async () => comBanco('recursos_arte', async (banco) => {
+test('instalação nova: a arte vem ligada sem obras em disco; mostra as duas obras de exemplo e nenhuma obra da pessoa', async () => comBanco('recursos_arte', async (banco) => {
   const antes = { dir: process.env.MARGEM_ARTE_DIR, recursos: process.env.MARGEM_RECURSOS, arte: process.env.MARGEM_ARTE };
   process.env.MARGEM_ARTE_DIR = join(tmpdir(), `margem-sem-acervo-${String(process.pid)}`);
   delete process.env.MARGEM_RECURSOS;
@@ -130,11 +130,13 @@ test('instalação nova: a arte vem ligada sem acervo em disco; mostra as duas o
     expect(await (await app.request('/api/recursos')).json()).toEqual({ recursos: ['arte'] });
     const lista = await app.request('/api/arte');
     expect(lista.status).toBe(200);
-    // Sem acervo, as fixtures do J94 (web/public/arte + fixtures/arte) entram no lugar: nunca quebra.
-    const { obras, acervo } = await lista.json() as { obras: { slug: string }[]; acervo: { instalado: boolean } };
-    expect(obras.map((o) => o.slug).sort()).toEqual(['educacao', 'tolo']);
-    // As obras de exemplo não contam como acervo: a tela Quadros explica como baixar o pacote (J110).
-    expect(acervo.instalado).toBe(false);
+    // Sem obras, as fixtures do J94 (web/public/arte + fixtures/arte) entram no lugar: nunca quebra.
+    const corpo = await lista.json() as { obras: { slug: string; exemplo: boolean }[]; preparando: unknown[] };
+    expect(corpo.obras.map((o) => o.slug).sort()).toEqual(['educacao', 'tolo']);
+    // As obras de exemplo vêm marcadas: a tela Quadros convida a adicionar a primeira obra (J118). Nada de pacote.
+    expect(corpo.obras.every((o) => o.exemplo)).toBe(true);
+    expect(corpo.preparando).toEqual([]);
+    expect(Object.keys(corpo).sort()).toEqual(['obras', 'preparando']);
     expect((await app.request('/api/arte/educacao')).status).toBe(200);
     const obra = await app.request('/api/arte/inexistente');
     expect(obra.status).toBe(404);

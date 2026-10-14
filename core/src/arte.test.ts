@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { AnaliseCurtaDaObraV1, ModeloDaObraV1 } from '@margem/contratos';
 import { validarAnaliseCurtaDaObra, validarModeloDaObra } from '../../contratos/src/validadores';
-import { cameraNoInstante, conferirAnaliseCurta, conferirModeloDaObra, contemRetangulo, enquadrarRegiao, iouDeRetangulos, limitesDaRegiao, QUADRO_INTEIRO } from './arte';
+import { cameraNoInstante, conferirAnaliseCurta, conferirModeloDaObra, contemRetangulo, enquadrarRegiao, iouDeRetangulos, limitesDaRegiao, obraNaoIdentificada, QUADRO_INTEIRO } from './arte';
 function ler<T>(nome: string): T { return JSON.parse(readFileSync(new URL(`../../fixtures/arte/${nome}.json`, import.meta.url), 'utf8')) as T; }
 describe('modelo da obra e projeções', () => {
   for (const nome of ['educacao', 'tolo']) it(`${nome}: contrato, integridade, ritmo e câmera`, () => {
@@ -45,6 +45,28 @@ describe('modelo da obra e projeções', () => {
     c.revisao_modelo++; c.batidas[1]!.inicio_s = 0; c.batidas[1]!.fim_s = .1;
     c.batidas[1]!.camera.para = { x: 0, y: 0, largura: .1, altura: .1 };
     expect(conferirAnaliseCurta(c, m)).toEqual(expect.arrayContaining(['projecao_desatualizada', 'timeline_descontinua', 'fala_apressada', 'regiao_fora_da_camera']));
+  });
+  it('obra não identificada (V-W5): só a imagem enviada como fonte, identidade sem afirmação e nenhum fato', () => {
+    const m = ler<ModeloDaObraV1>('educacao.modelo');
+    const fonte = { id: '01AUT0IMAGEMENVIADA0000000', titulo: 'A imagem enviada', url: 'margem:quadros/educacao-abc123/imagem.jpg', categoria: 'imagem_enviada' as const, consultado_em: '2026-10-14' };
+    const vistas = m.afirmacoes.filter(a => a.tipo === 'observacao' || a.tipo === 'inferencia_ia').map(a => ({ ...a, fontes: [] }));
+    const ids = new Set(vistas.map(a => a.id));
+    const so: ModeloDaObraV1 = {
+      ...m, identidade: { titulo: 'Obra não identificada', titulo_original: 'Obra não identificada', artista: 'Artista não identificado', data: 'Data não identificada', tecnica: 'Técnica não identificada', afirmacoes: [] },
+      imagem: { ...m.imagem, fonte_id: fonte.id }, localizacao: { ...m.localizacao, instituicao_proprietaria: null, localizacao_conhecida: null, atualmente_exposto: null, sala: null, fontes: [] },
+      fontes: [fonte], afirmacoes: vistas.map(a => ({ ...a, apoios: a.apoios.filter(id => ids.has(id)) })), estudo: [],
+    };
+    expect(validarModeloDaObra(so), JSON.stringify(validarModeloDaObra.errors)).toBe(true);
+    expect(conferirModeloDaObra(so)).toEqual([]);
+    expect(obraNaoIdentificada(so)).toBe(true);
+    expect(obraNaoIdentificada(m)).toBe(false);
+    // A imagem não documenta fato: um "fato" apoiado só nela é recusado.
+    const comFato = { ...so, afirmacoes: [...so.afirmacoes, { ...so.afirmacoes[0]!, id: '01FATO00000000000000000000', tipo: 'fato' as const, fontes: [fonte.id], regioes: [], apoios: [] }] };
+    expect(conferirModeloDaObra(comFato)).toContain('afirmacao_documentada_sem_fonte');
+    // Identidade vazia numa obra com fontes de verdade continua recusada.
+    expect(conferirModeloDaObra({ ...m, identidade: { ...m.identidade, afirmacoes: [] } })).toContain('identidade_sem_fato');
+    // A URL de imagem enviada só vale nesse formato.
+    expect(validarModeloDaObra({ ...so, fontes: [{ ...fonte, url: 'margem:qualquer' }] })).toBe(false);
   });
   it('interpola câmera geometricamente e usa o último enquadramento ao terminar', () => {
     const c = ler<AnaliseCurtaDaObraV1>('educacao.curta');

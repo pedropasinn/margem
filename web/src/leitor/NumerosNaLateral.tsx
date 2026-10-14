@@ -17,7 +17,6 @@ export interface ItemDaLateral {
   /** O que vai no círculo: o número da nota ou "?". */
   rotulo: string;
   cor?: string | undefined;
-  tracejado?: boolean;
   classe?: string;
   /** Sem `aoAbrir`, o toque abre `conteudo` numa folha própria. */
   aoAbrir?: () => void;
@@ -92,7 +91,7 @@ export function NumerosNaLateral({ itens, leitor, coluna }: { itens: readonly It
     const inicio = grupo.direita - DIAMETRO - (total - 1) * avanco;
     return <div key={grupo.chave} className={`pilha-lateral${aberta ? ' espalhada' : ''}`}>
       {mostrados.map((item, indice) => <button key={item.id} type="button" aria-label={item.descricao}
-        className={`nota-numero numero-lateral${item.tracejado ? ' periferica' : ''}${item.classe ? ` ${item.classe}` : ''}`}
+        className={`nota-numero numero-lateral${item.classe ? ` ${item.classe}` : ''}`}
         style={{ left: inicio + indice * avanco, top: grupo.y - DIAMETRO / 2, zIndex: indice + 1, ...(item.cor ? estiloDoNumero(item.cor) : {}) }}
         onClick={() => {
           // Numa pilha, o primeiro toque espalha (os de baixo ficam meio cobertos); o segundo abre a nota.
@@ -109,7 +108,7 @@ export function NumerosNaLateral({ itens, leitor, coluna }: { itens: readonly It
     {aberto && <div className="folha" role="dialog" aria-modal="false" aria-label={aberto.descricao}>
       <div className="folha-cabeca">
         <span />
-        <IconButton ref={fechar} className="folha-fechar" aria-label="Fechar" onClick={() => abrir(null)}>×</IconButton>
+        <IconButton ref={fechar} className="folha-fechar" aria-label="Fechar" onClick={() => abrir(null)} icone="xis" />
       </div>
       {aberto.conteudo}
     </div>}

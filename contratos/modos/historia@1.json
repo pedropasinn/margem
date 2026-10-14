@@ -1,0 +1,84 @@
+{
+  "versao": 1,
+  "id": "historia",
+  "revisao": 1,
+  "nome": "História",
+  "descricao": "Ler história, biografias históricas e fontes primárias distinguindo acontecimentos, agentes, fontes, causas e contextos, interpretações do historiador e consequências. Em fonte de época, a voz é a do autor dela, com as convenções do tempo dele.",
+  "funcoes": [
+    {
+      "chave": "acontecimento",
+      "rotulo": "Acontecimento",
+      "pergunta": "O que aconteceu, quando e onde?",
+      "descricao": "Fato datado e situado, como o texto o dá. Ex.: “Em 1453, Constantinopla caiu.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "agente",
+      "rotulo": "Agentes",
+      "pergunta": "Quem age, e com que interesses ou motivos?",
+      "descricao": "Pessoa, grupo ou instituição e seus motivos, como atestados ou propostos. Ex.: “Os mercadores genoveses queriam manter as rotas.”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "fonte",
+      "rotulo": "Fonte",
+      "pergunta": "Em que documento ou testemunho a afirmação se apoia?",
+      "descricao": "Documento, testemunho ou dado citado. Ex.: “segundo a crônica de Fernão Lopes”.",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "causa",
+      "rotulo": "Causa e contexto",
+      "pergunta": "Que condição ou causa o historiador propõe?",
+      "descricao": "Explicação causal ou contexto, atribuído. Ex.: “A peste reduziu a mão de obra.”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "interpretacao",
+      "rotulo": "Interpretação",
+      "pergunta": "Que leitura do passado o autor defende?",
+      "descricao": "Tese historiográfica ou juízo do historiador. Ex.: “Não houve ruptura, mas lenta transformação.”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "consequencia",
+      "rotulo": "Consequência",
+      "pergunta": "Que efeito ou desdobramento é atribuído ao acontecimento?",
+      "descricao": "Efeito proposto, de curto ou longo prazo. Ex.: “Daí o deslocamento do comércio para o Atlântico.”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "OBJECAO",
+    "CONEXAO",
+    "TENSAO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

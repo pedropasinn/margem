@@ -30,6 +30,38 @@ export interface EntradaPreparada {
   emArquivo: boolean;
 }
 
+/**
+ * Linha de comando inteira no Windows (`CreateProcess`): 32 767 caracteres UTF-16, contando o
+ * executável, todos os argumentos, os espaços e as aspas (V-W4, auditoria B-06). O teto de 100 KB
+ * acima vale por argumento no Linux; no Windows um prompt de 40 mil caracteres não sai do `spawn`.
+ */
+export const TETO_DA_LINHA_DO_WINDOWS = 32_767;
+/** Folga para o que muda a linha depois de montada (política do modo nativo, caminho do motor). */
+export const FOLGA_DA_LINHA_DO_WINDOWS = 2_048;
+
+/**
+ * Comprimento da linha que o Node monta no Windows: cada argumento com espaço, tab ou aspas vai
+ * entre aspas, com as aspas internas e as barras antes delas escapadas (estimativa por cima).
+ */
+export function tamanhoNaLinhaDoWindows(argumentos: readonly string[]): number {
+  let total = 0;
+  for (const argumento of argumentos) {
+    const precisaDeAspas = argumento === '' || /[\s"]/u.test(argumento);
+    const escapes = precisaDeAspas ? (argumento.match(/["\\]/gu)?.length ?? 0) : 0;
+    total += argumento.length + (precisaDeAspas ? 2 : 0) + escapes + 1;
+  }
+  return total;
+}
+
+/**
+ * O prompt pode ir por argumento nesta linha de comando? `linha` é a linha inteira (executável,
+ * argumentos e o próprio prompt). No Windows conta a linha toda; nos outros, o argumento isolado.
+ */
+export function promptCabeNaLinha(prompt: string, linha: readonly string[], plataforma: NodeJS.Platform = process.platform): boolean {
+  if (plataforma === 'win32') return tamanhoNaLinhaDoWindows(linha) <= TETO_DA_LINHA_DO_WINDOWS - FOLGA_DA_LINHA_DO_WINDOWS;
+  return Buffer.byteLength(prompt, 'utf8') <= TETO_PROMPT_POR_ARGUMENTO;
+}
+
 /** Escreve a entrada dentro de `raiz` (um temporário de quem chama, que também o remove). */
 export async function prepararEntrada(raiz: string, prompt: string, schema: unknown): Promise<EntradaPreparada> {
   const diretorioEntrada = join(raiz, 'entrada');

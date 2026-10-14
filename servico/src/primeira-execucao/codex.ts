@@ -13,6 +13,7 @@
 import { execFile } from 'node:child_process';
 import { ambienteSaneado } from '../executor/ambiente.js';
 import { detectarCapacidades, type ExecutarComando } from '../executor/capacidades.js';
+import { codexCli } from '../plataforma/executaveis.js';
 
 /** Código convencional de "comando não encontrado" (o mesmo do shell). */
 export const CODIGO_AUSENTE = 127;
@@ -36,7 +37,7 @@ export const comandoCurto: ExecutarComando = (arquivo, argumentos) =>
     execFile(
       arquivo,
       [...argumentos],
-      { env: ambienteSaneado(), timeout: 15_000, maxBuffer: 256 * 1024 },
+      { env: ambienteSaneado(), timeout: 15_000, maxBuffer: 256 * 1024, windowsHide: true },
       (erro, saidaPadrao, saidaErro) => {
         const saida = `${saidaPadrao}\n${saidaErro}`;
         if (erro && (erro as NodeJS.ErrnoException).code === 'ENOENT') { resolver({ codigo: CODIGO_AUSENTE, saida: '' }); return; }
@@ -66,7 +67,7 @@ function linhaDaVersao(saida: string): string | null {
 export async function verificarCodex(
   opcoes: { executarComando?: ExecutarComando; binario?: string } = {},
 ): Promise<EstadoDoCodex> {
-  const { executarComando = comandoCurto, binario = 'codex' } = opcoes;
+  const { executarComando = comandoCurto, binario = codexCli() } = opcoes;
   const versao = await executarComando(binario, ['--version']);
   if (versao.codigo === CODIGO_AUSENTE) return { encontrado: false, versao: null, compativel: false, logado: null, conta: null };
   // A ajuda e o login são independentes: em paralelo, para a tela não esperar dois processos em fila.

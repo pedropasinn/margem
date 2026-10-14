@@ -203,6 +203,11 @@ describe('nome do arquivo', () => {
     ['  ...oculto', 'oculto.md'],
     ['[[Link]] #tag ^bloco | pipe', 'Link tag bloco pipe.md'],
     ['', 'Documento 01KD0000000000000000000010.md'],
+    // J114: o que o Windows recusa além dos caracteres: fim em ponto/espaço e nomes de dispositivo.
+    ['Reticências...', 'Reticências.md'],
+    ['CON', 'CON (documento).md'],
+    ['com1', 'com1 (documento).md'],
+    ['Console', 'Console.md'],
   ])('%s', (titulo, esperado) => {
     expect(nomeDoArquivo(titulo, IDS.documento)).toBe(esperado);
   });

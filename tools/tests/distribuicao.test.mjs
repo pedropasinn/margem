@@ -38,13 +38,16 @@ test('instalar.ps1 tem os mesmos padrões de produto.env', () => {
 });
 
 test('os dois instaladores têm os mesmos subcomandos, inclusive "iniciar"', () => {
-  const comandos = ['iniciar', 'login', 'estado', 'parar', 'atualizar', 'backup', 'restaurar', 'logs', 'desinstalar', 'arte'];
+  const comandos = ['iniciar', 'login', 'estado', 'parar', 'atualizar', 'backup', 'restaurar', 'logs', 'desinstalar'];
   const sh = ler('instalar.sh');
   const ps = ler('instalar.ps1');
   for (const comando of comandos) {
     assert.match(sh, new RegExp(`^\\s+(\\w+\\|)*${comando}(\\|\\w+)*\\) `, 'mu'), `instalar.sh sem ${comando}`);
     assert.match(ps, new RegExp(`'${comando}'`, 'u'), `instalar.ps1 sem ${comando}`);
   }
+  // O Margem não distribui acervo de quadros (J118): a pessoa adiciona as obras pelo app.
+  assert.doesNotMatch(sh, /arte\) |arte:instalar/u);
+  assert.doesNotMatch(ps, /'arte'|arte:instalar/u);
 });
 
 test('o nome do produto não se espalha pelo compose de distribuição', () => {

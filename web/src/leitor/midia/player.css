@@ -93,7 +93,8 @@ html.com-player .leitor { padding-bottom: 45vh; }
 .painel-video {
   position: fixed; z-index: 75; top: var(--altura-casca-leitor, 0px); right: 0; bottom: 0;
   display: flex; flex-direction: column; width: var(--largura-do-video, 480px); box-sizing: border-box;
-  background: var(--surface-1); box-shadow: -12px 0 32px #0000001a;
+  /* Sem sombra (V-T1): a coluna do vídeo é parte da tela, não uma folha por cima do texto. */
+  background: var(--surface-1);
 }
 .painel-video[hidden] { display: none; }
 .quadro-do-video { flex: none; aspect-ratio: 16 / 9; background: #000; }
@@ -103,6 +104,13 @@ html.com-player .leitor { padding-bottom: 45vh; }
 .alca-do-video:hover::after, html.arrastando-guiada .alca-do-video::after { opacity: 1; }
 .capitulos-ao-lado { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 10px 132px; }
 .capitulos-ao-lado h3 { margin: 6px 10px 8px; font: 600 11px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); }
+/* J142: as partes da análise trazem um resumo de uma linha; a lista dos momentos vem logo depois. */
+.capitulos-ao-lado h3 + .capitulos-da-midia + h3 { margin-top: 18px; }
+.titulo-do-capitulo { min-width: 0; }
+.resumo-da-parte { display: block; margin-top: 2px; font-size: 12px; line-height: 1.35; color: var(--texto-3); }
+.capitulos-da-midia [aria-current=true] .resumo-da-parte { color: var(--texto-2); }
+.momentos-do-video button[data-passou] { color: var(--texto-3); }
+.momentos-do-video .tipo-do-momento { margin-right: 4px; }
 
 /* ------------------------------------------------------------------ YouTube (J109)
    O player oficial embutido ocupa o quadro inteiro e nada fica por cima dele (regra do YouTube):
@@ -148,4 +156,18 @@ html.com-player .leitor { padding-bottom: 45vh; }
 
 @media (prefers-reduced-motion: reduce) {
   .transporte, .controles-da-midia, .tocar, .trilha-botao { transition: none; }
+}
+
+/* ------------------------------------------------------------------ vídeo à esquerda (J142)
+   O vídeo troca de lado com o texto: a coluna fica à esquerda, o texto e o transporte se centram no que
+   sobra à direita, e a alça de largura passa para a borda direita do vídeo. Só no computador. */
+@media (min-width: 900px) {
+  html.com-leitura-guiada.com-video-a-esquerda body { padding-right: 0; padding-left: var(--largura-guiada, 0px); }
+  .player-midia[data-lado=esquerda] .painel-video { left: 0; right: auto; }
+  .player-midia[data-lado=esquerda] .alca-do-video { left: auto; right: -5px; }
+  .player-midia[data-lado=esquerda] .painel-video[data-controle=youtube] .alca-do-video { left: auto; right: -10px; }
+  .player-midia[data-lado=esquerda]::before { left: var(--largura-guiada, 0px); right: 0; }
+  .player-midia[data-lado=esquerda] .transporte { left: calc(var(--largura-guiada, 0px) + (100vw - var(--largura-guiada, 0px)) / 2); }
+  html.com-video-a-esquerda .voltar-ao-trecho { left: calc(var(--largura-guiada, 0px) + (100vw - var(--largura-guiada, 0px)) / 2); }
+  html.com-video.com-video-a-esquerda .painel-do-leitor { left: 0; right: auto; }
 }

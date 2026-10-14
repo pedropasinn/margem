@@ -110,11 +110,34 @@ describe('tela de boas-vindas da instalação', () => {
     expect(screen.getByRole('button', { name: /Abrir o exemplo já marcado/ })).toBeDefined();
   });
 
+  test('porta 8730 ocupada (V-W9): o aviso do app e a identificação deste Margem aparecem na checagem', () => {
+    const aviso = 'A porta 8730 está ocupada: outro programa está usando essa porta. Este Margem abriu na porta 8731; a extensão do navegador procura nas portas 8730 a 8739 e o encontra.';
+    const estado = com({ avisos: [aviso], instancia: { id: 'a1b2-c3d4', porta: 8731 } });
+    servico(estado);
+    montar(estado, (e) => <BoasVindasDaInstalacao estado={e} ir={() => {}} aoFechar={() => {}} />);
+    expect(screen.getByText(aviso).className).toContain('aviso');
+    expect(screen.getByText('a1b2-c3d4').tagName).toBe('CODE');
+    expect(screen.getByText(/Identificação deste Margem/).textContent).toContain('porta 8731');
+  });
+
   test('tudo pronto: nada a fazer além de começar', () => {
     servico(PRONTO);
     montar(PRONTO, (estado) => <BoasVindasDaInstalacao estado={estado} ir={() => {}} aoFechar={() => {}} />);
     expect(screen.getByRole('heading', { name: 'Tudo pronto para ler' })).toBeDefined();
     expect(screen.queryByText(COMANDO_LOGIN_DOCKER)).toBeNull();
+  });
+
+  test('V-D5: no app de computador o login não é conferido de novo; a tela apresenta os três jeitos de estudar', () => {
+    const doDesktop = { ...DESLOGADO, origem: 'desktop' as const };
+    servico(doDesktop);
+    montar(doDesktop, (estado) => <BoasVindasDaInstalacao estado={estado} ir={() => {}} aoFechar={() => {}} />);
+    const dialogo = screen.getByRole('dialog', { name: 'Boas-vindas ao Margem' });
+    expect(dialogo.textContent).not.toContain('Antes de pedir a primeira leitura');
+    expect(screen.queryByText(COMANDO_LOGIN_DOCKER)).toBeNull();
+    expect(screen.queryByRole('list', { name: 'O que esta instalação precisa' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Três jeitos de estudar' })).toBeDefined();
+    expect(dialogo.textContent).toMatch(/lê, assiste e observa/);
+    expect(screen.getByRole('button', { name: /Abrir o exemplo já marcado/ })).toBeDefined();
   });
 
   test('"Concluir" grava no serviço e fecha as boas-vindas do onboarding deste navegador', async () => {
@@ -202,4 +225,34 @@ describe('avisos fora da primeira execução', () => {
     expect(screen.getByText('conteúdo')).toBeDefined();
     expect(screen.queryByRole('status')).toBeNull();
   });
+
+  test('MARGEM_AVISOS do app aparece na faixa e na checagem; não vira aviso curto', async () => {
+    const SANDBOX = 'O Codex roda no sandbox próprio: o bwrap do sistema não funciona aqui.';
+    const estado = concluida(com({ avisos: [SANDBOX, SANDBOX, ' '] }));
+    servico(estado);
+    montar(estado, () => <><AvisoDaInstalacao ir={() => {}} /><div data-testid="acao"><AvisoDoCodexCurto /></div></>);
+    const faixa = await screen.findByRole('status', { name: 'Aviso da instalação' });
+    expect(faixa.textContent).toContain('Um aviso sobre esta instalação.');
+    expect(faixa.textContent).toContain(SANDBOX);
+    expect(screen.getByTestId('acao').textContent).toBe('');
+    expect(avisoDaInstalacao(concluida(com({ avisos: ['x'], cota: { esgotada: true, volta_em: null } })))?.tipo).toBe('cota');
+  });
+
+  test('ferramentas de mídia que faltam aparecem na checagem', () => {
+    const estado = com({
+      avisos: ['Aviso do app.'],
+      ferramentas: {
+        ffmpeg: { ok: false, origem: 'padrão', mensagem: 'ffmpeg não encontrado no PATH.' }, ffprobe: { ok: true, origem: 'padrão' },
+        yt_dlp: { ok: true, origem: 'MARGEM_YT_DLP' }, codex: { ok: true, origem: 'padrão' },
+      },
+    });
+    servico(estado);
+    montar(estado, (e) => <BoasVindasDaInstalacao estado={e} ir={() => {}} aoFechar={() => {}} />);
+    const lista = screen.getByRole('list', { name: 'O que esta instalação precisa' });
+    expect(lista.textContent).toContain('Áudio e vídeo');
+    expect(lista.textContent).toContain('ffmpeg não encontrado no PATH.');
+    expect(lista.textContent).toContain('Vídeos do YouTube');
+    expect(screen.getByRole('list', { name: 'Avisos sobre esta instalação' }).textContent).toBe('Aviso do app.');
+  });
 });
+

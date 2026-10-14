@@ -30,6 +30,10 @@
 .rotulo-do-aviso { margin: 0; font-weight: 600; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .meta-do-aviso { margin: 2px 0 0; color: var(--text-tertiary); font-size: 13px; font-variant-numeric: tabular-nums; }
 .mensagem-do-aviso { margin: 4px 0 0; color: var(--error-texto); font-size: 13px; }
+/* Concluída com avisos: a moldura e o alerta no tom de aviso; as ressalvas em lista curta. */
+.aviso-do-codex[data-avisos] { border-color: color-mix(in srgb, var(--aviso-texto) 35%, var(--borda-3d)); }
+.avisos-da-execucao { margin: 4px 0 0; padding: 0 0 0 16px; color: var(--aviso-texto); font-size: 13px; }
+.avisos-da-execucao li + li { margin-top: 2px; }
 .acoes-do-aviso { display: flex; align-items: center; gap: 2px; margin-top: -4px; }
 .abrir-do-aviso {
   display: inline-flex; align-items: center; min-height: 32px; padding: 4px 12px;
@@ -47,6 +51,7 @@
 .indicador-do-aviso[data-estado="na_fila"] .ponto-do-aviso { background: none; box-shadow: inset 0 0 0 1.5px var(--text-tertiary); }
 .indicador-do-aviso[data-estado="concluida"] { color: var(--sucesso-texto); }
 .indicador-do-aviso[data-estado="falhou"] { color: var(--error-texto); }
+.indicador-do-aviso[data-avisos] { color: var(--aviso-texto); }
 
 /* Agrupador "mais N em andamento": uma pílula discreta acima dos avisos; aberto, uma lista compacta. */
 .avisos-agrupador { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
@@ -94,3 +99,10 @@
 /* A folha da nota e o player de mídia ocupam a base: os avisos ficam fora do caminho. */
 html:has(.folha) .avisos-do-codex, html:has(.player-midia) .avisos-do-codex { bottom: auto; top: 72px; }
 @media print { .avisos-do-codex { display: none; } }
+
+/* V-T8: "Cancelar" num pedido na fila ou rodando. */
+.cancelar-do-aviso { min-height: 32px; padding: 4px 10px; border: 0; border-radius: var(--r-pilula); background: transparent; color: var(--text-secondary); font: 600 13px/1.2 var(--sans); cursor: pointer; }
+.cancelar-do-aviso:hover:not(:disabled) { background: var(--bg-hover); color: var(--error-texto); }
+.cancelar-do-aviso:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cancelar-do-aviso:disabled { opacity: .6; cursor: progress; }
+.cancelar-agrupado { margin-left: auto; min-height: 28px; padding: 2px 8px; font-size: 12px; }

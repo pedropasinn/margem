@@ -1,0 +1,83 @@
+{
+  "versao": 1,
+  "id": "didatico",
+  "revisao": 1,
+  "nome": "Livro didático e manual",
+  "descricao": "Ler livros didáticos, apostilas e manuais de qualquer área para aprender: o objetivo, as definições, as explicações passo a passo, os exemplos resolvidos, os procedimentos e os erros comuns. O que precisa ser entendido antes vem marcado como pré-requisito.",
+  "funcoes": [
+    {
+      "chave": "objetivo",
+      "rotulo": "Objetivo",
+      "pergunta": "O que o trecho quer que se aprenda?",
+      "descricao": "Meta de aprendizagem ou pergunta que guia a seção. Ex.: “Ao fim, você saberá calcular juros compostos.”",
+      "cor": {
+        "claro": "#FFD926",
+        "escuro": "#FFD926"
+      }
+    },
+    {
+      "chave": "definicao",
+      "rotulo": "Definição",
+      "pergunta": "O que exatamente está sendo definido?",
+      "descricao": "Definição, termo técnico ou notação. Ex.: “Chama-se taxa efetiva…”",
+      "cor": {
+        "claro": "#59D675",
+        "escuro": "#59D675"
+      }
+    },
+    {
+      "chave": "explicacao",
+      "rotulo": "Explicação",
+      "pergunta": "Como o conceito é explicado, passo a passo?",
+      "descricao": "Explicação, intuição ou justificativa didática. Ex.: “Pense no dinheiro rendendo sobre o que já rendeu.”",
+      "cor": {
+        "claro": "#52ABFF",
+        "escuro": "#52ABFF"
+      }
+    },
+    {
+      "chave": "exemplo",
+      "rotulo": "Exemplo resolvido",
+      "pergunta": "Que exemplo mostra o conceito em uso?",
+      "descricao": "Exemplo com solução no próprio texto. Ex.: “Aplicando R$ 100 a 10% ao mês…”",
+      "cor": {
+        "claro": "#B98CFF",
+        "escuro": "#B98CFF"
+      }
+    },
+    {
+      "chave": "procedimento",
+      "rotulo": "Procedimento",
+      "pergunta": "Que passos ou regra devem ser seguidos?",
+      "descricao": "Algoritmo, receita ou sequência de passos. Ex.: “Primeiro converta a taxa; depois…”",
+      "cor": {
+        "claro": "#FF8A3D",
+        "escuro": "#FF8A3D"
+      }
+    },
+    {
+      "chave": "cuidado",
+      "rotulo": "Erro comum",
+      "pergunta": "Que erro frequente ou cuidado o texto aponta?",
+      "descricao": "Armadilha, exceção ou cuidado. Ex.: “Não some taxas de períodos diferentes.”",
+      "cor": {
+        "claro": "#2EC4B6",
+        "escuro": "#2EC4B6"
+      }
+    }
+  ],
+  "comentarios": [
+    "AUTOR",
+    "LEITURA",
+    "INVESTIGAR",
+    "CONEXAO",
+    "PREREQUISITO"
+  ],
+  "saliencia": {
+    "alvo_por_nivel": {
+      "1": 0.04,
+      "2": 0.1,
+      "3": 0.2
+    }
+  }
+}

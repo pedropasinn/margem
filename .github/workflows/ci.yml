@@ -91,3 +91,39 @@ jobs:
 
       - name: pytest
         run: motor/.venv/bin/pytest motor/tests -rs
+
+  # App de desktop (J116): typecheck, lint e testes do pacote desktop/, que fica fora dos workspaces da
+  # raiz. Os instaladores saem do workflow app.yml.
+  desktop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+
+      # A raiz também: o desktop importa o serviço (e as dependências dele) no typecheck e nos testes.
+      - name: npm ci (raiz)
+        run: npm ci
+
+      - name: npm ci (desktop)
+        run: npm ci --prefix desktop
+
+      - name: typecheck
+        working-directory: desktop
+        run: npm run typecheck
+
+      - name: lint
+        working-directory: desktop
+        run: npm run lint
+
+      - name: test
+        working-directory: desktop
+        run: npm test
