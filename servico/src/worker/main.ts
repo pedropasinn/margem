@@ -222,7 +222,7 @@ export async function principal(): Promise<void> {
     seguindo = true;
     void comTransacao(pool, (cliente) => seguirSemTipo(compreensao, cliente))
       .then((ids) => { if (ids.length > 0) console.log(JSON.stringify({ evento: 'leitura_sem_tipo', documentos: ids, em: new Date().toISOString() })); },
-        () => { console.error(JSON.stringify({ evento: 'leitura_sem_tipo_falhou' })); })
+        (erro: unknown) => { console.error(JSON.stringify({ evento: 'leitura_sem_tipo_falhou', detalhe: erro instanceof Error ? erro.message : String(erro) })); })
       .finally(() => { seguindo = false; });
   }, 15_000);
   prazoDoTipo.unref?.();

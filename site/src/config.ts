@@ -22,14 +22,14 @@ export const CONFIG = {
   dominio: 'https://margem.dev',
 
   /** Nome da versão mostrada no site e em /novidades/. */
-  versao: 'V0',
-  dataDaVersao: '12/10/2026',
+  versao: 'v0.1.2',
+  dataDaVersao: '15/10/2026',
 
   /**
-   * Já existe um release público com os instaladores? Falso até o primeiro release: o site avisa
+   * Já existe um release público com os instaladores? Ficou verdadeiro com a v0.1.1 (14/10/2026); falso, o site avisa
    * que o download está em preparação. Os endereços abaixo já são os definitivos.
    */
-  publicado: false as boolean,
+  publicado: true as boolean,
 
   /** Licença do código (decidida em 12/10/2026). */
   licenca: 'AGPL-3.0',
@@ -104,11 +104,11 @@ export interface Instalador {
 
 /** Os instaladores, na ordem em que aparecem. O primeiro de cada sistema é o principal. Os do macOS ficam aqui para quando a versão sair (veja `SISTEMAS_EM_BREVE`). */
 export const INSTALADORES: readonly Instalador[] = [
-  { id: 'windows', sistema: 'windows', rotulo: 'Instalador para Windows', formato: '.exe', arquivo: 'Margem-Setup.exe', tamanho: 'cerca de 250 MB' },
+  { id: 'windows', sistema: 'windows', rotulo: 'Instalador para Windows', formato: '.exe', arquivo: 'Margem-Setup.exe', tamanho: 'cerca de 330 MB' },
   { id: 'mac-arm64', sistema: 'macos', arquitetura: 'arm64', rotulo: 'Apple Silicon', formato: '.dmg', arquivo: 'Margem-mac-arm64.dmg', tamanho: 'cerca de 250 MB', detalhe: 'Macs com chip M1 ou mais novo.' },
   { id: 'mac-x64', sistema: 'macos', arquitetura: 'x64', rotulo: 'Intel', formato: '.dmg', arquivo: 'Margem-mac-x64.dmg', tamanho: 'cerca de 260 MB', detalhe: 'Macs com processador Intel.' },
-  { id: 'linux-appimage', sistema: 'linux', rotulo: 'AppImage', formato: '.AppImage', arquivo: 'Margem-linux-x86_64.AppImage', tamanho: 'cerca de 260 MB', detalhe: 'Roda em qualquer distribuição e se atualiza sozinho.' },
-  { id: 'linux-deb', sistema: 'linux', rotulo: 'Pacote Debian', formato: '.deb', arquivo: 'margem_amd64.deb', tamanho: 'cerca de 200 MB', detalhe: 'Debian, Ubuntu, Mint e derivados.' },
+  { id: 'linux-appimage', sistema: 'linux', rotulo: 'AppImage', formato: '.AppImage', arquivo: 'Margem-linux-x86_64.AppImage', tamanho: 'cerca de 500 MB', detalhe: 'Roda em qualquer distribuição e se atualiza sozinho.' },
+  { id: 'linux-deb', sistema: 'linux', rotulo: 'Pacote Debian', formato: '.deb', arquivo: 'margem_amd64.deb', tamanho: 'cerca de 400 MB', detalhe: 'Debian, Ubuntu, Mint e derivados.' },
 ];
 
 /** Endereço de download direto de um arquivo do último release. */

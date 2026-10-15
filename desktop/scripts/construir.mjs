@@ -166,6 +166,7 @@ const ARQUIVOS_DA_RAIZ = [
   'prompts',
   'contratos/schemas',
   'contratos/modos',
+  'contratos/tipos-de-texto.json',
   'fixtures',
   'servico/src/db/migrations',
   'servico/src/primeira-execucao/exemplo',
