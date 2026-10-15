@@ -17,8 +17,8 @@
  *   node --import tsx src/ferramentas/capturar-readme.ts
  *   node --import tsx src/ferramentas/capturar-readme.ts --so=leitor,video,site
  *   node --import tsx src/ferramentas/capturar-readme.ts --servir
- * Telas: site, quadro, biblioteca, leitor, grifo, leitor-escuro, pdf, relacoes, video, exercicio, perguntar,
- * documento, notas e modelos. Saída: `docs/imagens/readme/<tela>.png` (1600 px de largura, otimizadas). `--saida=<pasta>` troca a
+ * Telas: site, quadro, biblioteca, leitor, grifo, pdf, relacoes, video, exercicio, perguntar, documento, notas e
+ * modelos, todas no tema escuro. Saída: `docs/imagens/readme/<tela>.png` (1600 px de largura, otimizadas). `--saida=<pasta>` troca a
  * pasta; `--servir` semeia e deixa o app no ar em http://127.0.0.1:8771 até Ctrl+C, sem capturar.
  * Precisa de `motor/.venv` (PyMuPDF), `ffmpeg` e do Chromium do Playwright.
  */
@@ -604,21 +604,21 @@ async function capturar(ids: Record<string, string>): Promise<void> {
       } finally { await pagina.context().close(); }
     }
 
-    // As telas do site: a clara é a mesma do README; a escura só vai para o site.
+    // As telas do site: a escura é a mesma do README; a clara só vai para o site.
     const doSite = join(raiz, 'site/public/app');
     for (const nome of DO_SITE) {
-      const claro = join(PASTA, `${nome}.png`);
-      const escuro = join(PASTA, `${nome}-escuro-site.png`);
-      if (existsSync(claro)) copyFileSync(claro, join(doSite, `${nome}-claro.png`));
-      if (existsSync(escuro)) { copyFileSync(escuro, join(doSite, `${nome}-escuro.png`)); rmSync(escuro); }
+      const escuro = join(PASTA, `${nome}.png`);
+      const claro = join(PASTA, `${nome}-claro-site.png`);
+      if (existsSync(escuro)) copyFileSync(escuro, join(doSite, `${nome}-escuro.png`));
+      if (existsSync(claro)) { copyFileSync(claro, join(doSite, `${nome}-claro.png`)); rmSync(claro); }
     }
 
-    // A abertura do site (o herói de margem.dev), quando o site foi compilado.
+    // A abertura do site (o herói de margem.dev, no tema escuro do sistema), quando o site foi compilado.
     const site = join(raiz, 'site/dist');
     if (quer('site') && existsSync(join(site, 'index.html'))) {
       const servidor = await servirSite(site);
       try {
-        const pagina = await abrir('claro', 900);
+        const pagina = await abrir('escuro', 900);
         await pagina.goto(`http://127.0.0.1:${String(PORTA_DO_SITE)}/`);
         await pagina.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
         await pagina.waitForTimeout(2500);
@@ -660,40 +660,35 @@ async function rolarAte(p: Page, texto: string, folga = 260): Promise<void> {
   await p.waitForTimeout(500);
 }
 
+// O README mostra tudo no tema escuro.
 const TELAS: Tela[] = [
   // A obra enviada fica de fora da lista: o acervo de exemplo já traz "Educação Obrigatória".
-  ['quadro', 'claro', async (p, ids, ir) => { await ir(p, `/quadros/${ids.slug!}`, 3500); }],
-  ['biblioteca', 'claro', async (p, ids, ir) => {
+  ['quadro', 'escuro', async (p, ids, ir) => { await ir(p, `/quadros/${ids.slug!}`, 3500); }],
+  ['biblioteca', 'escuro', async (p, ids, ir) => {
     await p.goto(`${API}/biblioteca`);
     await p.evaluate(async (slug) => { await fetch(`/api/arte/${slug}`, { method: 'DELETE', headers: { 'X-Margem': '1' } }); }, ids.slug!);
     await ir(p, '/biblioteca', 2000);
   }],
-  ['leitor', 'claro', async (p, ids, ir) => {
+  ['leitor', 'escuro', async (p, ids, ir) => {
     await lerNoNivelMaximo(p, `/ler/${ids.apologo!}`, ir);
-    await rolarAte(p, 'Sim, mas que vale isso?', 120);
+    await rolarAte(p, 'Sim, mas que vale isso?', 60);
     await p.getByRole('button', { name: /^Nota 3/ }).click();
     await p.waitForTimeout(700);
   }],
-  ['grifo', 'claro', async (p, ids, ir) => {
+  ['grifo', 'escuro', async (p, ids, ir) => {
     await lerNoNivelMaximo(p, `/ler/${ids.apologo!}`, ir);
-    await rolarAte(p, 'Sim, mas que vale isso?', 120);
+    await rolarAte(p, 'Sim, mas que vale isso?', 60);
     await p.locator('span.segmento', { hasText: 'Eu é que prendo, ligo, ajunto' }).first().click();
     await p.waitForTimeout(800);
   }],
-  ['leitor-escuro', 'escuro', async (p, ids, ir) => {
-    await lerNoNivelMaximo(p, `/ler/${ids.apologo!}`, ir);
-    await rolarAte(p, 'A linha não respondia nada', 60);
-    await p.getByRole('button', { name: /^Nota 6/ }).click().catch(() => undefined);
-    await p.waitForTimeout(700);
-  }],
-  ['pdf', 'claro', async (p, ids, ir) => {
+  ['pdf', 'escuro', async (p, ids, ir) => {
     await lerNoNivelMaximo(p, `/ler/${ids.ensaio!}`, ir);
     await p.evaluate('window.scrollBy(0, 140)');
     await p.waitForTimeout(400);
     await p.getByRole('button', { name: /^Nota 5/ }).click();
     await p.waitForTimeout(700);
   }],
-  ['relacoes', 'claro', async (p, ids, ir) => {
+  ['relacoes', 'escuro', async (p, ids, ir) => {
     await lerNoNivelMaximo(p, `/ler/${ids.ensaio!}`, ir);
     // As pontas da linha da tese se abrem em leque ao passar o cursor; a de "contrasta com" acende a relação.
     const pilha = p.getByRole('button', { name: /pontas de relações/ });
@@ -702,7 +697,7 @@ const TELAS: Tela[] = [
     await p.mouse.move(5, 700);
     await p.waitForTimeout(900);
   }],
-  ['video', 'claro', async (p, ids, ir) => {
+  ['video', 'escuro', async (p, ids, ir) => {
     await lerNoNivelMaximo(p, `/ler/${ids.oracao!}`, ir);
     // O instante do momento "Quinhoar": a palavra falada acende e o momento aparece sobre o vídeo.
     await p.evaluate("{ const v = document.querySelector('video'); if (v) v.currentTime = 6.5; }");
@@ -710,7 +705,7 @@ const TELAS: Tela[] = [
     await p.getByRole('button', { name: /Quinhoar/ }).first().click().catch(() => undefined);
     await p.waitForTimeout(800);
   }],
-  ['exercicio', 'claro', async (p, ids, ir) => {
+  ['exercicio', 'escuro', async (p, ids, ir) => {
     await ir(p, `/ler/${ids.questao!}`, 3500);
     await p.getByText('Exercício resolvido', { exact: false }).first().click();
     await p.waitForTimeout(1200);
@@ -719,15 +714,15 @@ const TELAS: Tela[] = [
     await p.getByRole('button', { name: /próximo passo/i }).click().catch(() => undefined);
     await p.waitForTimeout(900);
   }],
-  ['perguntar', 'claro', async (p, ids, ir) => {
+  ['perguntar', 'escuro', async (p, ids, ir) => {
     await ir(p, `/perguntar/${ids.agente!}`, 2500);
     await p.evaluate(`for (const e of document.querySelectorAll('*')) if (e.scrollHeight > e.clientHeight + 10 && getComputedStyle(e).overflowY !== 'visible') e.scrollTop = 0;
       window.scrollTo(0, 0);`);
     await p.waitForTimeout(500);
   }],
-  ['documento', 'claro', async (p, ids, ir) => { await ir(p, `/documentos/${ids.apologo!}`, 2500); }],
-  ['notas', 'claro', async (p, _ids, ir) => { await ir(p, '/notas', 2000); }],
-  ['modelos', 'claro', async (p, _ids, ir) => {
+  ['documento', 'escuro', async (p, ids, ir) => { await ir(p, `/documentos/${ids.apologo!}`, 2500); }],
+  ['notas', 'escuro', async (p, _ids, ir) => { await ir(p, '/notas', 2000); }],
+  ['modelos', 'escuro', async (p, _ids, ir) => {
     await ir(p, '/configuracoes', 2000);
     await p.evaluate(`{ const h = [...document.querySelectorAll('h2')].find((e) => e.textContent.includes('Modelos')); h?.scrollIntoView({ block: 'start' }); window.scrollBy(0, -30); }`);
     await p.waitForTimeout(600);
@@ -738,7 +733,7 @@ const TELAS: Tela[] = [
 const DO_SITE = ['grifo', 'pdf', 'video', 'notas'] as const;
 for (const nome of DO_SITE) {
   const tela = TELAS.find(([n]) => n === nome);
-  if (tela) TELAS.push([`${nome}-escuro-site`, 'escuro', tela[2]]);
+  if (tela) TELAS.push([`${nome}-claro-site`, 'claro', tela[2]]);
 }
 
 // ---------------------------------------------------------------- principal

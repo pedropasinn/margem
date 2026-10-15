@@ -4,7 +4,7 @@ O que mudou em cada versão do app. O workflow do app (`.github/workflows/app.ym
 `## vX.Y.Z` da tag como notas do release; a página https://margem.dev/novidades/ conta a mesma história
 com mais detalhe. Ao criar uma versão nova, acrescente a seção dela no topo antes de criar a tag.
 
-## v0.1.0
+## v0.1.1
 
 Primeira versão para instalar no computador: o Margem é um app de desktop para Windows e Linux (macOS em breve),
 usa a sua conta do ChatGPT pelo Codex e guarda a biblioteca numa pasta sua.

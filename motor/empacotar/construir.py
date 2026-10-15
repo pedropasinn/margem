@@ -76,7 +76,10 @@ def main() -> int:
           "--distpath", saida, "--workpath", trabalho / "build", EMPACOTAR / "margem-motor.spec", env=ambiente)
 
     executavel = saida / "margem-motor" / ("margem-motor.exe" if os.name == "nt" else "margem-motor")
-    verificacao = subprocess.run([str(executavel), "verificar"], check=True, capture_output=True, text=True)
+    verificacao = subprocess.run([str(executavel), "verificar"], capture_output=True, text=True)
+    if verificacao.returncode != 0:
+        raise SystemExit(f"O executável falhou ao se verificar (código {verificacao.returncode}):\n"
+                         f"{verificacao.stdout}\n{verificacao.stderr}")
     estado = json.loads(verificacao.stdout)
     if not estado.get("ok") or not estado.get("congelado") or not estado.get("numpy"):
         raise SystemExit(f"O executável não se verificou: {verificacao.stdout}")

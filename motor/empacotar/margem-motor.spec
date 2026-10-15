@@ -11,10 +11,10 @@ import os
 import sys
 from pathlib import Path
 
-# Símbolos de depuração fora (J116): só no Linux, onde o `strip` das .so do PyMuPDF, do numpy e do
-# CPython é seguro e tira ~5 MB. No macOS o strip invalidaria as assinaturas das dylibs das wheels, e no
-# Windows não se aplica.
-TIRAR_SIMBOLOS = sys.platform.startswith("linux")
+# Sem `strip` (era só no Linux, J116, ~5 MB a menos): o strip do binutils do Ubuntu 22.04, o runner
+# do CI, desalinha os segmentos da libscipy_openblas do numpy ("ELF load command address/offset not
+# page-aligned") e o motor não abre. No macOS invalidaria as assinaturas das dylibs; no Windows não se aplica.
+TIRAR_SIMBOLOS = False
 
 raiz = Path(os.environ["MARGEM_EMPACOTAR_RAIZ"])
 ferramentas = Path(os.environ["MARGEM_EMPACOTAR_FERRAMENTAS"])

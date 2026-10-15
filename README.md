@@ -122,13 +122,6 @@ dificuldade.
 O balão de um grifo: as funções do modo de leitura do texto (aqui, ficção narrativa), as de outros
 modos em "Outros olhares" e a sua nota, que se salva sozinha.
 
-<details>
-<summary>No tema escuro</summary>
-
-![O mesmo conto no tema escuro.](docs/imagens/readme/leitor-escuro.png)
-
-</details>
-
 ### Perguntar à biblioteca
 
 ![A página Perguntar: uma pergunta que compara dois textos, a resposta com citações numeradas e um quadro comparativo.](docs/imagens/readme/perguntar.png)
