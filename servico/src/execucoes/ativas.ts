@@ -4,7 +4,7 @@
  * caminho do leitor onde o resultado aparece. Só leitura: nada aqui escreve no banco.
  *
  * A canonização (motor Python) fica de fora: não é o Codex. Jobs cancelados também: quem cancelou
- * já sabe.
+ * já sabe. O trabalho em pausa (V-F1) também: ele tem o aviso próprio, "N trabalhos esperando".
  */
 import type { ExecucaoDoCodexV2, ExecucoesDoCodexV2, Id, JobResultV1 } from '@margem/contratos';
 import type { Transacao } from '../db/transacao.js';
@@ -160,7 +160,7 @@ export async function listarExecucoes(cliente: Transacao, agora: Date = new Date
         CASE WHEN j.estado IN ('ok','falhou') THEN j.atualizado_em END AS fim,
         count(*) OVER ()::int AS total
       FROM job j LEFT JOIN versao_texto v ON v.id=j.versao_id
-      WHERE j.tipo = ANY($1::text[])
+      WHERE j.tipo = ANY($1::text[]) AND j.retido_em IS NULL
         AND (j.estado IN ('fila','reservado','adiado') OR (j.estado IN ('ok','falhou') AND j.atualizado_em > $2))
       ORDER BY CASE j.estado WHEN 'reservado' THEN 0 WHEN 'falhou' THEN 1 WHEN 'ok' THEN 2 ELSE 3 END,
         CASE WHEN j.estado IN ('ok','falhou') THEN j.atualizado_em END DESC NULLS LAST,

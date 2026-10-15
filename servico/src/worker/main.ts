@@ -50,6 +50,7 @@ import { Worker } from './worker.js';
 import { ouvinteDoPool } from '../http/ouvinte.js';
 import type { Manipulador } from './worker.js';
 import { aoPedirParada, ehPontoDeEntrada } from '../plataforma/processos.js';
+import { esperaParaPausarMs, pausarParados } from '../pausa/pausa.js';
 
 function inteiroDoAmbiente(nome: string, padrao: number): number {
   const bruto = process.env[nome];
@@ -192,6 +193,22 @@ export function todosOsManipuladores(
   };
 }
 
+/** Na partida do worker: põe em pausa o trabalho do Codex parado desde antes do limite (V-F1). */
+export async function pausarNaPartida(partida: Date, banco: typeof pool = pool, ambiente: NodeJS.ProcessEnv = process.env): Promise<void> {
+  const esperaMs = esperaParaPausarMs(ambiente);
+  if (esperaMs === null) return;
+  try {
+    const pausados = await comTransacao(banco, (cliente) => pausarParados(cliente, { partida, esperaMs }));
+    if (pausados.jobs.length + pausados.preparacoes.length > 0) {
+      console.log(JSON.stringify({ evento: 'trabalho_em_pausa', jobs: pausados.jobs.length, preparacoes: pausados.preparacoes.length, em: partida.toISOString() }));
+    }
+  } catch (erro) {
+    // Sem a pausa, o worker não pode seguir: rodaria tudo o que esperava, o que a pausa existe para evitar.
+    console.error(JSON.stringify({ evento: 'trabalho_em_pausa_falhou', detalhe: erro instanceof Error ? erro.message : String(erro) }));
+    throw erro;
+  }
+}
+
 export async function principal(): Promise<void> {
   // Por fora da auditoria: a escolha de modelo e esforço por categoria (Configurações → Modelos, V-T10)
   // troca o pedido antes de ele ser registrado, a cada chamada (a mudança vale já no job seguinte).
@@ -231,6 +248,9 @@ export async function principal(): Promise<void> {
     worker.pedirParada();
   });
   try {
+    // V-F1: o trabalho do Codex parado há horas fica em pausa até a pessoa mandar (Retomar na janela). Antes
+    // da primeira volta do laço e do `seguirSemTipo`: nada do que esperava começa sozinho ao abrir o app.
+    await pausarNaPartida(new Date());
     await agendarNoticias();
     await recuperarPublicacoes(pool);
     await worker.rodar();

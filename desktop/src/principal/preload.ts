@@ -22,6 +22,9 @@ const ponte: PonteDaBiblioteca = {
     procurar: () => ipcRenderer.invoke(CANAIS_DA_BIBLIOTECA.procurarAtualizacao) as Promise<SituacaoDaAtualizacao>,
     reiniciar: () => { ipcRenderer.send(CANAIS_DA_BIBLIOTECA.reiniciarParaAtualizar); },
     abrirDownload: () => { ipcRenderer.send(CANAIS_DA_BIBLIOTECA.abrirDownload); },
+    atualizarAgora: () => { ipcRenderer.send(CANAIS_DA_BIBLIOTECA.atualizarAgora); },
+    adiar: () => { ipcRenderer.send(CANAIS_DA_BIBLIOTECA.adiarAtualizacao); },
+    abrirNovidades: () => { ipcRenderer.send(CANAIS_DA_BIBLIOTECA.abrirNovidades); },
     aoMudar: (ouvir) => {
       // Só o dado, nunca o evento do Electron (que expõe o `sender`).
       const tratar = (_evento: unknown, situacao: SituacaoDaAtualizacao): void => { ouvir(situacao); };

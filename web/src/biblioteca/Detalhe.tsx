@@ -6,6 +6,7 @@ import {
 } from './Operacoes';
 import type { CamadaResumida } from '../leitor/f2';
 import { rotuloCamada } from '../leitor/f2';
+import { retomarEmPausa } from '../pausa/api';
 import { escrever, pedir } from './api';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Esqueleto } from '../ui/Esqueleto';
@@ -146,13 +147,16 @@ export function Detalhe({
       : { nome: 'leitura', documento_id: documento.id, secao_id });
   };
 
-  async function operacao(caminho: string): Promise<void> {
+  async function operacao(caminho: string | (() => Promise<unknown>)): Promise<void> {
     if (operando) return;
     operar(true); definirAviso(null);
-    try { await escrever(caminho, {}); await recarregar(); }
+    try { await (typeof caminho === 'string' ? escrever(caminho, {}) : caminho()); await recarregar(); }
     catch (falha) { definirAviso(falha instanceof Error ? falha.message : 'Não foi possível concluir a operação.'); }
     finally { operar(false); }
   }
+  // V-F1: o que ficou parado desde antes de o app abrir espera a pessoa; "Retomar" o devolve à fila.
+  const retomarDaPausa = (id: string) => void operacao(() => retomarEmPausa({ ids: [id] }));
+  const emPausa = documento.jobs.some((job) => job.em_pausa === true) || documento.preparacao_em_pausa === true;
 
   return (
     <article className="detalhe">
@@ -305,15 +309,20 @@ export function Detalhe({
             </section>
           )}
 
-          {documento.jobs.length > 0 && (
+          {(documento.jobs.length > 0 || emPausa) && (
             <section className="card">
               <span className="eyebrow">Trabalhos</span>
               <ul className="limites">
+                {documento.preparacao_em_pausa === true && <li data-pausa="">
+                  Análise pedida antes · em pausa, esperando você
+                  <Button type="button" disabled={operando} onClick={() => retomarDaPausa(`preparacao:${documento_id}`)}>Retomar</Button>
+                </li>}
                 {documento.jobs.map((job) => (
-                  <li key={job.id} data-avisos={(job.avisos?.length ?? 0) > 0 ? '' : undefined}>
-                    {job.tipo} · {(job.avisos?.length ?? 0) > 0 ? 'concluído com avisos' : job.estado}
+                  <li key={job.id} data-avisos={(job.avisos?.length ?? 0) > 0 ? '' : undefined} data-pausa={job.em_pausa === true ? '' : undefined}>
+                    {job.tipo} · {job.em_pausa === true ? 'em pausa, esperando você' : (job.avisos?.length ?? 0) > 0 ? 'concluído com avisos' : job.estado}
                     {job.error_code !== null && ` · ${job.error_code}`}
                     {job.not_before !== null && ` · retoma em ${job.not_before}`}
+                    {job.em_pausa === true && <Button type="button" disabled={operando} onClick={() => retomarDaPausa(job.id)}>Retomar</Button>}
                     {['fila', 'reservado', 'adiado'].includes(job.estado) && <Button type="button" disabled={operando} onClick={() => void operacao(`/api/jobs/${job.id}/cancelar`)}>Cancelar</Button>}
                     {['falhou', 'cancelado'].includes(job.estado) && <Button type="button" disabled={operando} onClick={() => void operacao(`/api/jobs/${job.id}/reenfileirar`)}>Reenfileirar</Button>}
                     {(job.avisos?.length ?? 0) > 0 && <ul className="avisos-do-trabalho">{job.avisos?.map((aviso) => <li key={aviso.codigo}>{aviso.mensagem}</li>)}</ul>}

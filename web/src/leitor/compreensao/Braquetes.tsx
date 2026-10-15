@@ -255,9 +255,16 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
     candidataRef.current = id; definirCandidata(id);
     espera.current = setTimeout(() => { if (candidataRef.current === id) acender(id); }, esperaMs);
   };
+  // Onde o mouse está agora: sobre a dobra do PDF, a relação continua acesa mesmo que o leque das
+  // bolinhas (que o mouse deixou para ir até os recortes) peça para sair.
+  const ultimoAlvo = useRef<EventTarget | null>(null);
   const sair = () => {
     if (fixadaRef.current !== null) return;
-    clearTimeout(saida.current); saida.current = setTimeout(() => definirSobre(null), ESPERA_AO_SAIR_MS);
+    clearTimeout(saida.current); saida.current = setTimeout(() => {
+      saida.current = undefined;
+      if (naDobraDoPdf(ultimoAlvo.current)) return;
+      definirSobre(null);
+    }, ESPERA_AO_SAIR_MS);
   };
   // O clique no círculo fixa a relação (e a dobra do PDF) até outro clique ou Esc.
   const fixadaRef = useRef<string | null>(null);
@@ -277,6 +284,7 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
   // Acesa só enquanto o mouse estiver sobre a espinha dela (o círculo fica na espinha).
   useEffect(() => {
     const mover = (evento: PointerEvent) => {
+      ultimoAlvo.current = evento.target;
       if (navegacao?.aberta) return;
       const caixa = coluna();
       if (!caixa) return;
@@ -295,7 +303,7 @@ export function Braquetes({ visualizacao = 'linhas', navegacao, compreensaoId, s
       if (candidataRef.current !== null && !sobreA(candidataRef.current)) desistir();
       if (sobre === null) return;
       // Sobre a dobra do PDF (os recortes e a espinha religada), ou com a relação fixada pelo clique: fica.
-      const naDobra = evento.target instanceof Element && evento.target.closest('.dobra-pdf-alvo, .pontas-agrupadas') !== null;
+      const naDobra = naDobraDoPdf(evento.target) || (evento.target instanceof Element && evento.target.closest('.pontas-agrupadas') !== null);
       if (sobreA(sobre) || naDobra || fixadaRef.current === sobre) { clearTimeout(saida.current); saida.current = undefined; return; }
       if (saida.current === undefined) {
         saida.current = setTimeout(() => {
@@ -640,6 +648,11 @@ interface Dobra {
   id: string; marco: HTMLElement; elementos: HTMLElement[]; projecoes: HTMLElement[]; api: ApiDoLeitor | null; ancoraFixa: AncoraV1; rolagemAntes: number; rolagemDepois: number;
   /** Onde estava a espinha antes de recolher, em coordenadas da página. */
   espinha: [number, number];
+}
+
+/** O mouse está sobre a dobra do PDF (os recortes ou a espinha religada)? */
+function naDobraDoPdf(alvo: EventTarget | null): boolean {
+  return alvo instanceof Element && alvo.closest('.dobra-pdf-alvo') !== null;
 }
 
 function xDaEspinha(esquerdaDaColuna: number, pista: number): number { return esquerdaDaColuna - 30 - pista * LARGURA_DA_PISTA; }

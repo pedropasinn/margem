@@ -106,7 +106,7 @@ export async function prepararDocumentoNa(
   await pedirItensDoDocumento(cliente, documentoId, itens);
   if (!itens.includes('grifos_relacoes')) {
     // Sem a compreensão: flashcards e fluxograma saem na hora, do texto (o primeiro capítulo ou todos).
-    await cliente.query('UPDATE documento SET preparacao_pedida=NULL WHERE id=$1 AND preparacao_pedida IS NOT NULL', [documentoId]);
+    await cliente.query('UPDATE documento SET preparacao_pedida=NULL, preparacao_retida_em=NULL WHERE id=$1 AND preparacao_pedida IS NOT NULL', [documentoId]);
     const canonico = (await obterVersao(cliente, versaoId)).canonico;
     const capitulos = canonico.secoes.filter((secao) => secao.nivel === 1).map((secao) => secao.id);
     for (const secaoId of pedido.todos ? capitulos : capitulos.slice(0, 1)) {
@@ -116,11 +116,11 @@ export async function prepararDocumentoNa(
   }
   const resolucao = await resolverModo(cliente, documentoId, versaoId, opcoes.semEsperarTipo === true);
   if ('aguardando' in resolucao) {
-    await cliente.query(`UPDATE documento SET preparacao_pedida=$2 WHERE id=$1`,
+    await cliente.query(`UPDATE documento SET preparacao_pedida=$2, preparacao_retida_em=NULL WHERE id=$1`,
       [documentoId, JSON.stringify({ todos: pedido.todos === true, itens, em: new Date().toISOString() })]);
     return { compreensao_id: null, criada: false, enfileirados: 0, devolvidos: 0, aguardando_tipo: true };
   }
-  await cliente.query('UPDATE documento SET preparacao_pedida=NULL WHERE id=$1 AND preparacao_pedida IS NOT NULL', [documentoId]);
+  await cliente.query('UPDATE documento SET preparacao_pedida=NULL, preparacao_retida_em=NULL WHERE id=$1 AND preparacao_pedida IS NOT NULL', [documentoId]);
   const { modo } = resolucao;
   const existente = await compreensaoNoModo(cliente, versaoId, modo);
   const execucao = existente ?? await iniciarCompreensaoNa(config, cliente, versaoId, modo);
@@ -157,7 +157,7 @@ export async function comecarLeituraPedida(config: ConfiguracaoDaCompreensao, cl
     await prepararDocumentoNa(config, cliente, documentoId, pedido);
   } catch (erro) {
     if (!(erro instanceof SemCapitulos)) throw erro;
-    await cliente.query('UPDATE documento SET preparacao_pedida=NULL WHERE id=$1', [documentoId]);
+    await cliente.query('UPDATE documento SET preparacao_pedida=NULL, preparacao_retida_em=NULL WHERE id=$1', [documentoId]);
   }
 }
 
@@ -178,6 +178,9 @@ export function esperaDoTipoMs(ambiente: NodeJS.ProcessEnv = process.env): numbe
  * pedido passou do prazo (a identificação em curso é cancelada: não gasta vaga do Codex à toa e não troca o
  * modo da leitura que já começou). Chamada pelo worker de tempos em tempos e pela consulta da página
  * (a configuração pode vir como função: só é montada quando algum documento segue). Devolve os que seguiram.
+ *
+ * V-F1: a preparação em pausa (pedida horas antes de o worker partir, `pausa/pausa.ts`) fica de fora até a
+ * pessoa mandar retomar; sem isso, abrir o app começaria de uma vez tudo o que esperava.
  */
 export async function seguirSemTipo(
   config: ConfiguracaoDaCompreensao | (() => ConfiguracaoDaCompreensao), cliente: Transacao, opcoes: { documentoId?: Id; agora?: Date; esperaMs?: number } = {},
@@ -186,7 +189,8 @@ export async function seguirSemTipo(
   const limite = new Date(agora.getTime() - (opcoes.esperaMs ?? esperaDoTipoMs()));
   const candidatos = (await cliente.query<{ id: Id; pedido: PedidoDaPreparacao & { em?: string }; versao_id: Id | null }>(`SELECT d.id, d.preparacao_pedida AS pedido,
       (SELECT v.id FROM versao_texto v WHERE v.documento_id=d.id ORDER BY v.numero DESC LIMIT 1) AS versao_id
-    FROM documento d WHERE d.preparacao_pedida IS NOT NULL AND d.tipo_de_texto IS NULL AND ($1::text IS NULL OR d.id=$1)`,
+    FROM documento d WHERE d.preparacao_pedida IS NOT NULL AND d.tipo_de_texto IS NULL AND d.preparacao_retida_em IS NULL
+      AND ($1::text IS NULL OR d.id=$1)`,
   [opcoes.documentoId ?? null])).rows;
   const seguiram: Id[] = [];
   for (const { id, pedido, versao_id: versaoId } of candidatos) {
@@ -202,7 +206,7 @@ export async function seguirSemTipo(
       seguiram.push(id);
     } catch (erro) {
       if (!(erro instanceof SemCapitulos) && !(erro instanceof DocumentoSemTexto)) throw erro;
-      await cliente.query('UPDATE documento SET preparacao_pedida=NULL WHERE id=$1', [id]);
+      await cliente.query('UPDATE documento SET preparacao_pedida=NULL, preparacao_retida_em=NULL WHERE id=$1', [id]);
     }
   }
   return seguiram;

@@ -120,7 +120,7 @@ async function descartarPedido(cliente: Transacao, job: LinhaDoJob): Promise<voi
       return;
     case 'identificar_tipo':
       // A preparação que esperava o tipo também sai: ela nunca começou.
-      if (job.documento_id) await cliente.query('UPDATE documento SET preparacao_pedida=NULL WHERE id=$1', [job.documento_id]);
+      if (job.documento_id) await cliente.query('UPDATE documento SET preparacao_pedida=NULL, preparacao_retida_em=NULL WHERE id=$1', [job.documento_id]);
       return;
     case 'revisar_anotacao':
       if (segundo && terceiro) await cliente.query(`UPDATE anotacao SET pedido_de_revisao=NULL WHERE id=$1 AND pedido_de_revisao->>'id' = $2`, [segundo, terceiro]);
@@ -145,7 +145,7 @@ export async function cancelarOperacoes(cliente: Transacao, alvo: AlvoDoCancelam
   }
   if (alvo.documento_id !== undefined && alvo.secao_id === undefined) {
     // Uma preparação à espera do tipo (sem job da leitura ainda) também é cancelada.
-    await cliente.query('UPDATE documento SET preparacao_pedida=NULL WHERE id=$1 AND preparacao_pedida IS NOT NULL', [alvo.documento_id]);
+    await cliente.query('UPDATE documento SET preparacao_pedida=NULL, preparacao_retida_em=NULL WHERE id=$1 AND preparacao_pedida IS NOT NULL', [alvo.documento_id]);
   }
   // Capítulos cuja análise foi interrompida antes de ficar pronta: o que já foi gravado sai.
   const capitulos = new Map<string, CapituloDaExecucao>();

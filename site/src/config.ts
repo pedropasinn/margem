@@ -22,7 +22,7 @@ export const CONFIG = {
   dominio: 'https://margem.dev',
 
   /** Nome da versão mostrada no site e em /novidades/. */
-  versao: 'v0.1.2',
+  versao: 'v0.1.3',
   dataDaVersao: '15/10/2026',
 
   /**

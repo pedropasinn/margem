@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import type { ModeloDoCapituloV1, PlanoPedagogicoV1 } from '@margem/contratos';
@@ -455,6 +456,42 @@ test.each([false, true])('visualização por pontos mostra só o braquete escolh
   expect(container.querySelector('path.espinha')?.getAttribute('d')).toBe('M 370 415 V 130');
   rerender(<Braquetes {...props} visualizacao="linhas" />);
   expect(container.querySelectorAll('.relacao-braquete')).toHaveLength(30);
+});
+
+test('nas bolinhas, a dobra do PDF fica aberta com o mouse sobre os recortes e fecha quando ele sai para a página', async () => {
+  const dados = modelo();
+  const fontes: FontesDosBraquetes = { relacoes: () => Promise.resolve({ relacoes: [{ relacao: dados.relacoes[0]!, relevante: true, origem: dados.elementos[1], destino: dados.elementos[0], conexao_id: null }] }) };
+  // As duas pontas longe demais para caberem na tela: o bloco 1 na p. 1, o bloco 2 na p. 3.
+  const linhas = (y: number) => Array.from({ length: 3 }, (_, i) => ({ x: 100, y: y + i * 24, largura: 640, altura: 18 }));
+  const regiao = (pagina: number, y: number) => ({ pagina, escala: 1.5, largura: 850, altura: 1100, linhas: linhas(y), linhasDaPagina: linhas(y) });
+  const leitor = leitorFalso();
+  leitor.current.retangulosDaAncora = (ancora) => [retangulo(ancora.bloco_id === id(1) ? 200 : 2400, 22)];
+  leitor.current.dobraPdf = {
+    regioes: (ancora) => [ancora.bloco_id === id(1) ? regiao(1, 300) : regiao(3, 500)],
+    preparar: () => Promise.resolve(),
+    recorte: (recorte) => <div className="recorte-falso" data-pagina={recorte.pagina} />,
+    origemDaPagina: (pagina) => pagina === 1 ? { x: 400, y: -100 } : { x: 400, y: 2000 },
+  };
+  const { container } = render(<Braquetes pdf visualizacao="pontos" compreensaoId="C" secaoId={id(60)} modeloId={id(503)} filtro="todas" leitor={leitor} coluna={() => retangulo(0, 1000)} blocos={blocos} fontes={fontes} />);
+  fireEvent.pointerEnter((await screen.findAllByRole('button', { name: /^(Saída|Chegada):/ }))[0]!);
+  await waitFor(() => expect(container.querySelectorAll('.dobra-pdf-recorte')).toHaveLength(2));
+  // O mouse deixa a bolinha e vai ler o recorte de baixo: o leque se recolhe, a dobra fica.
+  fireEvent.pointerLeave(container.querySelector('.pontas-agrupadas')!);
+  const recorte = container.querySelectorAll('.dobra-pdf-recorte')[1]!;
+  recorte.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 800, clientY: 300 }));
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 500)); });
+  expect(container.querySelector('.braquetes[data-acesa]')).not.toBeNull();
+  expect(container.querySelectorAll('.dobra-pdf-recorte')).toHaveLength(2);
+  // Fora da dobra (sobre a página atrás do véu), ela fecha.
+  document.body.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 1400, clientY: 500 }));
+  await waitFor(() => expect(container.querySelector('.braquetes[data-acesa]')).toBeNull());
+});
+
+test('o véu da dobra do PDF cobre a página também nas bolinhas (nenhum modo desliga o fundo)', () => {
+  const css = readFileSync(`${import.meta.dirname}/compreensao.css`, 'utf8');
+  // O fundo do véu (::before) esconde o leitor atrás dos recortes; nenhuma regra o desliga por modo.
+  expect(css).toMatch(/\.dobra-pdf-veu::before \{[^}]*opacity: \.94/);
+  expect(css).not.toMatch(/\.em-pontos[^{}]*\.dobra-pdf-veu::before/);
 });
 
 test('120 relações compartilham quatro leituras de geometria por quadro, sem conservar coordenadas antigas', async () => {

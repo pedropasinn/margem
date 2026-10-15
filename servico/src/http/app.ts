@@ -21,6 +21,7 @@ import { registrarRotasDasExecucoes } from './rotas-execucoes.js';
 import { registrarRotasDasSalas } from './rotas-salas.js';
 import { registrarRotasDaPrimeiraExecucao } from './rotas-primeira-execucao.js';
 import { registrarRotasDoApagar } from './rotas-apagar.js';
+import { registrarRotasDaPausa } from './rotas-pausa.js';
 import { registrarRotasDosModelos } from './rotas-modelos.js';
 import type { CatalogoDeModelos } from '../modelos/catalogo.js';
 import type { Verificadores } from '../primeira-execucao/estado.js';
@@ -628,6 +629,8 @@ export function criarApi(opcoes: OpcoesDaApi): Hono {
 
   // Cancelar (um job, uma análise, tudo do documento) e apagar o que foi feito (V-T8).
   registrarRotasDoApagar(api, { banco, exigirUlid });
+  // Trabalho do Codex parado desde antes de o app abrir: em pausa até a pessoa retomar ou descartar (V-F1).
+  registrarRotasDaPausa(api, { banco, exigirUlid });
 
   api.post('/api/jobs/:id/reenfileirar', async (c) => {
     const id = exigirUlid(c.req.param('id'), 'job');

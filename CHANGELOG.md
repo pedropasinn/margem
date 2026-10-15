@@ -4,6 +4,16 @@ O que mudou em cada versão do app. O workflow do app (`.github/workflows/app.ym
 `## vX.Y.Z` da tag como notas do release; a página https://margem.dev/novidades/ conta a mesma história
 com mais detalhe. Ao criar uma versão nova, acrescente a seção dela no topo antes de criar a tag.
 
+## v0.1.3
+
+- **Atualizações**: ao abrir o app, um aviso mostra a versão nova com "Atualizar agora" (com o progresso do
+  download; reinicia sozinho ao terminar) ou "Depois" (instala ao fechar); notificação do sistema quando a
+  versão fica pronta com o app em segundo plano.
+- **Trabalhos parados**: trabalho do Codex parado há mais de 3 horas fica em pausa ao abrir o app, com o
+  aviso "N trabalhos do Codex esperando" (Retomar, Ver, Descartar); o que você pede na hora roda normal.
+- **PDF**: a dobra entre os dois trechos de uma relação volta a cobrir a página no modo Bolinhas e fica
+  aberta com o mouse sobre os recortes.
+
 ## v0.1.2
 
 - **Correção**: o instalador não levava o catálogo de tipos de texto, e o reconhecimento do tipo de um

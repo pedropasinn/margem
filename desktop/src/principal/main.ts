@@ -10,7 +10,7 @@
  *   MARGEM_DESKTOP_DADOS_APP=<pasta>   troca o userData (testes)
  *   MARGEM_DESKTOP_ARQUIVO_PARADA=<arquivo>   com --sem-janela, sai quando o arquivo aparece (fumaça no Windows)
  */
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, nativeTheme, session, shell, Tray, type IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, nativeTheme, Notification, session, shell, Tray, type IpcMainInvokeEvent } from 'electron';
 import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { CANAIS, type AvaliacaoDaPasta, type ResultadoDaConclusao } from '../boas-vindas/contrato.js';
@@ -26,8 +26,10 @@ import { localDosRecursos, resolverRecursos, resumoDosRecursos, type RecursosRes
 import { Registro } from '../nucleo/registros.js';
 import { ServicoDoMargem } from '../nucleo/servico.js';
 import { lerArgumentos, linkExterno, mesmaOrigem } from './argumentos.js';
-import type { SituacaoDaAtualizacao } from '../nucleo/atualizacao.js';
-import { configurarAtualizacao, instalarAtualizacaoAoSair, type Atualizador } from './atualizacao.js';
+import { deveNotificar, type EstadoDaAtualizacao, type SituacaoDaAtualizacao } from '../nucleo/atualizacao.js';
+import {
+  configurarAtualizacao, gravarUltimaNotificada, instalarAtualizacaoAoSair, lerUltimaNotificada, type Atualizador,
+} from './atualizacao.js';
 import { LINK_DA_DOCUMENTACAO, montarMenu } from './menu.js';
 import {
   ALTURA_DO_TITULO, POSICAO_DO_MENU, coresPadrao, molduraDaPagina, opcoesDaMoldura, posicaoDosSemaforos, proximoEstadoDoAlt,
@@ -386,13 +388,40 @@ async function trocarBiblioteca(): Promise<void> {
 // ---------------------------------------------------------------- atualização (J146)
 
 const LINK_DO_DOWNLOAD = 'https://margem.dev/download/';
+const LINK_DAS_NOVIDADES = 'https://margem.dev/novidades/';
 
 function situacaoDaAtualizacao(): SituacaoDaAtualizacao {
   return { versao: app.getVersion(), atualizacao: estado?.atualizador?.estado() ?? { estado: 'ociosa' } };
 }
 
-/** O estado mudou: a janela da biblioteca mostra (Configurações e o aviso de versão pronta). */
-function avisarAtualizacao(): void {
+/** A última versão avisada pela notificação do sistema (lida do disco na primeira vez). */
+let ultimaNotificada: string | null | undefined;
+
+/**
+ * Notificação do sistema quando a versão nova fica pronta com a janela fora de foco (J151), uma vez por
+ * versão (lembrada entre execuções). Clicar traz a janela, onde o aviso tem "Atualizar agora".
+ */
+function notificarSeFora(atualizacao: EstadoDaAtualizacao): void {
+  if (estado === null || !Notification.isSupported()) return;
+  const arquivo = join(estado.pastas.dadosDoApp, 'atualizacao.json');
+  if (ultimaNotificada === undefined) ultimaNotificada = lerUltimaNotificada(arquivo);
+  const janela = estado.principal;
+  const emFoco = janela != null && !janela.isDestroyed() && janela.isFocused();
+  if (!deveNotificar(atualizacao, ultimaNotificada, emFoco)) return;
+  ultimaNotificada = atualizacao.versao;
+  gravarUltimaNotificada(arquivo, atualizacao.versao);
+  const notificacao = new Notification({
+    title: `Margem ${atualizacao.versao} pronto para instalar`,
+    body: 'Abra o Margem e clique em "Atualizar agora", ou a versão nova é instalada quando você fechar o app.',
+    icon: icone(),
+  });
+  notificacao.on('click', trazerParaFrente);
+  notificacao.show();
+}
+
+/** O estado mudou: a janela da biblioteca mostra (Configurações e o aviso de versão nova). */
+function avisarAtualizacao(atualizacao: EstadoDaAtualizacao): void {
+  notificarSeFora(atualizacao);
   const janela = estado?.principal;
   if (janela == null || janela.isDestroyed()) return;
   janela.webContents.send(CANAIS_DA_BIBLIOTECA.atualizacaoMudou, situacaoDaAtualizacao());
@@ -503,6 +532,15 @@ function registrarIpcDaBiblioteca(): void {
   ipcMain.on(CANAIS_DA_BIBLIOTECA.reiniciarParaAtualizar, (evento) => {
     if (daBiblioteca(evento.sender) !== null) reiniciarParaAtualizar();
   });
+  ipcMain.on(CANAIS_DA_BIBLIOTECA.atualizarAgora, (evento) => {
+    if (daBiblioteca(evento.sender) !== null) estado?.atualizador?.atualizarAgora();
+  });
+  ipcMain.on(CANAIS_DA_BIBLIOTECA.adiarAtualizacao, (evento) => {
+    if (daBiblioteca(evento.sender) !== null) estado?.atualizador?.adiar();
+  });
+  ipcMain.on(CANAIS_DA_BIBLIOTECA.abrirNovidades, (evento) => {
+    if (daBiblioteca(evento.sender) !== null) void abrirFora(LINK_DAS_NOVIDADES);
+  });
   ipcMain.on(CANAIS_DA_BIBLIOTECA.abrirDownload, (evento) => {
     if (daBiblioteca(evento.sender) !== null) void abrirFora(LINK_DO_DOWNLOAD);
   });
@@ -587,6 +625,9 @@ function registrarIpcDaAbertura(): void {
 // ---------------------------------------------------------------- ciclo de vida
 
 async function iniciarApp(): Promise<void> {
+  // Windows: as notificações do sistema (aviso de atualização, J151) precisam do mesmo id do atalho que o
+  // instalador cria (`appId` em scripts/empacotar.mjs).
+  if (process.platform === 'win32') app.setAppUserModelId('dev.margem.app');
   const pastas = pastasDoApp(app.getPath('userData'));
   await prepararPastasDoApp(pastas);
   const registro = new Registro(join(pastas.registros, 'app.log'));
@@ -616,7 +657,12 @@ async function iniciarApp(): Promise<void> {
     instalarMenu();
     acompanharTemaDoSistema();
     if (configuracao.bandeja && process.platform !== 'darwin') alternarBandeja(true);
-    estado.atualizador = configurarAtualizacao({ empacotado: app.isPackaged, registro, aoMudar: avisarAtualizacao });
+    estado.atualizador = configurarAtualizacao({
+      empacotado: app.isPackaged, registro, aoMudar: avisarAtualizacao,
+      // Adiado: a máquina chama `instalar` já com o estado "pronta" gravado no atualizador.
+      instalar: () => { setImmediate(reiniciarParaAtualizar); },
+      abrirSite: () => { void abrirFora(LINK_DO_DOWNLOAD); },
+    });
   }
   if (configuracao.biblioteca === null) {
     if (argumentos.semJanela) {

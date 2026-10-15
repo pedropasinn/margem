@@ -1,4 +1,4 @@
-/* Configurações → Sobre e atualizações e o aviso de versão pronta (J146): cartão, pílula e barra de progresso do app. */
+/* Configurações → Sobre e atualizações (J146) e o aviso de versão nova (J151). */
 .configuracao-da-atualizacao { display: grid; gap: 16px; }
 .configuracao-da-atualizacao h2 { margin: 0; font-size: 22px; }
 .configuracao-da-atualizacao .cabeca-da-secao { display: grid; gap: 6px; }
@@ -11,22 +11,30 @@
 .estado-da-atualizacao p { margin: 0; font-size: 15px; color: var(--texto-2); }
 .estado-da-atualizacao .progress-track { max-width: 320px; }
 
-/* A pílula do pé da janela, como a do "Desfazer" do leitor, nas cores do tema. */
+/*
+ * O aviso de versão nova (J151): um cartão no canto de baixo, no padrão das dicas e popovers do app (borda
+ * 3D de 2px, raio 16, sombra), sem bloquear a tela. Nada de faixa lateral.
+ */
 .aviso-de-atualizacao {
-  position: fixed; z-index: 95; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%);
-  display: flex; align-items: center; gap: 4px; max-width: calc(100vw - 32px); box-sizing: border-box; margin: 0; padding: 6px 6px 6px 18px;
-  border-radius: var(--r-pilula); background: var(--texto-1); color: var(--bg); box-shadow: 0 8px 28px #0002; font: 500 14px/1.3 var(--sans);
+  position: fixed; z-index: 95; right: 24px; bottom: calc(24px + env(safe-area-inset-bottom));
+  display: grid; gap: 8px; width: min(360px, calc(100vw - 32px)); box-sizing: border-box; padding: 16px 20px 16px;
+  border: 2px solid var(--borda-3d); border-radius: var(--r-16); background: var(--surface-1); box-shadow: 0 12px 40px #0003;
+  color: var(--texto-1); font: 14px/1.45 var(--sans);
 }
-.aviso-de-atualizacao span { margin-right: 8px; }
-.aviso-de-atualizacao button { min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--r-pilula); background: none; color: inherit; font: 500 14px var(--sans); cursor: pointer; opacity: .8; white-space: nowrap; }
-.aviso-de-atualizacao button.principal { font-weight: 600; opacity: 1; }
-.aviso-de-atualizacao button:hover { opacity: 1; background: color-mix(in srgb, var(--bg) 14%, transparent); }
-.aviso-de-atualizacao button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-/* No celular, acima da barra de navegação de baixo (64px, ui/casca.css). */
+.aviso-de-atualizacao p { margin: 0; }
+.aviso-de-atualizacao .titulo { font-size: 16px; font-weight: 700; line-height: 1.3; }
+.aviso-de-atualizacao .o-que-mudou, .aviso-de-atualizacao .detalhe { color: var(--texto-2); }
+.aviso-de-atualizacao .detalhe { font-variant-numeric: tabular-nums; }
+.aviso-de-atualizacao[data-tipo="erro"] .titulo { color: var(--error-texto); }
+.aviso-de-atualizacao button.link {
+  display: inline; padding: 0; border: 0; background: none; color: var(--accent-texto); font: inherit; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.aviso-de-atualizacao button.link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.aviso-de-atualizacao .progress-track { margin-top: 4px; height: 4px; background: var(--painel); }
+.aviso-de-atualizacao .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+/* No celular, de ponta a ponta e acima da barra de navegação de baixo (64px, ui/casca.css). */
 @media (max-width: 799px) {
-  .app-shell:has(.bottomnav) ~ .aviso-de-atualizacao, body:has(.bottomnav) .aviso-de-atualizacao { bottom: calc(76px + env(safe-area-inset-bottom)); }
-}
-@media (max-width: 560px) {
-  .aviso-de-atualizacao { left: 16px; right: 16px; transform: none; flex-wrap: wrap; justify-content: flex-end; padding: 10px 8px 6px 16px; border-radius: var(--r-16); }
-  .aviso-de-atualizacao span { flex-basis: 100%; margin: 0 0 2px; }
+  .aviso-de-atualizacao { left: 16px; right: 16px; width: auto; }
+  body:has(.bottomnav) .aviso-de-atualizacao { bottom: calc(76px + env(safe-area-inset-bottom)); }
 }

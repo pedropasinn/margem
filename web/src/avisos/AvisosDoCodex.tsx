@@ -11,6 +11,7 @@ import { IconButton } from '../ui/Primitives';
 import { concluidaComAvisos, organizarPilha, tempoDoAviso, type Aviso, type PilhaOrganizada } from './execucoes';
 import { usarExecucoes } from './usarExecucoes';
 import { cancelarJob } from '../apagar/api';
+import { CartaoDaPausa, usarTrabalhosEmPausa } from '../pausa/TrabalhosEmPausa';
 import './avisos.css';
 
 const ESTREITO = '(max-width: 599.98px)';
@@ -43,9 +44,11 @@ export interface PropsDaPilha {
   noFluxo?: boolean;
   /** Agrupador aberto de saída (galeria e testes). */
   agrupadorAberto?: boolean;
+  /** V-F1: o cartão "N trabalhos do Codex esperando", no topo da pilha (`null` sem nada em pausa). */
+  pausa?: ReactNode;
 }
 
-export function PilhaDeAvisos({ pilha, agora, desvioMs, anuncio = '', aoDispensar, aoAbrir, aoCancelar, noFluxo = false, agrupadorAberto = false }: PropsDaPilha): ReactNode {
+export function PilhaDeAvisos({ pilha, agora, desvioMs, anuncio = '', aoDispensar, aoAbrir, aoCancelar, noFluxo = false, agrupadorAberto = false, pausa = null }: PropsDaPilha): ReactNode {
   const [aberto, abrir] = useState(agrupadorAberto);
   const [cancelando, marcarCancelando] = useState<ReadonlySet<string>>(new Set());
   const [falhaAoCancelar, definirFalha] = useState<string | null>(null);
@@ -82,7 +85,7 @@ export function PilhaDeAvisos({ pilha, agora, desvioMs, anuncio = '', aoDispensa
     if (id) { e.preventDefault(); e.stopPropagation(); dispensar(id); }
   };
 
-  const vazio = pilha.visiveis.length === 0 && pilha.mais === 0;
+  const vazio = pilha.visiveis.length === 0 && pilha.mais === 0 && (pausa === null || pausa === false);
   const linhaDoTempo = (aviso: Aviso) => {
     const tempo = tempoDoAviso(aviso.execucao, agora, desvioMs);
     return aviso.execucao.estado === 'rodando' ? `Codex · rodando · ${tempo}` : `Codex · ${tempo.toLowerCase()}`;
@@ -90,6 +93,7 @@ export function PilhaDeAvisos({ pilha, agora, desvioMs, anuncio = '', aoDispensa
 
   return <section ref={raiz} className={`avisos-do-codex${noFluxo ? ' no-fluxo' : ''}`} aria-label="Execuções do Codex" onKeyDown={teclado} data-vazio={vazio || undefined}>
     <p className="anuncio-dos-avisos" role="status" aria-live="polite">{anuncio}</p>
+    {pausa}
     {pilha.mais > 0 && <div className="avisos-agrupador">
       <button type="button" className="avisos-mais" aria-expanded={aberto} onClick={() => abrir(!aberto)}>
         <span className="ponto-do-aviso" aria-hidden="true" />
@@ -144,6 +148,7 @@ function usarEstreito(): boolean {
 /** A pilha ligada ao serviço. `ir` recebe o caminho do resultado (`/ler/<doc>/<seção>`). */
 export function AvisosDoCodex({ ir }: { ir: (caminho: string) => void }): ReactNode {
   const { estado, despachar, anuncio } = usarExecucoes();
+  const { pausa, retomar, descartar } = usarTrabalhosEmPausa();
   const [agora, definirAgora] = useState(() => Date.now());
   const estreito = usarEstreito();
   // No celular, um aviso só (o resto no agrupador): a pilha não pode tomar a página.
@@ -161,5 +166,6 @@ export function AvisosDoCodex({ ir }: { ir: (caminho: string) => void }): ReactN
   return <PilhaDeAvisos pilha={pilha} agora={agora} desvioMs={estado.desvioMs} anuncio={anuncio}
     aoDispensar={(id) => despachar({ tipo: 'dispensar', id })}
     aoAbrir={(execucao) => { if (execucao.rota) ir(execucao.rota); }}
-    aoCancelar={async (execucao) => { await cancelarJob(execucao.id); }} />;
+    aoCancelar={async (execucao) => { await cancelarJob(execucao.id); }}
+    pausa={pausa.total > 0 ? <CartaoDaPausa pausa={pausa} aoRetomar={retomar} aoDescartar={descartar} /> : null} />;
 }

@@ -101,6 +101,8 @@ export interface JobResumido {
   diagnosticos?: { nivel: 'info' | 'aviso' | 'erro'; codigo: string; mensagem: string }[];
   /** Concluído com ressalvas, já em frases para quem lê (vazio fora de `ok`). Ausente em serviços anteriores. */
   avisos?: { codigo: string; mensagem: string }[];
+  /** V-F1: parado desde antes de o app abrir; só roda quando a pessoa retomar. Ausente em serviços anteriores. */
+  em_pausa?: boolean;
 }
 
 export interface ExecucaoResumida {
@@ -127,6 +129,8 @@ export interface DetalheDoDocumento extends ItemDaBiblioteca {
   execucoes: ExecucaoResumida[];
   jobs: JobResumido[];
   exportacoes: ExportacaoResumida[];
+  /** V-F1: a análise pedida antes de o app abrir (à espera do tipo do texto) está em pausa. */
+  preparacao_em_pausa?: boolean;
 }
 
 export interface NoDaArvore {

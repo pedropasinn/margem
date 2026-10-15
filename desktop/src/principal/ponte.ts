@@ -32,7 +32,7 @@ export interface JanelaDoDesktop {
 }
 
 /**
- * Atualização do app (J146): a seção "Sobre e atualizações" das Configurações e o aviso de versão pronta.
+ * Atualização do app (J146, J151): a seção "Sobre e atualizações" das Configurações e o aviso de versão nova.
  * O estado é o de `nucleo/atualizacao.ts` (`SituacaoDaAtualizacao`).
  */
 export interface AtualizacaoDoDesktop {
@@ -44,6 +44,15 @@ export interface AtualizacaoDoDesktop {
   reiniciar: () => void;
   /** Abre a página de download no navegador (sistemas que não se atualizam sozinhos). */
   abrirDownload: () => void;
+  /**
+   * "Atualizar agora" do aviso (J151): instala se já baixou; baixando, reinicia sozinho ao terminar; sem
+   * download, começa; no macOS sem assinatura, abre o site.
+   */
+  atualizarAgora: () => void;
+  /** "Depois": não reinicia sozinho; a versão é instalada quando a pessoa fechar o Margem. */
+  adiar: () => void;
+  /** Abre margem.dev/novidades no navegador. */
+  abrirNovidades: () => void;
   /** Avisa a cada mudança de estado; devolve a função que para de avisar. */
   aoMudar: (ouvir: (situacao: SituacaoDaAtualizacao) => void) => () => void;
 }
@@ -63,5 +72,8 @@ export const CANAIS_DA_BIBLIOTECA = {
   procurarAtualizacao: 'atualizacao:procurar',
   reiniciarParaAtualizar: 'atualizacao:reiniciar',
   abrirDownload: 'atualizacao:abrir-download',
+  atualizarAgora: 'atualizacao:atualizar-agora',
+  adiarAtualizacao: 'atualizacao:adiar',
+  abrirNovidades: 'atualizacao:abrir-novidades',
   atualizacaoMudou: 'atualizacao:mudou',
 } as const;

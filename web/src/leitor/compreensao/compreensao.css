@@ -355,7 +355,9 @@ html.com-leitura-guiada .margem { display: none; }
 .braquetes.em-pontos .dobra-pdf, .braquetes.em-pontos .janela-dividida { z-index: 3; }
 /* Preserva os alvos do mouse para não interromper o hover ao ocultar as bolinhas. */
 .braquetes.em-pontos[data-acesa] .pontas-agrupadas { opacity: 0; }
-.braquetes.em-pontos .dobra-pdf-veu::before { opacity: 0; }
+/* A dobra do PDF é a mesma nos dois modos: o leitor some atrás do véu (::before) e só os recortes, o
+   vinco e o braquete religado aparecem. Sem esse fundo, a página de trás aparecia através dos recortes
+   (texto e números de nota em dobro, vinco ilegível, espinha original até o pé da tela). */
 
 /* Duas linhas de contexto nas pontas da dobra, com a largura e os segmentos do original. */
 [data-recorte-texto] { position: relative; overflow: hidden; margin-block: .6rem; display: flow-root; }

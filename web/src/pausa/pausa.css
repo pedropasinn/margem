@@ -1,0 +1,52 @@
+/*
+ * "N trabalhos do Codex esperando" (V-F1): um cartão no topo dos avisos do canto, com a mesma casca dos
+ * avisos do Codex (`avisos/avisos.css`: borda 3D de 2 px, raio médio, sombra) e a moldura no tom de aviso.
+ */
+.cartao-da-pausa {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: start; gap: 4px 10px;
+  padding: 10px 10px 10px 14px;
+  background: var(--surface-1); border: 2px solid color-mix(in srgb, var(--aviso-texto) 35%, var(--borda-3d)); border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px #0000001f;
+  font: 14px/1.4 var(--sans); color: var(--text-primary);
+  animation: entrada-do-aviso .18s ease-out;
+}
+.icone-da-pausa { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; color: var(--aviso-texto); }
+.corpo-da-pausa { min-width: 0; padding-top: 1px; }
+.titulo-da-pausa { margin: 0; font-weight: 600; }
+.meta-da-pausa { margin: 2px 0 0; color: var(--text-secondary); font-size: 13px; }
+.acoes-da-pausa { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 8px 0 0 -8px; }
+.botao-da-pausa {
+  min-height: 32px; padding: 4px 10px; border: 0; border-radius: var(--r-pilula); background: transparent;
+  color: var(--text-secondary); font: 600 13px/1.2 var(--sans); cursor: pointer; white-space: nowrap;
+}
+.botao-da-pausa:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
+.botao-da-pausa.principal { color: var(--accent-texto); }
+.botao-da-pausa.principal:hover:not(:disabled) { background: var(--accent-suave); color: var(--accent-texto); }
+.botao-da-pausa.descartar:hover:not(:disabled) { color: var(--error-texto); }
+.botao-da-pausa.descartar.forte { color: var(--error-texto); }
+.botao-da-pausa:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.botao-da-pausa:disabled { opacity: .6; cursor: progress; }
+
+/* "Ver": a lista curta, por documento; rola sozinha se for longa. */
+.lista-da-pausa {
+  margin: 8px 0 0; padding: 0; list-style: none;
+  max-height: min(40vh, 280px); overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.lista-da-pausa ul { margin: 2px 0 0; padding: 0; list-style: none; }
+.documento-da-pausa { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-da-pausa { display: flex; align-items: center; gap: 6px; padding: 2px 0 2px 10px; border-radius: var(--r-8); font-size: 13px; color: var(--text-secondary); }
+.item-da-pausa:hover { background: var(--bg-hover); }
+.rotulo-da-pausa { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acoes-do-item { display: flex; flex: none; }
+.acoes-do-item .botao-da-pausa { min-height: 28px; padding: 2px 8px; font-size: 12px; }
+
+.confirmacao-da-pausa { margin-top: 8px; padding: 8px 10px; border-radius: var(--r-8); background: var(--bg-hover); }
+.confirmacao-da-pausa p { margin: 0; font-size: 13px; }
+.confirmacao-da-pausa .acoes-da-pausa { margin: 4px 0 0 -8px; }
+.falha-da-pausa { margin: 6px 0 0; color: var(--error-texto); font-size: 13px; }
+
+@media (max-width: 799px) {
+  .cartao-da-pausa { padding: 8px 8px 8px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .cartao-da-pausa { animation: none; } }

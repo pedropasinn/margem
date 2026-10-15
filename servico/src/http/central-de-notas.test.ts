@@ -197,7 +197,9 @@ test('central: tudo de todos os documentos, com filtros, facetas, páginas, orde
 test('0035 indexa as relações e dificuldades dos modelos publicados antes dela; novos modelos entram pelo gatilho', async () => comBancoDeTeste('migracao_central', async (banco) => {
   await migrar(banco, { ate: '0034_analise_do_video.sql' });
   expect((await migracoesPendentes(banco))[0]).toBe('0035_central_de_notas.sql');
-  // O pipeline grava no esquema até a 0034 (sem a tabela nova): um modelo "antigo".
+  // O pipeline grava no esquema até a 0034 (sem a tabela nova): um modelo "antigo". A fila de hoje já lê as
+  // colunas da pausa (0036, V-F1): emprestadas aqui e devolvidas antes de migrar, para a 0036 aplicar limpa.
+  await banco.query('ALTER TABLE job ADD COLUMN retido_em timestamptz; ALTER TABLE documento ADD COLUMN preparacao_retida_em timestamptz');
   const canonico = livro();
   const versaoId = await comTransacao(banco, async (cliente) => {
     const d = await documentos.criar(cliente, { ...canonico.documento, origem_caminho: 'precos.md' });
@@ -211,6 +213,7 @@ test('0035 indexa as relações e dificuldades dos modelos publicados antes dela
   const modelos = (await banco.query<{ id: string; revisao: number; relacoes: number; dificuldades: number }>(`SELECT id, revisao,
     jsonb_array_length(conteudo->'relacoes') AS relacoes, jsonb_array_length(conteudo->'dificuldades') AS dificuldades FROM modelo_capitulo ORDER BY revisao`)).rows;
   expect(modelos.at(-1)?.revisao).toBe(2);
+  await banco.query('ALTER TABLE job DROP COLUMN retido_em; ALTER TABLE documento DROP COLUMN preparacao_retida_em');
   await migrar(banco);
   const indexados = (await banco.query<{ modelo_id: string; tipo: string; total: string }>(
     'SELECT modelo_id, tipo, count(*) AS total FROM item_do_modelo GROUP BY 1, 2 ORDER BY 1, 2')).rows;

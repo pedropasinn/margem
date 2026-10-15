@@ -148,6 +148,7 @@ interface LinhaDaBiblioteca {
   capitulos_total: number | null;
 }
 
+/** Estados de um job em andamento. As contagens deixam de fora o que está em pausa (V-F1): ele não anda sozinho. */
 const ESTADOS_ABERTOS = "('fila','reservado','adiado')";
 /** Jobs da compreensão do capítulo (`servico/src/compreensao/pipeline.ts`). */
 const TIPOS_DA_PREPARACAO = "('analisar_passagens','sintetizar_capitulo','revisar_capitulo','planejar_leitura')";
@@ -233,11 +234,11 @@ LEFT JOIN LATERAL (
   FROM parte pt JOIN execucao_leitura e ON e.id=pt.execucao_id WHERE e.versao_id=v.id
 ) p ON true
 LEFT JOIN LATERAL (
-  SELECT count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS}) AS abertos,
-         count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND tipo IN ('canonizar','importar_youtube')) AS canonizando,
-         count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND tipo='transcrever_escaneado') AS transcrevendo,
-         count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND tipo='ler_parte') AS marcando,
-         count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND tipo='revisar_consistencia') AS revisando,
+  SELECT count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND retido_em IS NULL) AS abertos,
+         count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND retido_em IS NULL AND tipo IN ('canonizar','importar_youtube')) AS canonizando,
+         count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND retido_em IS NULL AND tipo='transcrever_escaneado') AS transcrevendo,
+         count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND retido_em IS NULL AND tipo='ler_parte') AS marcando,
+         count(*) FILTER (WHERE estado IN ${ESTADOS_ABERTOS} AND retido_em IS NULL AND tipo='revisar_consistencia') AS revisando,
          (SELECT error_code FROM job WHERE documento_id=d.id AND estado='falhou'
             ORDER BY atualizado_em DESC LIMIT 1) AS falha
   FROM job WHERE documento_id=d.id
@@ -255,7 +256,7 @@ LEFT JOIN LATERAL (
   FROM parte pt WHERE pt.execucao_id = ce.execucao_id AND pt.secao_id IS NOT NULL
 ) cc ON true
 LEFT JOIN LATERAL (
-  SELECT count(*) FILTER (WHERE jb.estado IN ${ESTADOS_ABERTOS}) AS preparando,
+  SELECT count(*) FILTER (WHERE jb.estado IN ${ESTADOS_ABERTOS} AND jb.retido_em IS NULL) AS preparando,
     (array_agg(coalesce(jb.error_code, jb.estado) ORDER BY jb.atualizado_em DESC) FILTER (WHERE jb.estado IN ('falhou','cancelado')))[1] AS falha
   FROM job jb WHERE jb.documento_id = d.id AND (
     (jb.tipo IN ${TIPOS_DA_PREPARACAO} AND jb.dedup_key LIKE '%:' || ce.execucao_id || ':%')
@@ -355,6 +356,8 @@ export interface JobResumido {
   diagnosticos: { nivel: string; codigo: string; mensagem: string }[];
   /** Concluído com ressalvas: os diagnósticos de nível `aviso` em frases para quem lê (vazio fora de `ok`). */
   avisos: AvisoDaExecucaoV2[];
+  /** V-F1: parado desde antes de o app abrir; só roda quando a pessoa retomar. */
+  em_pausa: boolean;
 }
 
 export interface ExecucaoResumida {
@@ -391,6 +394,8 @@ export interface DetalheDoDocumento extends ItemDaBiblioteca {
   execucoes: ExecucaoResumida[];
   jobs: JobResumido[];
   exportacoes: ExportacaoResumida[];
+  /** V-F1: a análise pedida antes de o app abrir, que esperava o tipo do texto, está em pausa. */
+  preparacao_em_pausa: boolean;
 }
 
 export async function detalhe(cliente: Transacao, documentoId: Id): Promise<DetalheDoDocumento | null> {
@@ -417,6 +422,7 @@ export async function detalhe(cliente: Transacao, documentoId: Id): Promise<Deta
     FROM execucao_leitura e JOIN versao_texto v ON v.id=e.versao_id
     WHERE v.documento_id=$1 ORDER BY e.criada_em DESC`, [documentoId])).rows;
   const jobs = (await cliente.query<Omit<JobResumido, 'avisos'>>(`SELECT id, tipo, estado, attempt, diagnosticos,
+      (retido_em IS NOT NULL AND estado IN ('fila','adiado','reservado')) AS em_pausa,
       to_char(not_before AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS not_before, error_code,
       to_char(atualizado_em AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS atualizado_em
     FROM job WHERE documento_id=$1 ORDER BY criado_em DESC LIMIT 20`, [documentoId])).rows
@@ -424,7 +430,9 @@ export async function detalhe(cliente: Transacao, documentoId: Id): Promise<Deta
   const exportacoes = (await cliente.query<ExportacaoResumida>(`SELECT id, tipo, sha256,
       to_char(criada_em AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS criada_em
     FROM exportacao WHERE documento_id=$1 ORDER BY criada_em DESC`, [documentoId])).rows;
-  return { ...item, paginas_sem_texto: paginasSemTexto(versoes[0]?.limites ?? []).length, versoes, execucoes, jobs, exportacoes };
+  const preparacaoEmPausa = ((await cliente.query('SELECT 1 FROM documento WHERE id=$1 AND preparacao_retida_em IS NOT NULL AND preparacao_pedida IS NOT NULL',
+    [documentoId])).rowCount ?? 0) > 0;
+  return { ...item, paginas_sem_texto: paginasSemTexto(versoes[0]?.limites ?? []).length, versoes, execucoes, jobs, exportacoes, preparacao_em_pausa: preparacaoEmPausa };
 }
 
 export interface NoDaArvore {

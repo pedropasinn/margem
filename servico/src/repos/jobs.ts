@@ -12,6 +12,11 @@ export interface Job {
   diagnosticos: JobResultV1['diagnosticos']; criado_em: Date; atualizado_em: Date;
   /** 0 a 100; maior sai primeiro (migração 0006). */
   prioridade: number;
+  /**
+   * Em pausa desde a partida do worker (migração 0036, V-F1): trabalho do Codex parado há horas que só roda
+   * quando a pessoa mandar (`servico/src/pausa/`). O worker não reserva job com esta marca.
+   */
+  retido_em: Date | null;
 }
 export class ConcessaoPerdida extends Error {
   constructor() { super('Concessão perdida, vencida ou cancelada.'); this.name = 'ConcessaoPerdida'; }
@@ -38,6 +43,17 @@ export async function enfileirar(cliente: Transacao, entrada: EntradaJob): Promi
   conferirPrioridade(prioridade);
   const existente = (await cliente.query<Job>('SELECT * FROM job WHERE dedup_key=$1', [entrada.dedup_key])).rows[0];
   if (existente) {
+    // Um pedido feito agora (prioridade de quem espera o resultado) tira da pausa o mesmo trabalho que estava
+    // parado: a pessoa pediu de novo, não há o que perguntar (V-F1). Os encadeamentos automáticos (o capítulo
+    // seguinte em segundo plano) pedem com prioridade menor e não mexem na pausa.
+    if (existente.retido_em !== null && prioridade >= PRIORIDADE.artefato_pedido && ['fila', 'adiado'].includes(existente.estado)) {
+      const liberado = (await cliente.query<Job>(`WITH pendente AS (
+        SELECT id FROM job WHERE id=$1 AND estado IN ('fila','adiado') AND retido_em IS NOT NULL FOR UPDATE SKIP LOCKED
+      ) UPDATE job SET retido_em=NULL, prioridade=greatest(prioridade,$2), atualizado_em=clock_timestamp()
+        WHERE id IN (SELECT id FROM pendente) RETURNING *`, [existente.id, prioridade])).rows[0];
+      if (liberado) { await evento(cliente, liberado.id, 'retomado', { motivo: 'pedido' }); return liberado; }
+      return existente;
+    }
     if (prioridade <= existente.prioridade || !['fila', 'adiado'].includes(existente.estado)) return existente;
     // Não esperar por um job publicando enquanto o chamador segura o lock do capítulo.
     // A prioridade nunca diminui e só muda se ele continuar pendente depois do lock.
@@ -73,7 +89,7 @@ export async function reservar(banco: pg.Pool, owner: string, tipos: string[], a
   return comTransacao(banco, async cliente => {
     const resultado = await cliente.query<Job>(`WITH proximo AS (
       SELECT id FROM job WHERE estado IN ('fila','adiado') AND (not_before IS NULL OR not_before <= $1)
-      AND cancel_requested_at IS NULL AND tipo = ANY($2::text[])
+      AND cancel_requested_at IS NULL AND retido_em IS NULL AND tipo = ANY($2::text[])
       ORDER BY prioridade DESC,criado_em,id FOR UPDATE SKIP LOCKED LIMIT 1
     ) UPDATE job SET estado='reservado', lease_owner=$3,lease_token=$4,
       lease_expires_at=$1::timestamptz + $5 * interval '1 millisecond', heartbeat_at=$1,atualizado_em=$1
@@ -179,7 +195,7 @@ export async function reenfileirar(banco: pg.Pool, jobId: string): Promise<Job |
 export async function reenfileirarNa(cliente: Transacao, jobId: string): Promise<Job | null> {
   const antes = (await cliente.query<Job>('SELECT * FROM job WHERE id=$1 FOR UPDATE', [jobId])).rows[0];
   if (!antes || !REENFILEIRAVEIS.includes(antes.estado)) return null;
-  const depois = (await cliente.query<Job>(`UPDATE job SET estado='fila',attempt=attempt+1,not_before=NULL,
+  const depois = (await cliente.query<Job>(`UPDATE job SET estado='fila',attempt=attempt+1,not_before=NULL,retido_em=NULL,
     cancel_requested_at=NULL,error_code=NULL,diagnosticos='[]',${limparConcessao},atualizado_em=clock_timestamp()
     WHERE id=$1 RETURNING *`, [jobId])).rows[0]!;
   await evento(cliente, jobId, 'reenfileirado', {

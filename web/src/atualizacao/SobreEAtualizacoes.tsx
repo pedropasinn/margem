@@ -49,6 +49,8 @@ export function SobreEAtualizacoes({ ponte = ponteDaAtualizacao() }: { ponte?: P
         ? <Button variante="primario" onClick={() => ponte.reiniciar()}>Reiniciar e atualizar</Button>
         : estado?.estado === 'manual'
           ? <Button variante="primario" onClick={() => ponte.abrirDownload()}>Baixar a versão nova</Button>
+          : estado?.estado === 'disponivel'
+            ? <Button variante="primario" onClick={() => ponte.atualizarAgora()}>Atualizar agora</Button>
           : <Button disabled={situacao === null || ocupado || desligada} onClick={procurar}>{estado?.estado === 'procurando' ? 'Procurando…' : 'Procurar atualização'}</Button>}
       {desligada && estado.motivo === 'sem_feed' && <Button variante="ghost" onClick={() => ponte.abrirDownload()}>Abrir margem.dev</Button>}
     </div>
