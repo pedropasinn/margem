@@ -174,7 +174,8 @@ export function criarPortao(opcoes: OpcoesDoPortao): Hono {
   const geometrias = new CacheDeGeometria(16 * 1024 * 1024);
   // A API inteira, em memória, só para as rotas de arquivo já conferidas. Nada de leitura nem
   // compreensão: o portão nunca a usa para escrever, e uma configuração ausente falha alto.
-  const interna = criarApi({ banco, leitura: () => { throw new Error('O portão não inicia leituras.'); } });
+  // Em memória e só com pedidos que o portão já autorizou: sem a chave local (S-01).
+  const interna = criarApi({ banco, leitura: () => { throw new Error('O portão não inicia leituras.'); }, chaveLocal: null });
   const portao = new Hono();
 
   portao.onError((erro, c) => {

@@ -11,6 +11,7 @@
  * Apagar: o "⋯" do item já tem o lugar; a ação aparece quando a casca passa `apagar` (rotas do J143).
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { mensagemDeErro } from './erros';
 import { Esqueleto } from '../ui/Esqueleto';
 import { Icon } from '../ui/Icon';
 import { Button, IconButton, Input, Popover, SegmentedControl, Select, Switch } from '../ui/Primitives';
@@ -301,7 +302,7 @@ export function Notas({ documento_id, ir, carregar = listarCentral, apagar, pode
       definirItens(pagina.itens); definirTotal(pagina.total);
       if (pagina.facetas) definirFacetas(pagina.facetas);
       lista.current?.scrollTo?.({ top: 0 });
-    }, (falha: unknown) => { if (numero === pedido.current) definirErro(falha instanceof Error ? falha.message : 'falha ao carregar'); });
+    }, (falha: unknown) => { if (numero === pedido.current) definirErro(mensagemDeErro(falha, 'Não foi possível carregar as notas.')); });
     // `consulta` resume o filtro inteiro.
   }, [consulta, carregar]);
 
@@ -317,7 +318,7 @@ export function Notas({ documento_id, ir, carregar = listarCentral, apagar, pode
         return [...(atuais ?? []), ...pagina.itens.filter((item) => !vistos.has(item.chave))];
       });
       definirTotal(pagina.total);
-    }, (falha: unknown) => { if (numero === pedido.current) definirErro(falha instanceof Error ? falha.message : 'falha ao carregar'); })
+    }, (falha: unknown) => { if (numero === pedido.current) definirErro(mensagemDeErro(falha, 'Não foi possível carregar as notas.')); })
       .finally(() => carregarMais(false));
   }, [temMais, carregandoMais, itens, carregar, filtro]);
 
@@ -344,7 +345,7 @@ export function Notas({ documento_id, ir, carregar = listarCentral, apagar, pode
       if (!apagado) return;
       definirItens((atuais) => atuais?.filter((item) => item.chave !== alvo.chave) ?? atuais);
       definirTotal((atual) => Math.max(0, atual - 1));
-    }, (falha: unknown) => definirErro(falha instanceof Error ? falha.message : 'falha ao apagar'));
+    }, (falha: unknown) => definirErro(mensagemDeErro(falha, 'Não foi possível apagar.')));
   } : undefined;
   const linhas = (deste: readonly ItemDaCentral[]) => <ul className="central-itens">{deste.map((item) =>
     <ItemDaLista key={item.chave} item={item} comDocumento={geral && !agrupado} ir={ir} apagar={podeApagar && !podeApagar(item) ? undefined : aoApagar} />)}</ul>;

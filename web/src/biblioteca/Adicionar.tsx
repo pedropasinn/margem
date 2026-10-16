@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { Button, Input, Textarea, Select, classesDoBotao } from '../ui/Primitives';
+import { Button, Input, Textarea, Select, classesDoBotao, usarFoco } from '../ui/Primitives';
 import { Icon } from '../ui/Icon';
-import type { AbaDeAdicionar, Rota } from './rotas';
+import { segurarSaida, type AbaDeAdicionar, type Rota } from './rotas';
+import { EVENTO_ARQUIVOS_ABERTOS } from './abrir-com';
 import { usarOnboarding } from '../onboarding/ContextoDoOnboarding';
 import { integracoes } from '../onboarding/integracoes';
 import { ErroDaApi } from './api';
@@ -123,6 +124,27 @@ const ICONE: Readonly<Record<TipoDoItem, string>> = {
   youtube: 'video-doc', transcricao: 'arquivo', imagem: 'imagem', desconhecido: 'arquivo',
 };
 
+/**
+ * U-02: o que ainda não terminou de entrar e se perde ao sair da tela (a fila vive nela): os arquivos
+ * esperando ou em envio e as mídias cujo texto ainda não foi ligado ao vídeo ou ao áudio.
+ */
+export function pendentesDaImportacao(itens: readonly Pick<Item, 'estado'>[]): { envios: number; midias: number } {
+  let envios = 0; let midias = 0;
+  for (const { estado } of itens) {
+    if (estado.fase === 'aguardando' || estado.fase === 'enviando') envios += 1;
+    else if (estado.fase === 'enviado' && (estado.midia?.fase === 'esperando_texto' || estado.midia?.fase === 'publicando') && estado.texto !== 'falhou' && estado.texto !== 'sem_resposta') midias += 1;
+  }
+  return { envios, midias };
+}
+
+/** As frases da confirmação de saída. */
+export function frasesDaSaida({ envios, midias }: { envios: number; midias: number }): string[] {
+  return [
+    ...(envios > 0 ? [`${String(envios)} ${envios === 1 ? 'arquivo ainda não foi enviado' : 'arquivos ainda não foram enviados'}.`] : []),
+    ...(midias > 0 ? [`${String(midias)} ${midias === 1 ? 'vídeo ou áudio ainda está sendo ligado' : 'vídeos ou áudios ainda estão sendo ligados'} à transcrição.`] : []),
+  ];
+}
+
 /** O que foi para outra aba no último lote, para o aviso com o atalho. */
 interface Desvio { aba: AbaDeAdicionar; quantos: number }
 
@@ -144,6 +166,24 @@ export function Adicionar({ ir, aba: abaPedida = 'documento', modo, arquivosInic
   // Sair da tela encerra o lote: o item em curso termina, os seguintes não são enviados.
   const montado = useRef(true);
   useEffect(() => { montado.current = true; return () => { montado.current = false; }; }, []);
+  // U-02: sair com envio ou vinculação pendente pede confirmação (navegação dentro do app e fechar a página).
+  const pendentes = pendentesDaImportacao(itens);
+  const haPendentes = pendentes.envios + pendentes.midias > 0;
+  const haPendentesRef = useRef(haPendentes); haPendentesRef.current = haPendentes;
+  const [saida, definirSaida] = useState<{ seguir: () => void } | null>(null);
+  useEffect(() => segurarSaida((destino, seguir) => {
+    if (destino.nome === 'adicionar' || !haPendentesRef.current) return false;
+    definirSaida({ seguir });
+    return true;
+  }), []);
+  useEffect(() => {
+    if (!haPendentes) return undefined;
+    const antesDeSair = (evento: BeforeUnloadEvent) => { evento.preventDefault(); evento.returnValue = ''; };
+    window.addEventListener('beforeunload', antesDeSair);
+    return () => { window.removeEventListener('beforeunload', antesDeSair); };
+  }, [haPendentes]);
+  // Terminou tudo enquanto a confirmação estava aberta: segue para onde a pessoa pediu.
+  useEffect(() => { if (saida !== null && !haPendentes) { definirSaida(null); saida.seguir(); } }, [saida, haPendentes]);
   const [anuncio, anunciar] = useState('');
   const [desvios, definirDesvios] = useState<Desvio[]>([]);
   /** A imagem que espera na aba Quadro; `chave` refaz o formulário quando chega outra. */
@@ -203,8 +243,15 @@ export function Adicionar({ ir, aba: abaPedida = 'documento', modo, arquivosInic
       acolher(imagens.slice(0, 1), 'quadro');
       if (arte && abaRef.current !== 'quadro') irPara('quadro');
     };
-    window.addEventListener('drop', soltar); window.addEventListener('paste', colar);
-    return () => { window.removeEventListener('drop', soltar); window.removeEventListener('paste', colar); };
+    // "Abrir com" com Adicionar já aberta (U-08): entram na fila do Documento, sem enviar.
+    const abertos = (evento: Event) => {
+      const arquivos = (evento as CustomEvent<unknown>).detail;
+      if (!Array.isArray(arquivos) || arquivos.length === 0) return;
+      acolher(arquivos.filter((arquivo): arquivo is File => arquivo instanceof File), 'documento');
+      if (abaRef.current !== 'documento') irPara('documento');
+    };
+    window.addEventListener('drop', soltar); window.addEventListener('paste', colar); window.addEventListener(EVENTO_ARQUIVOS_ABERTOS, abertos);
+    return () => { window.removeEventListener('drop', soltar); window.removeEventListener('paste', colar); window.removeEventListener(EVENTO_ARQUIVOS_ABERTOS, abertos); };
   }, [arte]);
 
   function acrescentar(novos: Item[]) {
@@ -450,6 +497,29 @@ export function Adicionar({ ir, aba: abaPedida = 'documento', modo, arquivosInic
       </section>
     </div>}
     <p className="apenas-leitores" role="status" aria-live="polite">{anuncio}</p>
+    {saida !== null && haPendentes && <ConfirmarSaida frases={frasesDaSaida(pendentes)} total={pendentes.envios + pendentes.midias} aoContinuar={() => definirSaida(null)}
+      aoSair={() => { const { seguir } = saida; definirSaida(null); seguir(); }} />}
+  </div>;
+}
+
+/** U-02: sair de Adicionar com envio pendente. "Continuar importando" é o padrão (Enter e Esc). */
+function ConfirmarSaida({ frases, total, aoContinuar, aoSair }: { frases: string[]; total: number; aoContinuar: () => void; aoSair: () => void }): ReactNode {
+  const raiz = useRef<HTMLDivElement>(null);
+  const continuar = useRef<HTMLButtonElement>(null);
+  usarFoco(raiz, aoContinuar);
+  useEffect(() => { continuar.current?.focus({ preventScroll: true }); }, []);
+  return <div className="ui-veu veu-da-saida">
+    <div ref={raiz} role="alertdialog" aria-modal="true" aria-labelledby="titulo-da-saida" aria-describedby="texto-da-saida" tabIndex={-1} className="dialogo-da-saida">
+      <h2 id="titulo-da-saida">{frases[0]}</h2>
+      <div id="texto-da-saida" className="texto-da-saida">
+        {frases.slice(1).map((frase) => <p key={frase}>{frase}</p>)}
+        <p>Se sair agora, {total === 1 ? 'ele não termina' : 'eles não terminam'} de entrar na biblioteca.</p>
+      </div>
+      <div className="ui-rodape">
+        <Button variante="ghost" tamanho="md" onClick={aoSair}>Sair mesmo assim</Button>
+        <Button ref={continuar} variante="primario" tamanho="md" onClick={aoContinuar}>Continuar importando</Button>
+      </div>
+    </div>
   </div>;
 }
 
@@ -500,7 +570,8 @@ function textoDoEstado(item: Item): string {
     case 'enviando': return e.passo;
     case 'recusado': return `Recusado: ${e.motivo}`;
     case 'enviado': {
-      if (e.texto === 'falhou') return `Não foi possível preparar o texto${e.detalhe ? `: ${e.detalhe}` : '.'}`;
+      // U-04: o detalhe do serviço só vai à tela quando é uma frase (um código como `motor_falhou` fica no registro).
+      if (e.texto === 'falhou') return `Não foi possível preparar o texto${e.detalhe && !/^[a-z0-9_]+$/iu.test(e.detalhe.trim()) ? `: ${e.detalhe}` : '.'}`;
       if (e.texto === 'sem_resposta') return 'Ainda preparando. Acompanhe pela biblioteca.';
       if (e.texto === 'preparando') return item.tipo === 'youtube' ? 'Preparando a transcrição do vídeo…' : 'Preparando o texto…';
       if (e.midia) {

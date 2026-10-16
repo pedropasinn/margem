@@ -160,3 +160,11 @@ export function configurarAtualizacao(opcoes: {
 export function instalarAtualizacaoAoSair(): void {
   electronUpdater.autoUpdater.quitAndInstall(false, true);
 }
+
+/**
+ * O banco não fechou (L-05): esta saída não instala nada. Sem isso o `autoInstallOnAppQuit` instalaria a
+ * versão baixada por cima de arquivos em uso; a próxima saída limpa instala.
+ */
+export function naoInstalarNestaSaida(): void {
+  electronUpdater.autoUpdater.autoInstallOnAppQuit = false;
+}

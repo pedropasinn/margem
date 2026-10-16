@@ -42,9 +42,29 @@ test('dois Margens: fica com a identificação conhecida; sem ela, com o app de 
   expect(achados.map((a) => a.porta)).toEqual([8730, 8732]);
   expect(escolherMargem(achados, null)?.porta).toBe(8732);
   expect(escolherMargem(achados, 'ffff-0000')?.porta).toBe(8730);
-  expect(escolherMargem(achados, 'outra')?.porta).toBe(8732);
+  // S-06: a conhecida sumiu; não troca sozinho para a outra biblioteca.
+  expect(escolherMargem(achados, 'outra')).toBeNull();
   const resolvido = await resolverServidor({ servidor: 'http://localhost:8730', token: 't' }, 'ffff-0000', buscar);
   expect(resolvido).toMatchObject({ configuracao: { servidor: 'http://localhost:8730', token: 't' }, outros: 1 });
+});
+
+test('S-06: a biblioteca conhecida fechada e outra aberta: o envio para antes de qualquer POST', async () => {
+  const buscar = portas({ 8731: { status: 200, corpo: APP } });
+  await expect(resolverServidor({ servidor: 'http://localhost:8730', token: 't' }, 'ffff-0000', buscar)).rejects.toMatchObject({ codigo: 'margem_conhecido_ausente' });
+  // Só a sondagem de saúde saiu: nenhum POST.
+  const chamadas = (buscar as unknown as { mock: { calls: [string, RequestInit | undefined][] } }).mock.calls;
+  expect(chamadas.every(([url, init]) => String(url).endsWith('/api/saude') && (init?.method ?? 'GET') === 'GET')).toBe(true);
+  // Escolha explícita (Testar conexão): sem a conhecida, fica com o que respondeu.
+  expect((await resolverServidor({ servidor: 'http://localhost:8730', token: 't' }, null, buscar)).configuracao.servidor).toBe('http://localhost:8731');
+});
+
+test('S-06: resposta genérica ou sem identificação não conta como Margem', async () => {
+  const buscar = portas({
+    8730: { status: 200, corpo: { ok: true } },
+    8731: { status: 200, corpo: { servico: 'margem', ok: true } },
+    8732: { status: 200, corpo: { servico: 'outro', instancia_id: 'x' } },
+  });
+  expect(await procurarMargem('http://localhost:8730', buscar)).toEqual([]);
 });
 
 test('Margem que não autorizou a extensão também conta como achado (sem identificação)', async () => {

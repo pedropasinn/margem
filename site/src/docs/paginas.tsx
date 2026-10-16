@@ -31,6 +31,42 @@ function Passos({ children }: { children: ReactNode }): ReactNode {
   return <ol className="passos-doc">{children}</ol>;
 }
 
+/**
+ * Instalação no macOS sem a assinatura da Apple (J154). O app tem assinatura ad hoc (o Mac roda), mas não
+ * o Developer ID nem a notarização: na primeira vez o macOS diz que não pôde verificá-lo. Do macOS 15 em
+ * diante a liberação é só por Ajustes do Sistema → Privacidade e Segurança; no 14 também pelo botão direito.
+ */
+function InstalarNoMac({ arquivoArm64, arquivoX64 }: { arquivoArm64: string; arquivoX64: string }): ReactNode {
+  return (
+    <>
+      <Passos>
+        <li><p>Baixe o arquivo do seu Mac: <code>{arquivoArm64}</code> para Apple Silicon (M1 em diante) ou <code>{arquivoX64}</code> para Intel. Para saber qual é o seu, abra o menu Apple → <strong>Sobre Este Mac</strong>: "Chip Apple M…" é Apple Silicon; "Processador Intel" é Intel.</p></li>
+        <li><p>Abra o <code>.dmg</code> e arraste o {N} para a pasta <strong>Aplicativos</strong>. Depois, ejete o disco do {N} no Finder.</p></li>
+        <li><p>Abra o {N} pela pasta Aplicativos (ou pelo Launchpad). Na primeira vez, o macOS avisa que <strong>não foi possível verificar</strong> o app. Clique em <strong>OK</strong> (não em "Mover para o Lixo").</p></li>
+        <li><p>Abra <strong>Ajustes do Sistema → Privacidade e Segurança</strong> e role até <strong>Segurança</strong>. Ao lado do aviso de que o {N} foi bloqueado, clique em <strong>Abrir Mesmo Assim</strong>, confirme com a sua senha (ou o Touch ID) e clique em <strong>Abrir</strong>.</p></li>
+      </Passos>
+      <p>Só na primeira vez. Depois, o {N} abre como qualquer app, pelo Dock ou pela pasta Aplicativos.</p>
+      <Nota titulo="No macOS 14 (Sonoma)">
+        <p>Também dá para clicar no {N} com o botão direito (ou Control + clique) na pasta Aplicativos, escolher <strong>Abrir</strong> e confirmar em <strong>Abrir</strong>. No macOS 15 esse atalho não libera mais o app: use os Ajustes do Sistema.</p>
+      </Nota>
+      <Nota tipo="aviso" titulo="Por que o macOS avisa">
+        <p>O {N} ainda não tem a assinatura da Apple (o certificado de desenvolvedor e a verificação da Apple). Ele tem só uma assinatura própria, que basta para o Mac rodá-lo, mas não é a verificação da Apple. O código é aberto: você pode conferir o que ele faz.</p>
+      </Nota>
+      <h3 id="mac-no-dia-a-dia">No dia a dia</h3>
+      <ul>
+        <li>Fechar a janela não encerra o {N}: ele continua no Dock, com a biblioteca aberta e as leituras em preparação andando. Clique no ícone do Dock para voltar. Para encerrar, use <strong>Margem → Sair</strong> (<kbd>⌘</kbd> <kbd>Q</kbd>).</li>
+        <li>As configurações ficam em <strong>Margem → Ajustes…</strong> (<kbd>⌘</kbd> <kbd>,</kbd>).</li>
+        <li>Abra o {N} sempre da pasta Aplicativos, não de dentro do <code>.dmg</code> nem da pasta Downloads.</li>
+      </ul>
+      <Nota titulo="Se o macOS disser que o app está danificado ou não abrir mesmo assim">
+        <p>Confira se baixou o arquivo do seu processador e se o {N} está na pasta Aplicativos. Se ainda assim não abrir, você pode tirar a marca de "baixado da internet" do app, no Terminal, e abrir de novo:</p>
+        <Comando>{'xattr -dr com.apple.quarantine /Applications/Margem.app'}</Comando>
+        <p>Só faça isso com o arquivo baixado da <a href="/download/">página de download</a> ou do <a href={CONFIG.urlDoRelease}>release no GitHub</a>.</p>
+      </Nota>
+    </>
+  );
+}
+
 const instalacao: PaginaDeDoc = {
   slug: 'instalacao',
   titulo: 'Instalação',
@@ -66,12 +102,20 @@ const instalacao: PaginaDeDoc = {
       </Nota>
 
       <h2 id="macos">macOS</h2>
-      <Nota titulo="Em breve">
-        <p>A primeira versão do {N} é para Windows e Linux. A versão para macOS está em preparação e aparece na <a href="/download/">página de download</a> quando sair.</p>
-      </Nota>
+      {CONFIG.macPublicado
+        ? <InstalarNoMac arquivoArm64={arquivo('mac-arm64')} arquivoX64={arquivo('mac-x64')} />
+        : (
+          <Nota titulo="Em breve">
+            <p>A primeira versão do {N} é para Windows e Linux. A versão para macOS está em preparação e aparece na <a href="/download/">página de download</a> quando sair.</p>
+          </Nota>
+        )}
 
       <h2 id="linux">Linux</h2>
-      <p>Há dois formatos. O <strong>AppImage</strong> roda em qualquer distribuição e se atualiza sozinho; o <strong>.deb</strong> instala pelo gerenciador de pacotes do Debian, do Ubuntu e derivados.</p>
+      <p>Cada versão do {N} para Linux é testada no <strong>Ubuntu 22.04</strong>. Deve rodar também no Ubuntu mais novo e em distribuições equivalentes (glibc 2.35 ou mais nova, 64 bits), mas elas não são testadas a cada versão; se algo não funcionar na sua, conte em <a href={CONFIG.urlDeProblemas}>problemas</a>.</p>
+      <p>Há dois formatos. O <strong>.deb</strong> instala pelo gerenciador de pacotes do Debian, do Ubuntu e derivados, e é o recomendado no <strong>Ubuntu 24.04 ou mais novo</strong>. O <strong>AppImage</strong> é um arquivo só, que se atualiza sozinho.</p>
+      <Nota tipo="aviso" titulo="No Ubuntu 24.04, prefira o .deb">
+        <p>O Ubuntu 24.04 restringe um recurso do sistema (os <em>namespaces</em> de usuário) que a proteção interna do {N} usa, e o AppImage pode não abrir, mesmo com a FUSE instalada. O <code>.deb</code> não tem esse problema. Não desligue a proteção do app para contornar.</p>
+      </Nota>
       <h3 id="appimage">AppImage</h3>
       <Passos>
         <li><p>Baixe <code>{arquivo('linux-appimage')}</code> e guarde numa pasta que vai ficar (por exemplo, <code>~/Aplicativos</code>).</p></li>
@@ -82,7 +126,9 @@ const instalacao: PaginaDeDoc = {
         <li><p>Dê dois cliques no arquivo para abrir.</p></li>
       </Passos>
       <Nota titulo="Se o AppImage não abrir">
-        <p>Algumas distribuições novas não trazem a biblioteca FUSE 2, que o AppImage usa. No Ubuntu 22.04 ou mais novo, instale o pacote <code>libfuse2</code> (no 24.04, <code>libfuse2t64</code>) ou use o <code>.deb</code>.</p>
+        <p>O AppImage usa a biblioteca FUSE 2, que algumas distribuições novas não trazem. No Ubuntu 22.04, instale o pacote <code>libfuse2</code>:</p>
+        <Comando>{'sudo apt install libfuse2'}</Comando>
+        <p>No Ubuntu 24.04 ou mais novo, o pacote é o <code>libfuse2t64</code>, mas lá o AppImage pode não abrir também pelo motivo acima: use o <code>.deb</code>.</p>
       </Nota>
       <h3 id="deb">Pacote .deb</h3>
       <Passos>
@@ -112,10 +158,10 @@ const primeirosPassos: PaginaDeDoc = {
     <>
       <p>O {N} é um assistente de estudos: para livros, artigos, poemas, vídeos e obras de arte, ele mostra o que cada trecho faz, como os trechos se ligam e o que vale perguntar. A ideia não é ler mais depressa, e sim entender melhor. Estes são os primeiros passos.</p>
       <h2 id="pasta">1. Escolha a pasta da biblioteca</h2>
-      <p>Na primeira vez que abre, o {N} pergunta onde guardar a biblioteca. Tudo fica nessa pasta: os arquivos originais, o que é gerado a partir deles, o banco de dados com as marcas, as notas, as conversas e o progresso de leitura. Ela é sua: para fazer <a href="/docs/backup/">backup</a>, copie a pasta.</p>
+      <p>Na primeira vez que abre, o {N} pergunta onde guardar a biblioteca. Nessa pasta ficam os arquivos originais, o que é gerado a partir deles e, em geral, o banco de dados com as marcas, as notas, as conversas e o progresso de leitura. Para guardar tudo, use <strong>Arquivo → Fazer cópia de segurança…</strong> (veja <a href="/docs/backup/">Backup</a>).</p>
       <ul>
-        <li>Prefira uma pasta no disco do computador. Uma pasta sincronizada (OneDrive, iCloud, Dropbox) pode corromper o banco se a sincronização mexer nela com o app aberto.</li>
-        <li>Para trocar de pasta depois, use as <strong>Configurações</strong> do app.</li>
+        <li>Prefira uma pasta no disco do computador. Numa pasta sincronizada (OneDrive, iCloud, Dropbox, Google Drive), o {N} guarda o banco fora dela, numa pasta do computador, para a sincronização não o corromper: a nuvem leva os livros, mas não as notas.</li>
+        <li>Para trocar de pasta depois, use <strong>Arquivo → Trocar de biblioteca…</strong>.</li>
       </ul>
 
       <h2 id="chatgpt">2. Entre com a sua conta do ChatGPT</h2>
@@ -479,12 +525,16 @@ const audio: PaginaDeDoc = {
 
       <h2 id="privacidade">Privacidade</h2>
       <ul>
-        <li>A chave fica guardada só no seu computador, nas configurações do app.</li>
+        <li>A chave fica guardada só no seu computador, nas configurações do app (fora da pasta da biblioteca), uma por biblioteca. Ela não vai na cópia de segurança: num computador novo, informe-a de novo.</li>
         <li>Com o áudio ligado, o texto que você manda narrar vai para a ElevenLabs, que gera o áudio. O resto da biblioteca não vai.</li>
         <li>O áudio pronto fica salvo no seu computador.</li>
       </ul>
       <Nota titulo="Para desligar">
         <p>Em Configurações → Áudio, clique em <strong>Remover</strong>. Os áudios já gerados continuam na biblioteca.</p>
+      </Nota>
+      <Nota tipo="aviso" titulo="Troque a chave se a biblioteca estava numa pasta sincronizada">
+        <p>Até a versão 0.1.3, a chave ficava dentro da pasta da biblioteca (em <code>segredos</code>). Se essa pasta estava no OneDrive, Dropbox, Google Drive ou iCloud, a chave pode ter ido para a nuvem e para o histórico de versões do serviço. A partir da 0.2, o {N} a tira da biblioteca sozinho. Por segurança, no painel da ElevenLabs apague a chave antiga e crie uma nova; depois, em Configurações → Áudio, clique em <strong>Trocar</strong> e salve a nova.</p>
+        <p>Se você usa a mesma biblioteca em dois computadores, informe a chave em cada um.</p>
       </Nota>
     </>
   ),
@@ -500,7 +550,7 @@ const atualizacoes: PaginaDeDoc = {
       <p>Com o app aberto, o {N} confere de tempos em tempos se há uma versão nova (em <code>margem.dev/atualizacoes</code>, que entrega os arquivos publicados no <a href={CONFIG.urlDoRelease}>GitHub</a>). Se houver, baixa em segundo plano e mostra um aviso discreto no pé da janela: <strong>Reiniciar agora</strong> instala na hora; <strong>Depois</strong> instala quando você fechar o app.</p>
       <p>Para procurar na hora e ver a versão instalada, abra <strong>Configurações → Sobre e atualizações</strong> e clique em <strong>Procurar atualização</strong>.</p>
       <ul>
-        <li>A biblioteca continua como estava. Se a versão nova mudar o banco de dados, a mudança é feita sozinha ao abrir.</li>
+        <li>A biblioteca continua como estava. Se a versão nova mudar o banco de dados, a mudança é feita sozinha ao abrir, depois de o {N} guardar uma cópia do banco de antes (veja <a href="/docs/backup/#automatica">Cópia automática</a>).</li>
         <li>Leituras em preparação esperam o app voltar e continuam de onde pararam.</li>
         <li>O que mudou em cada versão está em <a href="/novidades/">Novidades</a>.</li>
       </ul>
@@ -515,9 +565,11 @@ const atualizacoes: PaginaDeDoc = {
 
       <h2 id="manual">Atualizar à mão</h2>
       <p>Se a atualização automática não funcionar no seu sistema, baixe o instalador da versão nova na <a href="/download/">página de download</a> e instale por cima. A pasta da biblioteca não é tocada.</p>
-      <Nota titulo="Faça um backup antes de pular muitas versões">
-        <p>Não é obrigatório, mas é barato: feche o app e copie a pasta da biblioteca. Veja <a href="/docs/backup/">Backup</a>.</p>
+      <Nota titulo="Faça uma cópia de segurança antes de pular muitas versões">
+        <p>Não é obrigatório, mas é barato: <strong>Arquivo → Fazer cópia de segurança…</strong>. Veja <a href="/docs/backup/">Backup</a>.</p>
       </Nota>
+      <h2 id="versao-anterior">Voltar para uma versão anterior</h2>
+      <p>Uma versão mais antiga não abre uma biblioteca que uma mais nova já atualizou: ela avisa e não mexe em nada. Instale de novo a versão mais nova ou, se precisa mesmo da anterior, restaure a <a href="/docs/backup/#automatica">cópia automática</a> do banco de antes da atualização.</p>
     </>
   ),
 };
@@ -525,33 +577,73 @@ const atualizacoes: PaginaDeDoc = {
 const backup: PaginaDeDoc = {
   slug: 'backup',
   titulo: 'Backup',
-  resumo: 'O backup é uma cópia da pasta da biblioteca, feita com o app fechado.',
+  resumo: 'A cópia de segurança leva a biblioteca e o banco, para uma pasta que você escolhe. Restaurar é copiar de volta.',
   grupo: 'Manutenção',
   corpo: () => (
     <>
-      <p>Tudo o que é seu no {N} fica na pasta da biblioteca, a que você escolheu na primeira vez: os arquivos originais, o que foi gerado a partir deles, as obras que você adicionou em Quadros e o banco de dados com marcas, notas, conversas e progresso. Fazer backup é copiar essa pasta.</p>
-
-      <h2 id="fazer">Fazer um backup</h2>
-      <Passos>
-        <li><p><strong>Feche o {N}</strong> de verdade: no Windows e no Linux, pelo ícone na bandeja, <strong>Sair</strong>. Fechar só a janela deixa o app rodando.</p></li>
-        <li><p>Copie a pasta da biblioteca inteira para um disco externo ou outro lugar seguro.</p></li>
-        <li><p>Abra o {N} de novo.</p></li>
-      </Passos>
-      <Nota tipo="aviso" titulo="Com o app fechado">
-        <p>Copiar a pasta com o app aberto pode pegar o banco de dados no meio de uma gravação, e a cópia não abrir depois. Feche antes.</p>
+      <p>O que é seu no {N} fica em <strong>dois lugares</strong>:</p>
+      <ul>
+        <li><strong>A pasta da biblioteca</strong>, a que você escolheu: os arquivos originais, o que foi gerado a partir deles (áudios, imagens, vídeos), as obras de Quadros.</li>
+        <li><strong>O banco de dados</strong>: marcas, notas, conversas e progresso de leitura. Em geral ele fica dentro da biblioteca, na pasta escondida <code>.margem/banco</code>. Mas se a biblioteca está numa <strong>pasta sincronizada</strong> (OneDrive, Dropbox, Google Drive, iCloud), o banco fica <strong>fora dela</strong>, numa pasta deste computador, para a sincronização não o corromper.</li>
+      </ul>
+      <p>Os dois caminhos aparecem em <strong>Configurações → Cópia de segurança</strong>.</p>
+      <Nota tipo="aviso" titulo="Biblioteca no OneDrive, Dropbox, Google Drive ou iCloud">
+        <p>A nuvem guarda os livros, mas <strong>não as notas</strong>: o banco não está na pasta sincronizada. Copiar só a pasta da biblioteca também não leva as notas. Use a cópia de segurança do app, que leva os dois.</p>
       </Nota>
-      <p>Não sabe onde está a pasta? Ela aparece nas <strong>Configurações</strong> do app.</p>
+
+      <h2 id="fazer">Fazer uma cópia de segurança</h2>
+      <Passos>
+        <li><p>No {N}, abra <strong>Arquivo → Fazer cópia de segurança…</strong> (ou <strong>Configurações → Cópia de segurança</strong>).</p></li>
+        <li><p>Escolha onde guardar: um disco externo, um pendrive, outra pasta. Não pode ser dentro da própria biblioteca.</p></li>
+        <li><p>O {N} fecha a biblioteca por alguns instantes (preparações em andamento voltam para a fila), copia tudo e abre de novo. No fim, ele diz onde ficou a cópia.</p></li>
+      </Passos>
+      <p>A cópia é uma pasta com nome e data, por exemplo <code>Cópia do Margem 2026-10-16 14h05</code>, com:</p>
+      <ul>
+        <li><code>biblioteca</code>: a pasta da biblioteca inteira;</li>
+        <li><code>banco</code>: o banco de dados, copiado com o {N} parado e conferido arquivo por arquivo;</li>
+        <li><code>LEIA-ME.txt</code>: como restaurar; e <code>manifesto.json</code>: a versão do {N}, a data e o estado do banco.</li>
+      </ul>
+      <p>Não vão na cópia: o login do ChatGPT, a chave da ElevenLabs e a senha interna do banco. Eles ficam nas configurações do app, no computador.</p>
 
       <h2 id="restaurar">Restaurar ou levar para outro computador</h2>
       <Passos>
-        <li><p>Instale o {N} no computador de destino.</p></li>
-        <li><p>Copie a pasta do backup para lá.</p></li>
-        <li><p>Ao abrir o {N} (ou nas <strong>Configurações</strong>, se ele já estiver em uso), escolha essa pasta como a pasta da biblioteca.</p></li>
+        <li><p><strong>Feche o {N}</strong> de verdade: <strong>Arquivo → Sair</strong> (ou, na bandeja, <strong>Sair</strong>). Fechar só a janela pode deixá-lo aberto. Num computador novo, instale o {N} antes.</p></li>
+        <li><p>Copie a pasta <code>biblioteca</code> da cópia para onde quiser, com o nome que quiser. Se for pôr no lugar de uma biblioteca estragada, tire a estragada do caminho antes (renomeie; não apague até conferir a restaurada).</p></li>
+        <li><p>Copie a pasta <code>banco</code> da cópia para <strong>dentro da pasta <code>.margem</code></strong> da biblioteca restaurada, substituindo a <code>banco</code> que estiver lá. A <code>.margem</code> é escondida: no Windows, <strong>Exibir → Mostrar → Itens ocultos</strong>; no Linux, <kbd>Ctrl</kbd> <kbd>H</kbd>; no macOS, <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>.</kbd>.</p></li>
+        <li><p>Abra o {N} e escolha a pasta restaurada: na primeira tela, num computador novo, ou em <strong>Arquivo → Trocar de biblioteca…</strong>. Se a pasta estiver no OneDrive, Dropbox, Google Drive ou iCloud, o {N} leva o banco para uma pasta do computador na primeira abertura (o banco de antes, se havia um, fica guardado ao lado, com <code>.anterior</code> no nome).</p></li>
+        <li><p>Num computador novo, entre de novo no ChatGPT e, se usa o áudio, informe de novo a chave da ElevenLabs.</p></li>
       </Passos>
-      <p>O login do ChatGPT não vai junto: entre de novo no computador novo.</p>
+      <p>Restaure com o {N} da mesma versão da cópia ou de uma mais nova, no mesmo sistema (Windows, macOS ou Linux) em que ela foi feita. De um sistema para outro, o banco não é garantido.</p>
+      <Nota titulo="Restaurar ao lado da original">
+        <p>Se a biblioteca original ainda estiver no computador, o {N} pergunta: <strong>Você moveu ou copiou esta biblioteca?</strong> <strong>Movi para cá</strong> continua com as mesmas notas; <strong>É uma cópia</strong> faz da pasta uma biblioteca separada, que começa com uma cópia das notas, e a original não muda. Duas pastas nunca dividem o mesmo banco.</p>
+      </Nota>
+
+      <h2 id="mao">Cópia à mão</h2>
+      <p>Também dá para copiar sem o app: feche o {N} de verdade e copie a pasta da biblioteca. Se nas <strong>Configurações → Cópia de segurança</strong> o banco aparece fora da biblioteca, copie também essa pasta. Os bancos que ficam fora da biblioteca moram em:</p>
+      <ul>
+        <li>Windows: <code>{`${CONFIG.pastaDosBancos.windows}\\bancos`}</code></li>
+        {CONFIG.macPublicado && <li>macOS: <code>{CONFIG.pastaDosBancos.macos}/bancos</code></li>}
+        <li>Linux: <code>{CONFIG.pastaDosBancos.linux}/bancos</code></li>
+      </ul>
+      <p>Para restaurar uma cópia à mão num computador novo, siga os passos acima, pondo a pasta do banco em <code>.margem/banco</code>. No mesmo computador, com a biblioteca numa pasta sincronizada, troque a pasta do banco que as Configurações mostram pela da cópia, com o app fechado.</p>
+      <Nota tipo="aviso" titulo="Com o app fechado">
+        <p>Copiar o banco com o app aberto pode pegá-lo no meio de uma gravação, e a cópia não abrir depois. A cópia de segurança do app já fecha a biblioteca antes de copiar.</p>
+      </Nota>
+
+      <h2 id="automatica">Cópia automática antes de atualizar o banco</h2>
+      <p>Quando uma versão nova do {N} precisa mudar o banco, ele guarda antes uma cópia do banco como estava, numa pasta do computador. Fica só a última (a de antes da atualização mais recente), em:</p>
+      <ul>
+        <li>Windows: <code>{`${CONFIG.pastaDosBancos.windows}\\copias`}</code></li>
+        {CONFIG.macPublicado && <li>macOS: <code>{CONFIG.pastaDosBancos.macos}/copias</code></li>}
+        <li>Linux: <code>{CONFIG.pastaDosBancos.linux}/copias</code></li>
+      </ul>
+      <p>Cada biblioteca tem a sua pasta lá, com a pasta <code>banco</code> e um <code>manifesto.json</code> que diz a data e a versão. Para voltar a ela (por exemplo, para usar de novo uma versão anterior do {N}): feche o app, guarde em outro lugar a pasta do banco atual (o caminho está nas Configurações) e ponha no lugar dela a pasta <code>banco</code> da cópia automática.</p>
+
+      <h2 id="nao-abre">Se o banco não abrir</h2>
+      <p>Se o {N} disser que o banco da biblioteca não subiu, <strong>não apague nada</strong>: os dados continuam na pasta do banco. Reinicie o computador e abra o {N} de novo. Se continuar, copie a pasta do banco (o caminho aparece na mensagem) para outro lugar, como garantia, e restaure a última cópia de segurança, como acima. Se puder, conte o que houve em <a href={CONFIG.urlDeProblemas}>problemas</a>.</p>
 
       <h2 id="sincronizar">Pastas sincronizadas</h2>
-      <p>Não use a mesma pasta da biblioteca em dois computadores ao mesmo tempo, nem deixe um serviço de sincronização (OneDrive, iCloud, Dropbox) mexer nela com o app aberto. Para uma cópia na nuvem, copie a pasta com o app fechado.</p>
+      <p>Não use a mesma pasta da biblioteca em dois computadores ao mesmo tempo. Numa pasta sincronizada, cada computador tem o seu banco: as notas feitas num não aparecem no outro. Para levar as notas de um computador para outro, use a cópia de segurança.</p>
     </>
   ),
 };
@@ -563,10 +655,17 @@ const desinstalar: PaginaDeDoc = {
   grupo: 'Manutenção',
   corpo: () => (
     <>
-      <p>Desinstalar remove o programa. A <strong>pasta da biblioteca não é apagada</strong>: os seus livros, marcas e notas continuam lá, e outra instalação do {N} pode abri-la.</p>
+      <p>Desinstalar remove o programa. A <strong>pasta da biblioteca não é apagada</strong>, nem o banco de dados, onde quer que ele esteja: outra instalação do {N} pode abrir a biblioteca. Antes de desinstalar para sempre, faça uma <a href="/docs/backup/">cópia de segurança</a>.</p>
 
       <h2 id="windows">Windows</h2>
       <p>Abra <strong>Configurações → Aplicativos → Aplicativos instalados</strong>, procure o {N}, clique nos três pontos e em <strong>Desinstalar</strong>.</p>
+
+      {CONFIG.macPublicado && (
+        <>
+          <h2 id="macos">macOS</h2>
+          <p>Encerre o {N} (<strong>Margem → Sair</strong>, ou <kbd>⌘</kbd> <kbd>Q</kbd>) e arraste o app da pasta <strong>Aplicativos</strong> para o Lixo.</p>
+        </>
+      )}
 
       <h2 id="linux">Linux</h2>
       <ul>
@@ -577,16 +676,24 @@ const desinstalar: PaginaDeDoc = {
       <h2 id="o-que-fica">O que fica no computador</h2>
       <ul>
         <li><strong>A pasta da biblioteca</strong>, onde você a escolheu.</li>
-        <li><strong>As configurações do app</strong> (qual é a pasta da biblioteca, preferências e o login do ChatGPT feito pelo app), numa pasta própria:
+        <li><strong>As configurações do app</strong> (qual é a pasta da biblioteca, preferências, o login do ChatGPT feito pelo app e a chave da ElevenLabs), numa pasta própria:
           <ul>
             <li>Windows: <code>{CONFIG.pastaDeConfiguracoes.windows}</code></li>
+            {CONFIG.macPublicado && <li>macOS: <code>{CONFIG.pastaDeConfiguracoes.macos}</code> (no Finder, <strong>Ir → Ir para a Pasta…</strong>)</li>}
             <li>Linux: <code>{CONFIG.pastaDeConfiguracoes.linux}</code></li>
           </ul>
         </li>
+        <li><strong>O banco das bibliotecas em pasta sincronizada</strong> (marcas, notas e leituras) e a <a href="/docs/backup/#automatica">cópia automática</a> de antes das atualizações, nas pastas <code>bancos</code> e <code>copias</code>:
+          <ul>
+            <li>Windows: <code>{CONFIG.pastaDosBancos.windows}</code></li>
+            {CONFIG.macPublicado && <li>macOS: <code>{CONFIG.pastaDosBancos.macos}</code></li>}
+            <li>Linux: <code>{CONFIG.pastaDosBancos.linux}</code></li>
+          </ul>
+        </li>
       </ul>
-      <p>Para remover tudo, apague também essas duas pastas.</p>
+      <p>Para remover tudo, apague também essas pastas.</p>
       <Nota tipo="aviso" titulo="Não tem volta">
-        <p>Apagar a pasta da biblioteca remove livros, marcas e notas para sempre. Faça um <a href="/docs/backup/">backup</a> antes se houver algo que você queira guardar.</p>
+        <p>Apagar a pasta da biblioteca ou a pasta <code>bancos</code> remove livros, marcas e notas para sempre. Com a biblioteca numa pasta sincronizada, as notas estão em <code>bancos</code>, não na nuvem. Faça uma <a href="/docs/backup/">cópia de segurança</a> antes se houver algo que você queira guardar.</p>
       </Nota>
     </>
   ),
@@ -603,7 +710,7 @@ const perguntas: PaginaDeDoc = {
       <p>O {N} é gratuito e de código aberto. As leituras usam a sua assinatura do ChatGPT, pelo Codex. O áudio é opcional e é pago direto à ElevenLabs, se você usar.</p>
 
       <h2 id="privacidade">Para onde vão os meus textos?</h2>
-      <p>Para lugar nenhum além do seu computador, com uma exceção que você controla. Os arquivos, as marcas, as notas e o banco de dados ficam na pasta da biblioteca. Não há servidor do {N} guardando nada, nem métricas de uso.</p>
+      <p>Para lugar nenhum além do seu computador, com uma exceção que você controla. Os arquivos, as marcas, as notas e o banco de dados ficam no seu computador, na pasta da biblioteca (ou, se ela estiver numa pasta sincronizada, o banco numa pasta do app). Não há servidor do {N} guardando nada, nem métricas de uso.</p>
       <p id="openai">A exceção é a leitura por IA: para marcar o texto, escrever as notas e responder às suas perguntas, o Codex manda à OpenAI <strong>só o que ele lê</strong> para fazer aquilo que você pediu (os trechos do capítulo em preparação, ou o trecho e o contexto de uma pergunta), <strong>pela sua conta</strong>. Valem as regras de uso e de privacidade da OpenAI para a sua conta. Se você ligar o áudio, o texto a narrar vai para a ElevenLabs.</p>
 
       <h2 id="atualizacoes">O app se conecta a mais alguma coisa?</h2>
@@ -622,7 +729,7 @@ const perguntas: PaginaDeDoc = {
       <p>Ler, grifar e anotar o que já está na biblioteca, sim. Preparar leituras e perguntar precisam de internet, porque passam pelo ChatGPT.</p>
 
       <h2 id="outro-computador">Posso usar no celular ou em outro computador?</h2>
-      <p>O {N} é um app de desktop para Windows e Linux (macOS em breve); não há versão para celular. Para levar a biblioteca para outro computador, copie a pasta da biblioteca (veja <a href="/docs/backup/#restaurar">Backup</a>).</p>
+      <p>O {N} é um app de desktop {CONFIG.macPublicado ? 'para Windows, macOS e Linux' : 'para Windows e Linux (macOS em breve)'}; não há versão para celular. Para levar a biblioteca para outro computador, faça uma cópia de segurança e restaure no outro (veja <a href="/docs/backup/#restaurar">Backup</a>).</p>
 
       <h2 id="formatos">Que formatos posso ler?</h2>
       <p>PDF, EPUB, Markdown, TXT, texto colado, páginas da web pela extensão, vídeos do YouTube pelo link e vídeo ou áudio seus com a transcrição. Um PDF escaneado, só com imagens, pode ser transcrito pelo Codex página por página. Veja <a href="/docs/importar/">Adicionar textos e vídeos</a>.</p>
@@ -647,15 +754,21 @@ const problemas: PaginaDeDoc = {
   corpo: () => (
     <>
       <nav className="fichas-doc" aria-label="Problemas comuns">
-        <a href="#nao-abre">Não abre</a><a href="#codex">Codex sem login</a><a href="#cota">Cota</a><a href="#porta">Porta ocupada</a><a href="#antivirus">Antivírus</a><a href="#extensao">Extensão</a>
+        <a href="#nao-abre">Não abre</a><a href="#banco">Banco não subiu</a><a href="#codex">Codex sem login</a><a href="#cota">Cota</a><a href="#porta">Porta ocupada</a><a href="#antivirus">Antivírus</a><a href="#extensao">Extensão</a>
       </nav>
 
       <h2 id="nao-abre">O app não abre</h2>
       <ul>
         <li><strong>Windows:</strong> se o SmartScreen bloqueou, veja <a href="/docs/instalacao/#windows">Instalação no Windows</a>.</li>
-        <li><strong>Linux:</strong> confira se o AppImage está marcado como executável e se a biblioteca FUSE 2 está instalada (veja <a href="/docs/instalacao/#appimage">AppImage</a>).</li>
+        <li><strong>Linux:</strong> confira se o AppImage está marcado como executável e se a biblioteca FUSE 2 está instalada (veja <a href="/docs/instalacao/#appimage">AppImage</a>). No Ubuntu 24.04 ou mais novo, use o <a href="/docs/instalacao/#deb">.deb</a>: lá o AppImage pode não abrir.</li>
         <li>O {N} abre uma janela só. Se ele já estiver rodando (por exemplo, minimizado na bandeja), abrir de novo traz a janela existente para a frente.</li>
       </ul>
+
+      <h2 id="banco">“O banco da biblioteca não subiu”</h2>
+      <p>Não apague nem mexa na pasta do banco: os dados continuam nela. Reinicie o computador e abra o {N} de novo. Se continuar, guarde uma cópia da pasta do banco e restaure a última cópia de segurança (veja <a href="/docs/backup/#nao-abre">Se o banco não abrir</a>).</p>
+
+      <h2 id="versao-mais-nova">“Esta biblioteca foi aberta por uma versão mais nova”</h2>
+      <p>Você está abrindo, com uma versão antiga do {N}, uma biblioteca que uma versão mais nova já atualizou. Nada foi alterado. Instale a versão mais nova pela <a href="/download/">página de download</a>; se precisa mesmo da antiga, veja <a href="/docs/atualizacoes/#versao-anterior">Voltar para uma versão anterior</a>.</p>
 
       <h2 id="codex">O app diz que o Codex não está logado</h2>
       <p>O login do ChatGPT expirou ou foi desfeito. Use o botão de entrar que aparece no aviso do app: ele abre o navegador na página de login da OpenAI. Entre e volte ao {N}.</p>

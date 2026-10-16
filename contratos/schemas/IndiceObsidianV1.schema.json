@@ -15,9 +15,9 @@
       "const": 1
     },
     "url_base": {
-      "description": "Endereço absoluto do Margem usado nos links de volta, sem barra no fim.",
+      "description": "Endereço absoluto do Margem usado nos links de volta, sem barra no fim; no app de computador, margem://abrir (o esquema que o app registra).",
       "type": "string",
-      "pattern": "^https?://[^\\s/?#]+(/[^\\s?#]*)?$",
+      "pattern": "^(https?://[^\\s/?#]+(/[^\\s?#]*)?|margem://abrir)$",
       "not": {
         "pattern": "/$"
       }

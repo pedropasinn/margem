@@ -4,12 +4,12 @@
  * (`integracoes/obsidian/exemplo/Margem`, gerada pelo serviço com `npm run exemplo-obsidian`).
  */
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { margemIdDaNota, sincronizarV2, type CofreDaSincronizacao, type IndiceDoMargemV2 } from '../../core/src/obsidian.js';
-import { exportarParaOCofre, resumoDaExportacao } from '../src/nucleo/obsidian.js';
+import { cofreNoDisco, exportarParaOCofre, resumoDaExportacao } from '../src/nucleo/obsidian.js';
 
 const EXEMPLO = new URL('../../integracoes/obsidian/exemplo/Margem/', import.meta.url);
 const SERVICO = 'http://127.0.0.1:8730';
@@ -109,6 +109,38 @@ describe('exportar para o Obsidian (app de computador)', () => {
       return exportarParaOCofre({ servico: SERVICO, cofre, buscar: (() => Promise.resolve(new Response(JSON.stringify(indice)))) });
     })();
     await expect(malicioso).rejects.toThrow(/malformada/);
+  });
+
+  it('S-07: Margem (ou uma subpasta) como link para fora do cofre é recusado sem criar nem alterar nada lá', async () => {
+    const { buscar } = await servidorDeExemplo();
+    const cofre = await pastaTemporaria();
+    const externa = await pastaTemporaria();
+    await writeFile(join(externa, 'intocado.md'), 'antes\n');
+    // No Windows a junção faz o mesmo papel do link simbólico de pasta.
+    await symlink(externa, join(cofre, 'Margem'), process.platform === 'win32' ? 'junction' : 'dir');
+    await expect(exportarParaOCofre({ servico: SERVICO, cofre, buscar })).rejects.toThrow(/aponta para fora/);
+    expect(await readdir(externa)).toEqual(['intocado.md']);
+    expect(await readFile(join(externa, 'intocado.md'), 'utf8')).toBe('antes\n');
+    // Um link mais fundo, criado depois da conferência da raiz: a escrita da nota também recusa.
+    await rm(join(cofre, 'Margem'));
+    await mkdir(join(cofre, 'Margem'));
+    await symlink(externa, join(cofre, 'Margem', 'Livro'), process.platform === 'win32' ? 'junction' : 'dir');
+    const disco = cofreNoDisco(cofre);
+    await expect(disco.escrever('Margem/Livro/nota.md', 'x')).rejects.toThrow(/aponta para fora/);
+    await expect(disco.escrever('Margem/Livro/sub/nota.md', 'x')).rejects.toThrow(/aponta para fora/);
+    expect(await readdir(externa)).toEqual(['intocado.md']);
+    // Dentro do cofre continua gravando, criando as pastas que faltam.
+    await disco.escrever('Margem/Outro/sub/nota.md', 'ok');
+    expect(await readFile(join(cofre, 'Margem', 'Outro', 'sub', 'nota.md'), 'utf8')).toBe('ok');
+  });
+
+  it('S-01: com a chave local, os pedidos ao serviço vão com Authorization: Bearer', async () => {
+    const { buscar } = await servidorDeExemplo();
+    const cabecalhos: (string | null)[] = [];
+    const comChave = ((url: string, init?: RequestInit) => { cabecalhos.push(new Headers(init?.headers).get('authorization')); return buscar(url, init); }) as typeof fetch;
+    await exportarParaOCofre({ servico: SERVICO, cofre: await pastaTemporaria(), buscar: comChave, chave: 'k'.repeat(43) });
+    expect(cabecalhos.length).toBeGreaterThan(0);
+    expect(new Set(cabecalhos)).toEqual(new Set([`Bearer ${'k'.repeat(43)}`]));
   });
 
   it('um documento só: o índice é filtrado e o resto do cofre não é tocado', async () => {

@@ -4,6 +4,7 @@
  * relação, um mapa…) e aos lotes do documento ou do capítulo.
  */
 import { useRef, useState, type ReactNode } from 'react';
+import { mensagemDeErro } from '../biblioteca/erros';
 import { Button, Input, usarFoco } from '../ui/Primitives';
 import { Icon } from '../ui/Icon';
 import './apagar.css';
@@ -38,7 +39,7 @@ export function ConfirmarApagar({
   async function confirmar() {
     ocupar(true); definirFalha(null);
     try { await aoConfirmar(); aoFechar(); }
-    catch (erro) { definirFalha(erro instanceof Error ? erro.message : 'Não foi possível apagar.'); ocupar(false); }
+    catch (erro) { definirFalha(mensagemDeErro(erro, 'Não foi possível apagar.')); ocupar(false); }
   }
   return <div className="ui-veu veu-do-apagar">
     <div ref={raiz} role="alertdialog" aria-modal="true" aria-labelledby="titulo-do-apagar" aria-describedby="texto-do-apagar" tabIndex={-1} className="dialogo-de-apagar">

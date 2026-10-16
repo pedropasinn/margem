@@ -7,7 +7,7 @@
  * para ele. O schema montado vai para um arquivo fora do diretório de entrada: o executor
  * o copia (saneado) e confere a resposta contra ele.
  */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 /** Folga abaixo dos 128 KiB do kernel, em bytes UTF-8. */
@@ -71,4 +71,41 @@ export async function prepararEntrada(raiz: string, prompt: string, schema: unkn
   const emArquivo = Buffer.byteLength(prompt, 'utf8') > TETO_PROMPT_POR_ARGUMENTO;
   if (emArquivo) await writeFile(join(diretorioEntrada, ARQUIVO_PROMPT), prompt, { mode: 0o600 });
   return { diretorioEntrada, schema: caminhoSchema, prompt: emArquivo ? PONTEIRO_DO_PROMPT : prompt, emArquivo };
+}
+
+/** O prompt pela entrada padrão do `codex exec` (`-` no lugar do texto). */
+export const PROMPT_PELA_ENTRADA = '-';
+
+const IMAGEM = /\.(png|jpe?g|webp|gif|bmp|tiff?)$/iu;
+
+/**
+ * S-04 · Sem ferramentas o modelo não abre arquivo nenhum: o que ele leria do diretório da execução vai
+ * no próprio prompt. O ponteiro para `prompt.md` vira o conteúdo dele, e cada arquivo de texto da
+ * entrada (sem as imagens, que vão por `--image`, e sem binários) entra depois, com o nome. Pastas
+ * (os anexos) ficam de fora.
+ */
+export async function promptComOsArquivos(diretorio: string, prompt: string, ignorar: readonly string[] = []): Promise<string> {
+  const nomes = (await readdir(diretorio)).sort();
+  let principal = prompt;
+  if (prompt === PONTEIRO_DO_PROMPT && nomes.includes(ARQUIVO_PROMPT)) principal = await readFile(join(diretorio, ARQUIVO_PROMPT), 'utf8');
+  const partes: string[] = [];
+  for (const nome of nomes) {
+    if (ignorar.includes(nome) || IMAGEM.test(nome) || (nome === ARQUIVO_PROMPT && principal !== prompt)) continue;
+    const caminho = join(diretorio, nome);
+    const informacao = await stat(caminho);
+    if (!informacao.isFile()) continue;
+    const bytes = await readFile(caminho);
+    if (bytes.includes(0)) continue;
+    let texto: string;
+    try { texto = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { continue; }
+    partes.push(`<<<arquivo ${nome}>>>\n${texto}${texto.endsWith('\n') ? '' : '\n'}<<<fim de ${nome}>>>`);
+  }
+  if (partes.length === 0) return principal;
+  return [
+    principal,
+    '',
+    'Os arquivos desta tarefa estão abaixo, cada um entre <<<arquivo nome>>> e <<<fim de nome>>>. Não há ferramentas para abrir arquivos: use este conteúdo.',
+    '',
+    ...partes,
+  ].join('\n');
 }

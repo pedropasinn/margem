@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { atalhoNoSistema } from '../ui/teclas';
 import type { AncoraV1 } from '@margem/contratos';
 import { Button, IconButton, Select } from '../ui/Primitives';
 import { Icon } from '../ui/Icon';
@@ -182,7 +183,7 @@ export function PainelDoLeitor({ snapshot, tituloDocumento, tipo, autor, grifos,
           return doGrupo.length > 0 && <section key={grupo} aria-label={grupo}><h3>{grupo}</h3>
             <ul className="lista-de-estudo">{doGrupo.map((acao) => <li key={acao.id}>
               <Button variante="ghost" tamanho="md" className="acao-de-estudo" aria-pressed={acao.ativa ?? undefined} disabled={acao.desabilitada} onClick={acao.executar}>
-                <Icon name={acao.icone} size={18} /><span className="acao-rotulo">{acao.rotulo}</span>{acao.detalhe && <span className="acao-detalhe">{acao.detalhe}</span>}
+                <Icon name={acao.icone} size={18} /><span className="acao-rotulo">{acao.rotulo}</span>{acao.detalhe && <span className="acao-detalhe">{atalhoNoSistema(acao.detalhe)}</span>}
               </Button>
             </li>)}</ul></section>;
         })}

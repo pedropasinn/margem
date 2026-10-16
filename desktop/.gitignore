@@ -1,8 +1,9 @@
 node_modules/
 dist/
 saida/
-# Binários montados pelo recursos/preparar.mjs (J114): nunca no git. Ficam só o script, versoes.json e TERCEIROS.md.
+# Binários montados pelo recursos/preparar.mjs (J114): nunca no git. Ficam só os scripts, versoes.json e TERCEIROS.md.
 recursos/*
 !recursos/preparar.mjs
 !recursos/versoes.json
 !recursos/TERCEIROS.md
+!recursos/assinar-mac.mjs

@@ -22,10 +22,13 @@ import type { ApiDoLeitor, PontoDeTexto } from './tipos';
 import { CacheDePaginas, renderizarPaginaNoCanvas, type RecortePdf } from './pdf-recortes';
 import { caixaNoPdf, quadNaTela, retangulosDoTextoPdf, tamanhoDaPagina, type GeometriaPdf, type PaginaPdf, type PalavraPdf } from './pdf-geometria';
 import './pdf.css';
+import { AlvosDoPdf } from './AlvosDoPdf';
 GlobalWorkerOptions.workerSrc = workerUrl;
 /** Decodificadores wasm (JBIG2, JPEG 2000, ICC) servidos pelo build: ver `decodificadoresDoPdfjs` no vite.config. */
 const URL_DOS_DECODIFICADORES = `/pdfjs-${versaoDoPdfjs}/wasm/`;
 
+/** Páginas por pedido de geometria: o teto da rota no serviço. */
+const LOTE_DE_PAGINAS = 60;
 function avisarGeometria() { window.dispatchEvent(new Event('margem:geometria')); }
 function densidadeDaTela(): number { return window.devicePixelRatio || 1; }
 
@@ -111,6 +114,8 @@ export const PdfReader = forwardRef<ApiDoLeitor, PropsDoLeitor & { documento_id:
   const { modos } = usarFuncoes();
   const [documento, definirDocumento] = useState<PDFDocumentProxy | null>(null);
   const [geometriaCarregada, definirGeometria] = useState<GeometriaPdf | null>(null);
+  /** Todos os lotes do capítulo chegaram (as páginas já aparecem desde o primeiro). */
+  const [completa, definirCompleta] = useState(false);
   const [erro, definirErro] = useState<string | null>(null);
   const [aviso, definirAviso] = useState<string | null>(null);
   const [largura, definirLargura] = useState(() => Math.min(850, (document.documentElement.clientWidth || window.innerWidth) - 48));
@@ -135,20 +140,22 @@ export const PdfReader = forwardRef<ApiDoLeitor, PropsDoLeitor & { documento_id:
   useEffect(() => { if (documento) aoMudarTotalDePaginas?.(documento.numPages); }, [documento, aoMudarTotalDePaginas]);
   useEffect(() => {
     const abortar = new AbortController();
-    definirGeometria(null);
+    definirGeometria(null); definirCompleta(false);
     void (async () => {
       const faixa = snapshot.paginas;
       if (!faixa) throw new Error('As páginas deste capítulo não estão disponíveis.');
       const paginas: PaginaPdf[] = []; const palavras: PalavraPdf[] = [];
-      let fonte: GeometriaPdf['fonte'] = 'pdf_texto'; let motor = '';
-      for (let inicio = faixa.inicio; inicio <= faixa.fim; inicio += 60) {
-        const resposta = await fetch(`/api/versoes/${snapshot.versao_id}/geometria?paginas=${inicio}-${Math.min(faixa.fim, inicio + 59)}`, { signal: abortar.signal });
+      // I-06: a leitura começa com o primeiro lote; os outros chegam em seguida e só acrescentam páginas ao fim.
+      for (let inicio = faixa.inicio; inicio <= faixa.fim; inicio += LOTE_DE_PAGINAS) {
+        const resposta = await fetch(`/api/versoes/${snapshot.versao_id}/geometria?paginas=${inicio}-${Math.min(faixa.fim, inicio + LOTE_DE_PAGINAS - 1)}`, { signal: abortar.signal });
         if (!resposta.ok) throw new Error('Não foi possível carregar as marcações do PDF.');
         const parte = await resposta.json() as GeometriaPdf;
         if (parte.versao_id !== snapshot.versao_id) throw new Error('A geometria pertence a outra versão.');
-        paginas.push(...parte.paginas); palavras.push(...parte.palavras); fonte = parte.fonte; motor = parte.motor;
+        if (abortar.signal.aborted) return;
+        paginas.push(...parte.paginas); palavras.push(...parte.palavras);
+        definirGeometria({ versao_id: snapshot.versao_id, fonte: parte.fonte, motor: parte.motor, paginas: [...paginas], palavras: [...palavras] });
       }
-      if (!abortar.signal.aborted) definirGeometria({ versao_id: snapshot.versao_id, fonte, motor, paginas, palavras });
+      if (!abortar.signal.aborted) definirCompleta(true);
     })().catch((falha: unknown) => { if (!abortar.signal.aborted) definirErro(falha instanceof Error ? falha.message : 'Não foi possível abrir o capítulo.'); });
     return () => abortar.abort();
   }, [snapshot.versao_id, snapshot.paginas?.inicio, snapshot.paginas?.fim, tentativa]);
@@ -197,7 +204,10 @@ export const PdfReader = forwardRef<ApiDoLeitor, PropsDoLeitor & { documento_id:
   });
   const superficie: ApiDoLeitor = {
     localizar(blocoId, offset) {
-      const palavra = porBloco.get(blocoId)?.find(p => p.fim_utf16 > offset) ?? porBloco.get(blocoId)?.[0];
+      // R3-4: com a geometria ainda chegando, um offset que os lotes carregados não cobrem não está "no começo do
+      // bloco": espera o lote seguinte (a retomada tenta de novo) em vez de concluir no lugar errado.
+      const doBloco = porBloco.get(blocoId);
+      const palavra = doBloco?.find(p => p.fim_utf16 > offset) ?? (completa ? doBloco?.[0] : undefined);
       const bloco = blocos.get(blocoId);
       if (!palavra || !bloco) return null;
       const ancora = ancoraDaFaixa(bloco, snapshot.versao_id, palavra.inicio_utf16, palavra.fim_utf16);
@@ -315,7 +325,7 @@ export const PdfReader = forwardRef<ApiDoLeitor, PropsDoLeitor & { documento_id:
   useLayoutEffect(() => {
     if (anterior.current) { const { ponto, topo } = anterior.current; const caixa = api.current?.localizar(ponto.bloco_id, ponto.offset_utf16); if (caixa) window.scrollBy(0, caixa.top - topo); }
     avisarGeometria();
-  }, [geometria, largura, preferencias.zoomPdf]);
+  }, [geometria, completa, largura, preferencias.zoomPdf]);
   /** As marcas de uma página, em pixels da página: as mesmas no leitor e nos recortes da dobra. */
   const marcasDaPagina = (pagina: PaginaPdf, escala: number, animar = preferencias.animacao): ReactNode => {
     const linhas = (ancora: AncoraV1) => quads(ancora).find((g) => g.pagina === pagina.numero)?.quads.map((q) => quadNaTela(q, pagina, escala)) ?? [];
@@ -354,11 +364,13 @@ export const PdfReader = forwardRef<ApiDoLeitor, PropsDoLeitor & { documento_id:
           <div className="pdf-pagina" data-pagina={pagina.numero} style={{ width: tamanho.largura, height: tamanho.altura }}>
             <Pagina documento={documento} pagina={pagina} escala={escala} aoErro={definirErro} />
             {marcasDaPagina(pagina, escala)}
-            <div className="pdf-alvos">{(marcasPorPagina.get(pagina.numero) ?? []).flatMap((m) => linhas(m.ancora).map((r, i) => <span key={`${m.id}-${i}`} data-marcas={m.id} tabIndex={0} role="button" aria-label={m.comentario?.rotulo ?? m.ancora.citacao} style={{ left: r.x, top: r.y, width: r.largura, height: r.altura }} />))}</div>
+            <AlvosDoPdf pagina={pagina.numero} marcas={marcasPorPagina.get(pagina.numero) ?? []} linhas={linhas}
+              paginasDaAncora={(ancora) => quads(ancora).filter((g) => g.quads.length > 0).map((g) => g.pagina)} />
           </div>
           <p className="pdf-numero">{pagina.numero}{impressa ? ` · p. ${impressa}` : ''}</p>
         </section>;
       })}
+      {documento && geometria && !completa && !erro && <p className="pdf-carregando" role="status">Carregando as próximas páginas…</p>}
     </article>
     {cabeMargem && margem}{rodape}
   </div>;

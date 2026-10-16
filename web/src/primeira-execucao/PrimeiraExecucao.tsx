@@ -20,6 +20,7 @@ import { TresJeitos } from '../onboarding/BoasVindas';
 import '../onboarding/onboarding.css';
 import './primeira-execucao.css';
 import { usarInstalacao } from './ContextoDaInstalacao';
+import { ConectarAoChatGPT } from './ConectarAoChatGPT';
 import {
   abrirExemploDaInstalacao, avisoDaInstalacao, avisosDoApp, concluirPrimeiraExecucao, ferramentasDaChecagem, situacaoDoCodex,
   type AvisoDaInstalacao as Aviso, type EstadoDaInstalacao,
@@ -49,6 +50,7 @@ function InstrucoesDoAviso({ aviso }: { aviso: Aviso }): ReactNode {
   return <>
     <p className="instrucao-texto">{aviso.texto}</p>
     {aviso.comandos.length > 0 && <div className="comandos">{aviso.comandos.map((c) => <ComandoParaCopiar key={c.rotulo} {...c} />)}</div>}
+    {aviso.acao !== undefined && <ConectarAoChatGPT reconectar={aviso.acao === 'reconectar'} />}
   </>;
 }
 

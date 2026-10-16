@@ -3,6 +3,7 @@ import type { ModoDeLeituraV1, ReferenciaModo } from '@margem/contratos';
 import type { SelecaoDoLeitor } from './selecao';
 import { Button, IconButton } from '../ui/Primitives';
 import { Icon } from '../ui/Icon';
+import { atalhoNoSistema } from '../ui/teclas';
 import { usarFuncoes } from './ContextoDosModos';
 import { atalhoDeUmaTeclaDesligado, digitando } from './teclado/comandos';
 import './barra-de-selecao.css';
@@ -120,7 +121,7 @@ export function MenuDeMais({ itens, rotulo = 'Mais ações' }: { itens: readonly
     }}>
       {itens.map((item) => <li key={item.id} role="none"><button type="button" role="menuitem" className={item.perigo ? 'perigo' : undefined} disabled={item.desabilitado}
         onClick={() => { abrir(false); item.executar(); }}>
-        {item.icone && <Icon name={item.icone} size={16} />}<span>{item.rotulo}</span>{item.atalho && <kbd>{item.atalho}</kbd>}
+        {item.icone && <Icon name={item.icone} size={16} />}<span>{item.rotulo}</span>{item.atalho && <kbd>{atalhoNoSistema(item.atalho)}</kbd>}
       </button></li>)}
     </ul>}
   </span>;

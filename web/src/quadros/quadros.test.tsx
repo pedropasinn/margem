@@ -331,6 +331,17 @@ describe('leitor de quadro', () => {
     fireEvent.click(within(painel).getByText(ancorada.texto));
     expect(document.querySelector(`[data-regiao="${ancorada.regioes[0]!}"]`)?.classList.contains('acesa')).toBe(true);
   });
+  test('M-09: ⌘ + − 0 dão o zoom do quadro como Ctrl; ⌘ com letra fica para o sistema', async () => {
+    servir();
+    render(<LeitorDeQuadro slug="educacao" ir={vi.fn()} />);
+    await screen.findByRole('navigation', { name: 'Barra do quadro' });
+    // O quadro trata o atalho (e impede o zoom da página inteira); no jsdom não há medida para conferir o zoom.
+    expect(fireEvent.keyDown(window, { key: '=', metaKey: true })).toBe(false);
+    expect(fireEvent.keyDown(window, { key: '-', metaKey: true })).toBe(false);
+    expect(fireEvent.keyDown(window, { key: '0', metaKey: true })).toBe(false);
+    expect(fireEvent.keyDown(window, { key: 'p', metaKey: true })).toBe(true);
+    expect(screen.queryByRole('region', { name: 'Percorrer as afirmações' })).toBeNull();
+  });
   test('Espaço abre o player da análise curta; Esc fecha; P percorre; a troca de análise pede a geração', async () => {
     const pedidos = servir();
     render(<LeitorDeQuadro slug="educacao" ir={vi.fn()} />);

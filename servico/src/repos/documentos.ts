@@ -44,6 +44,8 @@ export async function bloquearVersao(cliente: Transacao, versaoId: string): Prom
   await cliente.query('SELECT id FROM versao_texto WHERE id=$1 FOR UPDATE', [versaoId]);
   return obterVersao(cliente, versaoId);
 }
+/** Blocos por consulta na publicação de uma versão: cada uma bem abaixo do prazo de 5 s do pool. */
+export const BLOCOS_POR_LOTE = 500;
 /**
  * `fonteDerivada`: hash de um arquivo derivado do original que o chamador conferiu em disco (o PDF com
  * a camada de texto da transcrição de um escaneado); o canônico dele também é do documento.
@@ -69,10 +71,16 @@ export async function criarVersao(cliente: Transacao, documentoId: string, entra
   const idioma = canonico.documento.idioma.toLowerCase().split(/[-_]/)[0];
   const busca = idioma === 'pt' || idioma === 'portuguese' ? 'portuguese'
     : idioma === 'en' || idioma === 'english' ? 'english' : 'simple';
-  for (const bloco of canonico.blocos) {
+  // Em lotes (D-05): um PDF de milhares de páginas eram milhares de consultas dentro da publicação.
+  for (let inicio = 0; inicio < canonico.blocos.length; inicio += BLOCOS_POR_LOTE) {
+    const lote = canonico.blocos.slice(inicio, inicio + BLOCOS_POR_LOTE).map((bloco) => ({
+      id: bloco.id, ordem: bloco.ordem, tipo: bloco.tipo, texto: bloco.texto,
+      inline: bloco.inline, origens: bloco.origens, asset_id: bloco.asset_id ?? null,
+    }));
     await cliente.query(`INSERT INTO bloco (versao_id,id,ordem,tipo,texto,inline,origens,asset_id,idioma_busca)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::regconfig)`,
-    [id, bloco.id, bloco.ordem, bloco.tipo, bloco.texto, JSON.stringify(bloco.inline), JSON.stringify(bloco.origens), bloco.asset_id ?? null, busca]);
+      SELECT $1, b.id, b.ordem, b.tipo, b.texto, b.inline, b.origens, b.asset_id, $2::regconfig
+      FROM jsonb_to_recordset($3::jsonb) AS b(id ulid, ordem bigint, tipo text, texto text, inline jsonb, origens jsonb, asset_id ulid)`,
+    [id, busca, JSON.stringify(lote)]);
   }
   for (const secao of canonico.secoes) {
     await cliente.query('INSERT INTO secao VALUES ($1,$2,$3,$4,$5,$6,$7)',

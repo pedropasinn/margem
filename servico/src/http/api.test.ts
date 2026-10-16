@@ -139,6 +139,11 @@ test('upload de Markdown vira job de canonização, versão publicada e snapshot
     const snapshot = await corpo<{ palavras_no_livro: { antes: number; total: number }; blocos: { texto: string }[]; marcas: unknown[]; revisao_marcas: string }>(
       await api.request(`/api/versoes/${detalhe.versao_id}/capitulos/${capitulo}`));
     expect(snapshot.blocos.length).toBeGreaterThan(0);
+    // I-04: com `?bloco=`, a árvore diz em que capítulo ele está (a retomada abre nele).
+    const ultimoBloco = (snapshot.blocos as { id?: Id }[]).at(-1)?.id ?? '';
+    const comBloco = await corpo<{ capitulo_do_bloco: Id | null }>(await api.request(`/api/versoes/${detalhe.versao_id}/secoes?bloco=${ultimoBloco}`));
+    expect(comBloco.capitulo_do_bloco).toBe(capitulo);
+    expect(arvore).not.toHaveProperty('capitulo_do_bloco');
     expect(snapshot.palavras_no_livro.antes).toBe(0);
     expect(snapshot.palavras_no_livro.total).toBeGreaterThanOrEqual(snapshot.blocos.reduce((n, b) => n + (b.texto.match(/\S+/g)?.length ?? 0), 0));
     // O texto chega ao leitor sem normalização: o emoji e a ligatura continuam lá.

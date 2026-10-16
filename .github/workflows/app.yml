@@ -27,6 +27,9 @@ on:
         options: [todos, windows, macos, linux, 'windows,linux']
   push:
     tags: ['v*']
+    # Branches descartáveis do repositório privado (o workflow_dispatch exige o arquivo na main): um push
+    # em ci/windows, ci/macos ou ci/linux roda só aquele sistema, sem release (J154).
+    branches: ['ci/windows', 'ci/macos', 'ci/linux']
 
 concurrency:
   group: app-${{ github.ref }}
@@ -47,8 +50,9 @@ jobs:
     steps:
       - id: matriz
         env:
-          # Run manual: o que foi escolhido. Tag: MARGEM_SISTEMAS_DO_RELEASE, senão Windows e Linux.
-          SISTEMAS: ${{ inputs.sistemas || vars.MARGEM_SISTEMAS_DO_RELEASE || 'windows,linux' }}
+          # Run manual: o que foi escolhido. Branch ci/<sistema>: só ele. Tag: MARGEM_SISTEMAS_DO_RELEASE,
+          # senão Windows e Linux (o macOS entra no release só quando pedido).
+          SISTEMAS: ${{ inputs.sistemas || (startsWith(github.ref, 'refs/heads/ci/') && github.ref_name) || vars.MARGEM_SISTEMAS_DO_RELEASE || 'windows,linux' }}
           # macos-13 foi aposentado; o runner Intel do macOS hoje é o macos-15-intel.
           TODOS: >-
             [
@@ -59,7 +63,7 @@ jobs:
             ]
         run: >-
           node -e "const t = JSON.parse(process.env.TODOS);
-          const s = process.env.SISTEMAS.split(',').map((x) => x.trim()).filter(Boolean);
+          const s = process.env.SISTEMAS.replace(/^ci[/]/, '').split(',').map((x) => x.trim()).filter(Boolean);
           const pedidos = s.includes('todos') ? ['windows', 'macos', 'linux'] : s;
           const desconhecidos = pedidos.filter((x) => !t.some((y) => y.sistema === x));
           if (desconhecidos.length || !pedidos.length) { console.error('sistemas desconhecidos: ' + (desconhecidos.join(', ') || '(nenhum)')); process.exit(1); }
@@ -182,6 +186,12 @@ jobs:
           sudo apt-get install -y ./desktop/saida/margem_amd64.deb
           test -x /opt/Margem/margem
           test -x /opt/Margem/resources/recursos/postgres/bin/postgres
+          # As ferramentas embutidas rodam (o AppImage da fumaça não deixa achá-las; J154).
+          r=/opt/Margem/resources/recursos/bin
+          "$r/ffmpeg" -hide_banner -version
+          "$r/ffprobe" -hide_banner -version
+          "$r/yt-dlp" --version
+          "$r/codex" --version
           sudo apt-get remove -y margem
 
       - name: Instalar pelo NSIS (Windows)
@@ -201,30 +211,54 @@ jobs:
           MARGEM_DESKTOP_TMP: ${{ runner.temp }}\fumaca
         run: node desktop/scripts/fumaca.mjs --app "$env:MARGEM_APP_INSTALADO" --manter-se-falhar
 
-      # Informativo: pasta com "ç" (como C:\Users\João). Se falhar, o release não para, mas fica o aviso.
-      - name: Fumaça com acento no caminho (Windows, informativo)
+      # Obrigatória (W-07): pasta com "ç" (como C:\Users\João). Se falhar, o release não sai.
+      - name: Fumaça com acento no caminho (Windows)
         if: runner.os == 'Windows'
-        continue-on-error: true
         env:
           MARGEM_DESKTOP_TMP: ${{ runner.temp }}\fumaca
         run: node desktop/scripts/fumaca.mjs --app "$env:MARGEM_APP_INSTALADO" --acento --manter-se-falhar
+
+      # O .app sai do .dmg como a pessoa faria (arrastar para uma pasta), num caminho com espaço no nome.
+      - name: Montar o .dmg e copiar o app (macOS)
+        if: runner.os == 'macOS'
+        env:
+          ARCH: ${{ matrix.plataforma == 'darwin-arm64' && 'arm64' || 'x64' }}
+        run: |
+          set -euo pipefail
+          dmg="desktop/saida/Margem-mac-$ARCH.dmg"
+          ls -la desktop/saida
+          test -f "$dmg"
+          destino="$RUNNER_TEMP/Aplicativos de teste"
+          mkdir -p "$destino"
+          ponto="$(mktemp -d)"
+          # O hdiutil dos runners às vezes responde "Resource busy": até três tentativas.
+          for tentativa in 1 2 3; do
+            if hdiutil attach -nobrowse -readonly -noautoopen -mountpoint "$ponto" "$dmg"; then break; fi
+            if [ "$tentativa" = 3 ]; then exit 1; fi
+            sleep 10
+          done
+          ls -la "$ponto"
+          app_no_dmg="$(find "$ponto" -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_no_dmg"
+          ditto "$app_no_dmg" "$destino/Margem.app"
+          hdiutil detach "$ponto" || hdiutil detach -force "$ponto"
+          echo "MARGEM_APP_MAC=$destino/Margem.app" >> "$GITHUB_ENV"
+
+      # Info.plist (o executável de verdade), assinatura do .app e de cada binário embutido, arquitetura e
+      # dependências (otool -L). Reprova aqui, antes da fumaça; grava MARGEM_APP_INSTALADO.
+      - name: Conferir o app (macOS)
+        if: runner.os == 'macOS'
+        env:
+          ARCH: ${{ matrix.plataforma == 'darwin-arm64' && 'arm64' || 'x64' }}
+        run: node desktop/scripts/conferir-mac.mjs --app "$MARGEM_APP_MAC" --arch "$ARCH"
 
       - name: Fumaça (macOS, app copiado do .dmg)
         if: runner.os == 'macOS'
         env:
           MARGEM_DESKTOP_TMP: ${{ runner.temp }}/fumaca
-          ARCH: ${{ matrix.plataforma == 'darwin-arm64' && 'arm64' || 'x64' }}
         run: |
-          mkdir -p "$MARGEM_DESKTOP_TMP" "$RUNNER_TEMP/Aplicativos de teste"
-          ponto="$(mktemp -d)"
-          hdiutil attach -nobrowse -readonly -mountpoint "$ponto" "desktop/saida/Margem-mac-$ARCH.dmg"
-          ditto "$ponto/Margem.app" "$RUNNER_TEMP/Aplicativos de teste/Margem.app"
-          hdiutil detach "$ponto"
-          app="$RUNNER_TEMP/Aplicativos de teste/Margem.app"
-          codesign -dv "$app" 2>&1 | head -5 || true
-          codesign --verify --deep --strict "$app" && echo "assinatura (ad hoc ou Developer ID) válida"
-          file "$app/Contents/MacOS/Margem" "$app/Contents/Resources/recursos/postgres/bin/postgres" "$app/Contents/Resources/recursos/motor/margem-motor"
-          node desktop/scripts/fumaca.mjs --app "$app/Contents/MacOS/Margem" --manter-se-falhar
+          mkdir -p "$MARGEM_DESKTOP_TMP"
+          node desktop/scripts/fumaca.mjs --app "$MARGEM_APP_INSTALADO" --manter-se-falhar
 
       - name: Registros da fumaça (se falhar)
         if: failure()

@@ -22,7 +22,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type pg from 'pg';
 import { validarCanonico, type CanonicoV1, type Id, type JobResultV1 } from '@margem/contratos';
-import { pastaDaTentativaDeCanonizacao, pastaDoDocumento, raizDoRepositorio } from '../dados.js';
+import { originalDoDocumento, pastaDaTentativaDeCanonizacao, pastaDoDocumento, raizDoRepositorio } from '../dados.js';
 import { comTransacao, type Transacao } from '../db/transacao.js';
 import { interpretarJson, lerJsonLimitado, lerTextoLimitado, ORCAMENTOS } from '../entrada-json.js';
 import { sha256 } from '../executor/artefato.js';
@@ -177,7 +177,7 @@ export function manipuladorTranscreverEscaneado(opcoes: OpcoesDaTranscricao): Ma
       const imagens = join(trabalho, 'imagens');
       const respostas = join(trabalho, 'paginas');
       await mkdir(respostas, { recursive: true, mode: 0o700 });
-      const renderizacao = await rodarPython(comandoDoMotor('renderizar-paginas', [documento.origem_caminho, imagens, paginas.join(',')], { raiz }),
+      const renderizacao = await rodarPython(comandoDoMotor('renderizar-paginas', [originalDoDocumento(documento), imagens, paginas.join(',')], { raiz }),
         prazo, tarefa.sinal);
       if (renderizacao !== null) return falhou(tarefa.sinal.aborted ? 'cancelado' : 'processo', `Renderização das páginas: ${renderizacao}`, decorrido());
 
@@ -193,7 +193,7 @@ export function manipuladorTranscreverEscaneado(opcoes: OpcoesDaTranscricao): Ma
       }
 
       const camada = join(trabalho, 'camada.pdf');
-      const gravacao = await rodarPython(comandoDaCamada([documento.origem_caminho, trabalho, camada]), prazo, tarefa.sinal);
+      const gravacao = await rodarPython(comandoDaCamada([originalDoDocumento(documento), trabalho, camada]), prazo, tarefa.sinal);
       if (gravacao !== null) return falhou(tarefa.sinal.aborted ? 'cancelado' : 'processo', `Camada de texto: ${gravacao}`, decorrido());
       const sha = createHash('sha256').update(await readFile(camada)).digest('hex');
       const final = caminhoDaCamada(documentoId, sha);

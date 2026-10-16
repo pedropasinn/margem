@@ -6,6 +6,7 @@ import { CORES_DE_CONTRASTE, CORES_DO_METODO, TAMANHO_MAXIMO, TAMANHO_MINIMO, ty
 import { proximoZoom, ZOOM_MAXIMO, ZOOM_MINIMO } from './zoom';
 import { BotaoDaBarra } from './BarraDoLeitor';
 import { Icon } from '../ui/Icon';
+import { atalhoNoSistema } from '../ui/teclas';
 import './aparencia.css';
 
 /**
@@ -26,10 +27,10 @@ export function PilulaDeLeitura({ pdf, escala, aoProximaPagina }: { pdf: boolean
   }
   const porcentagem = `${String(Math.round(escala * 100))}%`;
   return <div className="pilula-de-leitura" role="group" aria-label="Zoom do PDF">
-    <IconButton aria-label="Diminuir zoom" data-dica="Diminuir" data-atalho="Ctrl −" disabled={escala <= ZOOM_MINIMO + .005} onClick={() => mudar({ zoomPdf: proximoZoom(escala, -1) })}><Icon name="menos" size={16} /></IconButton>
-    <button type="button" className="zoom-atual" data-dica={p.zoomPdf === 'largura' ? 'Ajustado à largura' : 'Ajustar à largura'} data-atalho={p.zoomPdf === 'largura' ? undefined : 'Ctrl 0'}
+    <IconButton aria-label="Diminuir zoom" data-dica="Diminuir" data-atalho={atalhoNoSistema('Ctrl −')} disabled={escala <= ZOOM_MINIMO + .005} onClick={() => mudar({ zoomPdf: proximoZoom(escala, -1) })}><Icon name="menos" size={16} /></IconButton>
+    <button type="button" className="zoom-atual" data-dica={p.zoomPdf === 'largura' ? 'Ajustado à largura' : 'Ajustar à largura'} data-atalho={p.zoomPdf === 'largura' ? undefined : atalhoNoSistema('Ctrl 0')}
       aria-label={`Zoom ${porcentagem}${p.zoomPdf === 'largura' ? ', ajustado à largura' : '; ajustar à largura'}`} aria-pressed={p.zoomPdf === 'largura'} onClick={() => mudar({ zoomPdf: 'largura' })}>{porcentagem}</button>
-    <IconButton aria-label="Aumentar zoom" data-dica="Aumentar" data-atalho="Ctrl +" disabled={escala >= ZOOM_MAXIMO - .005} onClick={() => mudar({ zoomPdf: proximoZoom(escala, 1) })}><Icon name="somar" size={16} /></IconButton>
+    <IconButton aria-label="Aumentar zoom" data-dica="Aumentar" data-atalho={atalhoNoSistema('Ctrl +')} disabled={escala >= ZOOM_MAXIMO - .005} onClick={() => mudar({ zoomPdf: proximoZoom(escala, 1) })}><Icon name="somar" size={16} /></IconButton>
     <span className="pilula-traco" aria-hidden="true" />
     <IconButton aria-label="Próxima página" data-dica="Próxima página" disabled={!aoProximaPagina} onClick={aoProximaPagina}><Icon name="abaixo" size={18} /></IconButton>
   </div>;

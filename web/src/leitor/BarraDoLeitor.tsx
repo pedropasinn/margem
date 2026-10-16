@@ -6,6 +6,7 @@
 import { forwardRef, useEffect, useRef, useState, type ButtonHTMLAttributes, type FormEvent, type ReactNode } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button, IconButton, Input, Popover } from '../ui/Primitives';
+import { atalhoNoSistema } from '../ui/teclas';
 
 type PropsDoBotao = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
   rotulo: string;
@@ -17,7 +18,7 @@ type PropsDoBotao = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & 
 
 /** Botão da barra: só o ícone, com a dica (rótulo e atalho) ao passar o mouse ou focar. */
 export const BotaoDaBarra = forwardRef<HTMLButtonElement, PropsDoBotao>(function BotaoDaBarra({ rotulo, icone, atalho, className = '', 'aria-label': nome, ...props }, ref) {
-  return <IconButton {...props} ref={ref} aria-label={nome ?? rotulo} className={`botao-da-barra ${className}`} data-dica={rotulo} data-atalho={atalho}>
+  return <IconButton {...props} ref={ref} aria-label={nome ?? rotulo} className={`botao-da-barra ${className}`} data-dica={rotulo} data-atalho={atalho === undefined ? undefined : atalhoNoSistema(atalho)}>
     <Icon name={icone} size={20} />
   </IconButton>;
 });
@@ -91,7 +92,7 @@ export function OuvirNaBarra({ acoes }: { acoes: readonly AcaoDeOuvir[] }): Reac
     {aberto && <Popover ancora={botao} aoFechar={() => abrir(false)} rotulo="Ouvir" largura={300} className="menu-da-barra">
       <ul className="lista-de-acoes">{acoes.map((acao) => <li key={acao.id}>
         <Button variante="ghost" aria-pressed={acao.ativa ?? undefined} disabled={acao.desabilitada} onClick={() => { abrir(false); acao.executar(); }}>
-          <Icon name={acao.icone} size={18} /><span><span className="acao-rotulo">{acao.rotulo}</span>{acao.detalhe && <span className="acao-detalhe">{acao.detalhe}</span>}</span>
+          <Icon name={acao.icone} size={18} /><span><span className="acao-rotulo">{acao.rotulo}</span>{acao.detalhe && <span className="acao-detalhe">{atalhoNoSistema(acao.detalhe)}</span>}</span>
         </Button>
       </li>)}</ul>
     </Popover>}

@@ -62,6 +62,23 @@ test('falhou: oferece tentar de novo o job que falhou', async () => {
   expect(fontes.tentarDeNovo).toHaveBeenCalledWith(id(50));
 });
 
+test('I-11: Tentar de novo trava enquanto espera e, se o pedido falhar, diz por quê e libera o botão', async () => {
+  let recusar: (falha: unknown) => void = () => undefined;
+  const fontes: FontesDaSessao = {
+    obter: vi.fn(() => Promise.resolve({ resolucao: base, estado: 'falhou' as const, jobs: [{ id: id(50), tipo: 'resolver_exercicio', estado: 'falhou' }] })),
+    perguntar: vi.fn(), tentarDeNovo: vi.fn(() => new Promise<unknown>((_resolver, rejeitar) => { recusar = rejeitar; })),
+  };
+  render(<SessaoDeResolucao id={id(1)} aoFechar={() => undefined} fontes={fontes} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Tentar de novo' }));
+  const pendente = screen.getByRole('button', { name: 'Tentando…' });
+  expect((pendente as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(pendente);
+  expect(fontes.tentarDeNovo).toHaveBeenCalledTimes(1);
+  await act(async () => { recusar(new TypeError('Failed to fetch')); await Promise.resolve(); });
+  expect(await screen.findByText(/Não foi possível falar com o Margem/)).toBeDefined();
+  expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Tentar de novo' }).disabled).toBe(false);
+});
+
 test('lista: remove as que falharam de uma vez; a que está resolvendo não pode ser removida', async () => {
   const sessoes: SessaoDaApi[] = [
     { resolucao: { ...base, id: id(11) }, estado: 'resolvendo' },

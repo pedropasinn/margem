@@ -6,6 +6,7 @@
  * fazer, com o comando exato quando houver um, sem jargão do serviço.
  */
 import { pedir } from '../biblioteca/api';
+import { jaConectou } from './ponte-do-chatgpt';
 
 export interface EstadoDaInstalacao {
   versao: 1;
@@ -119,19 +120,43 @@ export interface AvisoDaInstalacao {
   tipo: 'ausente' | 'deslogado' | 'incompativel' | 'cota' | 'motor' | 'banco' | 'app';
   titulo: string;
   texto: string;
-  /** Comandos para copiar, na ordem: com Docker primeiro, depois sem Docker. */
+  /** Comandos para copiar, na ordem: com Docker primeiro, depois sem Docker. Vazio no app de computador. */
   comandos: { rotulo: string; comando: string }[];
+  /** No app de computador (U-01/W-05): o botão que resolve, no lugar dos comandos. */
+  acao?: 'conectar' | 'reconectar';
 }
 
+/** No app de computador, o que falta dentro dele volta reinstalando. */
+const REINSTALAR = 'Reinstale o Margem com o instalador de margem.dev; a biblioteca e as notas continuam onde estão.';
+
 /**
- * O aviso que a casca do app mostra quando algo impede a leitura do Codex (ou `null`). A cota só
- * aparece quando há leitura de fato esperando por ela: o estado `adiado` dos jobs.
+ * No app de computador o Codex vem com o Margem e usa a pasta de credenciais dele: nada de npm, Docker
+ * ou `codex login` no terminal (U-01/W-05). Faltando o Codex, reinstalar; deslogado, o botão.
  */
-export function avisoDaInstalacao(estado: EstadoDaInstalacao, agora: Date = new Date()): AvisoDaInstalacao | null {
-  if (!estado.banco.ok) {
-    return { tipo: 'banco', titulo: 'O Margem não está falando com o banco de dados.', comandos: [],
-      texto: 'Seus textos estão guardados, mas nada novo é salvo até o banco voltar. Reinicie o Margem; se continuar, veja os registros do serviço.' };
+function avisoDoDesktop(estado: EstadoDaInstalacao, jaConectado: boolean): AvisoDaInstalacao | null {
+  if (!estado.motor.ok) {
+    return { tipo: 'motor', titulo: 'A preparação de textos não está disponível.', comandos: [],
+      texto: `Textos novos não vão abrir até ela voltar. Feche e abra o Margem; se continuar, ${REINSTALAR.charAt(0).toLowerCase()}${REINSTALAR.slice(1)}` };
   }
+  switch (situacaoDoCodex(estado.codex)) {
+    case 'ausente':
+      return { tipo: 'ausente', titulo: 'O Codex que vem com o Margem não foi encontrado.', comandos: [],
+        texto: `Sem ele o Margem abre e guarda seus textos, mas não consegue marcá-los. ${REINSTALAR}` };
+    case 'deslogado':
+      return jaConectado
+        ? { tipo: 'deslogado', titulo: 'A conexão com o ChatGPT terminou.', comandos: [], acao: 'reconectar',
+          texto: 'As marcas são feitas com a sua conta do ChatGPT. Conecte de novo: o navegador abre, você entra na conta e volta para cá. Nada da biblioteca se perde.' }
+        : { tipo: 'deslogado', titulo: 'O Margem não está conectado à sua conta do ChatGPT.', comandos: [], acao: 'conectar',
+          texto: 'As marcas são feitas com a sua conta do ChatGPT. Conecte: o navegador abre, você entra na conta e volta para cá.' };
+    case 'incompativel':
+      return { tipo: 'incompativel', titulo: 'O Codex que vem com esta versão do Margem é antigo.', comandos: [],
+        texto: 'Atualize o Margem em Configurações → Sobre e atualizações, ou baixe a versão nova em margem.dev.' };
+    default: return null;
+  }
+}
+
+/** Docker ou servidor próprio: os comandos exatos, primeiro com Docker. */
+function avisoDoServidor(estado: EstadoDaInstalacao): AvisoDaInstalacao | null {
   if (!estado.motor.ok) {
     return { tipo: 'motor', titulo: 'A preparação de textos não está disponível.', comandos: [{ rotulo: 'Com Docker', comando: COMANDO_ATUALIZAR_DOCKER }],
       texto: 'Textos novos não vão abrir até ela voltar. Atualize e reinicie o Margem.' };
@@ -149,8 +174,23 @@ export function avisoDaInstalacao(estado: EstadoDaInstalacao, agora: Date = new 
       return { tipo: 'incompativel', titulo: 'A versão instalada do Codex é antiga para o Margem.',
         texto: `${estado.codex.versao ? `Encontramos ${estado.codex.versao}. ` : ''}Atualize o Codex e reinicie o Margem.`,
         comandos: [{ rotulo: 'Com Docker', comando: COMANDO_ATUALIZAR_DOCKER }, { rotulo: 'Sem Docker', comando: COMANDO_INSTALAR_LOCAL }] };
-    default: break;
+    default: return null;
   }
+}
+
+/**
+ * O aviso que a casca do app mostra quando algo impede a leitura do Codex (ou `null`). A cota só
+ * aparece quando há leitura de fato esperando por ela: o estado `adiado` dos jobs.
+ */
+export function avisoDaInstalacao(estado: EstadoDaInstalacao, agora: Date = new Date(), jaConectado: boolean = jaConectou()): AvisoDaInstalacao | null {
+  if (!estado.banco.ok) {
+    return { tipo: 'banco', titulo: 'O Margem não está falando com o banco de dados.', comandos: [],
+      texto: estado.origem === 'desktop'
+        ? 'Seus textos estão guardados, mas nada novo é salvo até o banco voltar. Feche e abra o Margem; se continuar, use Ajuda → Relatar um problema.'
+        : 'Seus textos estão guardados, mas nada novo é salvo até o banco voltar. Reinicie o Margem; se continuar, veja os registros do serviço.' };
+  }
+  const doCodex = estado.origem === 'desktop' ? avisoDoDesktop(estado, jaConectado) : avisoDoServidor(estado);
+  if (doCodex !== null) return doCodex;
   if (estado.cota.esgotada) {
     const volta = quandoVolta(estado.cota.volta_em, agora);
     return { tipo: 'cota', titulo: 'A cota do Codex da sua conta acabou por agora.', comandos: [],

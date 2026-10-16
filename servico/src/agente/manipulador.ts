@@ -3,7 +3,8 @@
  *
  * - Execução (fora de transação): atualiza o export da biblioteca em Markdown (`biblioteca.ts`,
  *   reaproveitado entre perguntas), monta o prompt com o histórico do fio e chama o Codex com a
- *   pasta montada só para leitura em `biblioteca/`. Mapa com Mermaid fora da régua do core ganha
+ *   pasta montada só para leitura em `biblioteca/`. Sem ferramentas (Windows, R2-4) o modelo não abre
+ *   a pasta: os trechos relevantes vão no próprio prompt (`contexto.ts`) e não há export nem anexo. Mapa com Mermaid fora da régua do core ganha
  *   **uma** chamada curta de correção; recusado de novo, sai com diagnóstico.
  * - Publicação (na transação que fecha a tentativa): cada citação é conferida no bloco real da
  *   versão atual do documento (`resolverCitacao`: ausente, ambígua ou de versão antiga vira
@@ -22,6 +23,7 @@ import { comTransacao, type Transacao } from '../db/transacao.js';
 import { lerJsonLimitado, ORCAMENTOS } from '../entrada-json.js';
 import { sha256 } from '../executor/artefato.js';
 import { registrarNaAuditoria } from '../executor/auditoria.js';
+import { modeloSemFerramentas } from '../executor/confinamento.js';
 import { prepararEntrada } from '../executor/entrada.js';
 import { falhou, type ExecucaoOk, type Executor, type ResultadoExecutor } from '../executor/tipos.js';
 import { obterVersao } from '../repos/documentos.js';
@@ -32,6 +34,7 @@ import { entradaDoJob } from '../worker/fila-postgres.js';
 import type { ContextoPublicacao } from '../worker/fila.js';
 import type { Manipulador, Tarefa } from '../worker/worker.js';
 import { exportarBiblioteca } from './biblioteca.js';
+import { contextoDaPergunta } from './contexto.js';
 import { montarPromptDoAgente, montarPromptDoMapa } from './prompt.js';
 import * as agenteRepo from './repo.js';
 
@@ -50,6 +53,11 @@ export interface ConfiguracaoDoAgente {
   diretorioBiblioteca?: string;
   /** Onde o artefato da tentativa sobrevive entre executar e publicar. Padrão: ~/.cache/margem/agente. */
   diretorioArtefatos?: string;
+  /**
+   * R2-4: o modelo roda sem ferramentas e não abre a pasta da biblioteca; o contexto vai no prompt.
+   * Padrão: o que o executor desta máquina faz (`modeloSemFerramentas`, Windows por padrão).
+   */
+  semFerramentas?: boolean;
 }
 
 type Diagnostico = MensagemDoAgenteV1['diagnosticos'][number];
@@ -154,6 +162,7 @@ export async function executarAgente(config: ConfiguracaoDoAgente, tarefa: Taref
   const inicio = Date.now();
   const { conversa_id, mensagem_id } = lerChaveDoAgente(entradaDoJob(tarefa.job.entrada).dedup_key);
   const raizDaBiblioteca = config.diretorioBiblioteca ?? join(homedir(), '.cache/margem/biblioteca');
+  const semFerramentas = config.semFerramentas ?? modeloSemFerramentas();
   const preparo = await comTransacao(config.banco, async (cliente) => {
     const conversa = await agenteRepo.obterConversa(cliente, conversa_id);
     if (!conversa) return null;
@@ -162,13 +171,16 @@ export async function executarAgente(config: ConfiguracaoDoAgente, tarefa: Taref
     const pergunta = fio[indice];
     if (!pergunta || pergunta.autor !== 'leitor') throw new Error('Pergunta inexistente na conversa.');
     if (pergunta.estado === 'respondida') return null;
+    const anteriores = fio.slice(0, indice);
+    if (semFerramentas) return { pergunta: pergunta.texto, anteriores, contexto: (await contextoDaPergunta(cliente, pergunta.texto, anteriores)).texto };
     await exportarBiblioteca(cliente, raizDaBiblioteca);
-    return { pergunta: pergunta.texto, anteriores: fio.slice(0, indice) };
+    return { pergunta: pergunta.texto, anteriores, contexto: undefined };
   });
   if (preparo === null) return falhou('cancelado', 'A conversa foi apagada ou a pergunta já tem resposta.', Date.now() - inicio);
   if (tarefa.sinal.aborted) return falhou('cancelado', 'Job cancelado.', Date.now() - inicio);
 
-  const resultado = await chamar(config, montarPromptDoAgente(preparo.pergunta, preparo.anteriores), tarefa.sinal, raizDaBiblioteca);
+  const resultado = await chamar(config, montarPromptDoAgente(preparo.pergunta, preparo.anteriores, preparo.contexto), tarefa.sinal,
+    semFerramentas ? null : raizDaBiblioteca);
   if (resultado.estado !== 'ok') return resultado;
   const bruto: unknown = await lerJsonLimitado(resultado.artefato, ORCAMENTOS.resposta);
   if (!ehSaidaDoAgente(bruto) || bruto.resposta.trim() === '') return falhou('schema', 'Resposta fora do schema do agente.', Date.now() - inicio);

@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import {
-  SERVIDOR_PADRAO, cabecalhosDeEscrita, definirVerificadorDeAcesso, enviarTexto, importacaoDaCaptura, normalizarServidor,
+  SERVIDOR_PADRAO, cabecalhosDeEscrita, cabecalhosDeLeitura, definirVerificadorDeAcesso, enderecoParaAbrir, enviarTexto, importacaoDaCaptura, normalizarServidor,
   padraoDeHost, permissaoDeHost, testarConexao,
 } from '../src/servidor';
 import type { CapturaDeTexto } from '../src/tipos';
@@ -35,6 +35,15 @@ test('normalizarServidor aceita http(s) e tira a barra final', () => {
 test('cabeçalhos: X-Margem sempre; Bearer só com token', () => {
   expect(cabecalhosDeEscrita(CONFIG)).toEqual({ 'X-Margem': 'extensao' });
   expect(cabecalhosDeEscrita({ ...CONFIG, token: ' abc ' })).toEqual({ 'X-Margem': 'abc', Authorization: 'Bearer abc' });
+  expect(cabecalhosDeLeitura(CONFIG)).toEqual({});
+  expect(cabecalhosDeLeitura({ ...CONFIG, token: ' abc ' })).toEqual({ Authorization: 'Bearer abc' });
+});
+
+test('S-01: o teste de conexão leva a chave, e a recusa por falta dela diz onde copiá-la', async () => {
+  const chamada = vi.fn((_url: string, _init?: RequestInit) => Promise.resolve(new Response(JSON.stringify({ erro: 'chave_local' }), { status: 401 })));
+  vi.stubGlobal('fetch', chamada);
+  await expect(testarConexao({ ...CONFIG, token: 'k' })).rejects.toThrow(/Chave para a extensão e o Obsidian/);
+  expect(new Headers(chamada.mock.calls[0]?.[1]?.headers).get('authorization')).toBe('Bearer k');
 });
 
 test('importacaoDaCaptura segue o ImportacaoWebV1 (sem campos extras)', () => {
@@ -101,4 +110,17 @@ test('permissão de host: locais já estão no manifesto; outro host pede só el
   expect(permissaoDeHost('https://margem.exemplo.ts.net')).toBe('https://margem.exemplo.ts.net/*');
   expect(permissaoDeHost('http://192.168.0.10:8730')).toBe('http://192.168.0.10/*');
   expect(permissaoDeHost('não é url')).toBeNull();
+});
+
+test('R2-6: no app de computador, abrir vai pelo link margem:// (a aba do navegador não tem a chave)', async () => {
+  const enviado = { documento_id: '01ARZ3NDEKTSV4RRFFQ69G5FAV', endereco: 'http://127.0.0.1:8753/documentos/01ARZ3NDEKTSV4RRFFQ69G5FAV' };
+  const saude = (corpo: unknown) => vi.fn((_url: RequestInfo | URL, _init?: RequestInit) => Promise.resolve(new Response(JSON.stringify(corpo), { status: 200 })));
+  const doApp = saude({ ok: true, servico: 'margem', instancia_id: 'i', app_de_computador: true });
+  expect(await enderecoParaAbrir(CONFIG, enviado, doApp)).toEqual({ ...enviado, endereco: 'margem://abrir/documentos/01ARZ3NDEKTSV4RRFFQ69G5FAV' });
+  expect(doApp.mock.calls[0]?.[0]).toBe('http://127.0.0.1:8753/api/saude');
+  expect(doApp.mock.calls[0]?.[1]).toMatchObject({ credentials: 'omit' });
+  // Docker, Tailscale ou um Margem antigo: o endereço http continua.
+  expect(await enderecoParaAbrir(CONFIG, enviado, saude({ ok: true, servico: 'margem', instancia_id: 'i', app_de_computador: false }))).toEqual(enviado);
+  expect(await enderecoParaAbrir(CONFIG, enviado, saude({ ok: true }))).toEqual(enviado);
+  expect(await enderecoParaAbrir(CONFIG, enviado, vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))))).toEqual(enviado);
 });

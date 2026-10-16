@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { obterEstadoDaInstalacao, type EstadoDaInstalacao } from './estado';
+import { lembrarConexao } from './ponte-do-chatgpt';
 
 export interface ValorDaInstalacao {
   /** `null` até a primeira resposta, e também quando o serviço não tem a rota (versão anterior ao J103). */
@@ -46,6 +47,7 @@ export function ProvedorDaInstalacao({ children, obter = obterEstadoDaInstalacao
     definirVerificando(true);
     try {
       const novo = await obterRef.current(renovar);
+      if (novo.codex.logado === true) lembrarConexao();
       if (vivo.current) definir(novo);
     } catch {
       // Serviço sem a rota ou fora do ar: a interface segue como antes, sem avisos da instalação.

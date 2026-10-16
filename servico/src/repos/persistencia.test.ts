@@ -6,6 +6,7 @@ import {
   hashEstrutural, hashMarcas, validarCanonico, validarExecucaoLeitura, validarMarca,
   validarParte, type CanonicoV1, type LoteRevisaoV2, type MarcaV1, type ProgressoV1,
 } from '@margem/contratos';
+import { canonicoDeTeste } from '../../testes/apoio.js';
 import { comBancoDeTeste } from '../db/conexao.js';
 import { migrar } from '../db/migrar.js';
 import { comTransacao } from '../db/transacao.js';
@@ -75,7 +76,7 @@ test('migração em banco vazio, reaplicação e dois migradores concorrentes', 
         { nome: '0023_noticias.sql' }, { nome: '0024_noticia_capa.sql' }, { nome: '0025_leitor.sql' }, { nome: '0026_primeira_execucao.sql' }, { nome: '0028_video_youtube.sql' },
         { nome: '0029_quadros_da_pessoa.sql' }, { nome: '0030_conexao_semantica.sql' }, { nome: '0031_tipo_de_texto.sql' }, { nome: '0032_modelo_d_grifos.sql' }, { nome: '0033_apagar.sql' },
         { nome: '0034_analise_do_video.sql' }, { nome: '0035_central_de_notas.sql' },
-        { nome: '0036_trabalho_em_pausa.sql' }]);
+        { nome: '0036_trabalho_em_pausa.sql' }, { nome: '0037_concessoes_perdidas.sql' }, { nome: '0038_conferencia_do_sumario.sql' }]);
     const tabelas = await banco.query<{ tablename: string }>("SELECT tablename FROM pg_tables WHERE schemaname='public'");
     expect(tabelas.rows.map(linha => linha.tablename)).toEqual(expect.arrayContaining([
       'documento','versao_texto','bloco','secao','asset','execucao_leitura','parte','marca','lote_revisao',
@@ -219,6 +220,31 @@ test('heartbeat, expiração, nova tentativa, adiamento e falha terminal', async
   await jobs.falhar(banco, job.id, adiado!.lease_token!, 'definitivo', []);
   expect(await comTransacao(banco, c => jobs.obter(c, job.id))).toMatchObject({ estado: 'falhou', error_code: 'definitivo' });
   expect(await jobs.reservar(banco, 'teste', ['ler_parte'])).toBeNull();
+}));
+
+test('R-05: a varredura de vencidas pula a linha presa pela publicação longa e não espera o lock', async () => comBanco(async banco => {
+  const preso = await enfileirar(banco);
+  const agora = new Date();
+  const concessao = await jobs.reservar(banco, 'teste', ['ler_parte'], agora, 1_000);
+  expect(concessao).toMatchObject({ id: preso.id });
+  const livre = await enfileirar(banco);
+  await jobs.reservar(banco, 'teste', ['ler_parte'], agora, 1_000);
+  let soltar = (): void => undefined;
+  let comecou = (): void => undefined;
+  const dentro = new Promise<void>(resolver => { comecou = resolver; });
+  const segurar = new Promise<void>(resolver => { soltar = resolver; });
+  // Publicação aberta noutra conexão: estendeu o prazo, mas ainda não confirmou.
+  const publicacao = jobs.publicar(banco, preso.id, concessao!.lease_token!, async () => { comecou(); await segurar; });
+  await dentro;
+  try {
+    const inicio = Date.now();
+    // Visto de fora, o vencimento antigo (agora + 1 s) já passou; a linha do `livre` não está presa.
+    expect(await jobs.expirarConcessoes(banco, new Date(agora.getTime() + 2_000))).toBe(1);
+    expect(Date.now() - inicio).toBeLessThan(2_000);
+  } finally { soltar(); }
+  await publicacao;
+  expect(await comTransacao(banco, c => jobs.obter(c, preso.id))).toMatchObject({ estado: 'ok' });
+  expect(await comTransacao(banco, c => jobs.obter(c, livre.id))).toMatchObject({ estado: 'fila', attempt: 2 });
 }));
 
 test('teto de tentativas: concessões vencidas voltam com espera crescente e esgotam em falhou', async () => comBanco(async banco => {
@@ -413,4 +439,72 @@ test('consulta de planejamento representa V1, V2 e V3 sem fingir um contrato V1'
       expect(await execucoes.listar(cliente, dados.versao.id)).toEqual([resumo]);
     });
   }
+}));
+
+test('D-05: publicação mais longa que a concessão conclui uma vez, com a batida concorrente', async () => comBanco(async banco => {
+  const canonico = canonicoDeTeste({ blocos: Array.from({ length: 1_201 }, (_, i) => ({ tipo: 'paragrafo' as const, texto: `Frase ${String(i)}.` })) });
+  const documento = await comTransacao(banco, c => documentos.criar(c, { ...canonico.documento, origem_caminho: 'fixtures/longo.txt' }));
+  await enfileirar(banco, { tipo: 'canonizar', documento_id: documento.id });
+  const job = (await jobs.reservar(banco, 'teste', ['canonizar'], new Date(), 1_000))!;
+  const batidas: Promise<void>[] = [];
+  await jobs.publicar(banco, job.id, job.lease_token!, async c => {
+    // Batida no meio da publicação: não espera a linha presa nem derruba a tentativa.
+    batidas.push(jobs.heartbeat(banco, job.id, job.lease_token!, 1_000));
+    await documentos.criarVersao(c, documento.id, canonico);
+    await new Promise(resolver => setTimeout(resolver, 1_500));
+  });
+  await Promise.all(batidas);
+  expect(await comTransacao(banco, c => jobs.obter(c, job.id))).toMatchObject({ estado: 'ok', lease_token: null });
+  expect(await quantidade(banco, 'bloco')).toBe(1_201);
+  expect((await banco.query("SELECT 1 FROM evento_job WHERE job_id=$1 AND tipo='publicado'", [job.id])).rowCount).toBe(1);
+  // A ordem e o conteúdo dos blocos inseridos em lote são os do canônico.
+  const versao = (await banco.query<{ id: string }>('SELECT id FROM versao_texto WHERE documento_id=$1', [documento.id])).rows[0]!;
+  const blocos = (await banco.query<{ id: string; ordem: string; texto: string; origens: unknown }>(
+    'SELECT id, ordem::text, texto, origens FROM bloco WHERE versao_id=$1 ORDER BY bloco.ordem', [versao.id])).rows;
+  expect(blocos.map(b => ({ id: b.id, ordem: Number(b.ordem), texto: b.texto, origens: b.origens })))
+    .toEqual(canonico.blocos.map(b => ({ id: b.id, ordem: b.ordem, texto: b.texto, origens: b.origens })));
+}));
+
+test('D-05: a publicação ainda recusa token errado; prazo próprio menor não encurta a concessão', async () => comBanco(async banco => {
+  const dados = await preparar(banco);
+  await enfileirar(banco, { versao_id: dados.versao.id });
+  const { job, token } = await reservar(banco);
+  await expect(jobs.publicar(banco, job.id, ulid(), async () => {})).rejects.toBeInstanceOf(jobs.ConcessaoPerdida);
+  await expect(jobs.publicar(banco, job.id, token, async c => {
+    await marcas.publicarMarcas(c, dados.versao.id, [dados.marca]);
+    await new Promise(resolver => setTimeout(resolver, 300));
+  }, undefined, undefined, 100)).resolves.toBeUndefined();
+  // Prazo próprio menor que a concessão restante não a encurta (greatest), e a publicação conclui.
+  expect(await comTransacao(banco, c => jobs.obter(c, job.id))).toMatchObject({ estado: 'ok' });
+}));
+
+test('D-09: cota esgotada segura os jobs do Codex até o retorno; a canonização segue', async () => comBanco(async banco => {
+  const agora = new Date();
+  const volta = new Date(agora.getTime() + 3_600_000);
+  const primeiro = await enfileirar(banco);
+  const segundo = await enfileirar(banco, { tipo: 'revisar_consistencia' });
+  const local = await enfileirar(banco, { tipo: 'canonizar' });
+  const reservado = (await jobs.reservar(banco, 'teste', ['ler_parte'], agora))!;
+  expect(reservado.id).toBe(primeiro.id);
+  await jobs.falhar(banco, primeiro.id, reservado.lease_token!, 'cota', [{ nivel: 'aviso', codigo: 'cota', mensagem: 'Cota' }], volta);
+  expect(await jobs.reservar(banco, 'teste', ['ler_parte', 'revisar_consistencia', 'canonizar'], agora)).toMatchObject({ id: local.id });
+  expect(await jobs.reservar(banco, 'teste', ['ler_parte', 'revisar_consistencia'], agora)).toBeNull();
+  // No horário de retorno, os outros voltam.
+  const depois = await jobs.reservar(banco, 'teste', ['revisar_consistencia'], volta);
+  expect(depois).toMatchObject({ id: segundo.id });
+}));
+
+test('D-10: adiar pela cota não gasta as tentativas; a concessão perdida ainda tem as suas', async () => comBanco(async banco => {
+  const criado = await enfileirar(banco);
+  let agora = new Date();
+  for (let vez = 0; vez < 3; vez += 1) {
+    const job = (await jobs.reservar(banco, 'teste', ['ler_parte'], agora))!;
+    agora = new Date(agora.getTime() + 60_000);
+    await jobs.falhar(banco, job.id, job.lease_token!, 'cota', [{ nivel: 'aviso', codigo: 'cota', mensagem: 'Cota' }], agora);
+  }
+  const job = (await jobs.reservar(banco, 'teste', ['ler_parte'], agora, 1_000))!;
+  expect(job.attempt).toBe(4);
+  expect(await jobs.expirarConcessoes(banco, new Date(agora.getTime() + 2_000))).toBe(1);
+  // Primeira perda: volta à fila com a primeira espera, e a tentativa seguinte tem pasta própria (attempt 5).
+  expect(await comTransacao(banco, c => jobs.obter(c, criado.id))).toMatchObject({ estado: 'fila', attempt: 5, concessoes_perdidas: 1 });
 }));

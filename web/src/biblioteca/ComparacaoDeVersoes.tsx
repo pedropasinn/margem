@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { mensagemDeErro } from './erros';
 import type { PropostaDeAncora } from '@margem/core';
 import { pedir } from './api';
 import type { VersaoResumida } from './tipos';
@@ -22,7 +23,7 @@ export function ComparacaoDeVersoes({ versoes }: { versoes: VersaoResumida[] }) 
     definir(null); falhar(null);
     void pedir<Relatorio>(`/api/versoes/${antes}/comparar/${depois}?pagina=${pagina}`).then(
       r => { if (ativo) definir(r); },
-      e => { if (ativo) falhar(e instanceof Error ? e.message : 'Não foi possível comparar.'); });
+      e => { if (ativo) falhar(mensagemDeErro(e, 'Não foi possível comparar.')); });
     return () => { ativo = false; };
   }, [antes, depois, pagina]);
   const seletor = (rotulo: string, valor: string, escolher: (id: string) => void) => <label>{rotulo}<select value={valor} onChange={e => { escolher(e.target.value); escolherPagina(0); }}>{versoes.map(v => <option key={v.id} value={v.id}>Versão {v.numero} · {v.motor}</option>)}</select></label>;

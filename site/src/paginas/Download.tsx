@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Plataformas, RequisitosGerais } from '../componentes/Baixar';
 import { Icone, type NomeDoIcone } from '../componentes/Icone';
 import { Cabecalho, Rodape } from '../componentes/Moldura';
-import { CONFIG } from '../config';
+import { CONFIG, PARA_OS_SISTEMAS } from '../config';
 
 const N = CONFIG.nome;
 
@@ -28,7 +28,7 @@ export function Download(): ReactNode {
           <p className="sobretitulo">Versão {CONFIG.versao} · {CONFIG.dataDaVersao}</p>
           <h1 id="download-titulo">Baixe o {N}.</h1>
           <p className="docs-resumo">
-            Para Windows e Linux; macOS em breve. Gratuito, de código aberto e com tudo dentro: instale, escolha a pasta da biblioteca e comece a ler.
+            {PARA_OS_SISTEMAS} Gratuito, de código aberto e com tudo dentro: instale, escolha a pasta da biblioteca e comece a ler.
           </p>
           <Plataformas detalhado />
           <RequisitosGerais />
@@ -53,11 +53,15 @@ export function Download(): ReactNode {
         <section className="container download-secao" aria-labelledby="aviso-titulo">
           <h2 id="aviso-titulo">Na primeira vez que você abrir</h2>
           <p className="ideia-texto">
-            O {N} ainda não tem assinatura digital da Microsoft. Por isso, o Windows pode avisar que o app é de um
-            desenvolvedor desconhecido. É esperado: a instalação mostra como seguir em cada sistema.
+            {CONFIG.macPublicado
+              ? <>O {N} ainda não tem assinatura digital da Microsoft nem da Apple. Por isso, o Windows e o macOS avisam, na
+                primeira vez, que o app é de um desenvolvedor desconhecido. É esperado: a instalação mostra como seguir em cada sistema.</>
+              : <>O {N} ainda não tem assinatura digital da Microsoft. Por isso, o Windows pode avisar que o app é de um
+                desenvolvedor desconhecido. É esperado: a instalação mostra como seguir em cada sistema.</>}
           </p>
           <ul className="fichas-doc" role="list" aria-label="Avisos por sistema">
             <li><a href="/docs/instalacao/#windows">Windows: SmartScreen</a></li>
+            {CONFIG.macPublicado && <li><a href="/docs/instalacao/#macos">macOS: Abrir Mesmo Assim</a></li>}
             <li><a href="/docs/instalacao/#linux">Linux: AppImage executável</a></li>
           </ul>
         </section>

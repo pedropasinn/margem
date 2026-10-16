@@ -107,3 +107,21 @@ export function origensDeExtensao(): string[] {
     throw new Error(`MARGEM_EXTENSOES inválida: "${item}" não é id de extensão do Chrome nem UUID do Firefox.`);
   });
 }
+
+/** Tamanho mínimo da chave local: o app de computador gera 32 bytes aleatórios em base64url (43 caracteres). */
+const CHAVE_LOCAL_MINIMA = 32;
+
+/**
+ * S-01 · Chave local da instalação (`MARGEM_CHAVE_LOCAL`), que o app de computador gera e guarda na
+ * pasta de segredos do app (fora da biblioteca). Com ela, a API exige a chave nas leituras e escritas
+ * (`chave-local.ts`): loopback é dividido por todas as contas do computador. Sem ela (desenvolvimento,
+ * Docker, um servidor pessoal), nada muda. Chave curta demais derruba a API em vez de valer fraca.
+ */
+export function chaveLocal(ambiente: NodeJS.ProcessEnv = process.env): string | undefined {
+  const bruta = ambiente.MARGEM_CHAVE_LOCAL?.trim() ?? '';
+  if (bruta === '') return undefined;
+  if (bruta.length < CHAVE_LOCAL_MINIMA || !/^[A-Za-z0-9_-]+$/u.test(bruta)) {
+    throw new Error(`MARGEM_CHAVE_LOCAL inválida: use ao menos ${String(CHAVE_LOCAL_MINIMA)} caracteres de A–Z, a–z, 0–9, _ ou -.`);
+  }
+  return bruta;
+}

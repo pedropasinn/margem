@@ -7,6 +7,7 @@ import type {
   ConexaoV2, ConversaV2, DocumentoDoIndiceObsidianV1, Id, IndiceObsidianV1, MarcasDaExportacao, MarcaV2,
 } from '@margem/contratos';
 import type { Transacao } from '../db/transacao.js';
+import { secoesComTitulosApresentados } from '../sumario/conferencia.js';
 import * as anotacoesRepo from '../repos/anotacoes.js';
 import * as camadasRepo from '../repos/camadas.js';
 import * as conexoesRepo from '../repos/conexoes.js';
@@ -106,7 +107,8 @@ async function entradaDaLinha(cliente: Transacao, linha: LinhaDoDocumento & { ve
       criado_em: linha.criado_em, fonte_url: linha.fonte_url,
     },
     versao_id: versao.id,
-    secoes: versao.canonico.secoes,
+    // R3-8: os títulos do sumário sugerido em uso, nas mesmas seções do canônico.
+    secoes: await secoesComTitulosApresentados(cliente, versao.id, versao.canonico.secoes),
     blocos: versao.canonico.blocos,
     marcas, anotacoes, conversas, conexoes, etiquetas,
     rotulos: rotulos(),

@@ -23,10 +23,13 @@ import { BuscaNoDocumento, type Ocorrencia } from '../leitor/BuscaNoDocumento';
 import { TourDoLeitor, TourDoPlayer, type SituacaoDasMarcas } from '../onboarding/TourDoLeitor';
 import { usarOnboarding } from '../onboarding/ContextoDoOnboarding';
 import { pedirFlashcardsComAviso } from '../flashcards/api';
+import { LimiteDeErro } from '../ui/LimiteDeErro';
+import { mensagemDeErro } from './erros';
 
 export interface FontesDaLeitura {
   documento: (id: string) => Promise<DetalheDoDocumento>;
-  arvore: (versaoId: string) => Promise<ArvoreDaVersao>;
+  /** `bloco`: a árvore traz o capítulo dele (`capitulo_do_bloco`), para a retomada. */
+  arvore: (versaoId: string, bloco?: string) => Promise<ArvoreDaVersao>;
   capitulo: (versaoId: string, secaoId: string, camada?: string) => Promise<SnapshotDoCapitulo>;
   progresso: (documentoId: string) => Promise<{ progresso: ProgressoPersistido | null }>;
   gravarProgresso: (documentoId: string, progresso: ProgressoV1) => Promise<RespostaDoProgresso>;
@@ -52,9 +55,15 @@ const TITULOS = new Set(['capitulo', 'secao', 'legenda', 'epigrafe']);
 /** A seção não tem texto corrido, só títulos e legendas. */
 function soTitulos(capitulo: SnapshotDoCapitulo): boolean { return capitulo.blocos.every((bloco) => TITULOS.has(bloco.tipo)); }
 
-/** Qual capítulo abrir: o pedido na URL, o do progresso, ou o primeiro. */
-function capituloInicial(arvore: ArvoreDaVersao, pedido: string | undefined, progresso: ProgressoPersistido | null): string | null {
-  if (pedido !== undefined && arvore.capitulos.some((capitulo) => capitulo.id === pedido)) return pedido;
+/**
+ * Qual capítulo abrir: o pedido na URL; senão o da posição salva (I-04: o capítulo que contém a âncora, já
+ * conferida a versão); senão o primeiro não concluído, ou o primeiro.
+ */
+export function capituloInicial(arvore: ArvoreDaVersao, pedido: string | undefined, progresso: ProgressoPersistido | null): string | null {
+  const existe = (id: string | null | undefined): id is string => typeof id === 'string' && arvore.capitulos.some((capitulo) => capitulo.id === id);
+  // R3-2: um capítulo que o sumário sugerido escondeu ainda abre quando pedido por link (busca, grifo).
+  if (pedido !== undefined && (existe(pedido) || arvore.capitulos_ocultos?.includes(pedido) === true)) return pedido;
+  if (existe(arvore.capitulo_do_bloco)) return arvore.capitulo_do_bloco;
   const concluidos = new Set(progresso?.capitulos_concluidos ?? []);
   const pendente = arvore.capitulos.find((capitulo) => !concluidos.has(capitulo.id));
   return pendente?.id ?? arvore.capitulos[0]?.id ?? null;
@@ -73,6 +82,8 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
   const [snapshot, definirSnapshot] = useState<SnapshotDoCapitulo | null>(null);
   const [aviso, definirAviso] = useState<string | null>(null);
   const [erro, definirErro] = useState<string | null>(null);
+  /** "Tentar novamente" depois de uma falha ao abrir: refaz a abertura. */
+  const [tentativa, definirTentativa] = useState(0);
   const [concluidos, definirConcluidos] = useState<readonly Id[]>([]);
   const [autor, definirAutor] = useState<string | null>(null);
   const [tipo, definirTipo] = useState<{ icone: string; rotulo: string } | null>(null);
@@ -94,12 +105,15 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
   useEffect(() => {
     let vivo = true;
     async function abrir(): Promise<void> {
-      const documento = await fontes.documento(documento_id);
+      const [documento, progresso] = await Promise.all([fontes.documento(documento_id), fontes.progresso(documento_id)]);
       const versaoId = versaoDeDestino.current?.documentoId === documento_id ? versaoDeDestino.current.versaoId : documento.versao_id;
       if (versaoId === null) throw new Error('Este documento ainda não tem texto.');
-      const [carregada, progresso] = await Promise.all([
-        fontes.arvore(versaoId), fontes.progresso(documento_id),
-      ]);
+      // Sem capítulo pedido, a posição salva diz onde reabrir, se for desta versão (uma âncora de outra
+      // versão não está nestes blocos): a árvore responde em que capítulo está o bloco dela.
+      const salvo = progresso.progresso;
+      const blocoSalvo = secao_id === undefined && salvo !== null && salvo.versao_id === versaoId && salvo.ancora.versao_id === versaoId
+        ? salvo.ancora.bloco_id : undefined;
+      const carregada = await fontes.arvore(versaoId, blocoSalvo);
       if (!vivo) return;
       definirAutor(documento.autor);
       definirEstadoDoDocumento(documento.estado);
@@ -117,8 +131,8 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
       };
       let capitulo = await carregar(escolhido);
       // Sem capítulo pedido, uma seção só de títulos (a folha de rosto do livro, "Capítulo 1") não é
-      // onde a leitura começa: abre a seguinte, onde está o texto e as marcas.
-      if (secao_id === undefined) {
+      // onde a leitura começa: abre a seguinte, onde está o texto e as marcas. A posição salva vale como está.
+      if (secao_id === undefined && escolhido !== carregada.capitulo_do_bloco) {
         let indice = carregada.capitulos.findIndex((item) => item.id === escolhido);
         while (soTitulos(capitulo) && indice >= 0 && indice < carregada.capitulos.length - 1) {
           const seguinte = carregada.capitulos[++indice];
@@ -136,10 +150,11 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
       if (vivo) { definirErro(null); definirSnapshot({ ...capitulo, modos: modos.modos }); }
     }
     abrir().catch((falha: unknown) => {
-      if (vivo) definirErro(falha instanceof Error ? falha.message : 'falha ao abrir o texto');
+      // U-04: nada de `falha_interna` ou "Failed to fetch" na tela; o código fica no erro e no registro.
+      if (vivo) definirErro(mensagemDeErro(falha, 'Não foi possível carregar este texto. Tente novamente.'));
     });
     return () => { vivo = false; requisicao.current++; };
-  }, [documento_id, secao_id, fontes, ir]);
+  }, [documento_id, secao_id, fontes, ir, tentativa]);
 
   const atualizarCapitulo = useCallback(async (camada?: string) => {
     const atual = snapshotRef.current;
@@ -151,17 +166,17 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
   const navegarAncora = useCallback((ancora: AncoraV1) => {
     void (async () => {
       const arvore = await fontes.arvore(ancora.versao_id);
-      for (const capitulo of arvore.capitulos) {
-        const dados = await fontes.capitulo(ancora.versao_id, capitulo.id);
+      for (const capitulo of [...arvore.capitulos.map((item) => item.id), ...(arvore.capitulos_ocultos ?? [])]) {
+        const dados = await fontes.capitulo(ancora.versao_id, capitulo);
         if (dados.blocos.some((b) => b.id === ancora.bloco_id)) {
           versaoDeDestino.current = { documentoId: arvore.documento_id, versaoId: ancora.versao_id };
           definirDestino(ancora);
-          ir({ nome: 'leitura', documento_id: arvore.documento_id, secao_id: capitulo.id });
+          ir({ nome: 'leitura', documento_id: arvore.documento_id, secao_id: capitulo });
           return;
         }
       }
       throw new Error('O trecho não está nos capítulos disponíveis.');
-    })().catch((falha: unknown) => definirAviso(falha instanceof Error ? falha.message : 'Não foi possível abrir o trecho.'));
+    })().catch((falha: unknown) => definirAviso(mensagemDeErro(falha, 'Não foi possível abrir o trecho.')));
   }, [fontes, ir]);
 
   // Shift J no PDF, para uma página de outro capítulo: acha o capítulo pelas páginas dele e o abre ali.
@@ -225,7 +240,7 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
         }
       }
       throw new Error(`A página ${String(pagina)} não está em nenhum capítulo.`);
-    })().catch((falha: unknown) => definirAviso(falha instanceof Error ? falha.message : 'Não foi possível abrir a página.'));
+    })().catch((falha: unknown) => definirAviso(mensagemDeErro(falha, 'Não foi possível abrir a página.')));
   }, [fontes, ir, documento_id]);
 
   // Vindo de fora com `?bloco=`: espera a retomada do progresso (que também rola ao abrir), como a intenção.
@@ -290,7 +305,12 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
   { id: 'criar-flashcards', grupo: 'Estudo', rotulo: 'Criar flashcards deste capítulo', palavras: 'cartões revisão anki memorizar repetição espaçada', executar: criarFlashcards },
   { id: 'flashcards-do-livro', grupo: 'Estudo', rotulo: 'Flashcards do livro (estudar)', palavras: 'cartões revisão anki memorizar', executar: () => ir({ nome: 'flashcards', documento_id }) }],
   [ir, documento_id, criarFlashcards]);
-  if (erro !== null) return <div className="empty" role="alert"><h2>Não foi possível abrir a leitura</h2><p>{erro}</p></div>;
+  if (erro !== null) return <div className="empty" role="alert"><h2>Não foi possível abrir a leitura</h2><p>{erro}</p>
+    <p className="limite-de-erro-acoes">
+      <Button variante="primario" onClick={() => { definirErro(null); definirTentativa((n) => n + 1); }}>Tentar novamente</Button>
+      <a className="ui-button ui-ghost" href="/" onClick={(evento) => { evento.preventDefault(); ir({ nome: 'biblioteca' }); }}>Voltar à biblioteca</a>
+    </p>
+  </div>;
   if (arvore === null || snapshot === null || snapshot.documento_id !== documento_id) return <Esqueleto />;
 
   const Controlador = snapshot.camadas ? EstudoDoCapitulo : ReaderController;
@@ -367,6 +387,9 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
       {aviso && <p className="aviso-estudo" role="status">{aviso}</p>}
       {buscaAberta && <BuscaNoDocumento documentoId={documento_id} campoRef={campoDaBusca} aoIr={irAoAchado} aoFechar={() => abrirBusca(false)} />}
       {midia ? <TourDoPlayer video={midia === 'video'} ir={ir} /> : <TourDoLeitor situacao={situacao} pdf={usaPdf(snapshot)} ir={ir} />}
+      {/* I-08: uma exceção ao desenhar o leitor fica aqui, com saída, sem derrubar o app. Trocar de
+          capítulo esquece a falha sem desmontar o controlador, que guarda a pilha de desfazer (R-07). */}
+      <LimiteDeErro resetKey={snapshot.secao.id} titulo="Não foi possível mostrar este texto." aoVoltar={() => ir({ nome: 'biblioteca' })}>
       <Controlador
         voltar={{ href: `/documentos/${documento_id}`, rotulo: 'Voltar ao documento', aoVoltar: () => ir({ nome: 'documento', documento_id }) }}
         comandos={comandosDasNotas}
@@ -430,6 +453,7 @@ export function Ler({ documento_id, secao_id, bloco: blocoPedido, ir, fontes = F
           </nav>
         )}
       />
+      </LimiteDeErro>
     </div>
     </ContextoDaForma.Provider>
   );

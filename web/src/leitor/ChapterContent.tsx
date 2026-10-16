@@ -1,12 +1,13 @@
 import { agruparPor } from './indices';
 import type { MarcaDoLeitor } from './f2';
 const SEM_MARCAS: readonly MarcaDoLeitor[] = [];
-import { Fragment, useMemo, useRef, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { CamadaDeMarcas } from '../ui/marcador/CamadaDeMarcas';
 import { usarAparencia } from './ContextoDeAparencia';
 import type { Bloco, Id } from '@margem/contratos';
 import { AnnotatedText } from './AnnotatedText';
 import { BlockRenderer } from './BlockRenderer';
+import { NotaAberta, textoDaNota } from './NotaDeRodape';
 import type { SnapshotCapitulo } from './tipos';
 
 type Grupo = { tipo: 'lista'; blocos: Bloco[] } | { tipo: 'solto'; bloco: Bloco };
@@ -41,10 +42,32 @@ export function ChapterContent({ snapshot, ativa = null, abertura }: { snapshot:
   const grupos = useMemo(() => agrupar(blocos.filter(bloco => bloco !== tituloDaSecao)), [blocos, tituloDaSecao]);
   const marcasDo = (bloco: Bloco) => porBloco.get(bloco.id) ?? SEM_MARCAS;
   const ativaDo = (bloco: Bloco) => bloco.id === blocoAtivo ? ativa : null;
+  // Nota de rodapé aberta no lugar: a chamada (`a[data-rodape]`, do `AnnotatedText`) alterna a nota.
+  const [nota, abrirNota] = useState<{ id: Id; chamada: HTMLElement } | null>(null);
+  useEffect(() => { abrirNota(null); }, [snapshot.versao_id, secao.id]);
+  useEffect(() => {
+    if (!nota) return;
+    nota.chamada.setAttribute('aria-expanded', 'true');
+    return () => nota.chamada.setAttribute('aria-expanded', 'false');
+  }, [nota]);
+  const aoClicar = (evento: MouseEvent<HTMLElement>) => {
+    const chamada = evento.target instanceof Element ? evento.target.closest<HTMLElement>('a[data-rodape]') : null;
+    const id = chamada?.dataset['rodape'];
+    if (!chamada || id === undefined) return;
+    evento.preventDefault();
+    abrirNota((atual) => atual?.chamada === chamada ? null : { id, chamada });
+  };
+  const notaAtual = useRef(nota);
+  notaAtual.current = nota;
+  const fecharNota = useCallback((devolverFoco: boolean) => {
+    const atual = notaAtual.current;
+    abrirNota(null);
+    if (atual && devolverFoco) atual.chamada.focus({ preventScroll: true });
+  }, []);
 
 
   return (
-    <article ref={artigo} data-estilo={preferencias.estilo} className="capitulo" aria-labelledby="titulo-da-secao" {...(snapshot.idioma ? { lang: snapshot.idioma } : {})}>
+    <article ref={artigo} data-estilo={preferencias.estilo} className="capitulo" aria-labelledby="titulo-da-secao" onClick={aoClicar} {...(snapshot.idioma ? { lang: snapshot.idioma } : {})}>
       {tituloDaSecao === undefined ? null : (
         <h1
           className="titulo-da-secao"
@@ -68,6 +91,8 @@ export function ChapterContent({ snapshot, ativa = null, abertura }: { snapshot:
           <Fragment key={grupo.bloco.id}>{imagens(grupo.bloco, 'antes')}<BlockRenderer bloco={grupo.bloco} formatacao={snapshot.formatacao?.[grupo.bloco.id]} marcas={marcasDo(grupo.bloco)} assets={assets} ativa={ativaDo(grupo.bloco)} />{imagens(grupo.bloco, 'depois')}</Fragment>
         ),
       )}
+      {nota && artigo.current && <NotaAberta key={nota.id} versaoId={snapshot.versao_id} nota={nota.id} chamada={nota.chamada} artigo={artigo.current}
+        local={textoDaNota(blocos, nota.id)} aoFechar={fecharNota} />}
       <CamadaDeMarcas artigo={artigo} marcas={marcas} ativa={ativa} preferencias={preferencias} pessoais={snapshot.tracosPessoais} guia={snapshot.guia ?? null} />
     </article>
   );

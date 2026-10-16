@@ -18,6 +18,9 @@
  *   plataforma for a desta máquina, constrói com `motor/empacotar/construir.py` (Python 3.12 no PATH ou
  *   em MARGEM_PYTHON_CONSTRUCAO); noutra plataforma, monta sem o motor e avisa (cada CI constrói o seu).
  *
+ * - macOS (J154): no fim, todo Mach-O da pasta ganha assinatura ad hoc, de dentro para fora
+ *   (recursos/assinar-mac.mjs); só montando num Mac.
+ *
  * Extração: `.gz` pelo zlib do Node; `.tar.gz`, `.txz` e `.zip` pelo `tar` do sistema (bsdtar no macOS e
  * no Windows; GNU tar + xz no Linux, com `unzip` ou `python3 -m zipfile` para zip).
  * Rede só aqui; os testes (tools/tests/recursos-desktop.test.mjs) não baixam nada.
@@ -32,6 +35,7 @@ import { Readable } from 'node:stream';
 import { createGunzip } from 'node:zlib';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { assinarAdHoc } from './assinar-mac.mjs';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = resolve(AQUI, '..', '..');
@@ -209,6 +213,10 @@ async function montarCodex(arquivo, alvo, plataforma, temporario) {
   if (existsSync(join(pasta, 'codex-package.json'))) await copyFile(join(pasta, 'codex-package.json'), join(alvo, 'codex-package.json'));
   const binario = join(alvo, 'bin', exe(plataforma, 'codex'));
   if (!existsSync(binario)) throw new Error(`Pacote do Codex sem ${binario}`);
+  // O tar preserva os modos, mas não custa garantir (codex, codex-code-mode-host no macOS, rg).
+  for (const sub of ['bin', 'codex-path']) {
+    for (const nome of existsSync(join(pasta, sub)) ? await readdir(join(pasta, sub)) : []) await executavel(join(alvo, sub, nome), plataforma);
+  }
 }
 
 /** Build do BtbN (`ffmpeg-<versão>-<alvo>-gpl-<ramo>.tar.xz`/`.zip`): só `bin/ffmpeg`, `bin/ffprobe` e a licença. */
@@ -266,6 +274,12 @@ export async function enxugarPostgres(destino, plataforma) {
   for (const nome of existsSync(join(destino, 'lib')) ? await readdir(join(destino, 'lib')) : []) {
     if (/\.(a|lib)$/u.test(nome) || /^lib(ecpg|pgtypes)/u.test(nome)) await remover(join(destino, 'lib', nome));
   }
+  // Linguagens procedurais Perl, Python e Tcl (e as transformações delas): o Margem só usa plpgsql, e no
+  // macOS esses módulos apontam para /Library/edb/languagepack, que não existe na máquina da pessoa.
+  const modulos = join(destino, 'lib', 'postgresql');
+  for (const nome of existsSync(modulos) ? await readdir(modulos) : []) {
+    if (/pl(perl|python\d*|tcl)/u.test(nome)) await remover(join(modulos, nome));
+  }
   if (ehWindows(plataforma)) {
     const manter = new Set(['initdb.exe', 'pg_ctl.exe', 'postgres.exe']);
     for (const nome of await readdir(join(destino, 'bin'))) {
@@ -308,6 +322,17 @@ async function montarMotor(alvo, plataforma, opcoes, log) {
   await cp(origem, join(alvo, 'motor'), { recursive: true, verbatimSymlinks: true });
   await executavel(join(alvo, 'motor', exe(plataforma, 'margem-motor')), plataforma);
   return true;
+}
+
+/**
+ * macOS (J154): todo Mach-O da pasta (Postgres, Codex, yt-dlp, FFmpeg, motor) ganha assinatura ad hoc,
+ * de dentro para fora (recursos/assinar-mac.mjs). Só dá para fazer num Mac (`codesign`): montando para o
+ * macOS noutra máquina, avisa; o CI monta cada um no runner do próprio sistema.
+ */
+async function assinarNoMac(alvo, plataforma, log) {
+  if (!plataforma.startsWith('darwin')) return;
+  if (platform() !== 'darwin') { log('  assinatura ad hoc: AVISO: pulada (só montando no macOS, com o codesign)'); return; }
+  await assinarAdHoc(alvo, { log });
 }
 
 /** Esvazia a pasta da plataforma (seguindo o link simbólico, se for um) e devolve o caminho real. */
@@ -353,6 +378,7 @@ export async function montar(versoes, plataforma, opcoes, log = console.log) {
       log(`  montado     ${arquivo.componente}: ${arquivo.nome}`);
     }
     const comMotor = await montarMotor(alvo, plataforma, opcoes, log);
+    await assinarNoMac(alvo, plataforma, log);
     await copyFile(join(AQUI, 'TERCEIROS.md'), join(alvo, 'TERCEIROS.md'));
     const manifesto = {
       versao: 1, plataforma, montado_em: new Date().toISOString(), motor: comMotor,

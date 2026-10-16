@@ -8,6 +8,7 @@ import './painel.css';
 import './barra.css';
 import { PercorrerDestaques, type DestaqueNavegavel, type NavegacaoDeDestaques } from './NavegadorDeDestaques';
 import { Button, Popover } from '../ui/Primitives';
+import { atalhoNoSistema } from '../ui/teclas';
 import { chaveDaFuncaoDaMarca, modoDaMarca, usarFuncoes } from './ContextoDosModos';
 import type { SinalDeDificuldade } from './dificuldades';
 import { desenhaMarca, grifoNoTexto, marcasVisiveis } from './f2';
@@ -28,7 +29,7 @@ import { NoteSheet } from './NoteSheet';
 import { BalaoDaMarca, type FuncaoDoBalao } from './BalaoDaMarca';
 import { ConfirmarApagar } from '../apagar/ConfirmarApagar';
 import { apagarGrifoDeQualquerUm } from '../apagar/api';
-import { ContextoDeDesfazer, usePilhaDeDesfazer } from './desfazer';
+import { ContextoDeDesfazer, EVENTO_DESFAZER_DO_MENU, ehDesfazerDoSistema, usePilhaDeDesfazer } from './desfazer';
 import { ancoraDoBloco, faixaDaAncora } from './compreensao/geometria';
 import { atalhoDeUmaTeclaDesligado, blocosNavegaveis, digitando, vizinho, type Comando } from './teclado/comandos';
 import { FocoDoParagrafo } from './teclado/FocoDoParagrafo';
@@ -467,8 +468,9 @@ export function ReaderController({
       controlador.fechar(true);
       return;
     }
-    const espacoNoNumero = evento.key === ' ' && evento.target instanceof Element && evento.target.matches('.nota-numero[role="button"]');
-    if (evento.key !== 'Enter' && !espacoNoNumero) return;
+    // Espaço também ativa os alvos que se apresentam como botão: o número da nota e o alvo do grifo no PDF (U-09).
+    const espacoNoBotao = evento.key === ' ' && evento.target instanceof Element && evento.target.matches('.nota-numero[role="button"], .pdf-alvos [role="button"]');
+    if (evento.key !== 'Enter' && !espacoNoBotao) return;
     if (evento.target instanceof Element && evento.target.closest(SELETOR_DE_CONTROLE) !== null) return;
     const alvo = alvoDaInteracao(evento.target, coordenadasDoEvento(evento)?.x, coordenadasDoEvento(evento)?.y);
     if (alvo === null) return;
@@ -494,12 +496,24 @@ export function ReaderController({
       const nota = (snapshot.anotacoes ?? []).find((anotacao) => anotacao.marca_id === marca.id)?.texto;
       definirMarcas((atuais) => atuais.filter((item) => item.id !== marca.id));
       edicao.apagarGrifo(marca.id).then(() => {
+        // Restaurar tem etapas (grifo, etiquetas, nota): as já feitas ficam guardadas, e uma nova tentativa
+        // depois de uma falha no meio não recria o grifo nem repete a etiqueta (U-06, I-10).
+        let recriada: MarcaDoLeitor | null = null;
+        const etiquetadas = new Set<string>();
+        let notaRestaurada = false;
         pilha.registrar({ rotulo: nota ? 'Grifo e anotação removidos' : 'Grifo apagado', desfazer: async () => {
-          const nova = await edicao.criarGrifo(marca.ancora, marca.funcao, 'modo' in marca ? marca.modo : undefined);
-          apelidos.current.set(marca.id, nova.id);
-          inserir(nova);
-          if (edicao.etiquetar) for (const nome of etiquetas) await edicao.etiquetar(nova.id, nome);
-          if (nota && edicao.restaurarNota) await edicao.restaurarNota(nova.id, nota);
+          if (recriada === null) {
+            recriada = await edicao.criarGrifo(marca.ancora, marca.funcao, 'modo' in marca ? marca.modo : undefined);
+            apelidos.current.set(marca.id, recriada.id);
+            inserir(recriada);
+          }
+          const nova = recriada;
+          if (edicao.etiquetar) for (const nome of etiquetas) {
+            if (etiquetadas.has(nome)) continue;
+            await edicao.etiquetar(nova.id, nome);
+            etiquetadas.add(nome);
+          }
+          if (nota && edicao.restaurarNota && !notaRestaurada) { await edicao.restaurarNota(nova.id, nota); notaRestaurada = true; }
           aoMudarMarcas?.();
         } });
         aoMudarMarcas?.();
@@ -767,6 +781,10 @@ export function ReaderController({
       if (pdf && (evento.ctrlKey || evento.metaKey) && !evento.altKey && ['+', '=', '-', '_', '0'].includes(evento.key)) {
         evento.preventDefault(); zoom(evento.key === '0' ? 0 : evento.key === '-' || evento.key === '_' ? -1 : 1); return;
       }
+      // Ctrl/⌘ Z fora dos campos: a pilha do leitor (U-05). Num campo, fica o desfazer do próprio campo.
+      if (ehDesfazerDoSistema(evento) && !evento.defaultPrevented && !digitando(evento.target) && document.querySelector('[aria-modal="true"]') === null) {
+        evento.preventDefault(); desfazer(); return;
+      }
       if (evento.defaultPrevented || evento.ctrlKey || evento.metaKey || evento.altKey || digitando(evento.target) || atalhoDeUmaTeclaDesligado(evento)) return;
       // Com uma janela aberta (painel, paleta, atalhos), as teclas são dela.
       if (document.querySelector('[aria-modal="true"]') !== null) return;
@@ -791,6 +809,11 @@ export function ReaderController({
     window.addEventListener('keydown', teclar);
     return () => window.removeEventListener('keydown', teclar);
   }, [mover, alternarPainelDocumento, alternarMargem, desfazer, balao, foco, edicao, grifar, pdf, zoom, temPainelEsquerdo, alternarPainelEsquerdo, posicaoDaBarra, aoSelecionarArea, sumario, vistaEsquerda, mudarVistaEsquerda]);
+  // Editar → Desfazer no menu do app de computador: chega como evento quando o foco não está num campo.
+  useEffect(() => {
+    window.addEventListener(EVENTO_DESFAZER_DO_MENU, desfazer);
+    return () => window.removeEventListener(EVENTO_DESFAZER_DO_MENU, desfazer);
+  }, [desfazer]);
   // O aviso do desfazer some sozinho.
   useEffect(() => {
     if (pilha.aviso === null) return;
@@ -850,7 +873,7 @@ export function ReaderController({
           {/* Só o raro: cada ação fecha o menu antes de abrir a sua janela. */}
           <ul className="lista-de-acoes" onClick={(evento) => { if (evento.target instanceof Element && evento.target.closest('button, a')) abrirMenu(false); }}>
             {menuExtra}
-            <li><Button variante="ghost" onClick={() => abrirPaleta(true)}><Icon name="buscar" size={18} /><span><span className="acao-rotulo">Paleta de comandos</span><span className="acao-detalhe">Ctrl K</span></span></Button></li>
+            <li><Button variante="ghost" onClick={() => abrirPaleta(true)}><Icon name="buscar" size={18} /><span><span className="acao-rotulo">Paleta de comandos</span><span className="acao-detalhe">{atalhoNoSistema('Ctrl K')}</span></span></Button></li>
             <li><Button variante="ghost" onClick={() => abrirAtalhos(true)}><Icon name="info" size={18} /><span><span className="acao-rotulo">Atalhos do teclado</span><span className="acao-detalhe">?</span></span></Button></li>
           </ul>
         </Popover>}
@@ -924,7 +947,7 @@ export function ReaderController({
         }} />}
       {painel}
       {pilha.aviso && <p className="aviso-desfazer" role="status">{pilha.aviso}
-        {pilha.desfazivel && <button type="button" onClick={desfazer}>Desfazer <kbd>Z</kbd></button>}
+        {pilha.desfazivel && <button type="button" onClick={desfazer} disabled={pilha.desfazendo}>Desfazer <kbd>Z</kbd></button>}
         <button type="button" aria-label="Fechar aviso" onClick={pilha.dispensar}>×</button></p>}
       {ancoraDoFoco && <FocoDoParagrafo leitor={leitor} ancora={ancoraDoFoco} />}
       {paleta && <PaletaDeComandos comandos={comandos} aoFechar={() => abrirPaleta(false)} />}

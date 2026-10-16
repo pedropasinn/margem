@@ -1,0 +1,7 @@
+/* Configurações → Chave para a extensão e o Obsidian (S-01): a mesma composição da seção de Áudio. */
+.chave-para-integracoes { gap: 16px; }
+.chave-para-integracoes h2 { margin: 0; font-size: 22px; }
+.chave-para-integracoes .cabeca-da-secao { display: grid; gap: 6px; }
+.chave-para-integracoes .cabeca-da-secao p, .chave-para-integracoes .aviso { margin: 0; }
+.chave-para-integracoes .secundario { max-width: 60ch; }
+.situacao-da-chave { margin: 0; font-size: 15px; color: var(--texto-2); }

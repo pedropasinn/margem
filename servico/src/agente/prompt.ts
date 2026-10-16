@@ -9,6 +9,8 @@ import type { MensagemDoAgenteV1 } from '@margem/contratos';
 import { cercar, corpoDoModelo, ehObjeto, lerPrompt, preencher, type SchemaJson } from '../leitura/v2/prompt.js';
 
 export const VERSAO_PROMPT_AGENTE = 'agente@2';
+/** R2-4: o mesmo agente sem ferramentas (Windows), com os trechos da biblioteca no próprio prompt. */
+export const VERSAO_PROMPT_AGENTE_SEM_FERRAMENTAS = 'agente-sem-ferramentas@1';
 export const VERSAO_PROMPT_MAPA = 'agente-mapa@1';
 /** Quantas mensagens anteriores e quantos caracteres cada uma leva ao prompt. */
 export const HISTORICO_MAXIMO = 16;
@@ -32,10 +34,19 @@ export function historicoEmTexto(anteriores: readonly Pick<MensagemDoAgenteV1, '
   return `${cortadas > 0 ? `(${String(cortadas)} mensagens mais antigas omitidas)\n\n` : ''}${partes.join('\n\n')}`;
 }
 
-export function montarPromptDoAgente(pergunta: string, anteriores: readonly Pick<MensagemDoAgenteV1, 'autor' | 'texto' | 'artefatos'>[]): { prompt: string; schema: SchemaJson } {
+/**
+ * Com `contexto` (o modelo sem ferramentas, R2-4), o prompt traz os trechos da biblioteca escolhidos pelo
+ * serviço no lugar das instruções de ler a pasta `biblioteca/`. A saída é a mesma.
+ */
+export function montarPromptDoAgente(
+  pergunta: string, anteriores: readonly Pick<MensagemDoAgenteV1, 'autor' | 'texto' | 'artefatos'>[], contexto?: string,
+): { prompt: string; schema: SchemaJson } {
   if (!/\S/u.test(pergunta)) throw new Error('Pergunta vazia.');
+  const valores = { historico: historicoEmTexto(anteriores), pergunta: cercar(pergunta.trim()) };
   return {
-    prompt: preencher(corpoDoModelo(lerPrompt(`${VERSAO_PROMPT_AGENTE}.md`)), { historico: historicoEmTexto(anteriores), pergunta: cercar(pergunta.trim()) }),
+    prompt: contexto === undefined
+      ? preencher(corpoDoModelo(lerPrompt(`${VERSAO_PROMPT_AGENTE}.md`)), valores)
+      : preencher(corpoDoModelo(lerPrompt(`${VERSAO_PROMPT_AGENTE_SEM_FERRAMENTAS}.md`)), { ...valores, contexto: cercar(contexto) }),
     schema: lerSchema(`${VERSAO_PROMPT_AGENTE}.schema.json`),
   };
 }

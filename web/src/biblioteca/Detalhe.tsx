@@ -1,4 +1,5 @@
 import { ComparacaoDeVersoes } from './ComparacaoDeVersoes';
+import { mensagemDeErro } from './erros';
 import { Button, IconButton, Popover, Drawer, classesDoBotao } from '../ui/Primitives';
 import {
   EstadoDaPreparacao, FONTES_DA_PREPARACAO, JanelaDaPreparacao, PrimeiroEuDoDocumento, rotuloDeAnalisar, tipoDeAnalise, usePreparacao,
@@ -18,6 +19,7 @@ import type { DetalheDoDocumento } from './tipos';
 import { rotuloDoDocumento, tipoDoDocumento } from './tipos';
 import { TipoDoDocumento } from '../ui/TipoDoDocumento';
 import { ProducaoDoDocumento } from './ProducaoDoDocumento';
+import { SumarioConferido } from './SumarioConferido';
 import { EnviarParaObsidian } from './EnviarParaObsidian';
 import { pedirFlashcardsComAviso } from '../flashcards/api';
 import { CancelarAnalise, JanelaDeApagarEmLote, MenuDeApagar } from '../apagar/NoDocumento';
@@ -97,7 +99,7 @@ export function Detalhe({
   const [apagar, abrirApagar] = useState<QuemApagar | null>(null);
 
   const recarregar = useCallback(() => carregar(documento_id).then(definir, (falha: unknown) => {
-    definirErro(falha instanceof Error ? falha.message : 'falha ao carregar');
+    definirErro(mensagemDeErro(falha, 'Não foi possível carregar o documento.'));
   }), [carregar, documento_id]);
 
   useEffect(() => { void recarregar(); }, [recarregar]);
@@ -105,6 +107,8 @@ export function Detalhe({
   const preparacao = usePreparacao(documento_id, documento?.texto_disponivel === true, fontesDaPreparacao, aoMudarPreparacao);
 
   const versaoId = documento?.versao_id ?? null;
+  // J164: usar (ou largar) o sumário sugerido muda os capítulos que o índice mostra.
+  const [rodadaDoSumario, novaRodadaDoSumario] = useState(0);
   useEffect(() => {
     if (documento === null || versaoId === null) return;
     let vivo = true;
@@ -113,8 +117,8 @@ export function Detalhe({
       () => { /* sem índice: o detalhe continua útil sem ele */ },
     );
     return () => { vivo = false; };
-    // O índice depende da versão, não de cada recarga do documento.
-  }, [versaoId, capitulos]);
+    // O índice depende da versão (e do sumário em uso), não de cada recarga do documento.
+  }, [versaoId, capitulos, rodadaDoSumario]);
 
   useEffect(() => {
     if (!versaoId) return;
@@ -151,7 +155,7 @@ export function Detalhe({
     if (operando) return;
     operar(true); definirAviso(null);
     try { await (typeof caminho === 'string' ? escrever(caminho, {}) : caminho()); await recarregar(); }
-    catch (falha) { definirAviso(falha instanceof Error ? falha.message : 'Não foi possível concluir a operação.'); }
+    catch (falha) { definirAviso(mensagemDeErro(falha, 'Não foi possível concluir a operação.')); }
     finally { operar(false); }
   }
   // V-F1: o que ficou parado desde antes de o app abrir espera a pessoa; "Retomar" o devolve à fila.
@@ -186,7 +190,7 @@ export function Detalhe({
                   operar(true); definirAviso(null);
                   void Promise.resolve(propria(documento))
                     .then(() => { preparacao.recarregar(); aoMudarPreparacao(); },
-                      (falha: unknown) => { definirAviso(falha instanceof Error ? falha.message : 'Não foi possível começar a análise.'); })
+                      (falha: unknown) => { definirAviso(mensagemDeErro(falha, 'Não foi possível começar a análise.')); })
                     .finally(() => { operar(false); });
                 }
                 else if (preparacao.situacao?.estado === 'falhou') void preparacao.preparar();
@@ -239,6 +243,7 @@ export function Detalhe({
           </p>
         )}
         {documento.texto_disponivel && <EstadoDaPreparacao preparacao={preparacao} textoUnico={textoUnico} />}
+        {documento.versao_id !== null && <SumarioConferido key={documento.versao_id} documentoId={documento_id} aoMudar={() => novaRodadaDoSumario((atual) => atual + 1)} />}
         {documento.texto_disponivel && <CancelarAnalise documentoId={documento_id} situacao={preparacao.situacao} aoCancelar={() => { preparacao.recarregar(); aoMudarPreparacao(); }} />}
         {janela && <JanelaDaPreparacao preparacao={preparacao} documentoId={documento_id} textoUnico={textoUnico} aoFechar={() => abrirJanela(false)} />}
         {avisosDosTrabalhos.length > 0 && (

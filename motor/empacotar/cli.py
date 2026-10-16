@@ -9,6 +9,7 @@ Uso: margem-motor <subcomando> [argumentos]
   exercicios descobrir|recortar .. = python tools/exercicios-do-pdf.py ...
   miniatura ORIGEM DESTINO LADO    = o `-c` do PyMuPDF de servico/src/arte/miniaturas.ts
   imagem --entrada F --saida P     = python -m margem_motor.imagem ... (print de questão → PDF, J119)
+  sumario --entrada F --formato X  = python -m margem_motor.sumario_original ... (o sumário do arquivo, J164)
   verificar                        importa tudo (motor, PyMuPDF, numpy) e imprime as versões em JSON
   identidade                       imprime o `canonizacao.motor` que a canonização gravaria
 
@@ -115,7 +116,21 @@ def _identidade() -> int:
     return 0
 
 
+def _fluxos_em_utf8() -> None:
+    """stdin/stdout/stderr em UTF-8, como o serviço escreve e lê os pipes (W-03).
+
+    O executável do Windows herda a codepage do sistema (cp1252) quando o modo UTF-8 está desligado:
+    sem isto, `João` no pedido virava `JoÃ£o` e as mensagens de erro chegavam trocadas ao serviço.
+    """
+    for fluxo in (sys.stdin, sys.stdout, sys.stderr):
+        try:
+            fluxo.reconfigure(encoding="utf-8", errors="strict" if fluxo is sys.stdin else "backslashreplace")
+        except (AttributeError, ValueError, OSError):  # fluxo ausente (sem console) ou já em uso
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    _fluxos_em_utf8()
     # Filhos do pool de processos (exercícios) no macOS e no Windows reabrem este executável.
     multiprocessing.freeze_support()
     if not getattr(sys, "frozen", False):
@@ -147,6 +162,10 @@ def main(argv: list[str] | None = None) -> int:
         from margem_motor.imagem import main as imagem
 
         return imagem(resto)
+    if subcomando == "sumario":
+        from margem_motor.sumario_original import principal as sumario
+
+        return sumario(resto)
     if subcomando == "verificar":
         return _verificar()
     if subcomando == "identidade":

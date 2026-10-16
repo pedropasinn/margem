@@ -47,6 +47,7 @@ export const ATALHOS: readonly GrupoDeAtalhos[] = [
     { teclas: ['T'], descricao: 'Função e dificuldades do grifo (com o balão aberto)' },
     { teclas: ['P'], descricao: 'Perguntar sobre a seleção' },
     { teclas: ['Z'], descricao: 'Desfazer (várias vezes seguidas)' },
+    { teclas: ['Ctrl', 'Z'], descricao: 'Desfazer, fora dos campos de texto (num campo, desfaz a digitação)' },
   ] },
   { titulo: 'Painéis', atalhos: [
     { teclas: ['['], descricao: 'Sumário (painel esquerdo); sem sumário, esconde ou mostra as braquetes' },
@@ -55,7 +56,7 @@ export const ATALHOS: readonly GrupoDeAtalhos[] = [
     { teclas: ['Shift', 'J'], descricao: 'Ir para a página (PDF) ou o capítulo' },
     { teclas: ['Shift', 'Ctrl', 'S'], descricao: 'Selecionar uma área da página (PDF)' },
     { teclas: ['M'], descricao: 'Recolher as notas em números na margem, ou abri-las' },
-    { teclas: ['Ctrl', 'K'], descricao: 'Paleta de comandos (⌘ K no Mac)' },
+    { teclas: ['Ctrl', 'K'], descricao: 'Paleta de comandos' },
     { teclas: ['?'], descricao: 'Esta lista' },
   ] },
   { titulo: 'Leitura', atalhos: [

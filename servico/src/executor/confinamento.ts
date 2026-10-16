@@ -22,7 +22,7 @@ import { dirname, join } from 'node:path';
 import { modoInstalado } from '../instalacao.js';
 import { CODEX_DA_IMAGEM, codexCli, codexMotor } from '../plataforma/executaveis.js';
 import type { Plataforma } from '../plataforma/processos.js';
-import { ambienteSaneado } from './ambiente.js';
+import { ambienteSaneado, variaveisDeRede } from './ambiente.js';
 
 /**
  * Binário real do Codex quando `MARGEM_CODEX_MOTOR` não está definida: o caminho da imagem Docker
@@ -41,14 +41,26 @@ export const MOTOR_PADRAO = CODEX_DA_IMAGEM;
 export type TipoDeConfinamento = 'bwrap' | 'nativo';
 
 /**
- * Política do sandbox do Codex no modo nativo:
+ * Política do sandbox do Codex:
  * - `perfil`: perfil de permissões (`default_permissions`) com leitura negada na raiz e liberada só no
  *   mínimo do sistema, no diretório da execução e nos anexos; rede desligada. É o padrão no macOS
- *   (Seatbelt) e no Linux nativo.
+ *   (Seatbelt), no Linux nativo e, por dentro do `bwrap`, no Linux (S-05: a casa temporária, com o
+ *   `auth.json`, fica fora do alcance dos comandos do modelo).
  * - `somente-leitura`: o `--sandbox read-only` clássico (escrita e rede bloqueadas, leitura livre).
- *   É o padrão no Windows, cujo sandbox sem administrador (`unelevated`) não nega leitura.
+ *   **Não isola os arquivos pessoais**: o modelo lê o disco inteiro que a conta lê.
+ * - `sem-ferramentas` (S-04): `read-only` e, além disso, o modelo fica sem ferramentas (shell, execução
+ *   unificada e o modo de código, de onde saem as outras): só lê o que vai no prompt. O prompt vai pela
+ *   entrada padrão, com os arquivos de texto da entrada embutidos. É o padrão no Windows, cujo sandbox
+ *   sem administrador (`unelevated`) não nega leitura.
  */
-export type PoliticaNativa = 'perfil' | 'somente-leitura';
+export type PoliticaNativa = 'perfil' | 'somente-leitura' | 'sem-ferramentas';
+
+/**
+ * Recursos do Codex desligados na política `sem-ferramentas` (`--disable <recurso>`, codex 0.162.1).
+ * Sem `code_mode_host` o modo de código falha fechado: `exec`, `view_image`, `apply_patch` e a geração de
+ * imagem (que passam por ele) somem junto. Provado com a CLI real em `confinamento-sem-ferramentas.real.test.ts`.
+ */
+export const RECURSOS_DESLIGADOS_SEM_FERRAMENTAS = ['shell_tool', 'unified_exec', 'code_mode_host'] as const;
 
 /** Sandbox do Windows no modo nativo (`[windows] sandbox` do Codex). */
 export type SandboxDoWindows = 'unelevated' | 'elevated' | 'mxc';
@@ -114,7 +126,8 @@ export function montarConfinamento(entrada: {
 
 /** Ambiente do motor confinado: a casa temporária é HOME e CODEX_HOME. */
 export function ambienteConfinado(casa: string, origem: Record<string, string>): Record<string, string> {
-  const ambiente: Record<string, string> = { PATH: '/usr/bin:/bin', HOME: casa, CODEX_HOME: join(casa, '.codex') };
+  // J157 (W-04): proxy e certificados da empresa passam (os arquivos de certificado fora de /etc não são montados).
+  const ambiente: Record<string, string> = { ...variaveisDeRede(origem), PATH: '/usr/bin:/bin', HOME: casa, CODEX_HOME: join(casa, '.codex') };
   if (origem.LANG !== undefined) ambiente.LANG = origem.LANG;
   if (origem.TERM !== undefined) ambiente.TERM = origem.TERM;
   return ambiente;
@@ -155,11 +168,24 @@ function lerTipo(ambiente: NodeJS.ProcessEnv, plataforma: Plataforma): TipoDeCon
   return plataforma === 'linux' ? 'bwrap' : 'nativo';
 }
 
+/** Política de cada sistema quando `MARGEM_CODEX_SANDBOX` não escolhe outra. */
+export function politicaPadrao(plataforma: Plataforma): PoliticaNativa {
+  return plataforma === 'win32' ? 'sem-ferramentas' : 'perfil';
+}
+
 function lerPolitica(ambiente: NodeJS.ProcessEnv, plataforma: Plataforma): PoliticaNativa {
   const bruto = ambiente.MARGEM_CODEX_SANDBOX?.trim() ?? '';
-  if (bruto === 'perfil' || bruto === 'somente-leitura') return bruto;
-  if (bruto !== '') throw new Error(`MARGEM_CODEX_SANDBOX aceita "perfil" ou "somente-leitura", não "${bruto}".`);
-  return plataforma === 'win32' ? 'somente-leitura' : 'perfil';
+  if (bruto === 'perfil' || bruto === 'somente-leitura' || bruto === 'sem-ferramentas') return bruto;
+  if (bruto !== '') throw new Error(`MARGEM_CODEX_SANDBOX aceita "perfil", "somente-leitura" ou "sem-ferramentas", não "${bruto}".`);
+  return politicaPadrao(plataforma);
+}
+
+/**
+ * R2-4 · O executor desta máquina roda o modelo sem ferramentas (S-04)? Quem monta o prompt usa para
+ * pôr no próprio texto o que o modelo leria de uma pasta anexada. O executor falso não conta.
+ */
+export function modeloSemFerramentas(ambiente: NodeJS.ProcessEnv = process.env, plataforma: Plataforma = process.platform): boolean {
+  return ambiente.MARGEM_EXECUTOR !== 'falso' && lerPolitica(ambiente, plataforma) === 'sem-ferramentas';
 }
 
 function lerSandboxDoWindows(ambiente: NodeJS.ProcessEnv): SandboxDoWindows {
@@ -286,7 +312,8 @@ export function pastasDaCasaNativa(casa: string, plataforma: Plataforma): string
  */
 export function ambienteNativo(casa: string, origem: NodeJS.ProcessEnv, plataforma: Plataforma): Record<string, string> {
   const base = ambienteSaneado(origem, plataforma);
-  const ambiente: Record<string, string> = { HOME: casa, CODEX_HOME: join(casa, '.codex') };
+  // J157 (W-04): proxy e certificados da empresa passam também no modo nativo.
+  const ambiente: Record<string, string> = { ...variaveisDeRede(base), HOME: casa, CODEX_HOME: join(casa, '.codex') };
   if (base.LANG !== undefined) ambiente.LANG = base.LANG;
   if (base.TERM !== undefined) ambiente.TERM = base.TERM;
   if (plataforma === 'win32') {
@@ -349,41 +376,73 @@ export function politicaNativa(entrada: {
 }
 
 /**
- * Argumentos do `codex exec` no modo nativo. Com o perfil, o `--sandbox` sai da linha: a documentação
- * do Codex pede um sistema ou o outro, e o `--sandbox` da linha de comando venceria o perfil.
+ * Argumentos do `codex exec` conforme a política. Com o perfil, o `--sandbox` sai da linha: a documentação
+ * do Codex pede um sistema ou o outro, e o `--sandbox` da linha de comando venceria o perfil. Sem
+ * ferramentas, os `--disable` entram antes do `--` (o prompt depois dele fica intacto).
  */
 export function argumentosNativos(argumentos: readonly string[], politica: PoliticaNativa): string[] {
-  if (politica !== 'perfil') return [...argumentos];
   const lista = [...argumentos];
+  const fim = lista.indexOf('--');
+  if (politica === 'sem-ferramentas') {
+    const desligar = RECURSOS_DESLIGADOS_SEM_FERRAMENTAS.flatMap((recurso) => ['--disable', recurso]);
+    lista.splice(fim >= 0 ? fim : lista.length, 0, ...desligar);
+    return lista;
+  }
+  if (politica !== 'perfil') return lista;
   const posicao = lista.indexOf('--sandbox');
-  if (posicao >= 0 && posicao < lista.indexOf('--')) lista.splice(posicao, 2);
+  if (posicao >= 0 && posicao < fim) lista.splice(posicao, 2);
   return lista;
 }
 
 /**
- * Prepara a casa para o modo nativo: pastas de perfil e temporários, e a política no `config.toml`
- * (depois da linha do modelo que `prepararCasa` já escreveu). Devolve a linha de comando e o ambiente.
+ * Escreve a política no `config.toml` da casa (depois da linha do modelo que `prepararCasa` já
+ * escreveu): chaves de topo antes de qualquer tabela. `leituras` entra além do diretório da execução.
+ */
+async function escreverPolitica(casa: string, entrada: Parameters<typeof politicaNativa>[0]): Promise<void> {
+  const configuracao = join(casa, '.codex', 'config.toml');
+  let atual = '';
+  try { atual = await readFile(configuracao, 'utf8'); } catch { /* sem linha do modelo */ }
+  const { topo, tabelas } = politicaNativa(entrada);
+  await writeFile(configuracao, [...topo, ...atual.split('\n').filter((linha) => linha.trim() !== ''), ...tabelas, ''].join('\n'), { mode: 0o600 });
+}
+
+/**
+ * S-05 · Dentro do `bwrap` a casa temporária (com o `auth.json`) está montada: o `read-only` deixaria os
+ * comandos do modelo lê-la. Vale então o mesmo perfil do modo nativo, que só deixa ler o diretório da
+ * execução (onde os anexos são montados) e a pasta da versão do Codex. A CLI, fora do sandbox interno,
+ * continua lendo a credencial. Devolve os argumentos do `codex exec` para a política.
+ */
+export async function prepararPoliticaNoBwrap(entrada: {
+  casa: string; diretorio: string; pastaDoMotor: string; politica: PoliticaNativa; argumentos: readonly string[];
+}): Promise<string[]> {
+  await escreverPolitica(entrada.casa, {
+    politica: entrada.politica, plataforma: 'linux', sandboxDoWindows: 'unelevated',
+    diretorio: entrada.diretorio, leituras: [entrada.pastaDoMotor],
+  });
+  return argumentosNativos(entrada.argumentos, entrada.politica);
+}
+
+/**
+ * Prepara a casa para o modo nativo: pastas de perfil e temporários, e a política no `config.toml`.
+ * Devolve a linha de comando e o ambiente.
  */
 export async function prepararNativo(entrada: {
   confinamento: Confinamento; casa: string; diretorio: string; leituras: readonly string[];
   argumentos: readonly string[]; origem?: NodeJS.ProcessEnv;
+  /** Troca a política do confinamento só nesta execução (a geração de imagem não roda sem ferramentas). */
+  politica?: PoliticaNativa;
 }): Promise<{ comando: string; argumentos: string[]; ambiente: Record<string, string> }> {
   const { confinamento, casa } = entrada;
   const plataforma = confinamento.plataforma ?? process.platform;
-  const politica = confinamento.politica ?? (plataforma === 'win32' ? 'somente-leitura' : 'perfil');
+  const politica = entrada.politica ?? confinamento.politica ?? politicaPadrao(plataforma);
   for (const pasta of pastasDaCasaNativa(casa, plataforma)) await mkdir(pasta, { recursive: true, mode: 0o700 });
-  const configuracao = join(casa, '.codex', 'config.toml');
-  let atual = '';
-  try { atual = await readFile(configuracao, 'utf8'); } catch { /* sem linha do modelo */ }
   // O Codex reexecuta o próprio binário dentro do sandbox (no Linux, como auxiliar do bwrap): a pasta
   // da versão precisa ser legível, senão o perfil que nega a raiz esconde o próprio Codex.
   const pastaDoCodex = /[\\/]/u.test(confinamento.motor) ? (await pastaDoMotor(confinamento.motor)).pasta : null;
-  const { topo, tabelas } = politicaNativa({
+  await escreverPolitica(casa, {
     politica, plataforma, sandboxDoWindows: confinamento.sandboxDoWindows ?? 'unelevated',
     diretorio: entrada.diretorio, leituras: [...entrada.leituras, ...(pastaDoCodex === null ? [] : [pastaDoCodex])],
   });
-  // Chaves de topo antes de qualquer tabela; a linha do modelo (se houver) é de topo.
-  await writeFile(configuracao, [...topo, ...atual.split('\n').filter((linha) => linha.trim() !== ''), ...tabelas, ''].join('\n'), { mode: 0o600 });
   return {
     comando: confinamento.motor,
     argumentos: argumentosNativos(entrada.argumentos, politica),

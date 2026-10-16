@@ -1,18 +1,22 @@
 /**
- * Configurações. Duas seções (V-T1): "Geral" (a preparação ao importar, as marcas, o áudio, os modelos e, no
- * app de computador, "Sobre e atualizações", J146) e "Primeiros passos" (antes uma página à parte, na barra lateral).
+ * Configurações. Duas seções (V-T1): "Geral" (no app de computador, a conta do ChatGPT, U-01; a preparação ao
+ * importar, as marcas, o áudio, os modelos e, no app de computador, "Sobre e atualizações", J146) e "Primeiros passos" (antes uma página à parte, na barra lateral).
  *
  * Áudio (J106): a chave da ElevenLabs da pessoa, o teste da chave, a voz (vozes da conta) e o modelo.
  * A chave nunca volta do servidor: a tela só sabe se há uma e como ela termina.
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ErroDaApi } from '../biblioteca/api';
+import { mensagemDeErro } from '../biblioteca/erros';
 import { PadraoDaPreparacaoNasConfiguracoes } from '../biblioteca/Operacoes';
+import { ConferenciaDoSumarioNasConfiguracoes } from '../biblioteca/SumarioConferido';
 import { MarcasNasConfiguracoes } from '../leitor/MarcasNasConfiguracoes';
 import { caminhoDaRota, type Rota, type SecaoDasConfiguracoes } from '../biblioteca/rotas';
 import { PrimeirosPassos } from '../onboarding/PrimeirosPassos';
 import { ModelosNasConfiguracoes } from '../modelos/Modelos';
 import { SobreEAtualizacoes } from '../atualizacao/SobreEAtualizacoes';
+import { CopiaDeSeguranca } from '../copia/CopiaDeSeguranca';
+import { ContaDoChatGPT } from '../primeira-execucao/ConectarAoChatGPT';
+import { ChaveParaIntegracoes } from '../seguranca/ChaveParaIntegracoes';
 import { Icon } from '../ui/Icon';
 import { Button, Input, Select } from '../ui/Primitives';
 import {
@@ -21,7 +25,7 @@ import {
 } from './api';
 import './audio.css';
 
-const mensagem = (erro: unknown, padrao: string): string => erro instanceof ErroDaApi ? erro.detalhe ?? padrao : padrao;
+const mensagem = mensagemDeErro;
 
 const SECOES: readonly { secao: SecaoDasConfiguracoes | undefined; rotulo: string }[] = [
   { secao: undefined, rotulo: 'Geral' },
@@ -41,10 +45,14 @@ export function Configuracoes({ secao, ir }: { secao?: SecaoDasConfiguracoes | u
     {secao === 'primeiros-passos'
       ? <PrimeirosPassos ir={irPara} />
       : <>
+        <ContaDoChatGPT />
         <PadraoDaPreparacaoNasConfiguracoes />
+        <ConferenciaDoSumarioNasConfiguracoes />
         <MarcasNasConfiguracoes />
         <ConfiguracaoDoAudio />
         <ModelosNasConfiguracoes />
+        <CopiaDeSeguranca />
+        <ChaveParaIntegracoes />
         <SobreEAtualizacoes />
       </>}
   </article>;

@@ -2,6 +2,7 @@ import { SinteseDoCapitulo } from './SinteseDoCapitulo';
 import { AcoesDaSelecao, BarraDeSelecao, IconeDaSelecao } from './BarraDeSelecao';
 import { Blocos } from './Aparencia';
 import { Icon } from '../ui/Icon';
+import { atalhoNoSistema } from '../ui/teclas';
 import { PlayerDeMidia } from './midia/PlayerDeMidia';
 import { useFontesDeReproducao } from './midia/fontes';
 import { useNarracao } from '../audio/useNarracao';
@@ -634,7 +635,7 @@ export function EstudoDoCapitulo({ aoAtualizar, aoNavegarAncora, aoIrCapitulo, d
         // Estudar este capítulo (J132): entender, praticar e ver. Ouvir (visita, leitura comentada) fica no botão da barra.
         ...(compreensao.modelo && compreensao.modelo.elementos.length > 0 ? [{ id: 'mapa', grupo: 'Entender' as const, icone: 'mapa', rotulo: `Mapa do ${unidade}`, executar: () => abrirMapa(true) }] : []),
         { id: 'resolvidos', grupo: 'Praticar' as const, icone: 'resolvidos', rotulo: 'Exercícios', detalhe: 'Os deste livro, com a página de todos', executar: () => abrirListaDeResolucoes(true) },
-        ...(usaPdf(snapshot) ? [{ id: 'resolver', grupo: 'Praticar' as const, icone: 'resolver', rotulo: 'Resolver exercício', detalhe: 'Shift Ctrl S', executar: () => { abrirResolucao(null); recortar(true); } }] : []),
+        ...(usaPdf(snapshot) ? [{ id: 'resolver', grupo: 'Praticar' as const, icone: 'resolver', rotulo: 'Resolver exercício', detalhe: atalhoNoSistema('Shift Ctrl S'), executar: () => { abrirResolucao(null); recortar(true); } }] : []),
         { id: 'quadro', grupo: 'Ver' as const, icone: 'imagem', rotulo: poesia ? 'Quadro do poema' : `Quadro do ${unidade}`, executar: () => abrirVisual('imagem', null) },
       ]}
       ouvir={[

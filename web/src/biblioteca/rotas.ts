@@ -4,7 +4,7 @@
  * Início, biblioteca com filtros, adição, documento, notas, leitura de um capítulo e quadro.
  * O caminho é a verdade; o estado do React só o acompanha.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type Rota =
   | { nome: 'noticias'; edicao_id?: string }
@@ -138,22 +138,50 @@ export interface Navegacao {
   ir: (destino: Rota, substituir?: boolean) => void;
 }
 
+/**
+ * Uma tela pode segurar a saída (U-02: Adicionar com envio pendente). A guarda recebe o destino e a
+ * função que segue para ele; devolve `true` quando segurou (e chama `seguir` se a pessoa confirmar).
+ */
+export type GuardaDeSaida = (destino: Rota, seguir: () => void) => boolean;
+let guardaDeSaida: GuardaDeSaida | null = null;
+
+/** Instala a guarda; devolve a função que a retira (só se ainda for a mesma). */
+export function segurarSaida(guarda: GuardaDeSaida): () => void {
+  guardaDeSaida = guarda;
+  return () => { if (guardaDeSaida === guarda) guardaDeSaida = null; };
+}
+
 export function usarRota(): Navegacao {
   const [rota, definir] = useState<Rota>(() => rotaDoCaminho(window.location.pathname + window.location.search));
+  const atual = useRef(rota); atual.current = rota;
   useEffect(() => {
     const canonico = caminhoCanonico(window.location.pathname + window.location.search);
     if (canonico !== null) window.history.replaceState(null, '', canonico);
   }, [rota]);
   useEffect(() => {
-    const aoVoltar = () => { definir(rotaDoCaminho(window.location.pathname + window.location.search)); };
+    const aoVoltar = () => {
+      const caminho = window.location.pathname + window.location.search;
+      const destino = rotaDoCaminho(caminho);
+      // Voltar do navegador com a saída segura: o endereço volta ao da tela, e só muda se a pessoa confirmar.
+      if (guardaDeSaida !== null) {
+        window.history.pushState(null, '', caminhoDaRota(atual.current));
+        if (guardaDeSaida(destino, () => { window.history.replaceState(null, '', caminho); definir(destino); })) return;
+        window.history.replaceState(null, '', caminho);
+      }
+      definir(destino);
+    };
     window.addEventListener('popstate', aoVoltar);
     return () => { window.removeEventListener('popstate', aoVoltar); };
   }, []);
   const ir = useCallback((destino: Rota, substituir = false) => {
-    const caminho = caminhoDaRota(destino);
-    if (substituir) window.history.replaceState(null, '', caminho);
-    else window.history.pushState(null, '', caminho);
-    definir(destino);
+    const seguir = () => {
+      const caminho = caminhoDaRota(destino);
+      if (substituir) window.history.replaceState(null, '', caminho);
+      else window.history.pushState(null, '', caminho);
+      definir(destino);
+    };
+    if (guardaDeSaida?.(destino, seguir)) return;
+    seguir();
   }, []);
   return { rota, ir };
 }

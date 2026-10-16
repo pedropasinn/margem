@@ -1,0 +1,262 @@
+{
+ "versao": 1,
+ "documento": {
+  "titulo": "Caderno de leitura",
+  "idioma": "pt",
+  "formato": "epub",
+  "sha256_original": "aaf3961c64a69250133bda6bdd4bc6b76dab63316eb114c804cf292a234e4aff",
+  "autor": "Margem (sintético)"
+ },
+ "canonizacao": {
+  "motor": "margem-ingest/2; fonte-sha256/e1769b0e22f9b174572ea21d245d8ff70eeb549955756ab14b99e0dad4b07049; PyMuPDF/1.28.2",
+  "gerado_em": "1970-01-01T00:00:00Z",
+  "config": {
+   "formato": "epub",
+   "titulo": "Caderno de leitura",
+   "autor": "Margem (sintético)",
+   "idioma": "pt",
+   "paginas": null,
+   "dpi": 110,
+   "politica_gerado_em": "sentinela_fixa_para_determinismo"
+  }
+ },
+ "hash_estrutural": "102ebb0ab941cc77b2221cb195a7aa5c008e5b95aa925e742894736d33da7f3b",
+ "secoes": [
+  {
+   "id": "4A0XGRAA03JBGF3SV5MF36879S",
+   "nivel": 1,
+   "titulo": "O ofício da leitura",
+   "ordem": 0,
+   "bloco_inicio": "6KE54JRGQH4JW694JEMZ4V5XSC",
+   "bloco_fim": "7JSF218G6EP21ABYSE9PNKN8KD"
+  },
+  {
+   "id": "1A15GRBSM11XQ9Y5BR2C7MVN3E",
+   "nivel": 1,
+   "titulo": "Notas",
+   "ordem": 1,
+   "bloco_inicio": "02802E6R5VH7HJXGFNED2YF4NS",
+   "bloco_fim": "2GWK2946RN3WKMAWSHPMXTT0VV"
+  }
+ ],
+ "blocos": [
+  {
+   "id": "6KE54JRGQH4JW694JEMZ4V5XSC",
+   "ordem": 0,
+   "tipo": "capitulo",
+   "texto": "O ofício da leitura",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/h1[1]"
+    }
+   ]
+  },
+  {
+   "id": "0ENEZFZSPV5MYBKYZV28PD3Z3Q",
+   "ordem": 1,
+   "tipo": "paragrafo",
+   "texto": "Ler devagar é um hábito que se aprende. Quem anota à margem conversa com o texto e volta a ele com outra pergunta1; quem só sublinha costuma reencontrar, meses depois, trechos que já não sabe por que marcou.",
+   "inline": [
+    {
+     "inicio": 113,
+     "fim": 114,
+     "estilo": "nota_ref",
+     "ref": "7JSF218G6EP21ABYSE9PNKN8KD"
+    }
+   ],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/p[1]"
+    }
+   ]
+  },
+  {
+   "id": "3RKW1ZGD55EX4X4JRJXYR8G5WX",
+   "ordem": 2,
+   "tipo": "paragrafo",
+   "texto": "Os leitores de outros séculos tinham cadernos de lugares-comuns, onde copiavam frases e as organizavam por tema2. A tabela abaixo resume um pequeno registro de horas de leitura.",
+   "inline": [
+    {
+     "inicio": 111,
+     "fim": 112,
+     "estilo": "nota_ref",
+     "ref": "2GWK2946RN3WKMAWSHPMXTT0VV"
+    }
+   ],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/p[2]"
+    }
+   ]
+  },
+  {
+   "id": "5RBR4X8Q7AMEK3VYTRR0S4V8SZ",
+   "ordem": 3,
+   "tipo": "tabela",
+   "texto": "Tabela 1. Horas de leitura por semana\nLeitor | Manhã | Noite\nAna | 3 h | 5 h\nBruno | 1 h | 6 h\nCarla | 4 h | 2 h",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/table[1]"
+    }
+   ]
+  },
+  {
+   "id": "3K3NWEES0PPJX5JAC72SV78NRD",
+   "ordem": 4,
+   "tipo": "paragrafo",
+   "texto": "A figura a seguir mostra como as anotações se distribuem ao longo de um capítulo.",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/p[3]"
+    }
+   ]
+  },
+  {
+   "id": "0M2RZR1S888R0PEVZ7A45H4FJS",
+   "ordem": 5,
+   "tipo": "figura",
+   "texto": "[Imagem: Gráfico de barras com anotações por página]",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/div[1]/img[1]"
+    }
+   ],
+   "asset_id": "61MCN7G0JQE8S3Y6GW1PBE6054"
+  },
+  {
+   "id": "2GCVNT9BKAPFEB5C2FM90M080R",
+   "ordem": 6,
+   "tipo": "paragrafo",
+   "texto": "Uma ilustração sem descrição, como as que muitos livros trazem:",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/p[4]"
+    }
+   ]
+  },
+  {
+   "id": "6V7CK8M6B9KT9VVQXBN7EGT54N",
+   "ordem": 7,
+   "tipo": "figura",
+   "texto": "[Imagem]",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/div[2]/img[1]"
+    }
+   ],
+   "asset_id": "2AZJG1XR3GB1QEDHVS5Z4WE5VS"
+  },
+  {
+   "id": "7GPH8MDZA6B5RQXJZPSWTEWGGB",
+   "ordem": 8,
+   "tipo": "paragrafo",
+   "texto": "E uma figura cujo arquivo o leitor não consegue exibir:",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/p[5]"
+    }
+   ]
+  },
+  {
+   "id": "1ZWVN7F0YMHYRNZPMH6Y0B6CH4",
+   "ordem": 9,
+   "tipo": "figura",
+   "texto": "[Imagem: Esquema vetorial do caderno]",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/div[3]/img[1]"
+    }
+   ]
+  },
+  {
+   "id": "7JSF218G6EP21ABYSE9PNKN8KD",
+   "ordem": 10,
+   "tipo": "nota_rodape",
+   "texto": "1 A pergunta muda porque o leitor mudou: a nota registra o primeiro encontro.",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/capitulo.xhtml",
+     "xpath": "/html/body/aside[1]/p[1]"
+    }
+   ]
+  },
+  {
+   "id": "02802E6R5VH7HJXGFNED2YF4NS",
+   "ordem": 11,
+   "tipo": "capitulo",
+   "texto": "Notas",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/notas.xhtml",
+     "xpath": "/html/body/h1[1]"
+    }
+   ]
+  },
+  {
+   "id": "2GWK2946RN3WKMAWSHPMXTT0VV",
+   "ordem": 12,
+   "tipo": "nota_rodape",
+   "texto": "2 Os cadernos de lugares-comuns foram comuns entre estudantes e escritores do Renascimento ao século XIX; cada página reunia citações sob um título.",
+   "inline": [],
+   "origens": [
+    {
+     "tipo": "epub",
+     "arquivo": "OPS/notas.xhtml",
+     "xpath": "/html/body/p[1]"
+    }
+   ]
+  }
+ ],
+ "assets": [
+  {
+   "id": "61MCN7G0JQE8S3Y6GW1PBE6054",
+   "tipo": "imagem",
+   "caminho": "assets/imagem-001.png",
+   "sha256": "c586cb64be2fc0e4cc74b3faae99b9a69922711b071b435596b5a1d09778bae8"
+  },
+  {
+   "id": "2AZJG1XR3GB1QEDHVS5Z4WE5VS",
+   "tipo": "imagem",
+   "caminho": "assets/imagem-002.png",
+   "sha256": "1d3075b1dbb5fa41af9b103a70ecde38578a35db505ef6f5b9b558a665827eeb"
+  }
+ ],
+ "limites": [
+  "apresentacao_epub: Estilos, disposição visual e formatação inline do EPUB não são reproduzidos; a leitura usa texto corrido.",
+  "imagens_epub: OPS/capitulo.xhtml: 3 imagem(ns) marcada(s) no ponto original como [Imagem: descrição], 2 com a imagem do livro.",
+  "tabela_epub: OPS/capitulo.xhtml: 1 tabela(s) linearizada(s): uma linha do texto por linha da tabela, células separadas por \" | \"; mesclagens e alinhamento não são reproduzidos.",
+  "notas_epub: 2 chamada(s) de nota ligada(s) à nota."
+ ]
+}

@@ -16,6 +16,7 @@ import { obterResolucao, perguntarNaResolucao, resolverExercicio, tentarDeNovo, 
 import { Button, IconButton, SegmentedControl } from '../../ui/Primitives';
 import { Icon } from '../../ui/Icon';
 import { digitando } from '../teclado/comandos';
+import { mensagemDeErro } from '../../biblioteca/erros';
 import { LinhasDoCalculo, TextoComMatematica } from './Matematica';
 import { avancar, mostrarTodos, nomeDoItem, passosDoItem, progressoInicial, proximaAcao, recuar, type Progresso } from './progresso';
 import { caixaDoRecorte, formaGuardada, guardarForma, guardarTamanho, larguraLateral, posicaoFlutuante, tamanhoFlutuante, tamanhoGuardado, type FormaDaJanela, type TamanhoDaJanela } from './janela';
@@ -62,6 +63,8 @@ export function SessaoDeResolucao({ id, aoFechar, fontes = FONTES_DA_SESSAO, int
 }): ReactNode {
   const [sessao, definirSessao] = useState<SessaoDaApi | null>(null);
   const [erro, definirErro] = useState<string | null>(null);
+  /** O "Tentar de novo" esperando o serviço: o botão fica desligado (I-11). */
+  const [repetindo, definirRepetindo] = useState(false);
   const [pergunta, definirPergunta] = useState('');
   const [enviando, enviar] = useState(false);
   const [progresso, definirProgresso] = useState<Progresso | null>(null);
@@ -246,7 +249,12 @@ export function SessaoDeResolucao({ id, aoFechar, fontes = FONTES_DA_SESSAO, int
       {sessao?.estado === 'resolvendo' && <div className="estado-da-resolucao pensando"><ThoughtLine label="Resolvendo o exercício…" collapsible={false} fontSize={15} color="var(--texto-1)" glyphColor="var(--accent)" /></div>}
       {sessao?.estado === 'pendente' && fontes.resolver && <p className="estado-da-resolucao">Este exercício está na lista do livro e ainda não foi ao Codex.
         <Button variante="ghost" onClick={() => { void fontes.resolver?.(id).then((nova) => definirSessao(nova), (falha: unknown) => definirErro(falha instanceof Error ? falha.message : 'Não foi possível pedir a resolução.')); }}>Resolver agora</Button></p>}
-      {falhou && <p className="estado-da-resolucao" role="alert">Não deu certo desta vez. <Button variante="ghost" onClick={() => { void fontes.tentarDeNovo(falhou.id).then(carregar); }}>Tentar de novo</Button></p>}
+      {falhou && <p className="estado-da-resolucao" role="alert">Não deu certo desta vez. <Button variante="ghost" disabled={repetindo} aria-busy={repetindo || undefined} onClick={() => {
+        // I-11: o pedido de repetição pode falhar (o serviço reiniciando): diz por quê e libera o botão.
+        definirRepetindo(true); definirErro(null);
+        fontes.tentarDeNovo(falhou.id).then(carregar, (falha: unknown) => { definirErro(mensagemDeErro(falha, 'Não foi possível tentar de novo. Tente outra vez em instantes.')); })
+          .finally(() => definirRepetindo(false));
+      }}>{repetindo ? 'Tentando…' : 'Tentar de novo'}</Button></p>}
       {resolucao && progresso && <>
         {/* O enunciado é a própria foto do recorte (ou o trecho citado): sem repeti-lo em texto. Só avisa quando o Codex não leu bem. */}
         {(resolucao.legibilidade !== 'boa' || resolucao.observacao) && <p className="aviso-de-leitura" role="note">

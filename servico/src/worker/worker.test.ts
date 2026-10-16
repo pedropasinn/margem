@@ -13,6 +13,7 @@ import type { ResultadoExecutor } from '../executor/tipos.js';
 import { FilaEmMemoria } from './fila.js';
 import type { FilaDeJobs } from './fila.js';
 import { manipuladorDeTeste } from '../../testes/manipulador.js';
+import { LimiteDeEntrada } from '../entrada-json.js';
 import { Worker, resultadoDoJob } from './worker.js';
 import type { AnotacaoWorker, Manipulador, Tarefa } from './worker.js';
 
@@ -119,6 +120,23 @@ test('concessão perdida no meio do caminho não publica e o job volta à fila',
   const lido = fila.ler(job.id);
   expect(lido?.estado).toBe('pendente');
   expect(lido?.attempt).toBe(2);
+});
+
+test('R-05: varredura de vencidas que falha é registrada e o laço segue reservando', async () => {
+  const fila = new FilaEmMemoria();
+  const job = fila.enfileirar({ tipo: 'teste', entrada: entradaDoJob() });
+  const original = fila.expirarConcessoes.bind(fila);
+  let falhas = 1;
+  fila.expirarConcessoes = (agora?: Date) => (falhas-- > 0 ? Promise.reject(new Error('Query read timeout')) : original(agora));
+  const anotacoes: AnotacaoWorker[] = [];
+  await new Worker({
+    fila, manipuladores: { teste: manipuladorControlado(execucaoOk(1)) },
+    slots: 1, diretorioSlots: slots, intervaloMs: 5, maximoCiclos: 2, anotar: (a) => anotacoes.push(a),
+  }).rodar();
+  expect(anotacoes[0]).toEqual({ evento: 'expiracao_falhou', detalhe: 'Query read timeout' });
+  expect(anotacoes.map((a) => a.evento)).toContain('publicado');
+  expect(fila.publicados).toHaveLength(1);
+  expect(fila.ler(job.id)?.estado).not.toBe('pendente');
 });
 
 test('falha do manipulador na publicação faz rollback e encerra como falhou', async () => {
@@ -267,4 +285,29 @@ test('resultadoDoJob monta JobResultV1 coerente com o contrato', () => {
   const validar = ajv.compile(JSON.parse(readFileSync(join(raiz, 'contratos/schemas/JobResultV1.schema.json'), 'utf8')) as AnySchema);
   expect(validar(ok), JSON.stringify(validar.errors)).toBe(true);
   expect(validar(adiado), JSON.stringify(validar.errors)).toBe(true);
+});
+
+test('D-08 e D-13: exceção do manipulador vira falha visível do job e não roda de novo', async () => {
+  const fila = new FilaEmMemoria();
+  const limite = fila.enfileirar({ tipo: 'limite', entrada: entradaDoJob() });
+  const disco = fila.enfileirar({ tipo: 'disco', entrada: entradaDoJob() });
+  const outro = fila.enfileirar({ tipo: 'outro', entrada: entradaDoJob() });
+  const semEspaco = Object.assign(new Error('ENOSPC: no space left on device, write'), { code: 'ENOSPC' });
+  const manipuladores = {
+    limite: manipuladorControlado(() => Promise.reject(new LimiteDeEntrada('bytes'))),
+    disco: manipuladorControlado(() => Promise.reject(semEspaco)),
+    outro: manipuladorControlado(() => Promise.reject(new Error('falhou ao ler /home/pessoa/segredo/arquivo.json'))),
+  };
+  const anotacoes: AnotacaoWorker[] = [];
+  await new Worker({ fila, manipuladores, slots: 3, diretorioSlots: slots, intervaloMs: 5, maximoCiclos: 6, anotar: (a) => anotacoes.push(a) }).rodar();
+  expect(fila.ler(limite.id)).toMatchObject({ estado: 'falhou', resultado: { diagnosticos: [{ nivel: 'erro', codigo: 'limite_de_entrada' }] } });
+  expect(fila.ler(disco.id)?.resultado?.diagnosticos[0]?.codigo).toBe('sem_espaco');
+  expect(fila.ler(disco.id)?.resultado?.diagnosticos[0]?.mensagem).toMatch(/^Sem espaço no disco/);
+  const mensagem = fila.ler(outro.id)?.resultado?.diagnosticos[0]?.mensagem ?? '';
+  expect(fila.ler(outro.id)?.estado).toBe('falhou');
+  expect(mensagem).not.toContain('/home/pessoa');
+  // Nada volta sozinho: cada um rodou uma vez, e a concessão não ficou pendurada.
+  expect(Object.values(manipuladores).map((m) => m.execucoes)).toEqual([1, 1, 1]);
+  expect(await fila.expirarConcessoes(new Date(Date.now() + 3_600_000))).toBe(0);
+  expect(anotacoes.filter((a) => a.evento === 'falhou')).toHaveLength(3);
 });

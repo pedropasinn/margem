@@ -174,6 +174,31 @@ figure.bloco {
   font-size: 0.7em;
 }
 
+/* A chamada ligada à nota: um link discreto, com alvo de toque maior que o número. */
+.nota-ref-link { color: var(--texto-2); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; padding: 0 2px; border-radius: 3px; }
+.nota-ref-link:hover { color: var(--texto-1); background: var(--bg-hover); }
+.nota-ref-link[aria-expanded="true"] { color: var(--texto-1); background: var(--bg-hover); }
+.nota-ref-link:focus-visible { outline: 2px solid var(--texto-2); outline-offset: 1px; }
+
+/* A nota aberta no lugar, sobre o texto, como nos leitores de livro. */
+.nota-aberta { position: absolute; z-index: 70; box-sizing: border-box; width: min(380px, calc(100% - 8px)); padding: 12px 40px 12px 14px; border-radius: 12px; background: var(--painel); color: var(--texto-1); box-shadow: 0 10px 28px #0004; font: 14px/1.5 var(--sans); text-align: left; hyphens: manual; }
+.nota-aberta:focus { outline: none; }
+.nota-aberta:focus-visible { outline: 2px solid var(--texto-2); }
+.nota-aberta p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+.nota-aberta .nota-aberta-estado { color: var(--texto-3); }
+.nota-aberta-fechar { position: absolute; top: 6px; right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: var(--r-pilula); background: transparent; color: var(--texto-2); font: 18px/1 var(--sans); cursor: pointer; }
+.nota-aberta-fechar:hover { background: var(--bg-hover); color: var(--texto-1); }
+
+/* Tabela do EPUB: sem grade confiável, as linhas ao menos quebram; com grade, uma tabela de verdade. */
+.bloco-tabela .legenda { white-space: pre-line; }
+.bloco-tabela .tabela { display: table; width: 100%; border-collapse: collapse; font: 14px/1.45 var(--sans); color: var(--texto-1); }
+.bloco-tabela .tabela-legenda { display: table-caption; caption-side: top; padding-bottom: 6px; font-weight: 600; color: var(--texto-2); text-align: left; }
+.bloco-tabela .tabela-linha { display: table-row; }
+.bloco-tabela .tabela-celula { display: table-cell; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--borda); vertical-align: top; overflow-wrap: anywhere; }
+.bloco-tabela .tabela > .tabela-linha:first-child .tabela-celula, .bloco-tabela .tabela-legenda + .tabela-linha .tabela-celula { border-top: 1px solid var(--borda); }
+.bloco-tabela .tabela-celula:last-child { padding-right: 0; }
+.bloco-tabela .separador-da-tabela { display: none; }
+
 /* O desenho pertence ao SVG: segmentos preservam os estilos da fonte original. */
 .segmento { text-decoration: none; }
 

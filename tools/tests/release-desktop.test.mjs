@@ -55,6 +55,16 @@ test('release de Windows e Linux (J146): instaladores, latest*.yml, .blockmap e 
   assert.doesNotMatch(textoDasNotas('Novo.', ['windows', 'macos', 'linux']), /em breve/u);
 });
 
+test('notas com macOS (J154, M-08 e M-01): o Mac não se atualiza sozinho e abre pelos Ajustes do Sistema', () => {
+  const notas = textoDasNotas('Novo.', ['windows', 'macos', 'linux']);
+  assert.match(notas, /macOS 14 ou mais novo, com Apple Silicon/u);
+  assert.match(notas, /No \*\*macOS\*\* a atualização ainda não é automática/u);
+  assert.match(notas, /Privacidade e Segurança\*\*[\s\S]*Abrir Mesmo Assim/u);
+  assert.match(notas, /instalado no Windows ou no Linux não precisa baixar de novo/u);
+  const semMac = textoDasNotas('Novo.', ['windows', 'linux']);
+  assert.doesNotMatch(semMac, /Privacidade e Segurança|atualização ainda não é automática/u);
+});
+
 test('notas: a seção da versão no CHANGELOG.md, com ou sem o v', async () => {
   const texto = '# Novidades\n\n## v0.2.0\n\nNovo.\n\n- item\n\n## v0.1.0\n\nPrimeira.\n';
   assert.equal(secaoDoChangelog(texto, 'v0.2.0'), 'Novo.\n\n- item');

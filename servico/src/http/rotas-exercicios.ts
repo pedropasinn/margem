@@ -12,6 +12,7 @@ import type { Hono } from 'hono';
 import type pg from 'pg';
 import { ulid } from 'ulid';
 import type { Id, ResolucaoV2 } from '@margem/contratos';
+import { originalDoDocumento } from '../dados.js';
 import { arquivoNosDados } from '../geometria/arquivos.js';
 import { comTransacao, type Transacao } from '../db/transacao.js';
 import type { VersaoTexto } from '../repos/documentos.js';
@@ -172,7 +173,7 @@ export function registrarRotasDosExercicios(api: Hono, apoio: ApoioDosExercicios
     let descoberta: Descoberta;
     let original: string | null = null;
     if (doc.formato === 'pdf') {
-      original = await arquivoNosDados(doc.origem_caminho);
+      original = await arquivoNosDados(originalDoDocumento(doc));
       if (!original) throw new ErroDaApi(404, 'original_indisponivel');
       try { descoberta = await descobrirPdf(id, original); } catch (erro) {
         throw new ErroDaApi(500, 'descoberta_falhou', erro instanceof Error ? erro.message.slice(0, 400) : 'A descoberta falhou.');

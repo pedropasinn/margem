@@ -289,7 +289,7 @@ upload de Markdown (documento `md`, job de canonização). Casos em
 ## 20. IndiceObsidianV1
 
 Resposta de `GET /api/obsidian/indice` (exportação para o Obsidian): `versao: 1`, `url_base`
-(o endereço do Margem nos links de volta, http(s), sem barra no fim), `marcas: minhas|todas` e
+(o endereço do Margem nos links de volta, http(s), sem barra no fim; no app de computador, `margem://abrir`, o esquema que o app registra), `marcas: minhas|todas` e
 `documentos`. Cada documento tem `documento_id`, `versao_id` (a versão exportada, a mais recente),
 `titulo`, `arquivo` (nome da nota no cofre: sem pasta, sem `\ / : * ? " < > | # ^ [ ]`, terminado
 em `.md`), `sha256` (dos bytes UTF-8 da nota gerada), `itens` (trechos exportados) e

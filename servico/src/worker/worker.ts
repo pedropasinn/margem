@@ -5,6 +5,8 @@ import type { Concessao, ContextoPublicacao, FilaDeJobs, Id, Job } from './fila.
 import { comAuditoria } from '../executor/auditoria.js';
 import { comJob } from '../executor/contexto-do-job.js';
 import { SLOTS_PADRAO, aguardarVaga } from './slots.js';
+import { LimiteDeEntrada } from '../entrada-json.js';
+import { detalheSeguro, MENSAGEM_SEM_ESPACO, semEspacoNoDisco } from '../http/erros.js';
 import type { Vaga } from './slots.js';
 
 export interface Tarefa {
@@ -22,7 +24,13 @@ export interface Manipulador {
   publicar: (tarefa: Tarefa, execucao: ExecucaoOk, contexto: ContextoPublicacao) => Promise<JobResultV1>;
 }
 
-export interface AnotacaoWorker {
+export type AnotacaoWorker = AnotacaoDeJob | AnotacaoDaFila;
+/** R-05: falha da varredura de concessões vencidas; o laço registra e tenta na volta seguinte. */
+export interface AnotacaoDaFila {
+  evento: 'expiracao_falhou';
+  detalhe: string;
+}
+export interface AnotacaoDeJob {
   evento: 'reservado' | 'publicado' | 'falhou' | 'adiado' | 'concessao_perdida' | 'cancelado' | 'erro' | 'interrompido';
   job_id: Id;
   attempt: number;
@@ -102,6 +110,23 @@ export function resultadoDoJob(
   };
 }
 
+/**
+ * Exceção do manipulador (D-08) vira falha do job, com causa legível. Nenhuma volta sozinha à fila: o
+ * limite de tamanho e o formato inválido repetiriam igual, e o disco cheio também, até alguém liberar
+ * espaço (D-13); a pessoa pede de novo quando quiser.
+ */
+export function falhaDaExcecao(erro: unknown): { codigo: string; mensagem: string } {
+  if (semEspacoNoDisco(erro)) return { codigo: 'sem_espaco', mensagem: MENSAGEM_SEM_ESPACO };
+  if (erro instanceof LimiteDeEntrada) {
+    return { codigo: 'limite_de_entrada', mensagem: 'O resultado passou do tamanho que o Margem aceita e não foi usado.' };
+  }
+  const texto = erro instanceof Error ? erro.message : 'erro desconhecido no manipulador';
+  if (erro instanceof SyntaxError || texto === 'Entrada não é JSON válido.') {
+    return { codigo: 'json_invalido', mensagem: 'O resultado não veio num formato que o Margem entende.' };
+  }
+  return { codigo: 'falha_do_manipulador', mensagem: detalheSeguro(texto) };
+}
+
 /** Intervalo mínimo entre duas conferências do vigia de cancelamento (avisos chegam em rajada). */
 export const INTERVALO_DO_VIGIA_MS = 250;
 
@@ -163,7 +188,13 @@ export class Worker {
       ciclos += 1;
       // A espera pelo aviso começa antes da reserva: um job enfileirado durante a consulta não se perde.
       const aviso = this.esperarNovidade(espera);
-      await fila.expirarConcessoes();
+      try {
+        await fila.expirarConcessoes();
+      } catch (erro) {
+        // R-05: uma varredura que falha (prazo da consulta, conexão caída) não pode derrubar o laço
+        // e fechar o pool com jobs em curso; a próxima volta tenta de novo.
+        this.opcoes.anotar?.({ evento: 'expiracao_falhou', detalhe: erro instanceof Error ? erro.message : String(erro) });
+      }
       const concessao = (await fila.reservar(owner, tipos, 1))[0];
       if (!concessao) {
         await (aviso ?? pausar(espera, this.pararControlador.signal));
@@ -320,14 +351,23 @@ export class Worker {
           return;
         }
         const detalhe = erro instanceof Error ? erro.message : 'erro desconhecido na publicação';
-        await fila.falhar(job.id, lease_token, resultadoDoJob(job, lease_token, {
-          estado: 'falhou', codigo: 'desconhecido', mensagem: detalhe, duracao_ms: execucao.duracao_ms,
-        })).catch(() => undefined);
+        // Disco cheio na publicação (D-13): a causa legível no lugar da mensagem do sistema.
+        await fila.falhar(job.id, lease_token, resultadoDoJob(job, lease_token, semEspacoNoDisco(erro)
+          ? { estado: 'falhou', codigo: 'publicacao', mensagem: MENSAGEM_SEM_ESPACO, duracao_ms: execucao.duracao_ms }
+          : { estado: 'falhou', codigo: 'desconhecido', mensagem: detalhe, duracao_ms: execucao.duracao_ms })).catch(() => undefined);
         anotar?.({ evento: 'falhou', job_id: job.id, attempt: job.attempt, detalhe });
       }
     } catch (erro) {
       const detalhe = erro instanceof Error ? erro.message : 'erro desconhecido no manipulador';
       anotar?.({ evento: 'erro', job_id: job.id, attempt: job.attempt, detalhe });
+      // O worker parando (não o job) não é falha: a concessão vence e o job volta, como sempre.
+      if (erro instanceof ConcessaoPerdida || (this.abortarTudo.signal.aborted && !cancelamentoDoJob)) return;
+      const falha = falhaDaExcecao(erro);
+      // Com a concessão ainda válida, a falha fica no job com a causa; sem ela, nada a gravar.
+      await fila.falhar(job.id, lease_token, {
+        job_id: job.id, attempt: job.attempt, lease_token, estado: 'falhou', duracao_ms: 0,
+        diagnosticos: [{ nivel: 'erro', codigo: falha.codigo, mensagem: falha.mensagem }],
+      }).then(() => { anotar?.({ evento: 'falhou', job_id: job.id, attempt: job.attempt, detalhe: falha.codigo }); }, () => undefined);
     } finally {
       fimDaExecucao.abort();
       clearInterval(batida);

@@ -40,7 +40,9 @@ async function mostrarPasta(caminho: string): Promise<void> {
         : '';
 }
 
-function textoDoLogin(estado: { encontrado: boolean; logado: boolean | null; conta: string | null }): { texto: string; ok: boolean | null } {
+function textoDoLogin(estado: { encontrado: boolean; logado: boolean | null; conta: string | null; falha?: { mensagem: string } }): { texto: string; ok: boolean | null } {
+  // W-06: a CLI não rodou (ausente, barrada pelo antivírus, sem resposta): a frase diz qual e o que fazer.
+  if (estado.falha !== undefined) return { texto: estado.falha.mensagem, ok: false };
   if (!estado.encontrado) return { texto: 'O Codex não veio com esta instalação. Você pode entrar depois, pelas Configurações.', ok: false };
   if (estado.logado === true && estado.conta === 'chave_api') return { texto: 'Conectado com uma chave de API (o Margem foi pensado para a conta do ChatGPT).', ok: true };
   if (estado.logado === true) return { texto: 'Conectado à sua conta do ChatGPT.', ok: true };

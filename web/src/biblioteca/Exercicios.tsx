@@ -7,6 +7,7 @@
  * Tudo o que veio do modelo passa pelo `TextoComMatematica` (texto do React + KaTeX higienizado).
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { mensagemDeErro } from './erros';
 import type { ItemDaResolucaoV1 } from '@margem/contratos';
 import { LinhasDoCalculo, TextoComMatematica } from '../leitor/resolucao/Matematica';
 import { Esqueleto } from '../ui/Esqueleto';
@@ -96,7 +97,7 @@ export function Exercicios({ documento_id, ir, fontes = FONTES, intervaloMs = IN
   const [ocupado, ocupar] = useState<string | null>(null);
   const carregar = useCallback(async () => {
     try { definirDados(await fontes.listar(documento_id)); definirErro(null); }
-    catch (falha) { definirErro(falha instanceof Error ? falha.message : 'falha ao carregar'); }
+    catch (falha) { definirErro(mensagemDeErro(falha, 'Não foi possível carregar os exercícios.')); }
   }, [documento_id, fontes]);
   useEffect(() => { void carregar(); }, [carregar]);
   const trabalhando = dados?.exercicios.some((ex) => EM_ANDAMENTO.has(ex.estado)) ?? false;
@@ -124,7 +125,7 @@ export function Exercicios({ documento_id, ir, fontes = FONTES, intervaloMs = IN
   const resolver = (ex: ExercicioDaLista) => {
     if (ex.estado === 'pronta' && !window.confirm('Refazer a resolução? A atual (e as perguntas sobre ela) dá lugar a uma nova.')) return;
     ocupar(ex.resolucao.id);
-    void fontes.resolver(ex.resolucao.id).then(carregar, (falha: unknown) => definirErro(falha instanceof Error ? falha.message : 'Não foi possível pedir a resolução.'))
+    void fontes.resolver(ex.resolucao.id).then(carregar, (falha: unknown) => definirErro(mensagemDeErro(falha, 'Não foi possível pedir a resolução.')))
       .finally(() => ocupar(null));
   };
 

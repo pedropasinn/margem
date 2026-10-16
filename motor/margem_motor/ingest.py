@@ -89,7 +89,7 @@ def canonizar(entrada: Path, formato: str, saida: Path, *, titulo: str | None = 
                     print(f"capa não gerada: {erro}", file=sys.stderr)
             limites.extend(limites_de_ancoras_legadas(citacoes_legadas))
         elif formato == "epub":
-            blocos, metadados, limites = extrair_epub(conteudo)
+            blocos, metadados, limites, assets = extrair_epub(conteudo, pasta, semente)
             titulo = titulo or metadados.get("titulo")
             autor = autor or metadados.get("autor")
             idioma = idioma or metadados.get("idioma")
@@ -107,7 +107,9 @@ def canonizar(entrada: Path, formato: str, saida: Path, *, titulo: str | None = 
             with pymupdf.open(stream=conteudo, filetype="pdf") as pdf:
                 aplicar_sumario(blocos, pdf.get_toc(), limites, paginas or (1, len(pdf)))
         blocos, secoes = finalizar(blocos, titulo, semente)
-        ids_assets = {n: identificar(semente, "pagina", n) for n in {b.pagina_asset for b in blocos} if n is not None}
+        # PDF: o asset é a página renderizada; EPUB: a imagem do livro (I-03), com o mesmo vínculo bloco → asset.
+        dominio = "imagem" if formato == "epub" else "pagina"
+        ids_assets = {n: identificar(semente, dominio, n) for n in {b.pagina_asset for b in blocos} if n is not None}
         blocos_json = [bloco.json(ordem, ids_assets) for ordem, bloco in enumerate(blocos)]
         documento = {"titulo": titulo, "idioma": idioma or detectar_idioma(" ".join(b.texto for b in blocos)),
                      "formato": formato, "sha256_original": semente}

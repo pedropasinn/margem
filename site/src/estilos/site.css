@@ -105,6 +105,7 @@ kbd { border: 1px solid var(--borda); }
 .plataforma-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .plataforma h3 { font-size: 22px; }
 .plataforma > p { color: var(--texto-2); }
+.plataforma > .plataforma-aviso { font-size: 14.5px; line-height: 1.45; color: var(--texto-3); }
 /* Instaladores de um sistema: botão do arquivo e, embaixo, tamanho e para quem é. */
 .instaladores { display: grid; gap: 14px; flex: 1; align-content: start; }
 .instalador { display: grid; gap: 6px; }

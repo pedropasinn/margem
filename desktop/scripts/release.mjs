@@ -179,18 +179,33 @@ export function textoDasNotas(secao, sistemas) {
     '| Sistema | Arquivo |',
     '|---|---|',
     ...(tem('windows') ? ['| Windows 10 e 11 (x64) | `Margem-Setup.exe` |'] : []),
-    ...(tem('macos') ? ['| macOS com Apple Silicon (M1 em diante) | `Margem-mac-arm64.dmg` |', '| macOS com Intel | `Margem-mac-x64.dmg` |'] : []),
+    ...(tem('macos') ? ['| macOS 14 ou mais novo, com Apple Silicon (M1 em diante) | `Margem-mac-arm64.dmg` |', '| macOS 14 ou mais novo, com Intel | `Margem-mac-x64.dmg` |'] : []),
     ...(tem('linux') ? ['| Linux (x64) | `Margem-linux-x86_64.AppImage` ou `margem_amd64.deb` |'] : []),
     ...(tem('macos') ? [] : ['| macOS | em breve |']),
     '',
-    'Quem já tem o Margem instalado não precisa baixar de novo: o app baixa a versão nova sozinho e instala',
-    'ao fechar (ou em Configurações → Sobre e atualizações → "Reiniciar e atualizar"). A biblioteca, as notas',
-    'e as configurações continuam onde estão.',
+    'Quem já tem o Margem instalado no Windows ou no Linux não precisa baixar de novo: o app baixa a versão',
+    'nova sozinho e instala ao fechar (ou em Configurações → Sobre e atualizações → "Reiniciar e atualizar").',
+    'A biblioteca, as notas e as configurações continuam onde estão.',
+    // O macOS sem assinatura da Apple não se atualiza sozinho (o Squirrel.Mac exige app assinado; J154, M-08).
+    ...(tem('macos') ? [
+      '',
+      'No **macOS** a atualização ainda não é automática: o Margem avisa que há versão nova e abre a página de',
+      'download. Baixe o `.dmg` do seu Mac, feche o Margem (Margem → Sair) e arraste o app novo para Aplicativos,',
+      'substituindo o antigo. A biblioteca e as notas continuam onde estão.',
+    ] : []),
     '',
     'Os instaladores ainda **não têm assinatura de código**. No Windows, o SmartScreen avisa na primeira vez',
-    tem('macos')
-      ? '("Mais informações" → "Executar assim mesmo"). No macOS, abra com o botão direito → "Abrir", ou\nlibere em Ajustes do Sistema → Privacidade e Segurança. Passo a passo em https://margem.dev/docs/.'
-      : '("Mais informações" → "Executar assim mesmo"). Passo a passo em https://margem.dev/docs/.',
+    '("Mais informações" → "Executar assim mesmo").',
+    ...(tem('macos') ? [
+      '',
+      'No macOS, o app tem só a assinatura ad hoc (não é a verificação da Apple), e na primeira vez o sistema diz',
+      'que não foi possível verificá-lo. Arraste o Margem para Aplicativos, tente abri-lo uma vez e clique em OK;',
+      'depois abra **Ajustes do Sistema → Privacidade e Segurança**, role até o aviso do Margem, clique em',
+      '**Abrir Mesmo Assim** e confirme com a sua senha. No macOS 14, também dá para clicar no app com o botão',
+      'direito → Abrir.',
+    ] : []),
+    '',
+    'Passo a passo em https://margem.dev/docs/.',
     '',
   ].join('\n');
 }

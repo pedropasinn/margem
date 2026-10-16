@@ -4,7 +4,7 @@
  * da conta da pessoa, lida pelo próprio Codex, e "Outro…" aceita um nome digitado.
  */
 import { useEffect, useState, type ReactNode } from 'react';
-import { ErroDaApi } from '../biblioteca/api';
+import { mensagemDeErro } from '../biblioteca/erros';
 import { Button, Input, Select } from '../ui/Primitives';
 import {
   atualizarListaDeModelos, gravarEscolhaDeModelo, lerConfiguracaoDosModelos,
@@ -22,7 +22,7 @@ export interface FontesDosModelos {
 }
 const FONTES: FontesDosModelos = { ler: lerConfiguracaoDosModelos, gravar: gravarEscolhaDeModelo, atualizar: atualizarListaDeModelos };
 
-const mensagem = (erro: unknown, padrao: string): string => erro instanceof ErroDaApi ? erro.detalhe ?? padrao : padrao;
+const mensagem = mensagemDeErro;
 
 function quando(iso: string): string {
   const data = new Date(iso);

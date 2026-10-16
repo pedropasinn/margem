@@ -2,14 +2,14 @@
  * "Exportar para o Obsidian…" no app de computador: grava as notas do Margem direto numa pasta
  * escolhida (o cofre), com a mesma mescla e a mesma sincronização do plugin do Obsidian
  * (`core/src/obsidian.ts`). O serviço roda neste computador: as notas vêm da API local
- * (`/api/obsidian/v2/*`), sem token nem CORS.
+ * (`/api/obsidian/v2/*`), com a chave local da instalação (S-01) e sem CORS.
  *
  * As notas ficam em `<cofre>/Margem/<Documento>/…` (formato 2). O estado da última exportação (por
  * nota: o sha256 e o caminho) fica em `<cofre>/Margem/.margem/estado.json`, e o índice exportado em
  * `<cofre>/Margem/.margem/manifesto.json`. A nota é achada pelo `margem_id` em qualquer lugar do cofre:
  * renomear ou mover não duplica. Nada é apagado.
  */
-import { mkdir, open, readdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, open, readdir, readFile, realpath, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import {
   margemIdDaNota, sincronizarV2, type ClienteDoMargemV2, type CofreDaSincronizacao, type EstadoDaSincronizacao,
@@ -24,6 +24,36 @@ function noDisco(raiz: string, caminho: string): string {
   const absoluto = resolve(raiz, ...caminho.split('/'));
   if (absoluto !== raiz && !absoluto.startsWith(raiz + sep)) throw new Error(`Caminho fora do cofre: ${caminho}`);
   return absoluto;
+}
+
+function dentro(raiz: string, caminho: string): boolean {
+  return caminho === raiz || caminho.startsWith(raiz.endsWith(sep) ? raiz : raiz + sep);
+}
+
+/**
+ * S-07 · A pasta onde se vai gravar, conferida pelo caminho real: um `Margem` (ou qualquer pasta do
+ * caminho) que seja link simbólico ou junção para fora do cofre é recusado antes de criar ou gravar
+ * qualquer coisa. Confere a pasta existente mais funda (o `realpath` resolve os links do caminho todo),
+ * cria o que falta e confere de novo.
+ */
+export async function pastaRealNoCofre(raiz: string, pasta: string): Promise<void> {
+  const raizReal = await realpath(raiz);
+  const conferir = async (): Promise<boolean> => {
+    let atual = pasta;
+    for (;;) {
+      try {
+        const real = await realpath(atual);
+        if (!dentro(raizReal, real)) throw new Error(`A pasta ${relative(raiz, atual) || '.'} do cofre aponta para fora dele (link simbólico ou junção). Nada foi gravado.`);
+        return atual === pasta;
+      } catch (erro) {
+        if ((erro as NodeJS.ErrnoException).code !== 'ENOENT' || dirname(atual) === atual) throw erro;
+        atual = dirname(atual);
+      }
+    }
+  };
+  if (await conferir()) return;
+  await mkdir(pasta, { recursive: true });
+  await conferir();
 }
 
 /** O começo do arquivo, o bastante para o frontmatter (o arquivo inteiro, se o frontmatter não fechar). */
@@ -51,7 +81,7 @@ export function cofreNoDisco(raizBruta: string): CofreDaSincronizacao {
     },
     escrever: async (caminho, conteudo) => {
       const destino = noDisco(raiz, caminho);
-      await mkdir(dirname(destino), { recursive: true });
+      await pastaRealNoCofre(raiz, dirname(destino));
       // Atômico: o Obsidian (ou o Dropbox) nunca vê a nota pela metade.
       const temporario = `${destino}.${String(process.pid)}.margem-tmp`;
       await writeFile(temporario, conteudo, 'utf8');
@@ -85,33 +115,35 @@ export interface OpcoesDaExportacao {
   marcas?: 'minhas' | 'todas';
   /** Só este documento (o botão da página do documento); sem ele, a biblioteca inteira. */
   documentoId?: string;
+  /** S-01: a chave local da instalação, que o serviço do app exige (`Authorization: Bearer`). */
+  chave?: string;
   /** Para os testes. */
   buscar?: typeof fetch;
 }
 
 export interface ResultadoDaExportacao { pasta: string; relatorio: RelatorioDaSincronizacao }
 
-async function pedirJson(buscar: typeof fetch, url: string): Promise<unknown> {
-  const resposta = await buscar(url, { headers: { Accept: 'application/json' } });
+async function pedirJson(buscar: typeof fetch, url: string, chave: string | undefined): Promise<unknown> {
+  const resposta = await buscar(url, { headers: { Accept: 'application/json', ...(chave === undefined ? {} : { Authorization: `Bearer ${chave}` }) } });
   if (resposta.status === 404 && url.includes('/api/obsidian/v2/')) throw new Error('O serviço do Margem não tem a exportação por item. Atualize o app.');
   if (!resposta.ok) throw new Error(`O Margem respondeu ${String(resposta.status)} ao exportar.`);
   return resposta.json();
 }
 
 /** O cliente da API local; com `documentoId`, o índice só com as notas daquele documento. */
-export function clienteLocal(opcoes: Pick<OpcoesDaExportacao, 'servico' | 'marcas' | 'documentoId' | 'buscar'>): ClienteDoMargemV2 {
+export function clienteLocal(opcoes: Pick<OpcoesDaExportacao, 'servico' | 'marcas' | 'documentoId' | 'buscar' | 'chave'>): ClienteDoMargemV2 {
   const buscar = opcoes.buscar ?? fetch;
   const servico = opcoes.servico.replace(/\/+$/, '');
   const consulta = new URLSearchParams({ marcas: opcoes.marcas ?? 'minhas', base: servico });
   if (opcoes.documentoId !== undefined) consulta.set('todos', '1');
   return {
     indice: async () => {
-      const indice = await pedirJson(buscar, `${servico}/api/obsidian/v2/indice?${consulta.toString()}`) as IndiceDoMargemV2;
+      const indice = await pedirJson(buscar, `${servico}/api/obsidian/v2/indice?${consulta.toString()}`, opcoes.chave) as IndiceDoMargemV2;
       if (opcoes.documentoId === undefined || !Array.isArray(indice.notas)) return indice;
       return { ...indice, notas: indice.notas.filter((nota) => nota.documento_id === opcoes.documentoId) };
     },
     documento: async (documentoId) => {
-      const corpo = await pedirJson(buscar, `${servico}/api/obsidian/v2/documentos/${encodeURIComponent(documentoId)}?${consulta.toString()}`) as { notas?: unknown };
+      const corpo = await pedirJson(buscar, `${servico}/api/obsidian/v2/documentos/${encodeURIComponent(documentoId)}?${consulta.toString()}`, opcoes.chave) as { notas?: unknown };
       if (!Array.isArray(corpo.notas)) throw new Error('O Margem não devolveu as notas do documento.');
       return { notas: corpo.notas as NotaGeradaV2[] };
     },
@@ -133,8 +165,8 @@ async function lerEstado(caminho: string): Promise<EstadoDaSincronizacao> {
   }
 }
 
-async function gravarJson(caminho: string, valor: unknown): Promise<void> {
-  await mkdir(dirname(caminho), { recursive: true });
+async function gravarJson(cofre: string, caminho: string, valor: unknown): Promise<void> {
+  await pastaRealNoCofre(cofre, dirname(caminho));
   const temporario = `${caminho}.${String(process.pid)}.tmp`;
   await writeFile(temporario, `${JSON.stringify(valor, null, 2)}\n`, 'utf8');
   await rename(temporario, caminho);
@@ -145,13 +177,15 @@ export async function exportarParaOCofre(opcoes: OpcoesDaExportacao): Promise<Re
   const cofre = resolve(opcoes.cofre);
   const interna = join(cofre, PASTA_DO_MARGEM_NO_COFRE, '.margem');
   const caminhoDoEstado = join(interna, 'estado.json');
+  // S-07: `<cofre>/Margem` como link para fora recusa a exportação inteira antes de ler ou gravar nada.
+  await pastaRealNoCofre(cofre, join(cofre, PASTA_DO_MARGEM_NO_COFRE));
   const anterior = await lerEstado(caminhoDoEstado);
   const { relatorio, estado, indice } = await sincronizarV2({
     cofre: cofreNoDisco(cofre), cliente: clienteLocal(opcoes), pasta: PASTA_DO_MARGEM_NO_COFRE, estado: anterior,
   });
   const ordenado = Object.fromEntries(Object.entries(estado).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
-  await gravarJson(caminhoDoEstado, { versao: 2, notas: ordenado });
-  if (opcoes.documentoId === undefined) await gravarJson(join(interna, 'manifesto.json'), indice);
+  await gravarJson(cofre, caminhoDoEstado, { versao: 2, notas: ordenado });
+  if (opcoes.documentoId === undefined) await gravarJson(cofre, join(interna, 'manifesto.json'), indice);
   return { pasta: join(cofre, PASTA_DO_MARGEM_NO_COFRE), relatorio };
 }
 

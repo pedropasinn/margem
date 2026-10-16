@@ -2,7 +2,7 @@ import type { MarcaDoLeitor } from './f2';
 import { memo, type ReactNode } from 'react';
 import type { Bloco, Id } from '@margem/contratos';
 import type { FormatoDaFonte } from './tipos';
-import { AnnotatedText } from './AnnotatedText';
+import { AnnotatedText, linhasDaTabela } from './AnnotatedText';
 
 export interface PropsDoBloco {
   bloco: Bloco;
@@ -22,14 +22,23 @@ function ancoragem(bloco: Bloco): { 'data-bloco': Id; 'data-inicio': number; 'da
   return { 'data-bloco': bloco.id, 'data-inicio': 0, 'data-tipo': bloco.tipo };
 }
 
+/** O marcador que o motor põe no lugar de uma imagem do EPUB: `[Imagem]` ou `[Imagem: <alt>]`. */
+const MARCADOR_DE_IMAGEM = /^\[Imagem(?:: ([^]*))?\]$/;
+
 function legenda(bloco: Bloco, marcas: readonly MarcaDoLeitor[], assets: Record<Id, string>, ativa: Id | null, formatacao?: FormatoDaFonte): ReactNode {
   const url = bloco.asset_id === undefined ? undefined : assets[bloco.asset_id];
+  const texto = <AnnotatedText bloco={bloco} marcas={marcas} ativa={ativa} formatacao={formatacao} />;
+  // Tabela do EPUB com linhas e células inequívocas: grade de verdade (os separadores seguem no DOM).
+  if (bloco.tipo === 'tabela' && linhasDaTabela(bloco.texto)) {
+    return <figure className={`bloco bloco-${bloco.tipo}`} {...ancoragem(bloco)}><span className="tabela" role="table">{texto}</span></figure>;
+  }
+  // Com a imagem na tela, o marcador "[Imagem: …]" não é legenda: vira só o texto alternativo. O texto
+  // fica no DOM (oculto) para os offsets do bloco; sem a imagem, o marcador continua visível.
+  const marcador = url === undefined ? null : MARCADOR_DE_IMAGEM.exec(bloco.texto);
   return (
     <figure className={`bloco bloco-${bloco.tipo}`} {...ancoragem(bloco)}>
-      {url === undefined ? null : <img className="asset" src={url} alt={bloco.texto} />}
-      <figcaption className="legenda">
-        <AnnotatedText bloco={bloco} marcas={marcas} ativa={ativa} formatacao={formatacao} />
-      </figcaption>
+      {url === undefined ? null : <img className="asset" src={url} alt={marcador ? (marcador[1] ?? '') : bloco.texto} />}
+      <figcaption className="legenda" {...(marcador ? { hidden: true } : {})}>{texto}</figcaption>
     </figure>
   );
 }

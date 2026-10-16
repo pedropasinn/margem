@@ -25,6 +25,7 @@ export type { EstadoDaTranscricaoDoYoutube, ImportacaoYoutubeV1, VideoYoutubeV1 
 export { regrasVideoYoutube } from './youtube';
 export type { EstadoDoQuadroDaPessoa, EtapaDoQuadroDaPessoa, FormatoDaImagemDoQuadro, IdentificacaoDaObraV1, QuadroDaPessoaV1 } from './quadros';
 export { regrasQuadroDaPessoa } from './quadros';
+export type { ConferenciaDoSumarioV1, EntradaDoSumarioSugerido } from './sumario';
 export { conferirProveniencia } from './proveniencia';
 export type { ProvenienciaV1 } from './proveniencia';
 export type {

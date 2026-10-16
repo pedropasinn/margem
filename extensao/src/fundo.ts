@@ -7,7 +7,7 @@
  */
 import browser from 'webextension-polyfill';
 import { gravarInstanciaConhecida, lerConfiguracao, lerInstanciaConhecida } from './configuracao';
-import { ErroDoServidor, definirVerificadorDeAcesso, enviarPdf, enviarTexto, padraoDeHost, resolverServidor, testarConexao, type Conexao } from './servidor';
+import { ErroDoServidor, definirVerificadorDeAcesso, enderecoParaAbrir, enviarPdf, enviarTexto, padraoDeHost, resolverServidor, testarConexao, type Conexao } from './servidor';
 import type { Captura, CapturaDePdf, CapturaDeTexto, Configuracao, Enviado, Pedido, Resposta } from './tipos';
 
 // Com permissão de host o navegador não aplica CORS: falha de rede passa a significar Margem fechado.
@@ -128,11 +128,14 @@ async function bytesDoPdf(abaId: number, url: string): Promise<ArrayBuffer> {
 
 /**
  * O endereço padrão (localhost:8730) vira o do Margem achado nas portas 8730–8739 (V-W9): o app de
- * computador abre na seguinte quando a 8730 está ocupada. A identificação achada fica guardada.
+ * computador abre na seguinte quando a 8730 está ocupada. A identificação achada fica guardada. S-06: o
+ * envio só vai para a identificação conhecida; `escolher` (o "Testar conexão" das opções, um gesto de
+ * quem usa) é o único caminho que troca de biblioteca.
  */
-async function comMargemLocal(configuracao: Configuracao): Promise<{ config: Configuracao; conexao: Pick<Conexao, 'servidor' | 'instancia_id' | 'outros'> }> {
-  const { configuracao: config, encontrado, outros } = await resolverServidor(configuracao, await lerInstanciaConhecida());
-  if (encontrado !== null) await gravarInstanciaConhecida(encontrado.instancia_id);
+async function comMargemLocal(configuracao: Configuracao, escolher = false): Promise<{ config: Configuracao; conexao: Pick<Conexao, 'servidor' | 'instancia_id' | 'outros'> }> {
+  const { configuracao: config, encontrado, outros } = await resolverServidor(configuracao, escolher ? null : await lerInstanciaConhecida());
+  // Escolhendo, a identificação nova só fica guardada depois que a conexão (com o token) der certo.
+  if (encontrado !== null && !escolher) await gravarInstanciaConhecida(encontrado.instancia_id);
   return { config, conexao: encontrado === null ? {} : { servidor: encontrado.servidor, instancia_id: encontrado.instancia_id, outros } };
 }
 
@@ -140,9 +143,10 @@ async function enviar(captura: Captura, abaId: number | undefined, configuracao?
   const { config } = await comMargemLocal(configuracao ?? await lerConfiguracao());
   if (captura.tipo === 'pdf') {
     if (abaId === undefined) throw new ErroDeCaptura('A aba do PDF não está mais aberta.');
-    return enviarPdf(config, captura, await bytesDoPdf(abaId, captura.url));
+    return enderecoParaAbrir(config, await enviarPdf(config, captura, await bytesDoPdf(abaId, captura.url)));
   }
-  return enviarTexto(config, captura);
+  // R2-6: no app de computador, "abrir" vai pelo link margem:// (a aba do navegador não tem a chave).
+  return enderecoParaAbrir(config, await enviarTexto(config, captura));
 }
 
 async function responder<T>(trabalho: () => Promise<T>): Promise<Resposta<T>> {
@@ -169,8 +173,10 @@ browser.runtime.onMessage.addListener((mensagem: unknown, remetente: browser.Run
       return resultado;
     });
     case 'testar': return responder(async () => {
-      const { config, conexao } = await comMargemLocal(mensagem.configuracao);
-      return { ...await testarConexao(config), ...conexao };
+      const { config, conexao } = await comMargemLocal(mensagem.configuracao, true);
+      const testada = await testarConexao(config);
+      if (conexao.instancia_id !== undefined) await gravarInstanciaConhecida(conexao.instancia_id);
+      return { ...testada, ...conexao };
     });
     default: return undefined;
   }

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
-  CONFIG, REQUISITOS, SISTEMAS, downloadEmPreparacao, emBreve, instaladoresDe, urlDoArquivo,
+  AVISO_DA_PRIMEIRA_VEZ, CONFIG, REQUISITOS, SISTEMAS, downloadEmPreparacao, emBreve, instaladoresDe, urlDoArquivo,
   type Arquitetura, type Instalador, type Sistema,
 } from '../config';
 import { Icone } from './Icone';
@@ -138,6 +138,7 @@ function CartaoDePlataforma({ sistema, deteccao, detalhado }: { sistema: Sistema
         {seu && <span className="selo" data-disponivel="true">Seu sistema</span>}
       </div>
       <p>{REQUISITOS[sistema]}</p>
+      {AVISO_DA_PRIMEIRA_VEZ[sistema] && <p className="plataforma-aviso">{AVISO_DA_PRIMEIRA_VEZ[sistema]}</p>}
       <ul className="instaladores" role="list">
         {instaladores.map((i) => <LinhaDeInstalador key={i.id} instalador={i} principal={principal(i)} detalhado={detalhado} />)}
       </ul>

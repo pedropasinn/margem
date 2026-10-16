@@ -11,7 +11,33 @@
 import { execFile, spawn, type ChildProcess } from 'node:child_process';
 import { lerStatusDoLogin } from '../../../servico/src/primeira-execucao/codex.js';
 
-export interface EstadoDoLogin { encontrado: boolean; logado: boolean | null; conta: 'chatgpt' | 'chave_api' | null }
+/**
+ * O Codex e o CODEX_HOME do login do app: o executável que o app resolveu (o embutido; no desenvolvimento,
+ * o do sistema) e a pasta de credenciais no userData, a mesma que o serviço recebe (`servico.ts`).
+ * `null` sem Codex: a interface pede para reinstalar o app (U-01/W-05).
+ */
+export function loginDoApp(recursos: { codex: { caminho: string } | null }, pastas: { codexHome: string }): { codex: string; codexHome: string } | null {
+  return recursos.codex === null ? null : { codex: recursos.codex.caminho, codexHome: pastas.codexHome };
+}
+
+export interface EstadoDoLogin {
+  encontrado: boolean; logado: boolean | null; conta: 'chatgpt' | 'chave_api' | null;
+  /** A CLI não rodou (W-06): o texto para a pessoa e o código do sistema para os registros. */
+  falha?: { codigo: string; mensagem: string };
+}
+
+/**
+ * Por que a CLI do Codex não rodou, em frase para a pessoa (W-06): ausente (reinstalar), acesso negado
+ * (antivírus, política da empresa) ou tempo esgotado. O código do sistema vai junto para os registros.
+ */
+export function mensagemDaFalhaDoCodex(codigo: string | undefined): string {
+  if (codigo === 'ENOENT') return 'A CLI do Codex que vem com o Margem não foi encontrada. Se o antivírus avisou de algo, confira o histórico de proteção dele; senão, reinstale o Margem.';
+  if (codigo === 'EACCES' || codigo === 'EPERM' || codigo === 'UNKNOWN') {
+    return 'O sistema não deixou o Margem rodar a CLI do Codex. Costuma ser o antivírus ou uma política da empresa: veja o histórico de proteção do antivírus, libere o Margem e tente de novo.';
+  }
+  if (codigo === 'ETIMEDOUT') return 'A CLI do Codex não respondeu a tempo. Pode ser o antivírus examinando o arquivo: espere um pouco e tente de novo.';
+  return `Não foi possível rodar a CLI do Codex${codigo === undefined ? '' : ` (${codigo})`}. Tente de novo.`;
+}
 
 /** Ambiente da CLI: o do app (a pessoa pode precisar de proxy), com o CODEX_HOME do app. */
 export function ambienteDoCodex(codexHome: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
@@ -25,7 +51,16 @@ export function estadoDoLogin(codex: string | null, codexHome: string): Promise<
   if (codex === null) return Promise.resolve({ encontrado: false, logado: null, conta: null });
   return new Promise((resolver) => {
     execFile(codex, ['login', 'status'], { env: ambienteDoCodex(codexHome), timeout: 20_000, windowsHide: true }, (erro, saida, saidaErro) => {
-      if (erro && (erro as NodeJS.ErrnoException).code === 'ENOENT') { resolver({ encontrado: false, logado: null, conta: null }); return; }
+      const sistema = erro === null ? undefined : (erro as NodeJS.ErrnoException).code;
+      if (erro && sistema === 'ENOENT') {
+        resolver({ encontrado: false, logado: null, conta: null, falha: { codigo: 'ENOENT', mensagem: mensagemDaFalhaDoCodex('ENOENT') } });
+        return;
+      }
+      const codigoDaFalha = erro?.killed === true ? 'ETIMEDOUT' : typeof sistema === 'string' ? sistema : undefined;
+      if (codigoDaFalha !== undefined) {
+        resolver({ encontrado: true, logado: null, conta: null, falha: { codigo: codigoDaFalha, mensagem: mensagemDaFalhaDoCodex(codigoDaFalha) } });
+        return;
+      }
       const codigo = erro === null ? 0 : typeof erro.code === 'number' ? erro.code : 1;
       resolver({ encontrado: true, ...lerStatusDoLogin(codigo, `${saida}\n${saidaErro}`) });
     });
@@ -49,6 +84,8 @@ export function extrairCodigo(texto: string): string | null {
 export interface EventoDoLogin {
   tipo: 'link' | 'codigo' | 'concluido' | 'falhou';
   valor?: string;
+  /** Código do sistema quando a CLI nem rodou (ENOENT, EACCES, EPERM…), para os registros. */
+  codigo?: string;
 }
 
 export interface LoginEmAndamento {
@@ -76,7 +113,10 @@ export function iniciarLogin(
   filho.stdout?.on('data', ler);
   filho.stderr?.on('data', ler);
   const resultado = new Promise<boolean>((resolver) => {
-    filho.on('error', () => { aoEvento({ tipo: 'falhou', valor: 'A CLI do Codex não foi encontrada.' }); resolver(false); });
+    filho.on('error', (erro: NodeJS.ErrnoException) => {
+      aoEvento({ tipo: 'falhou', valor: mensagemDaFalhaDoCodex(erro.code), ...(erro.code === undefined ? {} : { codigo: erro.code }) });
+      resolver(false);
+    });
     filho.on('exit', (codigo) => {
       const ok = codigo === 0;
       aoEvento(ok ? { tipo: 'concluido' } : { tipo: 'falhou', valor: 'O login não terminou.' });

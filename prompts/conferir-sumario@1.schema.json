@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://margem.local/prompts/conferir-sumario@1.schema.json",
+  "title": "Conferência do sumário de um documento, versão 1",
+  "description": "O serviço troca o enum de bloco_inicio pelos inícios das seções do documento antes de chamar o Codex.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "problemas", "proposta"],
+  "properties": {
+    "ok": { "type": "boolean" },
+    "problemas": {
+      "type": "array",
+      "maxItems": 5,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "\\S" }
+    },
+    "proposta": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["titulo", "nivel", "bloco_inicio"],
+        "properties": {
+          "titulo": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "\\S" },
+          "nivel": { "type": "integer", "minimum": 1, "maximum": 6 },
+          "bloco_inicio": { "type": "string", "enum": ["01HZX0000000000000000000A1"] }
+        }
+      }
+    }
+  }
+}

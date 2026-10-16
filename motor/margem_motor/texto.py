@@ -87,14 +87,47 @@ def versos_da_estrofe(brutas: list[str]) -> tuple[list[str], int]:
     return versos, recuados
 
 
+BOMS = ((b"\xef\xbb\xbf", "utf-8", "UTF-8"), (b"\xff\xfe", "utf-16-le", "UTF-16 LE"),
+        (b"\xfe\xff", "utf-16-be", "UTF-16 BE"))
+
+
+def decodificar(conteudo: bytes, limites: list[dict]) -> str:
+    """Texto do arquivo, sem trocar caractere em silêncio (I-01).
+
+    BOM de UTF-8/UTF-16 decide a codificação e sai do texto (não estraga o primeiro título).
+    Sem BOM: UTF-8 estrito; se não for, uma tentativa com Windows-1252 (TXT antigo do Windows,
+    que cobre o Latin-1 legível), avisada em `limites`. Se nem assim, erro: nada de `�`.
+    """
+    for bom, codificacao, nome in BOMS:
+        if conteudo.startswith(bom):
+            try:
+                return conteudo[len(bom):].decode(codificacao)
+            except UnicodeDecodeError as erro:
+                raise ValueError(f"O arquivo começa como {nome}, mas o texto não é {nome} válido. "
+                                 "Salve-o de novo como UTF-8 e importe outra vez.") from erro
+    try:
+        return conteudo.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    try:
+        texto = conteudo.decode("cp1252")
+    except UnicodeDecodeError as erro:
+        raise ValueError("Não deu para ler o texto: o arquivo não está em UTF-8 nem em Windows-1252. "
+                         "Salve-o como UTF-8 e importe outra vez.") from erro
+    limites.append({"tipo": "codificacao_legada", "descricao": "O arquivo não estava em UTF-8; foi lido como "
+                    "Windows-1252 (Latin-1). Confira acentos e aspas; se algo estiver trocado, salve o original "
+                    "como UTF-8 e importe outra vez."})
+    return texto
+
+
 def extrair_texto(conteudo: bytes, formato: str, poesia: bool = False,
                   limites: list[dict] | None = None) -> list[Bloco]:
-    fonte = conteudo.decode("utf-8")
+    if limites is None:
+        limites = []
+    fonte = decodificar(conteudo, limites)
     linhas = re.findall(r"[^\r\n]*(?:\r\n|\r|\n|$)", fonte)
     if linhas and linhas[-1] == "":
         linhas.pop()
-    if limites is None:
-        limites = []
     blocos = []
     posicao = 0
     # Poesia declarada: a do documento vale até uma seção declarar a sua (e só dentro dela).

@@ -23,7 +23,7 @@ import type pg from 'pg';
 import { validarCanonico, validarVideoYoutube, type Id, type JobResultV1, type VideoYoutubeV1 } from '@margem/contratos';
 import type { PalavraTranscrita } from '@margem/core';
 import { idDoVideoDoYoutube, urlDeAssistirNoYoutube } from '@margem/core/youtube';
-import { caminhoDoOriginal, pastaDaTentativaDeCanonizacao, pastaDoDocumento, raizDoRepositorio } from '../dados';
+import { caminhoDoOriginal, originalDoDocumento, pastaDaTentativaDeCanonizacao, pastaDoDocumento, raizDoRepositorio } from '../dados';
 import { comTransacao, type Transacao } from '../db/transacao';
 import { interpretarJson, lerTextoLimitado, ORCAMENTOS } from '../entrada-json';
 import { sha256 } from '../executor/artefato';
@@ -205,7 +205,7 @@ export function manipuladorImportarYoutube(opcoes: OpcoesDaImportacaoYoutube): M
         : 'A transcrição não pôde ser obtida.';
       const texto = transcricao !== null ? textoDaTranscricao(paragrafosDoTexto(transcricao.palavras, meta.capitulos)) : textoSemTranscricao(meta, motivo);
       const shaTexto = createHash('sha256').update(texto, 'utf8').digest('hex');
-      await writeFile(documento.origem_caminho, texto, { mode: 0o600 });
+      await writeFile(originalDoDocumento(documento), texto, { mode: 0o600 });
       const titulo = documento.titulo === tituloProvisorio(videoId) && meta.titulo !== null ? meta.titulo : documento.titulo;
       const autor = documento.autor ?? meta.canal;
 
@@ -213,7 +213,7 @@ export function manipuladorImportarYoutube(opcoes: OpcoesDaImportacaoYoutube): M
       await comTransacao(opcoes.banco, (cliente) => reconciliarCanonizacao(cliente, documento.id));
       const saida = pastaDaTentativaDeCanonizacao(documento.id, tarefa.job.id, tarefa.lease_token);
       await rm(saida, { recursive: true, force: true });
-      const motor = await rodarMotor(raiz, documento.origem_caminho, 'txt', saida, {
+      const motor = await rodarMotor(raiz, originalDoDocumento(documento), 'txt', saida, {
         titulo, autor, poesia: false, sinal: tarefa.sinal, ...(opcoes.prazoMs === undefined ? {} : { prazoMs: opcoes.prazoMs }),
       });
       if (motor.estado !== 'ok' || motor.caminho === undefined) {

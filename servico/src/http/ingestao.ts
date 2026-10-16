@@ -5,12 +5,12 @@
  * capturada pela extensão (`POST /api/importacoes/web`). O motor lê o original do disco no
  * worker; a API nunca espera por ele.
  */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import type pg from 'pg';
 import type { Id } from '@margem/contratos';
-import { comTransacao } from '../db/transacao.js';
+import { comTransacao, type Transacao } from '../db/transacao.js';
 import * as documentosRepo from '../repos/documentos.js';
 import * as jobsRepo from '../repos/jobs.js';
 import { TIPO_CANONIZAR } from '../worker/canonizar.js';
@@ -52,7 +52,17 @@ export interface OriginalDuplicado {
 export async function registrarOriginal(banco: pg.Pool, entrada: OriginalNovo): Promise<OriginalRegistrado | OriginalDuplicado> {
   const { titulo, autor, formato, bytes, paginas, poesia, nomeDoArquivo, antesDeConfirmar } = entrada;
   const sha = sha256Hex(bytes);
-  return comTransacao(banco, async (cliente) => {
+  // A pasta do documento nasce dentro da transação, com id novo: se ela for desfeita (D-12), a pasta é
+  // só dela e sai junto. Nada mais é apagado.
+  let pastaCriada: string | null = null;
+  try {
+    return await comTransacao(banco, async (cliente) => registrar(cliente, (pasta) => { pastaCriada = pasta; }));
+  } catch (erro) {
+    if (pastaCriada !== null) await rm(pastaCriada, { recursive: true, force: true }).catch(() => undefined);
+    throw erro;
+  }
+
+  async function registrar(cliente: Transacao, aoCriarPasta: (pasta: string) => void): Promise<OriginalRegistrado | OriginalDuplicado> {
     // Duplicado é o mesmo original com as mesmas opções: outra faixa de páginas ou poesia é outro instantâneo.
     const existente = (await cliente.query<{ id: string }>(
       `SELECT id FROM documento WHERE sha256_original=$1 AND arquivado_em IS NULL
@@ -67,6 +77,7 @@ export async function registrarOriginal(banco: pg.Pool, entrada: OriginalNovo): 
       origem_caminho: caminhoDoOriginal('0'.repeat(26), formato),
     });
     const caminho = caminhoDoOriginal(documento.id, formato);
+    aoCriarPasta(pastaDoDocumento(documento.id));
     await mkdir(pastaDoDocumento(documento.id), { recursive: true, mode: 0o700 });
     await writeFile(caminho, bytes, { mode: 0o600 });
     if (titulo === '' && (formato === 'pdf' || formato === 'epub')) {
@@ -92,5 +103,5 @@ export async function registrarOriginal(banco: pg.Pool, entrada: OriginalNovo): 
       ...(paginas === null ? {} : { paginas: `${String(paginas.inicio)}-${String(paginas.fim)}` }),
       ...(poesia ? { poesia: true as const } : {}),
     };
-  });
+  }
 }

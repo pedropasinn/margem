@@ -19,6 +19,7 @@ import * as documentos from '../repos/documentos.js';
 import { FilaPostgres } from '../worker/fila-postgres.js';
 import { Worker } from '../worker/worker.js';
 import { capituloEmMarkdown } from './biblioteca.js';
+import { contextoDaPergunta, numeroNoTitulo, termosDaPergunta } from './contexto.js';
 import { manipuladoresDoAgente } from './manipulador.js';
 import { historicoEmTexto } from './prompt.js';
 
@@ -26,6 +27,48 @@ const temporarios: string[] = [];
 let dados = '';
 beforeEach(async () => { dados = await mkdtemp(join(tmpdir(), 'margem-agente-dados-')); temporarios.push(dados); process.env.MARGEM_DADOS = dados; });
 afterEach(async () => { delete process.env.MARGEM_DADOS; for (const caminho of temporarios.splice(0)) await rm(caminho, { recursive: true, force: true }); });
+
+test('R3-7: "capítulo N" é o número dos títulos (com o sumário sugerido em uso), não a posição; ambíguo, nenhum', async () => comBanco('agente_ctx_numero', async (banco) => {
+  expect([numeroNoTitulo('1. The Challenge'), numeroNoTitulo('Capítulo 3 — A tese'), numeroNoTitulo('Chapter IV'), numeroNoTitulo('II. Partes'),
+    numeroNoTitulo('Prefácio'), numeroNoTitulo('1999: o ano'), numeroNoTitulo('1.5 milhão'), numeroNoTitulo('Capital')]).toEqual([1, 3, 4, 2, null, null, null, null]);
+  const prefacio = 'Prefácio longo que não é o capítulo pedido. '.repeat(60);
+  const canonico = canonicoDeTeste({ titulo: 'Zero a um', blocos: [
+    { tipo: 'capitulo' as const, texto: 'Prefácio' }, { tipo: 'paragrafo' as const, texto: prefacio },
+    { tipo: 'capitulo' as const, texto: '1' },
+    { tipo: 'capitulo' as const, texto: 'O DESAFIO DO FUTURO' }, { tipo: 'paragrafo' as const, texto: 'O desafio é criar o novo.' },
+    { tipo: 'capitulo' as const, texto: '2' },
+    { tipo: 'capitulo' as const, texto: 'FESTA COMO EM 1999' }, { tipo: 'paragrafo' as const, texto: 'A bolha das empresas de internet.' },
+  ], secoes: [{ nivel: 1, inicio: 0, fim: 1 }, { nivel: 1, inicio: 2, fim: 2 }, { nivel: 1, inicio: 3, fim: 4 }, { nivel: 1, inicio: 5, fim: 5 }, { nivel: 1, inicio: 6, fim: 7 }] });
+  const { documentoId, versaoId } = await comTransacao(banco, async (cliente) => {
+    const documento = await documentos.criar(cliente, { ...canonico.documento, origem_caminho: 'zero.epub' });
+    return { documentoId: documento.id, versaoId: (await documentos.criarVersao(cliente, documento.id, canonico)).id };
+  });
+  const secao = (n: number) => canonico.secoes[n]!;
+  const proposta = [
+    { bloco_inicio: secao(0).bloco_inicio, titulo: 'Prefácio', nivel: 1 },
+    { bloco_inicio: secao(2).bloco_inicio, titulo: '1. O desafio do futuro', nivel: 1 },
+    { bloco_inicio: secao(4).bloco_inicio, titulo: '2. Festa como em 1999', nivel: 1 },
+  ];
+  await banco.query(`INSERT INTO conferencia_sumario (versao_id, documento_id, estado, resposta) VALUES ($1, $2, 'aplicada', $3)`,
+    [versaoId, documentoId, JSON.stringify({ ok: false, problemas: ['números soltos'], proposta })]);
+  await comTransacao(banco, async (cliente) => {
+    const vazio = await contextoDaPergunta(cliente, 'Resuma', [], 0);
+    const limite = vazio.texto.length + 400;
+    const pedido = await contextoDaPergunta(cliente, 'Resuma o capítulo 1 de Zero a um', [], limite);
+    expect(pedido.texto).toContain(`  - 1. O desafio do futuro · secao_id ${secao(2).id}`);
+    expect(pedido.texto).not.toContain('- 2. 1. O desafio');
+    expect(pedido.texto).toContain('### Zero a um · 1. O desafio do futuro');
+    expect(pedido.texto).toContain('O desafio é criar o novo.');
+    expect(pedido.texto).not.toContain('Prefácio longo');
+  });
+  // Duas partes que recomeçam a contagem: "capítulo 1" é ambíguo e nenhum entra pelo número.
+  await banco.query(`UPDATE conferencia_sumario SET resposta = jsonb_set(resposta, '{proposta,2,titulo}', '"1. Festa como em 1999"')`);
+  await comTransacao(banco, async (cliente) => {
+    const ambiguo = await contextoDaPergunta(cliente, 'Resuma o capítulo 1 de Zero a um', [], (await contextoDaPergunta(cliente, 'Resuma', [], 0)).texto.length + 400);
+    expect(ambiguo.texto).not.toContain('O desafio é criar o novo.');
+    expect(ambiguo.texto).not.toContain('A bolha das empresas');
+  });
+}));
 
 const ESCRITA = { 'X-Margem': '1', 'Content-Type': 'application/json' };
 function escrever(api: Hono, metodo: string, caminho: string, dado?: unknown): Promise<Response> {
@@ -49,7 +92,7 @@ async function preparar(banco: pg.Pool): Promise<{ canonico: CanonicoV1; versaoI
   });
 }
 
-function montar(banco: pg.Pool, passos: PassoRoteiro[]) {
+function montar(banco: pg.Pool, passos: PassoRoteiro[], opcoes: { semFerramentas?: boolean } = {}) {
   const pedidos: PedidoExecucao[] = [];
   const biblioteca = join(dados, 'biblioteca');
   const vistos: string[][] = [];
@@ -66,7 +109,7 @@ function montar(banco: pg.Pool, passos: PassoRoteiro[]) {
   const rodar = async (ciclos = 1) => {
     const slots = await mkdtemp(join(tmpdir(), 'margem-agente-slots-'));
     temporarios.push(slots);
-    await new Worker({ fila: new FilaPostgres(banco), manipuladores: manipuladoresDoAgente({ banco, executor, modelo: 'modelo-de-teste', esforco: 'medium', prazoMs: 10_000, diretorioArtefatos: artefatos, diretorioBiblioteca: biblioteca }),
+    await new Worker({ fila: new FilaPostgres(banco), manipuladores: manipuladoresDoAgente({ banco, executor, modelo: 'modelo-de-teste', esforco: 'medium', prazoMs: 10_000, diretorioArtefatos: artefatos, diretorioBiblioteca: biblioteca, semFerramentas: opcoes.semFerramentas ?? false }),
       slots: 1, diretorioSlots: slots, intervaloMs: 5, maximoCiclos: ciclos, heartbeatMs: 60_000 }).rodar();
   };
   return { api, pedidos, rodar, biblioteca, vistos };
@@ -202,7 +245,9 @@ test('sem citação válida vira aviso; cota deixa na fila com aviso; falha se r
     ], artefatos: [] } },
   ]);
   const outra = (await (await escrever(segundo.api, 'POST', '/api/agente/conversas', { pergunta: 'E sobre Kant?' })).json() as Fio).conversa;
-  await banco.query("UPDATE job SET not_before = now() + interval '1 day' WHERE tipo = 'responder_agente' AND estado = 'adiado'");
+  // A primeira fica parada sem segurar a fila: em pausa e com a cota já de volta (a cota esgotada seguraria
+  // todos os trabalhos do Codex, D-09).
+  await banco.query("UPDATE job SET retido_em = now(), not_before = now() - interval '1 second' WHERE tipo = 'responder_agente' AND estado = 'adiado'");
   await segundo.rodar();
   const falhou = (await lerFio(segundo.api, outra.id)).mensagens[0]!;
   expect(falhou.estado).toBe('falhou');
@@ -240,3 +285,71 @@ test('título da conversa, histórico recortado e capítulo em Markdown com subt
   expect(md).toContain('### Seção 1.1');
   expect(md).toContain(`⟦b:${canonico.blocos[2]!.id}⟧ [paragrafo] Texto.`);
 });
+
+async function outroLivro(banco: pg.Pool): Promise<{ versaoId: string; canonico: CanonicoV1 }> {
+  const canonico = canonicoDeTeste({ titulo: 'Crítica da razão pura', blocos: [
+    { tipo: 'capitulo' as const, texto: 'Estética transcendental' },
+    { tipo: 'paragrafo' as const, texto: 'Espaço e tempo são formas puras da intuição sensível.' },
+  ], secoes: [{ nivel: 1, inicio: 0, fim: 1 }] });
+  return comTransacao(banco, async (cliente) => {
+    const documento = await documentos.criar(cliente, { ...canonico.documento, autor: 'Kant', origem_caminho: 'kant.md' });
+    return { canonico, versaoId: (await documentos.criarVersao(cliente, documento.id, canonico)).id };
+  });
+}
+
+test('R2-4: sem ferramentas, os trechos relevantes vão no prompt (sem anexo nem export) e a citação confere', async () => comBanco('agente_sem_ferr', async (banco) => {
+  const { canonico, versaoId } = await preparar(banco);
+  const kant = await outroLivro(banco);
+  const bloco = canonico.blocos[5]!;
+  const { api, pedidos, rodar, biblioteca } = montar(banco, [
+    { quando: { ordem: 1 }, tipo: 'ok', conteudo: { resposta: 'Fechar a porta dos fundos identifica o efeito [c1].', citacoes: [
+      { ref: 'c1', versao_id: versaoId, bloco_id: bloco.id, texto: 'identifica o efeito causal' },
+    ], artefatos: [] } },
+    { quando: { ordem: 2 }, tipo: 'ok', conteudo: { resposta: 'Resumo.', citacoes: [], artefatos: [] } },
+  ], { semFerramentas: true });
+  const { conversa } = await (await escrever(api, 'POST', '/api/agente/conversas', { pergunta: 'O que é a porta dos fundos?' })).json() as Fio;
+  await rodar();
+  expect(pedidos).toHaveLength(1);
+  const prompt = pedidos[0]!.prompt;
+  // O executor recebe o texto: nada de pasta anexada nem instrução de abrir arquivos.
+  expect(pedidos[0]!.anexos).toBeUndefined();
+  await expect(readdir(biblioteca)).rejects.toThrow();
+  expect(prompt).not.toMatch(/grep|sed -n|biblioteca\/INDICE/u);
+  expect(prompt).toContain('não tem terminal nem ferramentas');
+  expect(prompt).toContain('O que é a porta dos fundos?');
+  // Índice com os dois livros; trecho achado pela busca, com o vizinho e a citação possível.
+  expect(prompt).toContain(`Mixtape de teste · documento_id`);
+  expect(prompt).toContain(`Crítica da razão pura — Kant · documento_id`);
+  expect(prompt).toContain(`2. Grafos acíclicos dirigidos · secao_id ${canonico.secoes[1]!.id}`);
+  expect(prompt).toContain(`### Mixtape de teste · capítulo 2: Grafos acíclicos dirigidos\nversao_id: ${versaoId} · secao_id: ${canonico.secoes[1]!.id}`);
+  expect(prompt).toContain(`⟦b:${bloco.id}⟧ [paragrafo] Fechar os caminhos pela porta dos fundos identifica o efeito causal.`);
+  expect(prompt).toContain(`⟦b:${canonico.blocos[4]!.id}⟧ [paragrafo] Um DAG`);
+  // O que não casou fica de fora: o outro livro e o capítulo 1.
+  expect(prompt).not.toContain('Espaço e tempo');
+  expect(prompt).not.toContain('Correlação não é causalidade');
+  const fio = await lerFio(api, conversa.id);
+  expect(fio.mensagens[1]!.citacoes).toMatchObject([{ ref: 'c1', capitulo: 'Grafos acíclicos dirigidos' }]);
+
+  // Pedir um capítulo pelo número de um livro citado traz o capítulo inteiro (aqui, pelo título "Kant").
+  expect((await escrever(api, 'POST', `/api/agente/conversas/${conversa.id}/mensagens`, { pergunta: 'Resuma o capítulo 1 da Crítica da razão pura' })).status).toBe(201);
+  await rodar();
+  const segundo = pedidos[1]!.prompt;
+  expect(segundo).toContain(`### Crítica da razão pura — Kant · capítulo 1: Estética transcendental\nversao_id: ${kant.versaoId}`);
+  expect(segundo).toContain('Espaço e tempo são formas puras da intuição sensível.');
+}));
+
+test('R2-4: contexto com limite claro e termos da pergunta', async () => comBanco('agente_ctx_limite', async (banco) => {
+  await preparar(banco);
+  expect(termosDaPergunta('O que é um DAG? DAG, causalidade e or')).toEqual(['que', 'dag', 'causalidade']);
+  await comTransacao(banco, async (cliente) => {
+    const inteiro = await contextoDaPergunta(cliente, 'Resuma o livro', []);
+    // Biblioteca de um livro só: o começo dele entra mesmo sem palavra que case.
+    expect(inteiro.cortado).toBe(false);
+    expect(inteiro.blocos).toBe(6);
+    const curto = await contextoDaPergunta(cliente, 'Resuma o livro', [], 700);
+    expect(curto.cortado).toBe(true);
+    expect(curto.blocos).toBeLessThan(6);
+    expect(curto.texto.length).toBeLessThan(1_000);
+    expect(curto.texto).toContain('Há mais texto relevante do que coube aqui');
+  });
+}));

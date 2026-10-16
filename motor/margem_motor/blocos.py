@@ -12,7 +12,7 @@ class Estilo:
     inicio: int
     fim: int
     estilo: str
-    ref: str | None = None
+    ref: "str | Bloco | None" = None  # Bloco só durante a extração do EPUB, até `finalizar`
 
 
 @dataclass
@@ -202,6 +202,14 @@ def finalizar(blocos: list[Bloco], titulo: str, semente: str) -> tuple[list[Bloc
         blocos.insert(0, Bloco("capitulo", titulo, fragmentos=[Fragmento(origem, 0, 0)], nivel=1))
     for ordem, bloco in enumerate(blocos):
         bloco.id = identificar(semente, "bloco", ordem)
+    # EPUB (I-05): a chamada guarda o próprio bloco da nota até haver ids; vira o id aqui.
+    presentes = {id(bloco) for bloco in blocos}
+    for bloco in blocos:
+        for estilo in [e for e in bloco.estilos if isinstance(e.ref, Bloco)]:
+            if id(estilo.ref) in presentes and estilo.ref.tipo == "nota_rodape" and estilo.fim <= len(bloco.texto):
+                estilo.ref = estilo.ref.id
+            else:
+                bloco.estilos[:] = [e for e in bloco.estilos if e is not estilo]
     secoes = []
     pilha: list[tuple[int, dict]] = []
     for posicao, bloco in enumerate(blocos):

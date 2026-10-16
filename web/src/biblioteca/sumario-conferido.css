@@ -1,0 +1,21 @@
+/* Conferência do sumário (J164): aviso discreto na página do documento, com a sugestão antes e depois. */
+.sumario-conferido { display: grid; gap: 12px; }
+.sumario-conferido p { margin: 0; }
+.sumario-conferido-linha { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.sumario-conferido-linha > p { flex: 1 1 320px; min-width: 0; }
+.sumario-conferido-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.sumario-conferido-problemas { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; }
+.sumario-conferido-comparacao { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sumario-conferido-lista { min-width: 0; padding: 12px 14px; border-radius: var(--radius-md); background: var(--bg-2); color: var(--texto-1); }
+.sumario-conferido-lista .eyebrow { margin-bottom: 6px; }
+.sumario-conferido-lista ol { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow: auto; display: grid; gap: 2px; font-size: 14px; }
+.sumario-conferido-lista li { overflow-wrap: anywhere; }
+.sumario-conferido-lista li.nivel-1 { font-weight: 600; }
+.sumario-conferido-lista li.nivel-2 { padding-inline-start: 16px; }
+.sumario-conferido-lista li.nivel-3 { padding-inline-start: 32px; color: var(--texto-2); }
+.sumario-conferido-lista li.nivel-4 { padding-inline-start: 48px; color: var(--texto-2); }
+.sumario-em-uso { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 12px 0 0; color: var(--texto-2); font-size: 14px; }
+@media (max-width: 600px) {
+  .sumario-conferido-comparacao { grid-template-columns: minmax(0, 1fr); }
+  .sumario-conferido-lista ol { max-height: 220px; }
+}

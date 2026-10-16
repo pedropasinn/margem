@@ -7,6 +7,7 @@ import { regrasImportacaoWeb, type ImportacaoWebV1 } from './importacao-web';
 import { regrasVideoYoutube, type ImportacaoYoutubeV1, type VideoYoutubeV1 } from './youtube';
 import { regrasQuadroDaPessoa, type IdentificacaoDaObraV1, type QuadroDaPessoaV1 } from './quadros';
 import type { VisualV1 } from './visual';
+import type { ConferenciaDoSumarioV1 } from './sumario';
 import type { EsquemaDoCapituloV1 } from './esquema';
 import { regrasNarracaoDaVisita, type NarracaoDaVisitaV1, type RoteiroGuiadoV1 } from './visita';
 import { regrasNarracaoDaLeitura, type LeituraComentadaV1, type NarracaoDaLeituraV1 } from './leitura-comentada';
@@ -53,7 +54,7 @@ export const NOMES_DOS_SCHEMAS = [
   'FormularioDaSalaV1', 'RespostaDaSalaV1', 'ComentarioDaSalaV1', 'SalaDeTesteV1',
   'ModeloDaObraV1', 'AnaliseCurtaDaObraV1', 'AnaliseDaObraGeradaV1', 'IdentificacaoDaObraV1', 'QuadroDaPessoaV1',
   'ConversaV2', 'ConexaoV2', 'ResolucaoV2', 'LoteRevisaoV2', 'ConexaoV3', 'IndiceObsidianV2',
-  'NotaDoGrifoV1', 'DificuldadeV1',
+  'NotaDoGrifoV1', 'DificuldadeV1', 'ConferenciaDoSumarioV1',
 ] as const;
 type NomeSchema = typeof NOMES_DOS_SCHEMAS[number];
 const esquemas: Record<string, Schema> = {};
@@ -98,6 +99,7 @@ export const validadoresSchema = {
   EtiquetaV1: compilado<EtiquetaV1>('EtiquetaV1'),
   NotaDoGrifoV1: compilado<NotaDoGrifoV1>('NotaDoGrifoV1'),
   DificuldadeV1: compilado<DificuldadeV1>('DificuldadeV1'),
+  ConferenciaDoSumarioV1: compilado<ConferenciaDoSumarioV1>('ConferenciaDoSumarioV1'),
   VisualV1: compilado<VisualV1>('VisualV1'),
   EsquemaDoCapituloV1: compilado<EsquemaDoCapituloV1>('EsquemaDoCapituloV1'),
   RoteiroGuiadoV1: compilado<RoteiroGuiadoV1>('RoteiroGuiadoV1'),
@@ -296,6 +298,8 @@ export const validarAnaliseCurtaDaObra = combinar(validadoresSchema.AnaliseCurta
 // Quadros da pessoa (J118): a obra que ela enviou, enquanto é preparada, e a identificação que ela corrige.
 export const validarIdentificacaoDaObra = combinar(validadoresSchema.IdentificacaoDaObraV1, () => true);
 export const validarQuadroDaPessoa = combinar(validadoresSchema.QuadroDaPessoaV1, regrasQuadroDaPessoa);
+// Conferência do sumário (J164): a forma aqui; as entradas contra as seções do canônico, no serviço.
+export const validarConferenciaDoSumario = combinar(validadoresSchema.ConferenciaDoSumarioV1, () => true);
 export const validarAnaliseDaObraGerada = combinar(validadoresSchema.AnaliseDaObraGeradaV1, () => true);
 
 // Notícias: regras de fontes e classificação dependem do contexto e vivem no serviço.

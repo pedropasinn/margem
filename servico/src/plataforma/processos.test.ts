@@ -100,3 +100,31 @@ test('parada pedida por sinal (Linux/macOS), SIGBREAK (Windows) ou mensagem IPC 
   windows.emissor.emit('message', MENSAGEM_DE_PARADA);
   expect(windows.origens).toEqual(['SIGBREAK', 'ipc', 'ipc']);
 });
+
+test('L-03: anuncia abrir e fechar pelo IPC e guarda a lista enquanto o grupo vive', async () => {
+  const { anunciarGrupo, gruposAbertos, ehAvisoDeGrupo } = await import('./processos.js');
+  const enviados: unknown[] = [];
+  const pai = { connected: true, send: (m: unknown) => { enviados.push(m); return true; } } as unknown as Pick<NodeJS.Process, 'send' | 'connected'>;
+  const filho = Object.assign(new EventEmitter(), { pid: 4321 });
+  anunciarGrupo(filho, pai);
+  expect(gruposAbertos()).toContain(4321);
+  filho.emit('exit', 0, null);
+  expect(gruposAbertos()).not.toContain(4321);
+  expect(enviados).toEqual([{ tipo: 'margem:grupo', acao: 'abrir', pid: 4321 }, { tipo: 'margem:grupo', acao: 'fechar', pid: 4321 }]);
+  expect(enviados.every(ehAvisoDeGrupo)).toBe(true);
+  expect(ehAvisoDeGrupo({ tipo: 'margem:grupo', acao: 'abrir', pid: -1 })).toBe(false);
+  // Sem canal (Docker, terminal) e sem pid (spawn falhou): nada é enviado nem quebra.
+  anunciarGrupo(Object.assign(new EventEmitter(), { pid: undefined }), pai);
+  anunciarGrupo(Object.assign(new EventEmitter(), { pid: 99 }), { connected: false, send: undefined });
+  expect(enviados).toHaveLength(2);
+});
+
+test('L-03: grupo órfão: kill(-pid) no Linux/macOS, taskkill /T /F no Windows', async () => {
+  const { encerrarGrupoOrfao } = await import('./processos.js');
+  const sinais: [number, string][] = [];
+  await encerrarGrupoOrfao(77, { plataforma: 'linux', matar: (pid, sinal) => { sinais.push([pid, sinal]); } });
+  expect(sinais).toEqual([[-77, 'SIGKILL']]);
+  const chamadas: string[][] = [];
+  await encerrarGrupoOrfao(77, { plataforma: 'win32', ambiente: { SystemRoot: 'C:\\Windows' }, rodarTaskkill: (programa, argumentos) => { chamadas.push([programa, ...argumentos]); return Promise.resolve(true); } });
+  expect(chamadas[0]?.slice(1)).toEqual(['/PID', '77', '/T', '/F']);
+});

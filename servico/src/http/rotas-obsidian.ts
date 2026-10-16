@@ -16,7 +16,8 @@
  *
  * Parâmetros comuns: `marcas=minhas|todas` (padrão `minhas`) e `base=<url>`, o endereço do Margem
  * nos links de volta. Sem `base`, vale `MARGEM_URL_PUBLICA`; sem ela, a origem do próprio pedido
- * (com https quando o pedido chegou pelo nome do Tailscale Serve). No índice e no ZIP, `todos=1`
+ * (com https quando o pedido chegou pelo nome do Tailscale Serve). No app de computador, sempre
+ * `margem://abrir` (R2-6). No índice e no ZIP, `todos=1`
  * inclui também os documentos sem nada do leitor.
  */
 import type { Hono } from 'hono';
@@ -29,6 +30,7 @@ import { exportarTudo, notaDoDocumento, sha256, type OpcoesDaExportacao } from '
 import { INCLUIR_TUDO, documentoV2, exportarTudoV2, type OpcoesDaExportacaoV2 } from '../obsidian/dados-v2.js';
 import { FUSO_DA_NOTA } from '../obsidian/exportar.js';
 import { criarZip } from '../obsidian/zip.js';
+import { noAppDeDesktop } from '../plataforma/executaveis.js';
 import { hostTailscale } from './ambiente.js';
 import { ErroDaApi } from './erros.js';
 
@@ -45,8 +47,22 @@ export function normalizarUrlBase(bruta: string): string | null {
   return URL_SEGURA.test(limpa) ? limpa : null;
 }
 
+/**
+ * R2-6: no app de computador a API exige a chave local, que o navegador do sistema não tem; um link
+ * `http://127.0.0.1:<porta>/…` aberto de uma nota daria 401. Lá os links de volta usam o esquema que o
+ * app registra (`margem://abrir/<rota>`, ver desktop/src/principal/protocolo.ts), que abre na janela dele.
+ */
+export const BASE_DO_APP = 'margem://abrir';
+
 function urlBase(c: { req: { query: (nome: string) => string | undefined; url: string; header: (nome: string) => string | undefined } }): string {
   const pedida = c.req.query('base');
+  if (noAppDeDesktop()) {
+    // A base pedida ainda precisa ser válida (o plugin e o app mandam a origem do serviço).
+    if (pedida !== undefined && pedida !== '' && normalizarUrlBase(pedida) === null) {
+      throw new ErroDaApi(400, 'base_invalida', 'Use base=<http(s)://host[/caminho]>, sem espaços nem parênteses.');
+    }
+    return BASE_DO_APP;
+  }
   if (pedida !== undefined && pedida !== '') {
     const base = normalizarUrlBase(pedida);
     if (base === null) throw new ErroDaApi(400, 'base_invalida', 'Use base=<http(s)://host[/caminho]>, sem espaços nem parênteses.');

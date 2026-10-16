@@ -14,6 +14,7 @@
  *   uma questão é coisa do leitor, dentro do documento.
  */
 import { ErroDaApi, escrever, obterDocumento, pedir } from './api';
+import { mensagemDeErro } from './erros';
 import type { AbaDeAdicionar } from './rotas';
 import type { DetalheDoDocumento } from './tipos';
 import type { ImportacaoYoutubeV1 } from '@margem/contratos';
@@ -303,10 +304,9 @@ export function motivoDaFalha(falha: unknown): string {
     if (falha.status === 413) return 'Grande demais para esta instalação.';
     if (falha.status === 429) return 'Muitos envios seguidos. Espere um minuto e tente de novo.';
     if (falha.status === 415 && falha.codigo === 'pdf_invalido') return 'O arquivo não é um PDF válido.';
-    return falha.detalhe ?? `O serviço recusou (${String(falha.status)}).`;
+    return mensagemDeErro(falha, 'O Margem não aceitou este arquivo.');
   }
-  if (falha instanceof TypeError) return 'Sem conexão com o Margem.';
-  return falha instanceof Error ? falha.message : 'Não foi possível adicionar.';
+  return mensagemDeErro(falha, 'Não foi possível adicionar.');
 }
 
 

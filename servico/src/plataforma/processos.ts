@@ -110,3 +110,56 @@ export function aoPedirParada(parar: (origem: string) => void, processo: NodeJS.
     });
   }
 }
+
+/**
+ * Subprocessos que lideram o próprio grupo (o Codex, `opcoesDeProcesso(…, true)`) não morrem com o grupo
+ * de quem os abriu (L-03). Quem os abre os anuncia aqui: o processo guarda a lista (para o próprio prazo de
+ * encerramento) e, com canal IPC, conta ao pai (o supervisor do app de computador), que encerra os que
+ * sobrarem quando este processo morrer — inclusive de OOM ou à força, quando nada daqui roda mais.
+ */
+export const MENSAGEM_DE_GRUPO = 'margem:grupo';
+
+export interface AvisoDeGrupo { tipo: typeof MENSAGEM_DE_GRUPO; acao: 'abrir' | 'fechar'; pid: number }
+
+const gruposAtivos = new Set<number>();
+
+/** Os grupos anunciados que ainda não saíram. */
+export function gruposAbertos(): number[] {
+  return [...gruposAtivos];
+}
+
+export function anunciarGrupo(
+  filho: { pid?: number | undefined; once?: (evento: 'exit', ouvinte: () => void) => unknown },
+  processo: Pick<NodeJS.Process, 'send' | 'connected'> = process,
+): void {
+  const pid = filho.pid;
+  if (typeof pid !== 'number' || typeof filho.once !== 'function') return;
+  const avisar = (acao: AvisoDeGrupo['acao']): void => {
+    if (typeof processo.send !== 'function' || processo.connected !== true) return;
+    try { processo.send({ tipo: MENSAGEM_DE_GRUPO, acao, pid } satisfies AvisoDeGrupo); } catch { /* canal fechado */ }
+  };
+  gruposAtivos.add(pid);
+  avisar('abrir');
+  filho.once('exit', () => { gruposAtivos.delete(pid); avisar('fechar'); });
+}
+
+export function ehAvisoDeGrupo(mensagem: unknown): mensagem is AvisoDeGrupo {
+  if (typeof mensagem !== 'object' || mensagem === null) return false;
+  const aviso = mensagem as Partial<AvisoDeGrupo>;
+  return aviso.tipo === MENSAGEM_DE_GRUPO && (aviso.acao === 'abrir' || aviso.acao === 'fechar') && Number.isInteger(aviso.pid) && (aviso.pid ?? 0) > 0;
+}
+
+/**
+ * Encerra à força um grupo cujo dono já morreu (sem o objeto `ChildProcess`): `kill(-pid)` no Linux e no
+ * macOS, `taskkill /T /F` no Windows. Nunca lança.
+ */
+export async function encerrarGrupoOrfao(pid: number, opcoes: Encerrador = {}): Promise<void> {
+  const plataforma = opcoes.plataforma ?? process.platform;
+  if (plataforma === 'win32') {
+    const rodar = opcoes.rodarTaskkill ?? taskkillPadrao;
+    await rodar(caminhoDoTaskkill(opcoes.ambiente), argumentosDoTaskkill(pid, 'forcado')).catch(() => false);
+    return;
+  }
+  const matar = opcoes.matar ?? ((alvo: number, s: NodeJS.Signals) => { process.kill(alvo, s); });
+  try { matar(-pid, 'SIGKILL'); } catch { /* grupo já desfeito */ }
+}

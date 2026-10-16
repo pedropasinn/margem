@@ -16,6 +16,11 @@ export function enderecoDeAdicionar(base: string, aba: AbaDeAdicionar): string {
   return `${base.replace(/\/+$/u, '')}/adicionar/${aba}`;
 }
 
+/** Configurações da biblioteca que roda em `base` (Margem → Ajustes… no macOS; Arquivo → Configurações… nos outros). */
+export function enderecoDasConfiguracoes(base: string): string {
+  return `${base.replace(/\/+$/u, '')}/configuracoes`;
+}
+
 /** Configurações → Sobre e atualizações, na biblioteca que roda em `base` (Menu → Procurar atualizações…; J146). */
 export function enderecoDasAtualizacoes(base: string): string {
   return `${base.replace(/\/+$/u, '')}/configuracoes#atualizacoes`;

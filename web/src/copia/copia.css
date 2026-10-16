@@ -1,0 +1,19 @@
+/* Configurações → Cópia de segurança (U-03). Mesma composição de "Sobre e atualizações"; nada de faixa lateral. */
+.configuracao-da-copia { display: grid; gap: 16px; }
+.configuracao-da-copia h2 { margin: 0; font-size: 22px; }
+.configuracao-da-copia .cabeca-da-secao { display: grid; gap: 6px; }
+.configuracao-da-copia .cabeca-da-secao p { margin: 0; }
+.configuracao-da-copia .secundario { margin: 0; max-width: 60ch; }
+.locais-da-biblioteca { display: grid; gap: 10px; margin: 0; }
+.locais-da-biblioteca > div { display: grid; gap: 2px; min-width: 0; }
+.locais-da-biblioteca dt { font-size: 14px; color: var(--texto-3); }
+.locais-da-biblioteca dd { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; min-width: 0; }
+.locais-da-biblioteca code { font-size: 14px; color: var(--texto-1); overflow-wrap: anywhere; word-break: break-all; }
+.nota-dos-locais, .ultima-copia { margin: 0; max-width: 60ch; font-size: 15px; color: var(--texto-2); }
+.configuracao-da-copia button.link {
+  display: inline; padding: 0; border: 0; background: none; color: var(--accent-texto); font: inherit; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.configuracao-da-copia button.link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.configuracao-da-copia .button-row { align-items: center; }
+.link-da-restauracao { color: var(--accent-texto); font-weight: 600; text-underline-offset: 2px; }

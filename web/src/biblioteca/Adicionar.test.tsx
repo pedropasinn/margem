@@ -91,7 +91,7 @@ test('texto que ainda está preparando mostra o estado; falha mostra o motivo', 
   render(<Adicionar ir={vi.fn()} servicos={servicos({ enviarDocumento: () => criado(), obterDocumento })} />);
   escolher([new File(['texto'], 'notas.txt')]);
   fireEvent.click(screen.getByRole('button', { name: 'Adicionar 1 arquivo' }));
-  expect(await fila().findByText('Não foi possível preparar o texto: motor_falhou')).toBeDefined();
+  expect(await fila().findByText('Não foi possível preparar o texto.')).toBeDefined();
   expect(obterDocumento).toHaveBeenCalledTimes(2);
 });
 

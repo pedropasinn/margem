@@ -4,6 +4,42 @@ O que mudou em cada versão do app. O workflow do app (`.github/workflows/app.ym
 `## vX.Y.Z` da tag como notas do release; a página https://margem.dev/novidades/ conta a mesma história
 com mais detalhe. Ao criar uma versão nova, acrescente a seção dela no topo antes de criar a tag.
 
+## v0.2.0
+
+- **macOS a caminho**: o app para Apple Silicon e Intel (macOS 14 ou mais novo) já é montado e testado; sai
+  assim que for conferido num Mac de verdade.
+- **Sumário dos livros**: o EPUB usa o sumário do próprio livro para os capítulos ("1. The Challenge of the
+  Future" em vez de "1" e o título separados). Ao importar, o Margem confere o sumário e, se algo parecer
+  errado, sugere outro, que você aplica ou não, sem mexer no texto nem nos grifos.
+- **Importação**: TXT e Markdown antigos do Windows (acentos em Windows-1252, UTF-16, BOM); tabelas, imagens e
+  notas de rodapé do EPUB (a nota abre no lugar, como nos leitores de livro); PDF grande abre na primeira
+  página sem esperar o resto.
+- **Leitor**: Ctrl/⌘ Z desfaz grifos; desfazer não se perde numa falha; abrir um livro volta ao capítulo onde
+  você parou; erros aparecem em português com "Tentar novamente", sem tela branca.
+- **Conta do ChatGPT**: "Conectar ao ChatGPT" (e "Conectar novamente") nas Configurações, sem terminal.
+- **Ajuda**: "Relatar um problema…" e "Copiar informações do app" (versão e sistema, sem conteúdo dos livros).
+- **Abrir com**: PDF e EPUB podem ser abertos com o Margem pelo sistema (macOS e Linux; no Windows, "Escolher
+  outro aplicativo"). Links da extensão e do Obsidian abrem direto no app.
+- **Cópia de segurança**: Arquivo → Fazer cópia de segurança… (também em Configurações) copia a biblioteca e
+  o banco, com o app parado, para uma pasta que você escolhe, com um LEIA-ME de restauração. Antes de cada
+  atualização que muda o banco, o app guarda sozinho uma cópia. As Configurações mostram onde ficam a
+  biblioteca e o banco: numa pasta do OneDrive, Dropbox, Google Drive ou iCloud, o banco (marcas, notas,
+  leituras) fica fora dela, e a nuvem não o leva.
+- **Biblioteca renomeada ou movida** continua abrindo com as mesmas notas, inclusive no OneDrive e com troca
+  só de maiúsculas no Windows. Uma cópia da pasta aberta ao lado da original pergunta se você moveu ou copiou,
+  e a cópia nunca divide o banco com a original.
+- **Privacidade**: o serviço local do Margem exige uma chave guardada no seu computador, então outra conta do
+  mesmo computador não lê a sua biblioteca. Para a extensão e o Obsidian, copie a chave em Configurações. No
+  Windows, o ChatGPT trabalha sem acesso aos seus arquivos: o conteúdo vai no pedido.
+- **Chave da ElevenLabs**: até a 0.1.3 ela ficava dentro da pasta da biblioteca. Se a pasta estava numa
+  nuvem, apague a chave antiga no painel da ElevenLabs, crie uma nova e salve em Configurações → Áudio.
+- **Mais robusto**: fechar ou travar o app não deixa programas rodando; se o banco não parar, a atualização
+  espera; cota do ChatGPT esgotada pausa todos os trabalhos até voltar; disco cheio dá mensagem clara;
+  proxy de empresa funciona; quando um antivírus bloqueia um componente, o app diz qual.
+- **Banco que não abre** e **biblioteca aberta por versão mais nova**: a mensagem diz o que fazer (preservar
+  a pasta e restaurar a última cópia; instalar a versão nova), sem reparo que apague dados.
+- **Linux**: testado no Ubuntu 22.04; no Ubuntu 24.04, use o .deb.
+
 ## v0.1.3
 
 - **Atualizações**: ao abrir o app, um aviso mostra a versão nova com "Atualizar agora" (com o progresso do

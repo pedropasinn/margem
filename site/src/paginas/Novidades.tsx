@@ -10,6 +10,38 @@ const VERSOES: readonly Versao[] = [
   {
     nome: CONFIG.versao,
     data: CONFIG.dataDaVersao,
+    dataIso: '2026-10-16',
+    resumo: `Uma versão para o ${N} aguentar o computador de qualquer pessoa: livros com o sumário certo, cópia de segurança pelo menu, mais privacidade e menos jeitos de dar errado. O macOS está a caminho.`,
+    grupos: [
+      { titulo: 'Livros e importação', itens: [
+        'O EPUB usa o sumário do próprio livro para os capítulos, e o Margem confere o sumário ao importar: se algo parecer errado, sugere outro, que você aplica ou não, sem mexer no texto nem nos grifos.',
+        'Tabelas, imagens e notas de rodapé do EPUB; a nota abre no lugar, como nos leitores de livro.',
+        'TXT e Markdown antigos do Windows abrem com os acentos certos.',
+        'PDF grande mostra a primeira página sem esperar o resto.',
+      ] },
+      { titulo: 'Leitura', itens: [
+        'Ctrl+Z (⌘Z no Mac) desfaz grifos, e desfazer não se perde numa falha.',
+        'Abrir um livro volta ao capítulo onde você parou.',
+        'Erros aparecem em português, com Tentar novamente, sem tela branca.',
+      ] },
+      { titulo: 'Seus dados', itens: [
+        'Arquivo → Fazer cópia de segurança… copia a biblioteca e o banco para uma pasta sua, com instruções para restaurar.',
+        'Antes de cada atualização que muda o banco, o app guarda uma cópia sozinho.',
+        'Biblioteca renomeada ou movida continua com as mesmas notas, inclusive no OneDrive.',
+        'O serviço local exige uma chave guardada no seu computador: outra conta do mesmo computador não lê a sua biblioteca.',
+        'No Windows, o ChatGPT trabalha sem acesso aos seus arquivos; o conteúdo vai no pedido.',
+      ] },
+      { titulo: 'No dia a dia', itens: [
+        'Conectar ao ChatGPT pelas Configurações, sem terminal.',
+        'Relatar um problema e Copiar informações do app, no menu Ajuda.',
+        'Abrir PDF e EPUB com o Margem pelo sistema; links da extensão e do Obsidian abrem direto no app.',
+        'Fechar ou travar o app não deixa programas rodando; cota do ChatGPT esgotada pausa os trabalhos até voltar; disco cheio e antivírus dão mensagem clara; proxy de empresa funciona.',
+      ] },
+    ],
+  },
+  {
+    nome: 'v0.1',
+    data: '12/10/2026',
     dataIso: '2026-10-12',
     resumo: `Primeira versão para instalar no seu computador. O ${N} é um assistente de estudos, um app de desktop para Windows e Linux (macOS em breve), usa a sua conta do ChatGPT pelo Codex e guarda a biblioteca numa pasta sua.`,
     grupos: [

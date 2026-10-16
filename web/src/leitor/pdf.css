@@ -12,3 +12,4 @@
 .pdf-numero { font: 12px var(--sans); color: var(--text-secondary); text-align: right; margin: 8px 0 0; }
 .zoom-pdf { display: flex; flex-wrap: wrap; gap: 4px; }
 
+.pdf-carregando { font: 13px var(--sans); color: var(--text-secondary); text-align: center; margin: 0 auto 24px; }

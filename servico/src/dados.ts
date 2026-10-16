@@ -61,6 +61,23 @@ export function caminhoDoOriginal(documentoId: string, formato: string): string 
   return join(pastaDoDocumento(documentoId), `original.${extensao}`);
 }
 
+const NOMES_DE_ORIGINAL = new Set(Object.values(EXTENSAO_POR_FORMATO).map((extensao) => `original.${extensao}`));
+
+/**
+ * Onde está, na biblioteca atual, o original de um documento (D-04). `origem_caminho` guarda o
+ * caminho absoluto de quando o original foi importado; com a biblioteca movida para outro disco ou
+ * restaurada noutro computador, ele aponta para fora da raiz e `arquivoNosDados` o recusa (com razão).
+ * O original gerenciado pelo app (`<raiz>/<id do documento>/original.<extensão>`) é refeito pela raiz
+ * atual a partir do id; qualquer outro valor (registro de outra origem) volta como está, e a conferência
+ * de caminho de quem o usa continua valendo.
+ */
+export function originalDoDocumento(documento: { id: string; origem_caminho: string }): string {
+  const partes = documento.origem_caminho.split(/[\\/]/);
+  const nome = partes.at(-1) ?? '';
+  if (!ehUlid(documento.id) || partes.at(-2) !== documento.id || !NOMES_DE_ORIGINAL.has(nome)) return documento.origem_caminho;
+  return join(pastaDoDocumento(documento.id), nome);
+}
+
 /**
  * Resolve um caminho relativo **dentro** de uma raiz. Recusa caminho absoluto, `..`
  * e qualquer resultado que escape da raiz — inclusive por link simbólico no nome.

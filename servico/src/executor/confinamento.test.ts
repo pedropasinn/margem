@@ -14,14 +14,14 @@ import type { ChildProcess, SpawnOptions, spawn } from 'node:child_process';
 import { executarCodex } from './codex.js';
 import { FLAGS_NECESSARIAS, type Capacidades } from './capacidades.js';
 import {
-  ambienteNativo, argumentosNativos, confinamentoPadrao, montarConfinamento, modeloDoUsuario, MOTOR_PADRAO, PERFIL_DO_MARGEM, politicaNativa, type Confinamento,
+  ambienteConfinado, ambienteNativo, argumentosNativos, confinamentoPadrao, montarConfinamento, modeloDoUsuario, modeloSemFerramentas, MOTOR_PADRAO, PERFIL_DO_MARGEM, politicaNativa, type Confinamento,
 } from './confinamento.js';
 import { pngDeTeste } from './fake.js';
 
 const SESSAO = '01a0eac1-3876-75e2-ab56-b4081137959f';
 const CAPACIDADES: Capacidades = {
   versao: 'codex-cli 0.159.2',
-  flags: { ...Object.fromEntries(FLAGS_NECESSARIAS.map((flag) => [flag, true])), '--json': true },
+  flags: { ...Object.fromEntries(FLAGS_NECESSARIAS.map((flag) => [flag, true])), '--json': true, '--disable': true },
   faltando: [],
 };
 
@@ -122,11 +122,13 @@ test('confinado: roda o motor dentro do bwrap, com a casa temporária como HOME 
     sincronizar: async (casaCodex) => { sincronizadas.push(casaCodex); await writeFile(join(casaCodex, 'auth.json'), '{"t":1}'); },
   };
   let vistoNaCasa: string[] = [];
+  let configuracaoNaCasa = '';
   const resultado = await executarCodex(await pedido(), {
     capacidades: CAPACIDADES, confinamento,
     gerar: spawnEncenado(registro, async (ambiente) => {
       const { readdir } = await import('node:fs/promises');
       vistoNaCasa = await readdir(ambiente.CODEX_HOME ?? '');
+      configuracaoNaCasa = await readFile(join(ambiente.CODEX_HOME ?? '', 'config.toml'), 'utf8');
     }),
   });
   expect(resultado.estado).toBe('ok');
@@ -136,15 +138,23 @@ test('confinado: roda o motor dentro do bwrap, com a casa temporária como HOME 
   const posicaoDoMotor = argumentos.indexOf(motor);
   expect(posicaoDoMotor).toBeGreaterThan(0);
   expect(argumentos[posicaoDoMotor + 1]).toBe('exec');
-  expect(argumentos).toContain('--sandbox');
+  // S-05: dentro do bwrap vale o perfil (que tira o --sandbox da linha), não o read-only.
+  expect(argumentos).not.toContain('--sandbox');
   expect(argumentos.join(' ')).toContain('cli_auth_credentials_store="file"');
   const ambiente = chamada?.opcoes.env as Record<string, string>;
   expect(ambiente.HOME).toMatch(/margem-casa-/u);
   expect(ambiente.CODEX_HOME).toBe(join(ambiente.HOME ?? '', '.codex'));
   expect(JSON.stringify(ambiente)).not.toContain('senha');
   expect(JSON.stringify(ambiente)).not.toContain(codexDoUsuario);
-  // A casa só tem a credencial e a linha do modelo; nada das sessões do usuário.
+  // A casa só tem a credencial e o config (modelo e perfil); nada das sessões do usuário.
   expect(vistoNaCasa.sort()).toEqual(['auth.json', 'config.toml']);
+  expect(configuracaoNaCasa.split('\n').slice(0, 2)).toEqual([`default_permissions = "${PERFIL_DO_MARGEM}"`, 'model = "gpt-6-astra"']);
+  expect(configuracaoNaCasa).toContain('":root" = "deny"');
+  // Só o diretório da execução e a pasta da versão do Codex; a casa (com o auth.json) não.
+  const diretorioDaExecucao = argumentos.at(argumentos.indexOf('-C') + 1) ?? '';
+  expect(configuracaoNaCasa).toContain(`${JSON.stringify(diretorioDaExecucao)} = "read"`);
+  expect(configuracaoNaCasa).toContain(`${JSON.stringify(join(base, 'versao'))} = "read"`);
+  expect(configuracaoNaCasa).not.toContain(ambiente.HOME ?? '?');
   expect(sincronizadas).toHaveLength(1);
   // Casa e diretório da execução somem no fim.
   expect(existsSync(ambiente.HOME ?? '')).toBe(false);
@@ -223,7 +233,10 @@ test('anexos só de leitura (a biblioteca do agente) entram como --ro-bind dentr
 test('confinamento padrão por sistema: bwrap no Linux, sandbox do próprio Codex no macOS e no Windows', () => {
   expect(confinamentoPadrao({}, 'codex', 'linux')).toMatchObject({ tipo: 'bwrap', bwrap: '/usr/bin/bwrap', motor: MOTOR_PADRAO });
   expect(confinamentoPadrao({ MARGEM_CODEX_MOTOR: '/r/codex' }, 'codex', 'darwin')).toMatchObject({ tipo: 'nativo', motor: '/r/codex', politica: 'perfil' });
-  expect(confinamentoPadrao({ MARGEM_CODEX_MOTOR: 'C:\\r\\codex.exe' }, 'codex', 'win32')).toMatchObject({ tipo: 'nativo', politica: 'somente-leitura', sandboxDoWindows: 'unelevated' });
+  // S-04: no Windows o read-only não nega leitura; o padrão é o modelo sem ferramentas.
+  expect(confinamentoPadrao({ MARGEM_CODEX_MOTOR: 'C:\\r\\codex.exe' }, 'codex', 'win32')).toMatchObject({ tipo: 'nativo', politica: 'sem-ferramentas', sandboxDoWindows: 'unelevated' });
+  expect(confinamentoPadrao({ MARGEM_CODEX_SANDBOX: 'somente-leitura' }, 'codex', 'win32')).toMatchObject({ politica: 'somente-leitura' });
+  expect(confinamentoPadrao({ MARGEM_CODEX_SANDBOX: 'sem-ferramentas' }, 'codex', 'darwin')).toMatchObject({ politica: 'sem-ferramentas' });
   // Escolhas explícitas; valor desconhecido é erro, nunca um isolamento mais fraco em silêncio.
   expect(confinamentoPadrao({ MARGEM_CONFINAMENTO: 'nativo', MARGEM_BWRAP: '/opt/bwrap' }, 'codex', 'linux')).toMatchObject({ tipo: 'nativo', bwrap: '/opt/bwrap', politica: 'perfil' });
   expect(confinamentoPadrao({ MARGEM_CODEX_SANDBOX: 'perfil', MARGEM_WINDOWS_SANDBOX: 'mxc' }, 'codex', 'win32')).toMatchObject({ politica: 'perfil', sandboxDoWindows: 'mxc' });
@@ -253,6 +266,53 @@ test('com o perfil o --sandbox sai da linha; o prompt depois de -- fica intacto'
   const linha = ['exec', '--sandbox', 'read-only', '-C', '/d', '--', 'leia --sandbox'];
   expect(argumentosNativos(linha, 'perfil')).toEqual(['exec', '-C', '/d', '--', 'leia --sandbox']);
   expect(argumentosNativos(linha, 'somente-leitura')).toEqual(linha);
+  // S-04: sem ferramentas, o read-only fica e os recursos que dão ferramentas ao modelo saem, antes do --.
+  expect(argumentosNativos(linha, 'sem-ferramentas')).toEqual([
+    'exec', '--sandbox', 'read-only', '-C', '/d',
+    '--disable', 'shell_tool', '--disable', 'unified_exec', '--disable', 'code_mode_host', '--', 'leia --sandbox',
+  ]);
+});
+
+test('S-04 · sem ferramentas: o prompt vai pela entrada padrão, com o prompt.md e os arquivos de texto embutidos', async () => {
+  const registro: Chamada[] = [];
+  const entradas: string[] = [];
+  const gerar = spawnEncenado(registro);
+  const comEntrada = ((arquivo: string, argumentos: readonly string[], opcoes: SpawnOptions) => {
+    const filho = (gerar as unknown as (a: string, b: readonly string[], c: SpawnOptions) => ChildProcess)(arquivo, argumentos, opcoes);
+    const pedacos: string[] = [];
+    Object.defineProperty(filho, 'stdin', { value: { on: () => undefined, end: (texto: string) => { pedacos.push(texto); entradas.push(pedacos.join('')); } } });
+    return filho;
+  }) as unknown as typeof spawn;
+  const base0 = await pedido();
+  await writeFile(join(base0.diretorioEntrada, 'prompt.md'), 'INSTRUCOES LONGAS DA TAREFA\n');
+  await writeFile(join(base0.diretorioEntrada, 'figura.png'), pngDeTeste(2, 2));
+  await writeFile(join(base0.diretorioEntrada, 'binario.dat'), Buffer.from([0, 1, 2, 255]));
+  const confinamento: Confinamento = { tipo: 'nativo', bwrap: '', motor, plataforma: 'win32', politica: 'sem-ferramentas' };
+  const { PONTEIRO_DO_PROMPT } = await import('./entrada.js');
+  const resultado = await executarCodex({ ...base0, prompt: PONTEIRO_DO_PROMPT }, { capacidades: CAPACIDADES, confinamento, gerar: comEntrada });
+  expect(resultado.estado).toBe('ok');
+  const argumentos = registro[0]?.argumentos ?? [];
+  expect(argumentos.at(-1)).toBe('-');
+  expect(argumentos.slice(argumentos.indexOf('--sandbox'), argumentos.indexOf('--sandbox') + 2)).toEqual(['--sandbox', 'read-only']);
+  for (const recurso of ['shell_tool', 'unified_exec', 'code_mode_host']) expect(argumentos.join(' ')).toContain(`--disable ${recurso}`);
+  const texto = entradas[0] ?? '';
+  expect(texto.startsWith('INSTRUCOES LONGAS DA TAREFA')).toBe(true);
+  expect(texto).toContain('<<<arquivo parte.txt>>>\ntexto da parte\n<<<fim de parte.txt>>>');
+  expect(texto).not.toContain('<<<arquivo prompt.md>>>');
+  expect(texto).not.toMatch(/figura\.png|binario\.dat|schema\.json/u);
+});
+
+test('S-04 · sem ferramentas exige --disable na CLI, e a geração de imagem cai no read-only', async () => {
+  const confinamento: Confinamento = { tipo: 'nativo', bwrap: '', motor, plataforma: 'win32', politica: 'sem-ferramentas' };
+  const semDisable: Capacidades = { ...CAPACIDADES, flags: { ...CAPACIDADES.flags, '--disable': false } };
+  const registro: Chamada[] = [];
+  expect(await executarCodex(await pedido(), { capacidades: semDisable, confinamento, gerar: spawnEncenado(registro) }))
+    .toMatchObject({ estado: 'falhou', codigo: 'cli_incompativel' });
+  expect(registro).toEqual([]);
+  // A imagem passa pelo modo de código: a execução vai com o prompt por argumento e sem os --disable.
+  await executarCodex(await pedido(true), { capacidades: CAPACIDADES, confinamento, gerar: spawnEncenado(registro) });
+  expect(registro[0]?.argumentos).not.toContain('--disable');
+  expect(registro[0]?.argumentos.at(-1)).toBe('leia');
 });
 
 test('ambiente nativo: casa temporária como perfil, PATH só do sistema, nada do worker', () => {
@@ -271,6 +331,16 @@ test('ambiente nativo: casa temporária como perfil, PATH só do sistema, nada d
   expect(windows.PATH).not.toContain('Users');
   expect(windows.PATHEXT).toBe('.COM;.EXE');
   expect(JSON.stringify(windows)).not.toMatch(/senha|ghp_/u);
+});
+
+test('W-04: proxy e certificados chegam ao Codex no modo nativo (Windows e macOS) e no bwrap', () => {
+  const rede = { HTTPS_PROXY: 'http://proxy:3128', NODE_EXTRA_CA_CERTS: 'C:\\ca.pem' };
+  const windows = ambienteNativo('C:\\T\\casa', { SYSTEMROOT: 'C:\\Windows', ...rede, DATABASE_URL: 'postgres://x:senha@h/b' }, 'win32');
+  expect(windows).toMatchObject({ ...rede, NO_PROXY: '127.0.0.1,localhost,::1' });
+  expect(ambienteNativo('/T/casa', { https_proxy: 'http://proxy:3128' }, 'darwin').https_proxy).toBe('http://proxy:3128');
+  const confinado = ambienteConfinado('/T/casa', { PATH: '/usr/bin', https_proxy: 'http://proxy:3128', SSL_CERT_FILE: '/etc/ssl/empresa.pem' });
+  expect(confinado).toMatchObject({ https_proxy: 'http://proxy:3128', SSL_CERT_FILE: '/etc/ssl/empresa.pem', PATH: '/usr/bin:/bin', HOME: '/T/casa' });
+  expect(JSON.stringify(windows)).not.toContain('senha');
 });
 
 test('nativo: roda o motor direto, sem bwrap, cwd no diretório e a política no config.toml da casa', async () => {
@@ -318,4 +388,13 @@ test('nativo sem o motor do Codex: falha fechada com a variável a corrigir', as
   expect(resultado).toMatchObject({ estado: 'falhou', codigo: 'cli_incompativel' });
   expect(resultado.estado === 'falhou' ? resultado.mensagem : '').toContain('MARGEM_CODEX_MOTOR');
   expect(registro).toEqual([]);
+});
+
+test('R2-4: quem monta o prompt sabe quando o modelo roda sem ferramentas', () => {
+  expect(modeloSemFerramentas({}, 'win32')).toBe(true);
+  expect(modeloSemFerramentas({}, 'linux')).toBe(false);
+  expect(modeloSemFerramentas({}, 'darwin')).toBe(false);
+  expect(modeloSemFerramentas({ MARGEM_CODEX_SANDBOX: 'sem-ferramentas' }, 'linux')).toBe(true);
+  expect(modeloSemFerramentas({ MARGEM_CODEX_SANDBOX: 'somente-leitura' }, 'win32')).toBe(false);
+  expect(modeloSemFerramentas({ MARGEM_EXECUTOR: 'falso' }, 'win32')).toBe(false);
 });

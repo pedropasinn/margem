@@ -14,6 +14,8 @@ export interface JanelaDoDesktop {
   alturaDoTitulo: number;
   abrirMenu: () => void;
   definirMoldura: (moldura: MolduraDaJanela) => void;
+  /** Editar → Desfazer do menu (U-05); quem ouve é `ligarDesfazerDoMenu` (leitor/desfazer.ts). */
+  aoDesfazer?: (ouvir: () => void) => () => void;
 }
 
 /**

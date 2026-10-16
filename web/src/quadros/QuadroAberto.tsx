@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { AfirmacaoDaObra, RetanguloDaObra } from '@margem/contratos';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/Primitives';
+import { comComando } from '../ui/teclas';
 import { BotaoDaBarra, Separador } from '../leitor/BarraDoLeitor';
 import { campoEmEdicao, guardarPreferencia, preferencia } from '../biblioteca/preferencias-locais';
 import { enquadrar, nivelDeZoom, QUADRO_INTEIRO } from './camera';
@@ -121,9 +122,10 @@ export function QuadroAberto({ detalhe, analise, manifesto, audio, carregandoAna
   useEffect(() => {
     const teclar = (evento: KeyboardEvent) => {
       if (atalhosSoComFoco && !(evento.target instanceof Node && raiz.current?.contains(evento.target))) return;
-      if (campoEmEdicao(evento.target) || document.querySelector('[aria-modal=true], .ui-listbox') || evento.altKey || evento.metaKey) return;
+      if (campoEmEdicao(evento.target) || document.querySelector('[aria-modal=true], .ui-listbox') || evento.altKey) return;
       const tecla = evento.key;
-      const comCtrl = evento.ctrlKey;
+      // + − 0 com ou sem Ctrl (⌘ no Mac) aproximam; as letras e os colchetes só sem eles.
+      const comCtrl = comComando(evento);
       if (['+', '='].includes(tecla)) { evento.preventDefault(); definirSeguir(false); palco.current?.zoom(1.5); return; }
       if (tecla === '-' || tecla === '_') { evento.preventDefault(); definirSeguir(false); palco.current?.zoom(1 / 1.5); return; }
       if (tecla === '0') { evento.preventDefault(); definirSeguir(false); palco.current?.irPara(QUADRO_INTEIRO); return; }

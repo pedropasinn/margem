@@ -97,7 +97,7 @@ export function pythonDoVenv(raiz: string, plataforma: Plataforma = process.plat
 
 /** Subcomandos do motor; os mesmos no congelado (`margem-motor <sub>`) e no venv. */
 export type SubcomandoDoMotor =
-  | 'ingest' | 'pdf-anotado' | 'renderizar-paginas' | 'camada-da-transcricao' | 'exercicios' | 'miniatura' | 'imagem' | 'verificar';
+  | 'ingest' | 'pdf-anotado' | 'renderizar-paginas' | 'camada-da-transcricao' | 'exercicios' | 'miniatura' | 'imagem' | 'verificar' | 'sumario';
 
 export interface ComandoDoMotor {
   programa: string;
@@ -148,6 +148,8 @@ export function comandoDoMotor(subcomando: SubcomandoDoMotor, argumentos: readon
       return { programa: ctx.python ?? doVenv, argumentos: ['-m', 'margem_motor.pdf_anotado', ...argumentos], cwd: motor, congelado: false };
     case 'imagem':
       return { programa: ctx.python ?? doVenv, argumentos: ['-m', 'margem_motor.imagem', ...argumentos], cwd: motor, congelado: false };
+    case 'sumario':
+      return { programa: ctx.python ?? doVenv, argumentos: ['-m', 'margem_motor.sumario_original', ...argumentos], cwd: motor, congelado: false };
     case 'verificar':
       return { programa: ctx.python ?? doVenv, argumentos: ['-c', 'import margem_motor.ingest', ...argumentos], cwd: motor, congelado: false };
     case 'renderizar-paginas':

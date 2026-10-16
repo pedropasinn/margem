@@ -29,6 +29,11 @@ export interface JanelaDoDesktop {
    * (logo abaixo do botão de menu).
    */
   definirMoldura: (moldura: { fundo: string; simbolo: string; altura: number; menu: { x: number; y: number } }) => void;
+  /**
+   * Editar → Desfazer do menu (U-05): o web decide se desfaz a digitação do campo ou o último grifo do leitor.
+   * Devolve a função que para de ouvir.
+   */
+  aoDesfazer: (ouvir: () => void) => () => void;
 }
 
 /**
@@ -57,17 +62,77 @@ export interface AtualizacaoDoDesktop {
   aoMudar: (ouvir: (situacao: SituacaoDaAtualizacao) => void) => () => void;
 }
 
+/**
+ * Cópia de segurança (U-03, W-01): onde moram a biblioteca e o banco desta biblioteca, a última cópia, e o
+ * "Fazer cópia de segurança…" (o mesmo do menu Arquivo).
+ */
+export interface LocaisDaBibliotecaNaJanela {
+  biblioteca: string;
+  banco: string;
+  /** O banco fica fora da pasta da biblioteca (pasta sincronizada): copiar só a pasta não leva as notas. */
+  bancoSeparado: boolean;
+  sincronizada: string | null;
+  /** A cópia automática de antes da última atualização do banco, se houver. */
+  copiaAntesDeMigrar: string | null;
+  ultimaCopia: { pasta: string; criada_em: string } | null;
+}
+
+export interface CopiaDeSegurancaDoDesktop {
+  locais: () => Promise<LocaisDaBibliotecaNaJanela>;
+  /** Escolher a pasta e copiar (a biblioteca fecha durante a cópia e abre de novo). */
+  fazer: () => void;
+  /** Mostra a pasta no gerenciador de arquivos. */
+  mostrar: (qual: 'biblioteca' | 'banco' | 'ultima') => void;
+}
+
+/**
+ * Conectar ao ChatGPT pelas Configurações e pelo aviso da biblioteca (U-01/W-05): o mesmo login da janela de
+ * abertura, com o Codex embutido e o CODEX_HOME do app. Espelho em `web/src/primeira-execucao/ponte-do-chatgpt.ts`.
+ */
+export interface ChatGPTDoDesktop {
+  /** `encontrado: false`: o Codex embutido não está no app (reinstalar). */
+  estado: () => Promise<{ encontrado: boolean; logado: boolean | null; conta: 'chatgpt' | 'chave_api' | null; falha?: { codigo: string; mensagem: string } }>;
+  /** `dispositivo`: com o código de uso único (sem servidor local). Resolve com o login concluído ou não. */
+  entrar: (dispositivo: boolean) => Promise<boolean>;
+  cancelar: () => Promise<void>;
+  /** Abre o link de login no navegador do sistema (só https). */
+  abrirLink: (url: string) => Promise<void>;
+  /** O link, o código e o fim do login, enquanto ele corre; devolve a função que para de avisar. */
+  aoEvento: (ouvir: (evento: { tipo: 'link' | 'codigo' | 'concluido' | 'falhou'; valor?: string }) => void) => () => void;
+}
+
+/** Um arquivo que o sistema mandou abrir ("Abrir com", U-08): o nome e os bytes, nunca o caminho. */
+export interface ArquivoAberto { nome: string; tipo: string; dados: Uint8Array }
+
+/** "Abrir com" o Margem (U-08): a página pega os arquivos e os leva à tela Adicionar, para confirmar. */
+export interface ArquivosDoDesktop {
+  /** Os arquivos que chegaram desde o último pedido (e os esquece). */
+  pegar: () => Promise<ArquivoAberto[]>;
+  /** Avisa quando chegam arquivos com a janela aberta; devolve a função que para de avisar. */
+  aoChegar: (ouvir: () => void) => () => void;
+}
+
 export interface PonteDaBiblioteca {
   /** Escolhe a pasta do cofre e grava nela as notas (de um documento, ou da biblioteca inteira). */
   exportarParaObsidian: (documentoId?: string) => Promise<ResultadoDaExportacaoNaJanela>;
+  /**
+   * S-01: a chave local da instalação. A página a troca pelo cookie da sessão (`POST /api/sessao`) e a
+   * mostra nas Configurações, para a extensão e o plugin do Obsidian.
+   */
+  chaveLocal: () => Promise<string>;
   janela: JanelaDoDesktop;
   atualizacao: AtualizacaoDoDesktop;
+  copia: CopiaDeSegurancaDoDesktop;
+  chatgpt: ChatGPTDoDesktop;
+  arquivos: ArquivosDoDesktop;
 }
 
 export const CANAIS_DA_BIBLIOTECA = {
   exportarParaObsidian: 'biblioteca:exportar-obsidian',
+  chaveLocal: 'biblioteca:chave-local',
   abrirMenu: 'janela:abrir-menu',
   definirMoldura: 'janela:definir-moldura',
+  desfazer: 'janela:desfazer',
   situacaoDaAtualizacao: 'atualizacao:situacao',
   procurarAtualizacao: 'atualizacao:procurar',
   reiniciarParaAtualizar: 'atualizacao:reiniciar',
@@ -76,4 +141,14 @@ export const CANAIS_DA_BIBLIOTECA = {
   adiarAtualizacao: 'atualizacao:adiar',
   abrirNovidades: 'atualizacao:abrir-novidades',
   atualizacaoMudou: 'atualizacao:mudou',
+  locaisDaBiblioteca: 'copia:locais',
+  fazerCopia: 'copia:fazer',
+  mostrarPasta: 'copia:mostrar',
+  estadoDoChatGPT: 'chatgpt:estado',
+  entrarNoChatGPT: 'chatgpt:entrar',
+  cancelarChatGPT: 'chatgpt:cancelar',
+  abrirLinkDoChatGPT: 'chatgpt:abrir-link',
+  eventoDoChatGPT: 'chatgpt:evento',
+  pegarArquivosAbertos: 'arquivos:pegar',
+  arquivosChegaram: 'arquivos:chegaram',
 } as const;

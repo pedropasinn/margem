@@ -79,8 +79,9 @@ export function prepararMarcas(id: string, opcoes: OpcoesDeLeitura = {}): Promis
   });
 }
 
-export function arvoreDaVersao(versaoId: string): Promise<ArvoreDaVersao> {
-  return pedir(`/api/versoes/${versaoId}/secoes`);
+/** `bloco`: a resposta diz também em que capítulo ele está (`capitulo_do_bloco`), para retomar a leitura ali. */
+export function arvoreDaVersao(versaoId: string, bloco?: string): Promise<ArvoreDaVersao> {
+  return pedir(`/api/versoes/${versaoId}/secoes${bloco ? `?bloco=${encodeURIComponent(bloco)}` : ''}`);
 }
 
 export function capituloDaVersao(versaoId: string, secaoId: string, camada?: string): Promise<SnapshotDoCapitulo> {

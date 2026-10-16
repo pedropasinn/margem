@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import type { Hono } from 'hono';
 import type pg from 'pg';
-import { ehUlid, pastaDaVersao, raizDoRepositorio } from '../dados.js';
+import { ehUlid, originalDoDocumento, pastaDaVersao, raizDoRepositorio } from '../dados.js';
 import { comTransacao } from '../db/transacao.js';
 import { gerarPdfAnotado, marcasDoPdf, montarPedido } from '../exportacao/pdf-anotado.js';
 import * as anotacoesRepo from '../repos/anotacoes.js';
@@ -57,7 +57,7 @@ export function registrarDocumentoOriginal(api: Hono, banco: pg.Pool): void {
     // que a PDF.js precisa para selecionar o texto.
     const camada = documento && documento.fonte_da_versao !== null && documento.fonte_da_versao !== documento.sha256_original
       ? await arquivoNosDados(caminhoDaCamada(id, documento.fonte_da_versao)) : null;
-    const caminho = camada ?? (documento ? await arquivoNosDados(documento.origem_caminho) : null);
+    const caminho = camada ?? (documento ? await arquivoNosDados(originalDoDocumento({ id, origem_caminho: documento.origem_caminho })) : null);
     if (!documento || caminho === null) throw new ErroDaApi(404, 'original_indisponivel');
     const arquivo = await open(caminho, 'r');
     try {
@@ -102,13 +102,13 @@ export function registrarDocumentoOriginal(api: Hono, banco: pg.Pool): void {
     }
     if (faixa && fim - inicio + 1 > 60) throw new ErroDaApi(400, 'limite_de_paginas');
     const versao = (await banco.query<{ documento_id: string }>('SELECT documento_id FROM versao_texto WHERE id=$1', [id])).rows[0];
-    const geometria = versao ? await cache.ler(versao.documento_id, id) : null;
+    // I-06: só a faixa pedida; acima do teto do cache, lida dos recortes derivados, não do arquivo inteiro.
+    const total = versao ? await cache.totalDePaginas(versao.documento_id, id) : null;
+    if (total !== null && !faixa && total > 60) throw new ErroDaApi(400, 'limite_de_paginas');
+    const geometria = versao && total !== null ? await cache.paginas(versao.documento_id, id, faixa ? inicio : 1, faixa ? fim : Number.MAX_SAFE_INTEGER) : null;
     if (!geometria) throw new ErroDaApi(404, 'geometria_indisponivel');
-    const paginas = geometria.paginas.filter((pagina) => !faixa || (pagina.numero >= inicio && pagina.numero <= fim));
-    if (paginas.length > 60) throw new ErroDaApi(400, 'limite_de_paginas');
-    const numeros = new Set(paginas.map((pagina) => pagina.numero));
-    return c.json({ versao_id: id, fonte: geometria.fonte, motor: geometria.motor, paginas,
-      palavras: geometria.palavras.filter((palavra) => numeros.has(palavra.pagina)) });
+    if (geometria.paginas.length > 60) throw new ErroDaApi(400, 'limite_de_paginas');
+    return c.json({ versao_id: id, fonte: geometria.fonte, motor: geometria.motor, paginas: geometria.paginas, palavras: geometria.palavras });
   });
 
   /**
@@ -123,7 +123,7 @@ export function registrarDocumentoOriginal(api: Hono, banco: pg.Pool): void {
     const documento = (await banco.query<{ documento_id: string; origem_caminho: string; titulo: string }>(
       `SELECT d.id AS documento_id, d.origem_caminho, d.titulo FROM versao_texto v JOIN documento d ON d.id = v.documento_id
         WHERE v.id=$1 AND d.formato='pdf'`, [id])).rows[0];
-    const original = documento ? await arquivoNosDados(documento.origem_caminho) : null;
+    const original = documento ? await arquivoNosDados(originalDoDocumento({ id: documento.documento_id, origem_caminho: documento.origem_caminho })) : null;
     if (!documento || original === null) throw new ErroDaApi(404, 'original_indisponivel');
     const geometria = await cache.ler(documento.documento_id, id);
     if (!geometria) throw new ErroDaApi(404, 'geometria_indisponivel');

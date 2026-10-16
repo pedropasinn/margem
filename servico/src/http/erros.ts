@@ -29,6 +29,21 @@ export class ErroDaApi extends Error {
   }
 }
 
+/** D-13: o que a pessoa lê quando o disco enche no meio do uso. */
+export const MENSAGEM_SEM_ESPACO = 'Sem espaço no disco: a operação não foi concluída. Libere espaço e tente de novo.';
+
+/**
+ * Disco cheio: `ENOSPC`/`EDQUOT` do sistema de arquivos ou SQLSTATE `53100` (disk_full) do Postgres,
+ * no próprio erro ou na causa dele.
+ */
+export function semEspacoNoDisco(erro: unknown): boolean {
+  for (let atual: unknown = erro, passos = 0; atual instanceof Object && passos < 5; atual = (atual as { cause?: unknown }).cause, passos += 1) {
+    const codigo = (atual as { code?: unknown }).code;
+    if (codigo === 'ENOSPC' || codigo === 'EDQUOT' || codigo === '53100') return true;
+  }
+  return false;
+}
+
 export function corpoDoErro(erro: unknown): { status: ContentfulStatusCode; corpo: CorpoDeErro } {
   if (erro instanceof AnotacaoObsoleta) {
     return { status: 409, corpo: { erro: 'anotacao_obsoleta', detalhe: erro.message, anotacao: erro.atual, revisao_atual: erro.atual.revisao_edicao } };
@@ -39,6 +54,7 @@ export function corpoDoErro(erro: unknown): { status: ContentfulStatusCode; corp
       corpo: erro.detalhe === undefined ? { erro: erro.erro } : { erro: erro.erro, detalhe: erro.detalhe },
     };
   }
+  if (semEspacoNoDisco(erro)) return { status: 507, corpo: { erro: 'sem_espaco', detalhe: MENSAGEM_SEM_ESPACO } };
   return { status: 500, corpo: { erro: 'falha_interna' } };
 }
 

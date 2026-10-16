@@ -15,7 +15,7 @@ const ICONE_DO_MARGEM = '<g fill="currentColor" transform="scale(0.6667) transla
 interface Configuracoes {
   /** Endereço do Margem, como se abre no navegador (ex.: http://localhost:8730). */
   servidor: string;
-  /** Token pessoal (beta). Hoje a API pessoal não exige; vai no cabeçalho Authorization quando preenchido. */
+  /** A chave do app de computador (Configurações → Chave para a extensão e o Obsidian); vai em Authorization quando preenchida. */
   token: string;
   pasta: string;
   marcas: 'minhas' | 'todas';
@@ -85,7 +85,7 @@ export default class PluginDoMargem extends Plugin {
   private async pedir(url: string): Promise<string> {
     const resposta = await requestUrl({ url, headers: this.cabecalhos(), throw: false });
     if (resposta.status === 401 || resposta.status === 403) {
-      throw new Error(`O Margem recusou o pedido (${String(resposta.status)}). Confira o token e, se o servidor recusar a origem do Obsidian, inclua-a em MARGEM_ORIGENS.`);
+      throw new Error(`O Margem recusou o pedido (${String(resposta.status)}). No app de computador, copie a chave em Configurações → Chave para a extensão e o Obsidian e cole no campo Token; se o servidor recusar a origem do Obsidian, inclua-a em MARGEM_ORIGENS.`);
     }
     if (resposta.status === 404 && url.includes('/api/obsidian/v2/')) {
       throw new Error('Este servidor do Margem é anterior às notas por item. Atualize o Margem.');
@@ -157,7 +157,7 @@ class AbaDoMargem extends PluginSettingTab {
 
     new Setting(containerEl).setName('Servidor').setDesc('Endereço do Margem, como você abre no navegador (loopback ou o nome do Tailscale).')
       .addText((campo) => campo.setPlaceholder(PADRAO.servidor).setValue(c.servidor).onChange(async (valor) => { c.servidor = valor.trim(); await salvar(); }));
-    new Setting(containerEl).setName('Token').setDesc('Token pessoal do Margem. Hoje o servidor pessoal não pede; deixe vazio.')
+    new Setting(containerEl).setName('Token').setDesc('No app de computador do Margem, cole a chave de Configurações → Chave para a extensão e o Obsidian. Com o Margem em Docker, deixe vazio.')
       .addText((campo) => { campo.inputEl.type = 'password'; campo.setValue(c.token).onChange(async (valor) => { c.token = valor; await salvar(); }); });
     new Setting(containerEl).setName('Pasta').setDesc('Onde as notas do Margem ficam no cofre: uma pasta por documento, com uma nota por grifo, anotação, pergunta e relação.')
       .addText((campo) => campo.setPlaceholder('Margem').setValue(c.pasta).onChange(async (valor) => { c.pasta = valor.trim(); await salvar(); }));

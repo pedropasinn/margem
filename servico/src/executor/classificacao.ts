@@ -33,33 +33,44 @@ export function classificarSaida(stderr: string, codigoSaida: number | null): Cl
 }
 
 const MINUTOS_PADRAO = 60;
+/** Espera mínima (D-11): anúncio no passado ou "in 0 seconds" não pode virar nova chamada imediata. */
+export const ESPERA_MINIMA_MS = 60_000;
+
+function noFuturo(quando: Date, agora: Date): Date {
+  return quando.getTime() - agora.getTime() >= ESPERA_MINIMA_MS ? quando : new Date(agora.getTime() + ESPERA_MINIMA_MS);
+}
 
 /**
  * Extrai o horário de volta anunciado pela CLI. Sem anúncio legível, adia sessenta minutos.
- * Aceita data ISO, "in N minutes/hours" e "at HH:MM" (próxima ocorrência).
+ * Aceita data ISO, "in N minutes/hours" e "at HH:MM", com ou sem AM/PM (próxima ocorrência, no
+ * relógio local). Nunca devolve menos que `ESPERA_MINIMA_MS` à frente.
  */
 export function horarioDeVolta(stderr: string, agora: Date = new Date()): Date {
   const iso = /(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)/.exec(stderr);
   if (iso?.[1]) {
     const quando = new Date(iso[1].replace(' ', 'T'));
-    if (!Number.isNaN(quando.getTime())) return quando;
+    if (!Number.isNaN(quando.getTime())) return noFuturo(quando, agora);
   }
   const relativo = /in\s+(\d+)\s*(second|minute|hour|segundo|minuto|hora)/i.exec(stderr);
   if (relativo?.[1] && relativo[2]) {
     const quantidade = Number(relativo[1]);
     const unidade = relativo[2].toLowerCase();
     const fator = unidade.startsWith('s') ? 1_000 : unidade.startsWith('m') ? 60_000 : 3_600_000;
-    return new Date(agora.getTime() + quantidade * fator);
+    return noFuturo(new Date(agora.getTime() + quantidade * fator), agora);
   }
-  const relogio = /(?:resets?|try again|volta)[^0-9\n]{0,20}(\d{1,2}):(\d{2})/i.exec(stderr);
+  const relogio = /(?:resets?|try again|volta)[^0-9\n]{0,20}(\d{1,2}):(\d{2})(?:\s*([ap])\.?\s*m\b\.?)?/i.exec(stderr);
   if (relogio?.[1] && relogio[2]) {
-    const hora = Number(relogio[1]);
+    let hora = Number(relogio[1]);
     const minuto = Number(relogio[2]);
-    if (hora < 24 && minuto < 60) {
+    const meridiano = relogio[3]?.toLowerCase();
+    // 12 AM é meia-noite e 12 PM, meio-dia; com AM/PM, a hora vai de 1 a 12.
+    const valida = meridiano === undefined ? hora < 24 : hora >= 1 && hora <= 12;
+    if (meridiano !== undefined) hora = (hora % 12) + (meridiano === 'p' ? 12 : 0);
+    if (valida && minuto < 60) {
       const quando = new Date(agora);
       quando.setHours(hora, minuto, 0, 0);
       if (quando.getTime() <= agora.getTime()) quando.setDate(quando.getDate() + 1);
-      return quando;
+      return noFuturo(quando, agora);
     }
   }
   return new Date(agora.getTime() + MINUTOS_PADRAO * 60_000);

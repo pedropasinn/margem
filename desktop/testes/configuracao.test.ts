@@ -14,7 +14,7 @@ describe('configuração do app', () => {
   it('banco e quadros dentro da biblioteca; segredos e CODEX_HOME no userData', () => {
     const b = pastasDaBiblioteca('/docs/Margem', { bancosLocais: '/home/x/.config/Margem/bancos', ambiente: {} });
     expect(b).toEqual({
-      biblioteca: '/docs/Margem', interna: '/docs/Margem/.margem', banco: '/docs/Margem/.margem/banco',
+      biblioteca: '/docs/Margem', id: idDaBiblioteca('/docs/Margem'), interna: '/docs/Margem/.margem', banco: '/docs/Margem/.margem/banco',
       bancoNaBiblioteca: '/docs/Margem/.margem/banco', sincronizada: null,
     });
     const a = pastasDoApp('/home/x/.config/Margem');
@@ -79,6 +79,10 @@ describe('biblioteca em pasta sincronizada (V-W8)', () => {
     expect(pastaDosBancosLocais('C:\\x', { USERPROFILE: 'C:\\Users\\ana' }, 'win32')).toBe('C:\\Users\\ana\\AppData\\Local\\Margem\\bancos');
     expect(pastaDosBancosLocais('/home/x/.config/Margem', {}, 'linux')).toBe('/home/x/.config/Margem/bancos');
     expect(pastasDoApp('/home/x/.config/Margem', {}, 'linux').bancosLocais).toBe('/home/x/.config/Margem/bancos');
+    // D-06: as cópias ficam no armazenamento local, ao lado dos bancos.
+    expect(pastasDoApp('/home/x/.config/Margem', {}, 'linux').copias).toBe('/home/x/.config/Margem/copias');
+    expect(pastasDoApp('C:\\Users\\ana\\AppData\\Roaming\\Margem', { LOCALAPPDATA: 'C:\\Users\\ana\\AppData\\Local' }, 'win32').copias)
+      .toBe('C:\\Users\\ana\\AppData\\Local\\Margem\\copias');
 
     const b = pastasDaBiblioteca('/home/x/Dropbox/Margem', { bancosLocais: '/home/x/.config/Margem/bancos', ambiente: {} });
     expect(b.sincronizada).toBe('Dropbox');

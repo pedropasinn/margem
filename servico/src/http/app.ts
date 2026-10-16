@@ -22,6 +22,8 @@ import { registrarRotasDasSalas } from './rotas-salas.js';
 import { registrarRotasDaPrimeiraExecucao } from './rotas-primeira-execucao.js';
 import { registrarRotasDoApagar } from './rotas-apagar.js';
 import { registrarRotasDaPausa } from './rotas-pausa.js';
+import { registrarRotasDoSumario } from './rotas-sumario.js';
+import { capituloApresentado, secoesApresentadas, sugestaoEmUso, vizinhosApresentados } from '../sumario/conferencia.js';
 import { registrarRotasDosModelos } from './rotas-modelos.js';
 import type { CatalogoDeModelos } from '../modelos/catalogo.js';
 import type { Verificadores } from '../primeira-execucao/estado.js';
@@ -57,8 +59,9 @@ import {
   EXTENSAO_POR_FORMATO, dentroDaRaiz, ehUlid,
   pastaDaVersao, tipoDoArquivo,
 } from '../dados.js';
-import { LIMITE_UPLOAD_BYTES } from './ambiente.js';
-import { CamadaInexistente, arvoreDeSecoes, biblioteca, capitulos, detalhe, snapshotDoCapitulo } from './consultas.js';
+import { LIMITE_UPLOAD_BYTES, chaveLocal } from './ambiente.js';
+import { registrarSessao } from './chave-local.js';
+import { CamadaInexistente, arvoreDeSecoes, biblioteca, capituloDoBloco, capitulos, detalhe, snapshotDoCapitulo } from './consultas.js';
 import { ErroDaApi, corpoDoErro, detalheSeguro } from './erros.js';
 import { cabecalhosDeSeguranca, lerFormularioLimitado, pareceUmPdf, seguranca } from './seguranca.js';
 import { registrarOriginal, type OriginalNovo } from './ingestao.js';
@@ -100,6 +103,11 @@ export interface OpcoesDaApi {
   provedorDeVoz?: (chave: string) => ProvedorDeVoz;
   /** Os testes trocam as verificações do `codex` e do motor da primeira execução (J103). */
   primeiraExecucao?: Partial<Verificadores>;
+  /**
+   * S-01: a chave local. Sem a opção, `MARGEM_CHAVE_LOCAL`; `null` desliga (a API interna do portão da
+   * sala, em memória, que só recebe pedidos que o próprio portão já autorizou).
+   */
+  chaveLocal?: string | null;
   /** Os testes trocam a busca da lista de modelos da conta (Configurações → Modelos, V-T10). */
   buscarModelos?: () => Promise<CatalogoDeModelos | null>;
 }
@@ -169,7 +177,8 @@ export function lerPedidoDeLeituraV2(bruto: unknown): PedidoDeLeituraV2 | undefi
 }
 
 const TIPOS_ACEITOS: Readonly<Record<string, readonly string[]>> = {
-  pdf: ['application/pdf'],
+  // I-09: há sistemas que entregam o .pdf como octet-stream; a assinatura %PDF- continua conferida.
+  pdf: ['application/pdf', 'application/octet-stream'],
   epub: ['application/epub+zip', 'application/octet-stream'],
   md: ['text/markdown', 'text/x-markdown', 'text/plain', 'application/octet-stream'],
   txt: ['text/plain', 'application/octet-stream'],
@@ -246,7 +255,10 @@ export function criarApi(opcoes: OpcoesDaApi): Hono {
     if (erro instanceof ErroDaApi) for (const [nome, valor] of Object.entries(erro.cabecalhos ?? {})) c.header(nome, valor);
     return c.json(corpo, status);
   });
-  api.use('/api/*', seguranca());
+  // S-01: a chave local é lida uma vez; inválida, a API não sobe.
+  const chave = opcoes.chaveLocal === null ? undefined : opcoes.chaveLocal ?? chaveLocal();
+  api.use('/api/*', seguranca(chave));
+  registrarSessao(api, chave);
   // Recursos pessoais (J102): os desligados respondem 404 antes de qualquer outra rota deles.
   const recursos = recursosEfetivos(opcoes.recursos ?? recursosDoAmbiente());
   for (const recurso of RECURSOS) if (!recursos.has(recurso)) desligarRecurso(api, recurso);
@@ -431,14 +443,24 @@ export function criarApi(opcoes: OpcoesDaApi): Hono {
 
   api.get('/api/versoes/:id/secoes', async (c) => {
     const id = exigirUlid(c.req.param('id'), 'versão');
-    const versao = await comTransacao(banco, (cliente) => documentosRepo.obterVersao(cliente, id))
-      .catch(() => { throw new ErroDaApi(404, 'versao_inexistente'); });
+    const bloco = c.req.query('bloco')?.trim() || undefined;
+    const { versao, sugestao } = await comTransacao(banco, async (cliente) => ({
+      versao: await documentosRepo.obterVersao(cliente, id), sugestao: await sugestaoEmUso(cliente, id),
+    })).catch(() => { throw new ErroDaApi(404, 'versao_inexistente'); });
+    // J164: com a sugestão da conferência em uso, o sumário mostra outros títulos e níveis para as mesmas seções.
+    const secoes = sugestao === null ? null : secoesApresentadas(versao.canonico.secoes, sugestao);
     return c.json({
       versao_id: versao.id, documento_id: versao.documento_id,
       titulo: versao.canonico.documento.titulo,
-      secoes: arvoreDeSecoes(versao.canonico.secoes),
-      capitulos: capitulos(versao.canonico).map((secao) => ({ id: secao.id, titulo: secao.titulo })),
+      secoes: arvoreDeSecoes(secoes ?? versao.canonico.secoes),
+      capitulos: (secoes?.filter((secao) => secao.nivel === 1) ?? capitulos(versao.canonico)).map((secao) => ({ id: secao.id, titulo: secao.titulo })),
+      // R3-2: os capítulos do canônico que a sugestão tirou do sumário ainda abrem por link (busca, grifo, nota).
+      ...(secoes === null ? {} : { capitulos_ocultos: capitulos(versao.canonico)
+        .filter((secao) => !secoes.some((visivel) => visivel.id === secao.id && visivel.nivel === 1)).map((secao) => secao.id) }),
       limites: versao.canonico.limites,
+      // `?bloco=`: o capítulo onde está o bloco (o da posição salva), para a leitura reabrir nele (I-04).
+      ...(bloco ? { capitulo_do_bloco: secoes === null ? capituloDoBloco(versao.canonico, bloco)
+        : capituloApresentado(secoes, versao.canonico.secoes, capituloDoBloco(versao.canonico, bloco)) } : {}),
     });
   });
 
@@ -448,9 +470,16 @@ export function criarApi(opcoes: OpcoesDaApi): Hono {
     // `?camada=<id>|todas`; sem o parâmetro, a camada preferida do documento, senão a mais recente.
     const bruta = c.req.query('camada');
     const camada = bruta === undefined || bruta === '' ? undefined : bruta === 'todas' ? 'todas' : exigirUlid(bruta, 'camada');
-    const snapshot = await comTransacao(banco, (cliente) => snapshotDoCapitulo(
-      cliente, id, secaoId, (versaoId, assetId) => `/api/assets/${versaoId}/${assetId}`, camada,
-      async (documentoId, versaoId) => (await geometriasDoCapitulo.ler(documentoId, versaoId))?.paginas.length ?? null, c.req.query('etiqueta')?.trim() || undefined))
+    const snapshot = await comTransacao(banco, async (cliente) => {
+      const lido = await snapshotDoCapitulo(
+        cliente, id, secaoId, (versaoId, assetId) => `/api/assets/${versaoId}/${assetId}`, camada,
+        (documentoId, versaoId) => geometriasDoCapitulo.totalDePaginas(documentoId, versaoId), c.req.query('etiqueta')?.trim() || undefined);
+      // R3-2: com a sugestão do sumário em uso, anterior/próximo seguem os capítulos que o sumário mostra.
+      const sugestao = lido === null ? null : await sugestaoEmUso(cliente, id);
+      if (lido === null || sugestao === null) return lido;
+      const versao = await documentosRepo.obterVersao(cliente, id);
+      return { ...lido, ...vizinhosApresentados(secoesApresentadas(versao.canonico.secoes, sugestao), lido.secao) };
+    })
       .catch((erro: unknown) => {
         if (erro instanceof CamadaInexistente) throw new ErroDaApi(404, 'camada_inexistente', 'A camada não é desta versão.');
         throw new ErroDaApi(404, 'versao_inexistente');
@@ -631,6 +660,8 @@ export function criarApi(opcoes: OpcoesDaApi): Hono {
   registrarRotasDoApagar(api, { banco, exigirUlid });
   // Trabalho do Codex parado desde antes de o app abrir: em pausa até a pessoa retomar ou descartar (V-F1).
   registrarRotasDaPausa(api, { banco, exigirUlid });
+  // Conferência do sumário de EPUB e PDF novos (J164): o aviso, a decisão e a configuração.
+  registrarRotasDoSumario(api, { banco, exigirUlid });
 
   api.post('/api/jobs/:id/reenfileirar', async (c) => {
     const id = exigirUlid(c.req.param('id'), 'job');

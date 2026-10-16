@@ -11,6 +11,8 @@
  * Tudo roda na transação do chamador, depois de `ligarApagamento`: só ela libera o DELETE nas tabelas
  * imutáveis (migração 0033).
  */
+import { raizDaAuditoria } from '../executor/auditoria.js';
+import { apagarAuditoriaDosJobs } from '../worker/retencao.js';
 import type { DificuldadeTextualV1, ElementoSemanticoV1, Id, ModeloDoCapituloV1, PlanoPedagogicoV1, RelacaoSemanticaV1 } from '@margem/contratos';
 import type { Transacao } from '../db/transacao.js';
 
@@ -58,8 +60,11 @@ export async function apagarJobs(cliente: Transacao, ids: readonly Id[]): Promis
     await cliente.query('SAVEPOINT apagar_job');
     try {
       await cliente.query('DELETE FROM evento_job WHERE job_id=$1', [id]);
-      apagados += (await cliente.query('DELETE FROM job WHERE id=$1', [id])).rowCount ?? 0;
+      const apagado = (await cliente.query('DELETE FROM job WHERE id=$1', [id])).rowCount ?? 0;
+      apagados += apagado;
       await cliente.query('RELEASE SAVEPOINT apagar_job');
+      // A auditoria do job (prompt e resposta com o texto do documento) sai com ele.
+      if (apagado > 0) await apagarAuditoriaDosJobs(raizDaAuditoria(), [id]).catch(() => undefined);
     } catch (erro) {
       // 23503: uma linha fora da limpeza ainda aponta para o job (ex.: um visual guardado). Ele fica.
       if ((erro as { code?: string }).code !== '23503') throw erro;
@@ -150,6 +155,7 @@ export async function apagarExecucao(cliente: Transacao, execucaoId: Id): Promis
     await cliente.query('DELETE FROM evento_job WHERE job_id=$1', [id]);
     await cliente.query('DELETE FROM job WHERE id=$1', [id]);
   }
+  await apagarAuditoriaDosJobs(raizDaAuditoria(), jobs).catch(() => undefined);
   await cliente.query('DELETE FROM parte WHERE execucao_id=$1', [execucaoId]);
   await cliente.query('DELETE FROM camada WHERE id=$1', [execucaoId]);
   await cliente.query('DELETE FROM execucao_leitura WHERE id=$1', [execucaoId]);

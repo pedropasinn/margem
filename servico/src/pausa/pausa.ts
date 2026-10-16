@@ -18,7 +18,7 @@
 import type { Id } from '@margem/contratos';
 import type { Transacao } from '../db/transacao.js';
 import { cancelarOperacoes } from '../apagar/cancelar.js';
-import { CANCELAVEIS } from '../repos/jobs.js';
+import { CANCELAVEIS, TIPOS_SEM_CODEX } from '../repos/jobs.js';
 
 /** Quanto tempo parado faz um trabalho do Codex esperar a pessoa na partida do worker. */
 export const ESPERA_PARA_PAUSAR_MS = 3 * 60 * 60_000;
@@ -32,8 +32,8 @@ export function esperaParaPausarMs(ambiente: NodeJS.ProcessEnv = process.env): n
   return horas === 0 ? null : Math.round(horas * 60 * 60_000);
 }
 
-/** Jobs que não chamam o Codex (motor local, download, voz): nunca entram em pausa. */
-export const TIPOS_SEM_CODEX: readonly string[] = ['canonizar', 'canonizar_revisao', 'importar_youtube', 'narrar_audio', 'narrar_noticias'];
+/** Jobs que não chamam o Codex (motor local, download, voz): nunca entram em pausa. Moram na fila (D-09). */
+export { TIPOS_SEM_CODEX } from '../repos/jobs.js';
 
 /** Prefixo do id da preparação em pausa na API (ela não é um job: é o pedido guardado no documento). */
 export const PREFIXO_DA_PREPARACAO = 'preparacao:';
@@ -70,6 +70,7 @@ export function rotuloDoTrabalho(tipo: string): string {
     case 'sintetizar_capitulo': case 'revisar_capitulo': case 'planejar_leitura':
       return 'Análise do texto';
     case 'identificar_tipo': return 'Reconhecer o tipo do texto';
+    case 'conferir_sumario': return 'Conferir o sumário';
     case 'gerar_esquema': return 'Mapa do capítulo';
     case 'gerar_flashcards': return 'Flashcards';
     case 'roteirizar_visita': return 'Visita guiada';

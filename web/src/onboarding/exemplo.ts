@@ -12,6 +12,7 @@
  * quando a pessoa pedir "Analisar" — o onboarding nunca dispara uma leitura do Codex.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { mensagemDeErro } from '../biblioteca/erros';
 import { adicionarDocumento, ErroDaApi, obterDocumento } from '../biblioteca/api';
 import type { ItemDaBiblioteca } from '../biblioteca/tipos';
 
@@ -97,7 +98,7 @@ export function usarExemplo({ existente, aoRegistrar, aoPronto, fontes = FONTES_
       }
     } catch (falha) {
       if (!vivo.current) return;
-      definirErro(falha instanceof Error ? falha.message : 'Não foi possível abrir o exemplo.');
+      definirErro(mensagemDeErro(falha, 'Não foi possível abrir o exemplo.'));
       definirFase('erro');
     }
   }, [existente, fontes, aoRegistrar, aoPronto, intervaloMs, limiteMs]);

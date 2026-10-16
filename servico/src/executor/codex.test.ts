@@ -180,12 +180,12 @@ test('resposta fora do schema vira falha de schema e resposta truncada vira json
 test('cota vira adiamento com horário de volta e autenticação vira auth', async () => {
   const adiado = await executarCodex(
     { diretorioEntrada: entrada, prompt: 'e', schema, prazoMs: 5_000, diretorioArtefatos: artefatos },
-    { capacidades: CAPACIDADES, gerar: spawnFalso({ codigo: 1, stderr: 'You have hit your usage limit. Try again at 2026-09-21T10:27:00Z' }, []) },
+    { capacidades: CAPACIDADES, gerar: spawnFalso({ codigo: 1, stderr: 'You have hit your usage limit. Try again at 2099-09-21T10:27:00Z' }, []) },
   );
   expect(adiado.estado).toBe('adiado');
   if (adiado.estado === 'adiado') {
     expect(adiado.codigo).toBe('cota');
-    expect(adiado.not_before.toISOString()).toBe('2026-09-21T10:27:00.000Z');
+    expect(adiado.not_before.toISOString()).toBe('2099-09-21T10:27:00.000Z');
   }
   const semSessao = await executarCodex(
     { diretorioEntrada: entrada, prompt: 'f', schema, prazoMs: 5_000, diretorioArtefatos: artefatos },

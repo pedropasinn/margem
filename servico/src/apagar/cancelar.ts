@@ -49,7 +49,7 @@ const ATIVOS = jobsRepo.CANCELAVEIS;
  * oferece "Reenfileirar"), sem nada publicado.
  */
 export const SOMEM_AO_CANCELAR: readonly string[] = [
-  'identificar_tipo', 'gerar_esquema', 'gerar_flashcards', 'roteirizar_visita', 'comentar_leitura', 'conceitos_do_video',
+  'identificar_tipo', 'conferir_sumario', 'gerar_esquema', 'gerar_flashcards', 'roteirizar_visita', 'comentar_leitura', 'conceitos_do_video',
   'resolver_exercicio', 'transcrever_escaneado',
 ];
 

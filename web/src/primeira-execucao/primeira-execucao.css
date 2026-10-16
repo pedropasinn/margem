@@ -49,3 +49,13 @@
   .comando-rotulo { grid-column: 1 / -1; }
   .app-shell.pagina-ampla > main > .aviso-da-instalacao { margin: 16px 16px 0; }
 }
+
+/* ---------- Conectar ao ChatGPT (app de computador, U-01) ---------- */
+.conectar-chatgpt { display: grid; gap: 8px; }
+.conectar-chatgpt .button-row { flex-wrap: wrap; }
+.conectar-chatgpt-codigo { margin: 0; font: 600 22px/1.2 var(--mono, ui-monospace, monospace); letter-spacing: 2px; color: var(--texto-1); }
+.conectar-chatgpt-estado { margin: 0; color: var(--texto-1); }
+.configuracao-do-chatgpt { display: grid; gap: 16px; }
+.configuracao-do-chatgpt h2 { margin: 0; font-size: 22px; }
+.configuracao-do-chatgpt .cabeca-da-secao { display: grid; gap: 6px; }
+.configuracao-do-chatgpt .cabeca-da-secao p, .configuracao-do-chatgpt > p { margin: 0; max-width: 60ch; }

@@ -5,12 +5,15 @@ import { homedir, tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { ambienteSaneado } from './ambiente.js';
 import { conferirResposta, diretorioArtefatosPadrao, escreverSchemaDoCodex, guardarArtefato, sha256 } from './artefato.js';
-import { ARQUIVO_PROMPT, PONTEIRO_DO_PROMPT, promptCabeNaLinha } from './entrada.js';
+import { ARQUIVO_PROMPT, PONTEIRO_DO_PROMPT, PROMPT_PELA_ENTRADA, promptCabeNaLinha, promptComOsArquivos } from './entrada.js';
 import { classificarSaida, esforcoDaSaida, horarioDeVolta, modeloDaSaida, trechoDecisivo } from './classificacao.js';
 import { causaDoStderr, resumirStderr } from './stderr.js';
 import { detectarCapacidades } from './capacidades.js';
-import { ambienteConfinado, confinamentoDisponivel, lerCredencial, montarConfinamento, pastaDoMotor, prepararCasa, prepararNativo, tipoDoConfinamento } from './confinamento.js';
-import { encerrarArvore, opcoesDeProcesso } from '../plataforma/processos.js';
+import {
+  ambienteConfinado, confinamentoDisponivel, lerCredencial, montarConfinamento, pastaDoMotor, politicaPadrao, prepararCasa, prepararNativo,
+  prepararPoliticaNoBwrap, tipoDoConfinamento, type PoliticaNativa,
+} from './confinamento.js';
+import { anunciarGrupo, encerrarArvore, opcoesDeProcesso } from '../plataforma/processos.js';
 import { codexCli } from '../plataforma/executaveis.js';
 import type { Confinamento } from './confinamento.js';
 import type { Capacidades } from './capacidades.js';
@@ -161,6 +164,8 @@ function rodarProcesso(
   gerar: typeof spawn,
   lerSessao: boolean,
   ambiente: Record<string, string>,
+  /** O prompt pela entrada padrão (política sem ferramentas); sem ele, a entrada fica fechada. */
+  entradaPadrao?: string,
 ): Promise<FimDoProcesso> {
   return new Promise<FimDoProcesso>((resolver) => {
     let cabecalho = '';
@@ -171,12 +176,19 @@ function rodarProcesso(
     let pendente = '';
     const filho = gerar(binario, argumentos, {
       cwd: diretorio,
-      // stdin fechado: o prompt vai por argumento, nunca por tubo.
-      stdio: ['ignore', lerSessao ? 'pipe' : 'ignore', 'pipe'],
+      // stdin fechado quando o prompt vai por argumento; sem ferramentas, ele vai pela entrada.
+      stdio: [entradaPadrao === undefined ? 'ignore' : 'pipe', lerSessao ? 'pipe' : 'ignore', 'pipe'],
       env: ambiente,
       // Líder de grupo (fora do Windows) para o prazo e o cancelamento levarem a árvore inteira.
       ...opcoesDeProcesso(process.platform, true),
     });
+    // J157 (L-03): grupo próprio não morre com o worker; anunciado, o supervisor o encerra se o worker cair.
+    anunciarGrupo(filho);
+    if (entradaPadrao !== undefined) {
+      // A CLI que morre antes de ler tudo fecha o tubo: o erro de escrita não derruba o worker.
+      filho.stdin?.on('error', () => undefined);
+      filho.stdin?.end(entradaPadrao);
+    }
     // Do stdout só interessa o `thread_id`; nada dele é guardado (as mensagens do modelo passam por aqui).
     filho.stdout?.on('data', (pedaco: Buffer) => {
       if (sessao !== undefined) return;
@@ -323,11 +335,24 @@ export async function executarCodex(
       buscaNaWeb: pedido.buscaNaWeb === true,
     });
     let argumentos = montar(pedido.prompt);
-    // V-W4: acima do teto da plataforma (no Windows, a linha inteira), o prompt vai para
-    // `prompt.md` no diretório da execução e o argumento só aponta para ele.
     const plataforma = opcoes.plataforma ?? confinamento?.plataforma ?? process.platform;
+    // S-04: sem ferramentas (padrão no Windows) o modelo só lê o prompt. A geração de imagem passa pelo
+    // modo de código, que essa política desliga: ela roda com o `read-only` (o prompt é do Margem).
+    const politicaPedida: PoliticaNativa | undefined = confinamento === undefined
+      ? undefined : confinamento.politica ?? politicaPadrao(confinamento.plataforma ?? process.platform);
+    const politica = politicaPedida === 'sem-ferramentas' && pedido.gerarImagem === true ? 'somente-leitura' : politicaPedida;
+    let entradaPadrao: string | undefined;
     const motorDaLinha = confinamento !== undefined && !comBwrap ? confinamento.motor : binario;
-    if (!promptCabeNaLinha(pedido.prompt, [motorDaLinha, ...argumentos], plataforma)) {
+    if (politica === 'sem-ferramentas') {
+      if (capacidades.flags['--disable'] !== true) {
+        return falhou('cli_incompativel', 'A CLI local não oferece --disable, que desliga as ferramentas do modelo.', Date.now() - inicio);
+      }
+      // Sem teto de linha: o prompt, com os arquivos da entrada, vai pela entrada padrão.
+      entradaPadrao = await promptComOsArquivos(diretorio, pedido.prompt, [ARQUIVO_SCHEMA, ...(pedido.imagens ?? []).map((nome) => basename(nome))]);
+      argumentos = montar(PROMPT_PELA_ENTRADA);
+    } else if (!promptCabeNaLinha(pedido.prompt, [motorDaLinha, ...argumentos], plataforma)) {
+      // V-W4: acima do teto da plataforma (no Windows, a linha inteira), o prompt vai para
+      // `prompt.md` no diretório da execução e o argumento só aponta para ele.
       await writeFile(join(diretorio, ARQUIVO_PROMPT), pedido.prompt, { flag: 'wx', mode: 0o600 });
       argumentos = montar(PONTEIRO_DO_PROMPT);
     }
@@ -341,19 +366,22 @@ export async function executarCodex(
       if (comBwrap) {
         const motor = await pastaDoMotor(confinamento.motor);
         comando = confinamento.bwrap;
-        linha = [...montarConfinamento({ motor: motor.real, pastaDoMotor: motor.pasta, diretorio, casa, somenteLeitura: anexos }), ...argumentos];
+        // S-05: a casa (com o auth.json) está montada; o perfil deixa os comandos do modelo só no diretório.
+        const doMotor = await prepararPoliticaNoBwrap({ casa, diretorio, pastaDoMotor: motor.pasta, politica: politica ?? 'perfil', argumentos });
+        linha = [...montarConfinamento({ motor: motor.real, pastaDoMotor: motor.pasta, diretorio, casa, somenteLeitura: anexos }), ...doMotor];
         ambiente = ambienteConfinado(casa, ambiente);
       } else {
         // Sem bwrap (macOS, Windows): o sandbox do próprio Codex, com a política escrita na casa.
         const nativo = await prepararNativo({
           confinamento, casa, diretorio: await realpath(diretorio), leituras: anexos.map((anexo) => anexo.origem), argumentos,
+          ...(politica === undefined ? {} : { politica }),
         });
         comando = nativo.comando;
         linha = nativo.argumentos;
         ambiente = nativo.ambiente;
       }
     }
-    const fim = await rodarProcesso(comando, linha, diretorio, pedido.prazoMs, pedido.sinal, gerar, pedido.gerarImagem === true, ambiente);
+    const fim = await rodarProcesso(comando, linha, diretorio, pedido.prazoMs, pedido.sinal, gerar, pedido.gerarImagem === true, ambiente, entradaPadrao);
     // Se o Codex renovou o token na casa temporária, a renovação volta ao login comum.
     if (confinamento !== undefined && casa !== undefined && await lerCredencial(join(casa, '.codex')) !== credencialAntes) {
       await confinamento.sincronizar?.(join(casa, '.codex'));

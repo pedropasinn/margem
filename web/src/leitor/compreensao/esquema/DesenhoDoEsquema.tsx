@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import type { AncoraV1, EsquemaDoCapituloV1, TipoDoNoDoEsquema } from '@margem/contratos';
 import { Icon } from '../../../ui/Icon';
+import { textoNoSistema } from '../../../ui/teclas';
 import {
   ESPACO_DO_ICONE, ICONE, MEDIDAS_ESTREITAS, MEDIDAS_LARGAS, caminhoArredondado, calcularLayout, carregarElk, formaDoNo, medirTexto,
   type LayoutDoEsquema, type MotorDeLayout, type NoPosicionado,
@@ -197,7 +198,7 @@ export function DesenhoDoEsquema({ esquema, aoIr, motor = carregarElk }: PropsDo
 
   return <div className="esquema-area">
     <div ref={tela} className="esquema-tela" tabIndex={0} role="application" aria-roledescription="mapa esquemático"
-      aria-label={`${esquema.titulo}. Arraste para mover, Ctrl e roda ou os botões para aproximar; Tab percorre as ideias.`}
+      aria-label={`${esquema.titulo}. Arraste para mover, ${textoNoSistema('Ctrl')} e roda ou os botões para aproximar; Tab percorre as ideias.`}
       onPointerDown={aoApertar} onPointerMove={aoMover} onPointerUp={aoSoltar} onPointerCancel={aoSoltar} onKeyDown={teclarNaTela}>
       {falha && <p className="esquema-falha" role="alert">{falha}</p>}
       {layout && <svg className="esquema-svg" width={tamanho?.largura ?? 0} height={tamanho?.altura ?? 0} data-escala={vista.escala.toFixed(2)}>

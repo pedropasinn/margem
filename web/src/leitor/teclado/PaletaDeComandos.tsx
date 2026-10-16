@@ -4,6 +4,7 @@
  */
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { filtrarComandos, type Comando } from './comandos';
+import { atalhoNoSistema } from '../../ui/teclas';
 
 export function PaletaDeComandos({ comandos, aoFechar }: { comandos: readonly Comando[]; aoFechar: () => void }): ReactNode {
   const [busca, buscar] = useState('');
@@ -47,7 +48,7 @@ export function PaletaDeComandos({ comandos, aoFechar }: { comandos: readonly Co
             {cabeca && <li className="paleta-grupo" role="presentation">{cabeca}</li>}
             <li id={`${idDaLista}-${comando.id}`} role="option" aria-selected={indice === escolhido}
               onPointerMove={() => escolher(indice)} onClick={() => executar(comando)}>
-              <span>{comando.rotulo}</span>{comando.atalho && <kbd>{comando.atalho}</kbd>}
+              <span>{comando.rotulo}</span>{comando.atalho && <kbd>{atalhoNoSistema(comando.atalho)}</kbd>}
             </li>
           </Fragment>;
         })}

@@ -41,3 +41,24 @@ test('Windows: o mínimo do sistema passa (sem ele nem o TLS sobe), com nomes em
   expect(ambienteSaneado({ SystemRoot: 'C:\\Windows', TMPDIR: '/t' }, 'linux')).toEqual({});
   expect(ambienteSaneado({ TMPDIR: '/var/folders/x' }, 'darwin')).toEqual({ TMPDIR: '/var/folders/x' });
 });
+
+test('W-04: proxy e certificados passam em qualquer caixa; o loopback não vai pelo proxy; segredos continuam fora', async () => {
+  const { variaveisDeRede } = await import('./ambiente.js');
+  const origem = {
+    PATH: '/usr/bin', https_proxy: 'http://u:p@proxy.empresa:3128', HTTP_PROXY: 'http://proxy.empresa:3128', no_proxy: 'intranet.local',
+    NODE_EXTRA_CA_CERTS: '/etc/empresa/ca.pem', SSL_CERT_FILE: '/etc/empresa/ca.pem', DATABASE_URL: 'postgres://u:senha@x/m',
+  };
+  const ambiente = ambienteSaneado(origem, 'linux');
+  expect(ambiente).toMatchObject({
+    PATH: '/usr/bin', https_proxy: 'http://u:p@proxy.empresa:3128', HTTP_PROXY: 'http://proxy.empresa:3128',
+    NODE_EXTRA_CA_CERTS: '/etc/empresa/ca.pem', SSL_CERT_FILE: '/etc/empresa/ca.pem',
+  });
+  expect(ambiente.no_proxy).toBe('intranet.local,127.0.0.1,localhost,::1');
+  expect(ambiente.NO_PROXY).toBe(ambiente.no_proxy);
+  expect(ambiente.DATABASE_URL).toBeUndefined();
+  expect(vazamentos(ambiente, 'linux')).toEqual([]);
+  // Windows: o mesmo, sem depender da caixa.
+  expect(ambienteSaneado({ Https_Proxy: 'http://p:8080' }, 'win32')).toMatchObject({ Https_Proxy: 'http://p:8080', NO_PROXY: '127.0.0.1,localhost,::1' });
+  // Sem proxy, nada inventado.
+  expect(variaveisDeRede({ PATH: '/x' })).toEqual({});
+});

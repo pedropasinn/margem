@@ -20,9 +20,10 @@
         com ele, se a porta 8730 estiver ocupada, a extensão procura o Margem nas portas 8730 a 8739.
         Outro endereço: a extensão pede permissão só para ele ao salvar.</p>
 
-      <label for="token">Token (opcional)</label>
-      <input id="token" class="ui-input" type="password" autocomplete="off" placeholder="deixe vazio enquanto o Margem não usar tokens">
-      <p class="ajuda">Vai no cabeçalho <code>X-Margem</code> e em <code>Authorization: Bearer</code>. Fica só neste navegador.</p>
+      <label for="token">Token</label>
+      <input id="token" class="ui-input" type="password" autocomplete="off" placeholder="a chave copiada das Configurações do Margem">
+      <p class="ajuda">No app de computador, copie em Configurações → Chave para a extensão e o Obsidian. Fica só neste navegador.
+        Com o Margem em Docker, deixe vazio.</p>
 
       <div class="acoes">
         <button class="ui-button primary" type="submit">Salvar</button>

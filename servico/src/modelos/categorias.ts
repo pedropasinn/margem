@@ -14,6 +14,7 @@ import type { Recurso } from '../recursos.js';
 import { esforcoDoAgente } from '../agente/manipulador.js';
 import { esforcoDosFlashcards } from '../flashcards/manipuladores.js';
 import { esforcoDoTipo } from '../tipo-de-texto/identificar.js';
+import { esforcoDoSumario } from '../sumario/conferencia.js';
 import {
   ESFORCO_DO_PLANO_PADRAO, ESFORCO_PADRAO, MODELO_DA_CONTA, MODELO_PADRAO, esforcoDaLeituraComentada, esforcoDaVisita, esforcoDosVisuais,
 } from '../worker/configuracao.js';
@@ -59,8 +60,11 @@ export const CATEGORIAS: readonly CategoriaDeExecucao[] = Object.freeze([
     ],
   },
   {
-    id: 'tipo_de_texto', rotulo: 'Tipo de texto', descricao: 'Reconhecer se é romance, artigo, Escritura… para escolher como ler.',
-    grupos: [{ tipos: ['identificar_tipo'], esforco: esforcoDoTipo }],
+    id: 'tipo_de_texto', rotulo: 'Tipo de texto e sumário', descricao: 'Reconhecer se é romance, artigo, Escritura… para escolher como ler, e conferir o sumário de um livro novo.',
+    grupos: [
+      { tipos: ['identificar_tipo'], esforco: esforcoDoTipo },
+      { tipos: ['conferir_sumario'], esforco: esforcoDoSumario, rotulo: 'o sumário' },
+    ],
   },
   {
     id: 'perguntas', rotulo: 'Perguntas', descricao: 'Responder no leitor e em Perguntar, e revisar as suas notas.',

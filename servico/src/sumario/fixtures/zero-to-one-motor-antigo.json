@@ -1,0 +1,745 @@
+{
+ "origem": "Zero to One (EPUB original), seções do canônico do motor antigo (bab4ab8); só títulos, níveis e contagens de palavras, sem o texto.",
+ "formato": "epub",
+ "palavras": 42516,
+ "secoes": [
+  {
+   "nivel": 1,
+   "titulo": "Zero to One",
+   "palavras": 198,
+   "proprias": 198
+  },
+  {
+   "nivel": 1,
+   "titulo": "Contents",
+   "palavras": 80,
+   "proprias": 80
+  },
+  {
+   "nivel": 1,
+   "titulo": "Preface",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "ZERO TO ONE",
+   "palavras": 616,
+   "proprias": 616
+  },
+  {
+   "nivel": 1,
+   "titulo": "1",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "THE CHALLENGE OF THE FUTURE",
+   "palavras": 1300,
+   "proprias": 316
+  },
+  {
+   "nivel": 2,
+   "titulo": "ZERO TO ONE: THE FUTURE OF PROGRESS",
+   "palavras": 724,
+   "proprias": 724
+  },
+  {
+   "nivel": 2,
+   "titulo": "STARTUP THINKING",
+   "palavras": 260,
+   "proprias": 260
+  },
+  {
+   "nivel": 1,
+   "titulo": "2",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "PARTY LIKE IT’S 1999",
+   "palavras": 2280,
+   "proprias": 223
+  },
+  {
+   "nivel": 2,
+   "titulo": "A QUICK HISTORY OF THE ’90S",
+   "palavras": 732,
+   "proprias": 732
+  },
+  {
+   "nivel": 2,
+   "titulo": "MANIA: SEPTEMBER 1998–MARCH 2000",
+   "palavras": 195,
+   "proprias": 195
+  },
+  {
+   "nivel": 2,
+   "titulo": "PAYPAL MANIA",
+   "palavras": 500,
+   "proprias": 500
+  },
+  {
+   "nivel": 2,
+   "titulo": "LESSONS LEARNED",
+   "palavras": 630,
+   "proprias": 630
+  },
+  {
+   "nivel": 1,
+   "titulo": "3",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "ALL HAPPY COMPANIES ARE DIFFERENT",
+   "palavras": 2526,
+   "proprias": 503
+  },
+  {
+   "nivel": 2,
+   "titulo": "LIES PEOPLE TELL",
+   "palavras": 1019,
+   "proprias": 102
+  },
+  {
+   "nivel": 3,
+   "titulo": "Monopoly Lies",
+   "palavras": 329,
+   "proprias": 329
+  },
+  {
+   "nivel": 3,
+   "titulo": "Competitive Lies",
+   "palavras": 588,
+   "proprias": 588
+  },
+  {
+   "nivel": 2,
+   "titulo": "RUTHLESS PEOPLE",
+   "palavras": 289,
+   "proprias": 289
+  },
+  {
+   "nivel": 2,
+   "titulo": "MONOPOLY CAPITALISM",
+   "palavras": 715,
+   "proprias": 715
+  },
+  {
+   "nivel": 1,
+   "titulo": "4",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "THE IDEOLOGY OF COMPETITION",
+   "palavras": 2149,
+   "proprias": 595
+  },
+  {
+   "nivel": 2,
+   "titulo": "WAR AND PEACE",
+   "palavras": 1554,
+   "proprias": 1554
+  },
+  {
+   "nivel": 1,
+   "titulo": "5",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "LAST MOVER ADVANTAGE",
+   "palavras": 3362,
+   "proprias": 737
+  },
+  {
+   "nivel": 2,
+   "titulo": "CHARACTERISTICS OF MONOPOLY",
+   "palavras": 1318,
+   "proprias": 72
+  },
+  {
+   "nivel": 3,
+   "titulo": "1. Proprietary Technology",
+   "palavras": 457,
+   "proprias": 457
+  },
+  {
+   "nivel": 3,
+   "titulo": "2. Network Effects",
+   "palavras": 216,
+   "proprias": 216
+  },
+  {
+   "nivel": 3,
+   "titulo": "3. Economies of Scale",
+   "palavras": 189,
+   "proprias": 189
+  },
+  {
+   "nivel": 3,
+   "titulo": "4. Branding",
+   "palavras": 384,
+   "proprias": 384
+  },
+  {
+   "nivel": 2,
+   "titulo": "BUILDING A MONOPOLY",
+   "palavras": 1167,
+   "proprias": 28
+  },
+  {
+   "nivel": 3,
+   "titulo": "Start Small and Monopolize",
+   "palavras": 319,
+   "proprias": 319
+  },
+  {
+   "nivel": 3,
+   "titulo": "Scaling Up",
+   "palavras": 401,
+   "proprias": 401
+  },
+  {
+   "nivel": 3,
+   "titulo": "Don’t Disrupt",
+   "palavras": 419,
+   "proprias": 419
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE LAST WILL BE FIRST",
+   "palavras": 140,
+   "proprias": 140
+  },
+  {
+   "nivel": 1,
+   "titulo": "6",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "YOU ARE NOT A LOTTERY TICKET",
+   "palavras": 4764,
+   "proprias": 567
+  },
+  {
+   "nivel": 2,
+   "titulo": "CAN YOU CONTROL YOUR FUTURE?",
+   "palavras": 1776,
+   "proprias": 274
+  },
+  {
+   "nivel": 3,
+   "titulo": "Indefinite Pessimism",
+   "palavras": 172,
+   "proprias": 172
+  },
+  {
+   "nivel": 3,
+   "titulo": "Definite Pessimism",
+   "palavras": 288,
+   "proprias": 288
+  },
+  {
+   "nivel": 3,
+   "titulo": "Definite Optimism",
+   "palavras": 554,
+   "proprias": 554
+  },
+  {
+   "nivel": 3,
+   "titulo": "Indefinite Optimism",
+   "palavras": 488,
+   "proprias": 488
+  },
+  {
+   "nivel": 2,
+   "titulo": "OUR INDEFINITELY OPTIMISTIC WORLD",
+   "palavras": 1456,
+   "proprias": 0
+  },
+  {
+   "nivel": 3,
+   "titulo": "Indefinite Finance",
+   "palavras": 295,
+   "proprias": 295
+  },
+  {
+   "nivel": 3,
+   "titulo": "Indefinite Politics",
+   "palavras": 215,
+   "proprias": 215
+  },
+  {
+   "nivel": 3,
+   "titulo": "Indefinite Philosophy",
+   "palavras": 360,
+   "proprias": 360
+  },
+  {
+   "nivel": 3,
+   "titulo": "Indefinite Life",
+   "palavras": 586,
+   "proprias": 586
+  },
+  {
+   "nivel": 2,
+   "titulo": "IS INDEFINITE OPTIMISM EVEN POSSIBLE?",
+   "palavras": 462,
+   "proprias": 462
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE RETURN OF DESIGN",
+   "palavras": 363,
+   "proprias": 363
+  },
+  {
+   "nivel": 2,
+   "titulo": "YOU ARE NOT A LOTTERY TICKET",
+   "palavras": 140,
+   "proprias": 140
+  },
+  {
+   "nivel": 1,
+   "titulo": "7",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "FOLLOW THE MONEY",
+   "palavras": 2123,
+   "proprias": 380
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE POWER LAW OF VENTURE CAPITAL",
+   "palavras": 767,
+   "proprias": 767
+  },
+  {
+   "nivel": 2,
+   "titulo": "WHY PEOPLE DON’T SEE THE POWER LAW",
+   "palavras": 358,
+   "proprias": 358
+  },
+  {
+   "nivel": 2,
+   "titulo": "WHAT TO DO WITH THE POWER LAW",
+   "palavras": 618,
+   "proprias": 618
+  },
+  {
+   "nivel": 1,
+   "titulo": "8",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "SECRETS",
+   "palavras": 3416,
+   "proprias": 313
+  },
+  {
+   "nivel": 2,
+   "titulo": "WHY AREN’T PEOPLE LOOKING FOR SECRETS?",
+   "palavras": 1157,
+   "proprias": 1157
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE WORLD ACCORDING TO CONVENTION",
+   "palavras": 647,
+   "proprias": 647
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE CASE FOR SECRETS",
+   "palavras": 508,
+   "proprias": 508
+  },
+  {
+   "nivel": 2,
+   "titulo": "HOW TO FIND SECRETS",
+   "palavras": 534,
+   "proprias": 534
+  },
+  {
+   "nivel": 2,
+   "titulo": "WHAT TO DO WITH SECRETS",
+   "palavras": 257,
+   "proprias": 257
+  },
+  {
+   "nivel": 1,
+   "titulo": "9",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "FOUNDATIONS",
+   "palavras": 2584,
+   "proprias": 317
+  },
+  {
+   "nivel": 2,
+   "titulo": "FOUNDING MATRIMONY",
+   "palavras": 269,
+   "proprias": 269
+  },
+  {
+   "nivel": 2,
+   "titulo": "OWNERSHIP, POSSESSION, AND CONTROL",
+   "palavras": 959,
+   "proprias": 959
+  },
+  {
+   "nivel": 2,
+   "titulo": "ON THE BUS OR OFF THE BUS",
+   "palavras": 130,
+   "proprias": 130
+  },
+  {
+   "nivel": 2,
+   "titulo": "CASH IS NOT KING",
+   "palavras": 359,
+   "proprias": 359
+  },
+  {
+   "nivel": 2,
+   "titulo": "VESTED INTERESTS",
+   "palavras": 389,
+   "proprias": 389
+  },
+  {
+   "nivel": 2,
+   "titulo": "EXTENDING THE FOUNDING",
+   "palavras": 161,
+   "proprias": 161
+  },
+  {
+   "nivel": 1,
+   "titulo": "10",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "THE MECHANICS OF MAFIA",
+   "palavras": 1823,
+   "proprias": 197
+  },
+  {
+   "nivel": 2,
+   "titulo": "BEYOND PROFESSIONALISM",
+   "palavras": 386,
+   "proprias": 386
+  },
+  {
+   "nivel": 2,
+   "titulo": "RECRUITING CONSPIRATORS",
+   "palavras": 459,
+   "proprias": 459
+  },
+  {
+   "nivel": 2,
+   "titulo": "WHAT’S UNDER SILICON VALLEY’S HOODIES",
+   "palavras": 270,
+   "proprias": 270
+  },
+  {
+   "nivel": 2,
+   "titulo": "DO ONE THING",
+   "palavras": 276,
+   "proprias": 276
+  },
+  {
+   "nivel": 2,
+   "titulo": "OF CULTS AND CONSULTANTS",
+   "palavras": 235,
+   "proprias": 235
+  },
+  {
+   "nivel": 1,
+   "titulo": "11",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "IF YOU BUILD IT, WILL THEY COME?",
+   "palavras": 3381,
+   "proprias": 246
+  },
+  {
+   "nivel": 2,
+   "titulo": "NERDS VS. SALESMEN",
+   "palavras": 301,
+   "proprias": 301
+  },
+  {
+   "nivel": 2,
+   "titulo": "SALES IS HIDDEN",
+   "palavras": 488,
+   "proprias": 488
+  },
+  {
+   "nivel": 2,
+   "titulo": "HOW TO SELL A PRODUCT",
+   "palavras": 2269,
+   "proprias": 135
+  },
+  {
+   "nivel": 3,
+   "titulo": "Complex Sales",
+   "palavras": 404,
+   "proprias": 404
+  },
+  {
+   "nivel": 3,
+   "titulo": "Personal Sales",
+   "palavras": 368,
+   "proprias": 368
+  },
+  {
+   "nivel": 3,
+   "titulo": "Distribution Doldrums",
+   "palavras": 179,
+   "proprias": 179
+  },
+  {
+   "nivel": 3,
+   "titulo": "Marketing and Advertising",
+   "palavras": 455,
+   "proprias": 455
+  },
+  {
+   "nivel": 3,
+   "titulo": "Viral Marketing",
+   "palavras": 406,
+   "proprias": 406
+  },
+  {
+   "nivel": 3,
+   "titulo": "The Power Law of Distribution",
+   "palavras": 113,
+   "proprias": 113
+  },
+  {
+   "nivel": 3,
+   "titulo": "Selling to Non-Customers",
+   "palavras": 209,
+   "proprias": 209
+  },
+  {
+   "nivel": 2,
+   "titulo": "EVERYBODY SELLS",
+   "palavras": 77,
+   "proprias": 77
+  },
+  {
+   "nivel": 1,
+   "titulo": "12",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "MAN AND MACHINE",
+   "palavras": 2594,
+   "proprias": 309
+  },
+  {
+   "nivel": 2,
+   "titulo": "SUBSTITUTION VS. COMPLEMENTARITY",
+   "palavras": 660,
+   "proprias": 93
+  },
+  {
+   "nivel": 3,
+   "titulo": "Globalization Means Substitution",
+   "palavras": 228,
+   "proprias": 228
+  },
+  {
+   "nivel": 3,
+   "titulo": "Technology Means Complementarity",
+   "palavras": 339,
+   "proprias": 339
+  },
+  {
+   "nivel": 2,
+   "titulo": "COMPLEMENTARY BUSINESSES",
+   "palavras": 1357,
+   "proprias": 999
+  },
+  {
+   "nivel": 3,
+   "titulo": "The Ideology of Computer Science",
+   "palavras": 358,
+   "proprias": 358
+  },
+  {
+   "nivel": 2,
+   "titulo": "EVER-SMARTER COMPUTERS: FRIEND OR FOE?",
+   "palavras": 268,
+   "proprias": 268
+  },
+  {
+   "nivel": 1,
+   "titulo": "13",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "SEEING GREEN",
+   "palavras": 3873,
+   "proprias": 483
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE ENGINEERING QUESTION",
+   "palavras": 221,
+   "proprias": 221
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE TIMING QUESTION",
+   "palavras": 185,
+   "proprias": 185
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE MONOPOLY QUESTION",
+   "palavras": 486,
+   "proprias": 486
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE PEOPLE QUESTION",
+   "palavras": 186,
+   "proprias": 186
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE DISTRIBUTION QUESTION",
+   "palavras": 374,
+   "proprias": 374
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE DURABILITY QUESTION",
+   "palavras": 400,
+   "proprias": 400
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE SECRET QUESTION",
+   "palavras": 182,
+   "proprias": 182
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE MYTH OF SOCIAL ENTREPRENEURSHIP",
+   "palavras": 258,
+   "proprias": 258
+  },
+  {
+   "nivel": 2,
+   "titulo": "TESLA: 7 FOR 7",
+   "palavras": 682,
+   "proprias": 682
+  },
+  {
+   "nivel": 2,
+   "titulo": "ENERGY 2.0",
+   "palavras": 416,
+   "proprias": 416
+  },
+  {
+   "nivel": 1,
+   "titulo": "14",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "THE FOUNDER’S PARADOX",
+   "palavras": 2829,
+   "proprias": 263
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE DIFFERENCE ENGINE",
+   "palavras": 774,
+   "proprias": 774
+  },
+  {
+   "nivel": 2,
+   "titulo": "WHERE KINGS COME FROM",
+   "palavras": 372,
+   "proprias": 372
+  },
+  {
+   "nivel": 2,
+   "titulo": "AMERICAN ROYALTY",
+   "palavras": 818,
+   "proprias": 818
+  },
+  {
+   "nivel": 2,
+   "titulo": "THE RETURN OF THE KING",
+   "palavras": 602,
+   "proprias": 602
+  },
+  {
+   "nivel": 1,
+   "titulo": "Conclusion",
+   "palavras": 0,
+   "proprias": 0
+  },
+  {
+   "nivel": 1,
+   "titulo": "STAGNATION OR SINGULARITY?",
+   "palavras": 703,
+   "proprias": 703
+  },
+  {
+   "nivel": 1,
+   "titulo": "Acknowledgments",
+   "palavras": 59,
+   "proprias": 59
+  },
+  {
+   "nivel": 1,
+   "titulo": "Illustration Credits",
+   "palavras": 172,
+   "proprias": 172
+  },
+  {
+   "nivel": 1,
+   "titulo": "Index",
+   "palavras": 1490,
+   "proprias": 1490
+  },
+  {
+   "nivel": 1,
+   "titulo": "About the Authors",
+   "palavras": 194,
+   "proprias": 194
+  }
+ ]
+}

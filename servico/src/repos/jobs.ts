@@ -12,6 +12,8 @@ export interface Job {
   diagnosticos: JobResultV1['diagnosticos']; criado_em: Date; atualizado_em: Date;
   /** 0 a 100; maior sai primeiro (migração 0006). */
   prioridade: number;
+  /** Concessões vencidas desta linha (migração 0037, D-10): o que conta para `MAXIMO_TENTATIVAS`. */
+  concessoes_perdidas: number;
   /**
    * Em pausa desde a partida do worker (migração 0036, V-F1): trabalho do Codex parado há horas que só roda
    * quando a pessoa mandar (`servico/src/pausa/`). O worker não reserva job com esta marca.
@@ -83,38 +85,62 @@ export async function enfileirar(cliente: Transacao, entrada: EntradaJob): Promi
   if (job) { await evento(cliente, job.id, 'enfileirado'); return job; }
   return (await cliente.query<Job>('SELECT * FROM job WHERE dedup_key=$1', [entrada.dedup_key])).rows[0]!;
 }
+/** Jobs que não chamam o Codex (motor local, download, voz): não entram em pausa nem esperam a cota (D-09). */
+export const TIPOS_SEM_CODEX: readonly string[] = ['canonizar', 'canonizar_revisao', 'importar_youtube', 'narrar_audio', 'narrar_noticias'];
+/**
+ * Cota do Codex esgotada (D-09): enquanto houver job adiado por `cota` com retorno no futuro, nenhum
+ * outro trabalho do Codex é reservado (abriria outra chamada que a conta recusa); os de
+ * `TIPOS_SEM_CODEX` seguem. O próprio adiado volta no horário dele, e com ele os outros.
+ */
+const SEM_COTA_ESGOTADA = `(tipo = ANY($6::text[]) OR NOT EXISTS (
+  SELECT 1 FROM job cota WHERE cota.estado='adiado' AND cota.error_code='cota' AND cota.not_before > $1
+    AND cota.cancel_requested_at IS NULL))`;
 export async function reservar(banco: pg.Pool, owner: string, tipos: string[], agora = new Date(), ttlMs = 60_000): Promise<Job | null> {
   conferirTtl(ttlMs);
   if (!owner.trim()) throw new Error('Responsável pela concessão obrigatório.');
   return comTransacao(banco, async cliente => {
     const resultado = await cliente.query<Job>(`WITH proximo AS (
       SELECT id FROM job WHERE estado IN ('fila','adiado') AND (not_before IS NULL OR not_before <= $1)
-      AND cancel_requested_at IS NULL AND retido_em IS NULL AND tipo = ANY($2::text[])
+      AND cancel_requested_at IS NULL AND retido_em IS NULL AND tipo = ANY($2::text[]) AND ${SEM_COTA_ESGOTADA}
       ORDER BY prioridade DESC,criado_em,id FOR UPDATE SKIP LOCKED LIMIT 1
     ) UPDATE job SET estado='reservado', lease_owner=$3,lease_token=$4,
       lease_expires_at=$1::timestamptz + $5 * interval '1 millisecond', heartbeat_at=$1,atualizado_em=$1
-      FROM proximo WHERE job.id=proximo.id RETURNING job.*`, [agora, tipos, owner, ulid(), ttlMs]);
+      FROM proximo WHERE job.id=proximo.id RETURNING job.*`, [agora, tipos, owner, ulid(), ttlMs, TIPOS_SEM_CODEX]);
     const job = resultado.rows[0];
     if (!job) return null;
     await evento(cliente, job.id, 'reservado', { attempt: job.attempt, owner });
     return job;
   });
 }
-async function conferirConcessao(cliente: Transacao, jobId: string, token: string): Promise<void> {
+async function conferirConcessao(cliente: Transacao, jobId: string, token: string, semEsperar = false): Promise<void> {
   // Primeiro espera pelo lock; só depois lê o relógio. Um heartbeat não ressuscita concessão vencida.
-  await cliente.query('SELECT id FROM job WHERE id=$1 FOR UPDATE', [jobId]);
+  await cliente.query(`SELECT id FROM job WHERE id=$1 FOR UPDATE${semEsperar ? ' NOWAIT' : ''}`, [jobId]);
   const valido = await cliente.query(`SELECT id FROM job WHERE id=$1 AND lease_token=$2 AND estado='reservado'
     AND lease_expires_at > clock_timestamp() AND cancel_requested_at IS NULL`, [jobId, token]);
   if (valido.rowCount !== 1) throw new ConcessaoPerdida();
 }
 export async function heartbeat(banco: pg.Pool, jobId: string, token: string, ttlMs = 60_000): Promise<void> {
   conferirTtl(ttlMs);
-  await comTransacao(banco, async cliente => {
-    await conferirConcessao(cliente, jobId, token);
-    await cliente.query(`UPDATE job SET heartbeat_at=clock_timestamp(), atualizado_em=clock_timestamp(),
-      lease_expires_at=clock_timestamp()+$2 * interval '1 millisecond' WHERE id=$1`, [jobId, ttlMs]);
-  });
+  try {
+    await comTransacao(banco, async cliente => {
+      await conferirConcessao(cliente, jobId, token, true);
+      await cliente.query(`UPDATE job SET heartbeat_at=clock_timestamp(), atualizado_em=clock_timestamp(),
+        lease_expires_at=clock_timestamp()+$2 * interval '1 millisecond' WHERE id=$1`, [jobId, ttlMs]);
+    });
+  } catch (erro) {
+    // 55P03: a linha está presa por outra transação — em geral a publicação desta tentativa, que já
+    // estendeu o prazo dela (D-05). Esperar o lock estourava o prazo da consulta e abortava o job; a
+    // batida seguinte confere de novo.
+    if ((erro as { code?: string }).code === '55P03') return;
+    throw erro;
+  }
 }
+/**
+ * Prazo da publicação (D-05): a transação que publica segura a linha do job, e a batida não a renova
+ * enquanto isso. A publicação estende a concessão por conta própria, antes do efeito, na mesma
+ * transação (desfeita junto, se ela falhar).
+ */
+export const PRAZO_PUBLICACAO_MS = 15 * 60_000;
 type Diagnosticos = JobResultV1['diagnosticos'];
 /**
  * `artefatoHash` também aceita uma função do resultado: a fila do J07 só conhece o hash
@@ -126,13 +152,16 @@ type Diagnosticos = JobResultV1['diagnosticos'];
  */
 export async function publicar<T>(banco: pg.Pool, jobId: string, token: string,
   fn: (cliente: Transacao) => Promise<T>, artefatoHash?: string | ((resultado: T) => string | undefined),
-  diagnosticos?: Diagnosticos | ((resultado: T) => Diagnosticos)): Promise<T> {
+  diagnosticos?: Diagnosticos | ((resultado: T) => Diagnosticos), prazoMs = PRAZO_PUBLICACAO_MS): Promise<T> {
+  conferirTtl(prazoMs);
   return comTransacao(banco, async cliente => {
     await conferirConcessao(cliente, jobId, token);
+    await cliente.query(`UPDATE job SET lease_expires_at=greatest(lease_expires_at, clock_timestamp() + $2 * interval '1 millisecond')
+      WHERE id=$1`, [jobId, prazoMs]);
     const resultado = await fn(cliente);
     const hash = typeof artefatoHash === 'function' ? artefatoHash(resultado) : artefatoHash;
     const vencedores = (typeof diagnosticos === 'function' ? diagnosticos(resultado) : diagnosticos) ?? [];
-    // A escrita pode ter demorado: perder a concessão durante fn também provoca rollback.
+    // A escrita pode ter passado do prazo da publicação: perder a concessão durante fn provoca rollback.
     await conferirConcessao(cliente, jobId, token);
     const anteriores = (await cliente.query<{ diagnosticos: Diagnosticos }>(
       'SELECT diagnosticos FROM job WHERE id=$1', [jobId])).rows[0]?.diagnosticos ?? [];
@@ -207,25 +236,33 @@ export async function reenfileirarNa(cliente: Transacao, jobId: string): Promise
 /**
  * Teto de tentativas automáticas. Uma concessão que vence (worker morto, OOM, motor travado)
  * conta como tentativa perdida: o job volta à fila com espera crescente (`ESPERA_MINUTOS`,
- * indexada pela tentativa que acabou) até `MAXIMO_TENTATIVAS`; ao estourar, vai para
+ * indexada pelas perdas) até `MAXIMO_TENTATIVAS`; ao estourar, vai para
  * `falhou` com `error_code='tentativas_esgotadas'` e não volta sozinho ("poison job").
- * Adiamento por cota (`falhar` com `retry`) não conta: é espera, não defeito do job.
+ * Adiamento por cota (`falhar` com `retry`) não conta: é espera, não defeito do job. Por isso as
+ * perdas têm contador próprio (`concessoes_perdidas`, D-10); `attempt` continua subindo a cada
+ * tentativa e numera a pasta da auditoria de cada uma.
  * Reenfileirar à mão continua possível e dá mais uma tentativa.
  */
 export const MAXIMO_TENTATIVAS = 3;
 export const ESPERA_MINUTOS: readonly number[] = [1, 5, 15];
 export async function expirarConcessoes(banco: pg.Pool, agora = new Date()): Promise<number> {
   return comTransacao(banco, async cliente => {
-    const esgotados = await cliente.query<{ id: string; attempt: number }>(`UPDATE job SET estado='falhou',
-      error_code='tentativas_esgotadas',not_before=NULL,${limparConcessao},atualizado_em=$1
-      WHERE estado='reservado' AND lease_expires_at <= $1 AND attempt >= $2 RETURNING id, attempt`, [agora, MAXIMO_TENTATIVAS]);
+    // R-05: a linha presa por outra transação (em geral a publicação longa, que já estendeu o prazo
+    // e ainda não confirmou) fica para a próxima volta. Esperar o lock estourava o prazo da consulta.
+    const esgotados = await cliente.query<{ id: string; attempt: number }>(`WITH alvo AS (SELECT id FROM job
+      WHERE estado='reservado' AND lease_expires_at <= $1 AND concessoes_perdidas + 1 >= $2 FOR UPDATE SKIP LOCKED)
+      UPDATE job SET estado='falhou',
+      error_code='tentativas_esgotadas',not_before=NULL,concessoes_perdidas=concessoes_perdidas+1,${limparConcessao},atualizado_em=$1
+      FROM alvo WHERE job.id=alvo.id RETURNING job.id, job.attempt`, [agora, MAXIMO_TENTATIVAS]);
     for (const job of esgotados.rows) {
       await evento(cliente, job.id, 'concessao_expirada');
       await evento(cliente, job.id, 'falhou', { error_code: 'tentativas_esgotadas', attempt: job.attempt, maximo: MAXIMO_TENTATIVAS });
     }
     const devolvidos = await cliente.query<{ id: string; not_before: Date }>(`UPDATE job SET estado='fila',attempt=attempt+1,
-      not_before=$1::timestamptz + ($2::int[])[least(attempt, cardinality($2::int[]))] * interval '1 minute',
-      ${limparConcessao},atualizado_em=$1 WHERE estado='reservado' AND lease_expires_at <= $1 RETURNING id, not_before`,
+      concessoes_perdidas=concessoes_perdidas+1,
+      not_before=$1::timestamptz + ($2::int[])[least(concessoes_perdidas + 1, cardinality($2::int[]))] * interval '1 minute',
+      ${limparConcessao},atualizado_em=$1 FROM (SELECT id FROM job WHERE estado='reservado' AND lease_expires_at <= $1
+      FOR UPDATE SKIP LOCKED) AS alvo WHERE job.id=alvo.id RETURNING job.id, job.not_before`,
     [agora, ESPERA_MINUTOS]);
     for (const job of devolvidos.rows) await evento(cliente, job.id, 'concessao_expirada', { not_before: job.not_before.toISOString() });
     return (esgotados.rowCount ?? 0) + (devolvidos.rowCount ?? 0);

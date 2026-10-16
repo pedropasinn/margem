@@ -186,3 +186,63 @@ test('formato 2: índice por nota, notas de um documento e ZIP com pastas e mani
   expect((await api.request(`/api/documentos/${documentoId}/obsidian.md`)).status).toBe(200);
   expect((await api.request('/api/obsidian/indice')).status).toBe(200);
 }));
+
+test('R2-6: no app de computador os links de volta usam margem://abrir (o navegador não tem a chave)', async () => comBanco('obsidian_app', async (banco) => {
+  const canonico = canonicoDeTeste({ titulo: 'Livro do app', blocos: [
+    { tipo: 'capitulo', texto: 'Primeiro' },
+    { tipo: 'paragrafo', texto: 'Um trecho que vale um grifo no app de computador.' },
+  ], secoes: [{ nivel: 1, inicio: 0, fim: 1 }] });
+  const { documentoId, versaoId } = await comTransacao(banco, async (cliente) => {
+    const documento = await documentos.criar(cliente, { ...canonico.documento, origem_caminho: 'app.md' });
+    return { documentoId: documento.id, versaoId: (await documentos.criarVersao(cliente, documento.id, canonico)).id };
+  });
+  const api = criarApi({ banco, leitura: () => { throw new Error('Leitura não usada.'); }, intervaloEventosMs: 20 });
+  const bloco = canonico.blocos[1]!;
+  expect((await escrever(api, '/api/grifos', { ancora: ancora(versaoId, bloco, 'vale um grifo'), funcao: 'tese' })).status).toBe(201);
+  const anterior = process.env.MARGEM_APP_DESKTOP;
+  try {
+    process.env.MARGEM_APP_DESKTOP = '1';
+    const base = encodeURIComponent('http://127.0.0.1:8731');
+    const indice = await (await api.request(`/api/obsidian/v2/indice?base=${base}`)).json() as IndiceObsidianV2;
+    expect(indice.url_base).toBe('margem://abrir');
+    expect(validarIndiceObsidianV2(indice), JSON.stringify(validarIndiceObsidianV2.errors)).toBe(true);
+    const v1 = await (await api.request(`/api/obsidian/indice?base=${base}`)).json() as IndiceObsidianV1;
+    expect(validarIndiceObsidian(v1), JSON.stringify(validarIndiceObsidian.errors)).toBe(true);
+    const doDocumento = await (await api.request(`/api/obsidian/v2/documentos/${documentoId}?base=${base}`)).json() as { notas: { conteudo: string }[] };
+    const tudo = doDocumento.notas.map((nota) => nota.conteudo).join('\n');
+    expect(tudo).toContain(`(margem://abrir/ler/${documentoId}/${canonico.secoes[0]!.id}?bloco=${bloco.id})`);
+    expect(tudo).not.toContain('127.0.0.1');
+    const nota = await (await api.request(`/api/documentos/${documentoId}/obsidian.md?base=${base}`)).text();
+    expect(nota).toContain(`[abrir no Margem](margem://abrir/documentos/${documentoId})`);
+    // A base pedida continua sendo conferida.
+    expect((await api.request(`/api/obsidian/v2/indice?base=javascript:x`)).status).toBe(400);
+  } finally {
+    if (anterior === undefined) delete process.env.MARGEM_APP_DESKTOP; else process.env.MARGEM_APP_DESKTOP = anterior;
+  }
+}));
+
+test('R3-8: com o sumário sugerido em uso, as notas usam os títulos que o sumário mostra (V1 e V2)', async () => comBanco('obsidian_sumario', async (banco) => {
+  const canonico = canonicoDeTeste({ titulo: 'Zero a um', blocos: [
+    { tipo: 'capitulo', texto: 'THE CHALLENGE' },
+    { tipo: 'paragrafo', texto: 'O desafio do futuro é criar o novo.' },
+  ], secoes: [{ nivel: 1, inicio: 0, fim: 1 }] });
+  const { documentoId, versaoId } = await comTransacao(banco, async (cliente) => {
+    const documento = await documentos.criar(cliente, { ...canonico.documento, origem_caminho: 'zero.epub' });
+    return { documentoId: documento.id, versaoId: (await documentos.criarVersao(cliente, documento.id, canonico)).id };
+  });
+  const api = criarApi({ banco, leitura: () => { throw new Error('Leitura não usada.'); }, intervaloEventosMs: 20 });
+  expect((await escrever(api, '/api/grifos', { ancora: ancora(versaoId, canonico.blocos[1]!, 'criar o novo'), funcao: 'tese' })).status).toBe(201);
+  const proposta = [{ bloco_inicio: canonico.secoes[0]!.bloco_inicio, titulo: '1. The Challenge of the Future', nivel: 1 }];
+  await banco.query(`INSERT INTO conferencia_sumario (versao_id, documento_id, estado, resposta) VALUES ($1, $2, 'aplicada', $3)`,
+    [versaoId, documentoId, JSON.stringify({ ok: false, problemas: ['caixa alta'], proposta })]);
+  const v1 = await (await api.request(`/api/documentos/${documentoId}/obsidian.md?base=${encodeURIComponent(BASE)}`)).text();
+  expect(v1).toContain('## 1\\. The Challenge of the Future');
+  expect(v1).not.toContain('THE CHALLENGE');
+  const v2 = await (await api.request(`/api/obsidian/v2/documentos/${documentoId}?base=${encodeURIComponent(BASE)}`)).json() as { notas: { conteudo: string }[] };
+  const tudo = v2.notas.map((nota) => nota.conteudo).join('\n');
+  expect(tudo).toMatch(/1\\?\. The Challenge of the Future/u);
+  expect(tudo).not.toContain('THE CHALLENGE');
+  // "Manter" volta ao título do canônico.
+  await banco.query(`UPDATE conferencia_sumario SET estado='mantida'`);
+  expect(await (await api.request(`/api/documentos/${documentoId}/obsidian.md?base=${encodeURIComponent(BASE)}`)).text()).toContain('## THE CHALLENGE');
+}));

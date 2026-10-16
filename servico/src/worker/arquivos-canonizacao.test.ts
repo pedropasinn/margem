@@ -5,7 +5,9 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { comBanco, canonicoDeTeste, idTeste } from '../../testes/apoio.js';
 import { comTransacao } from '../db/transacao.js';
 import * as documentos from '../repos/documentos.js';
-import { pastaDaTentativaDeCanonizacao, pastaDaVersao, pastaDoDocumento } from '../dados.js';
+import { pastaDaCanonizacao, pastaDaTentativaDeCanonizacao, pastaDaVersao, pastaDoDocumento } from '../dados.js';
+import { registrarOriginal } from '../http/ingestao.js';
+import * as jobs from '../repos/jobs.js';
 import { finalizarArquivos, reconciliarCanonizacao } from './arquivos-canonizacao.js';
 const temporarios: string[] = [];
 afterEach(async () => { vi.unstubAllEnvs(); for (const p of temporarios.splice(0)) await rm(p, { recursive: true, force: true }); });
@@ -67,4 +69,43 @@ test('reconciliação espera uma publicação em andamento e não apaga sua past
   } finally { liberar(); await publicacao; }
   expect(await recuperacao).toEqual([]);
   expect(await readFile(join(pastaDaVersao(doc.id, id), 'canonico.json'), 'utf8')).toBe(JSON.stringify(canonico));
+}));
+
+test('D-12: tentativas encerradas são recolhidas; a em curso e o desconhecido ficam', async () => comBanco('arquivos_d12', async banco => {
+  const raiz = await mkdtemp(join(tmpdir(), 'margem-d12-')); temporarios.push(raiz); vi.stubEnv('MARGEM_DADOS', raiz);
+  const canonico = canonicoDeTeste({ blocos: [{ tipo: 'paragrafo', texto: 'Livro.' }] });
+  const doc = await comTransacao(banco, c => documentos.criar(c, { ...canonico.documento, origem_caminho: 'original.txt' }));
+  const job = await comTransacao(banco, c => jobs.enfileirar(c, { tipo: 'canonizar', dedup_key: `canonizar:${doc.id}`, input_snapshot_hash: 'a'.repeat(64), documento_id: doc.id }));
+  const reservado = (await jobs.reservar(banco, 'teste', ['canonizar']))!;
+  const antiga = pastaDaTentativaDeCanonizacao(doc.id, job.id, idTeste('T', 1));
+  const atual = pastaDaTentativaDeCanonizacao(doc.id, job.id, reservado.lease_token!);
+  const estranha = join(pastaDaCanonizacao(doc.id, job.id), 'nao-e-tentativa');
+  const deOutroJob = pastaDaTentativaDeCanonizacao(doc.id, idTeste('J', 9), idTeste('T', 2));
+  for (const pasta of [antiga, atual, estranha, deOutroJob]) { await mkdir(pasta, { recursive: true }); await writeFile(join(pasta, 'canonico.json'), '{}'); }
+  await comTransacao(banco, c => reconciliarCanonizacao(c, doc.id));
+  const restantes = async () => (await readdir(pastaDaCanonizacao(doc.id, job.id))).sort();
+  expect(await restantes()).toEqual(['nao-e-tentativa', `tentativa-${reservado.lease_token!}`]);
+  // Job concluído: a tentativa que sobrou também sai; o nome desconhecido e o job que o banco não conhece, não.
+  await banco.query("UPDATE job SET estado='ok', lease_token=NULL WHERE id=$1", [job.id]);
+  await comTransacao(banco, c => reconciliarCanonizacao(c, doc.id));
+  expect(await restantes()).toEqual(['nao-e-tentativa']);
+  expect(await readdir(pastaDaCanonizacao(doc.id, idTeste('J', 9)))).toEqual([`tentativa-${idTeste('T', 2)}`]);
+  // Só com tentativas, a pasta do job some inteira.
+  await rm(estranha, { recursive: true });
+  await mkdir(antiga, { recursive: true });
+  await comTransacao(banco, c => reconciliarCanonizacao(c, doc.id));
+  expect(await readdir(pastaDoDocumento(doc.id))).not.toContain(`canonizacao-${job.id}`);
+}));
+
+test('D-12: importação desfeita não deixa a pasta do original para trás', async () => comBanco('arquivos_d12_imp', async banco => {
+  const raiz = await mkdtemp(join(tmpdir(), 'margem-d12-imp-')); temporarios.push(raiz); vi.stubEnv('MARGEM_DADOS', raiz);
+  await mkdir(join(raiz, 'outra-pasta'));
+  let criado = '';
+  await expect(registrarOriginal(banco, {
+    titulo: 'Livro', formato: 'txt', bytes: new TextEncoder().encode('Texto.'), paginas: null, poesia: false,
+    antesDeConfirmar: (id) => { criado = id; return Promise.reject(new Error('falha antes do commit')); },
+  })).rejects.toThrow('falha antes do commit');
+  expect(criado).not.toBe('');
+  expect(await readdir(raiz)).toEqual(['outra-pasta']);
+  expect((await banco.query('SELECT 1 FROM documento')).rowCount).toBe(0);
 }));

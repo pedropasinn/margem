@@ -74,10 +74,15 @@ def anotar(pedido: dict) -> dict:
 
 def main() -> int:
     try:
-        pedido = json.load(sys.stdin)
-        print(json.dumps(anotar(pedido)))
+        # O protocolo é JSON em UTF-8 (o serviço escreve assim no pipe), qualquer que seja a codepage
+        # do sistema: no Windows sem modo UTF-8, `json.load(sys.stdin)` leria `João` como `JoÃ£o` (W-03).
+        # (Um stdin já em texto, sem `buffer`, como o StringIO dos testes, é lido como veio.)
+        bytes_de_entrada = getattr(sys.stdin, "buffer", None)
+        pedido = json.loads(bytes_de_entrada.read().decode("utf-8") if bytes_de_entrada is not None else sys.stdin.read())
+        sys.stdout.buffer.write((json.dumps(anotar(pedido)) + "\n").encode("utf-8"))
+        sys.stdout.flush()
         return 0
-    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as erro:
+    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as erro:  # UnicodeDecodeError é ValueError
         print(f"Falha no PDF anotado: {erro}", file=sys.stderr)
         return 1
 

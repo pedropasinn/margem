@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { capituloExemplo } from '../leitor/fixtures/capitulo-exemplo';
 import { BuscaNoDocumento, type Ocorrencia } from '../leitor/BuscaNoDocumento';
 import { Ler, ancoraDaFaixa, type FontesDaLeitura } from './Ler';
@@ -137,6 +137,41 @@ describe('busca no texto da biblioteca', () => {
       { nome: 'leitura', documento_id: DOC, secao_id: capituloExemplo.secao.id, bloco: 'B1' },
       { nome: 'leitura', documento_id: 'outro' },
     ]);
+  });
+
+  test('U-07: "Buscando…" enquanto espera, "Nada encontrado" só com a resposta vazia da consulta atual, falha com nova tentativa', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(JSON.stringify({ capitulos: [] })))));
+    const pendentes = new Map<string, { resolver: (r: RespostaDaBusca) => void; rejeitar: (e: Error) => void }>();
+    const consultas: string[] = [];
+    const buscarTexto = (consulta: string) => { consultas.push(consulta); return new Promise<RespostaDaBusca>((resolver, rejeitar) => { pendentes.set(consulta, { resolver, rejeitar }); }); };
+    render(<Lista ir={() => {}} buscarTexto={buscarTexto} carregar={() => Promise.resolve({ documentos: [item()] })} />);
+    await screen.findByRole('link', { name: 'Livro de teste' });
+    const campo = screen.getByRole('searchbox');
+    fireEvent.change(campo, { target: { value: 'primeira' } });
+    expect(screen.getByText('Buscando no texto…')).toBeDefined();
+    expect(screen.queryByText(/encontrado\./)).toBeNull();
+    await waitFor(() => expect(consultas).toEqual(['primeira']));
+    await act(async () => { pendentes.get('primeira')!.resolver(resposta([resultado({ bloco_id: 'B1' })])); await Promise.resolve(); });
+    expect(await screen.findByRole('region', { name: 'Encontrado no texto' })).toBeDefined();
+    // Trocar o termo tira os resultados da consulta anterior da tela na hora.
+    fireEvent.change(campo, { target: { value: 'segunda' } });
+    expect(screen.queryByRole('region', { name: 'Encontrado no texto' })).toBeNull();
+    expect(screen.getByText('Buscando no texto…')).toBeDefined();
+    await waitFor(() => expect(consultas).toEqual(['primeira', 'segunda']));
+    // A resposta atrasada da primeira não volta.
+    await act(async () => { pendentes.get('primeira')!.resolver(resposta([resultado({ bloco_id: 'B9' })])); await Promise.resolve(); });
+    expect(screen.queryByRole('region', { name: 'Encontrado no texto' })).toBeNull();
+    await act(async () => { pendentes.get('segunda')!.rejeitar(new TypeError('Failed to fetch')); await Promise.resolve(); });
+    const falha = await screen.findByRole('alert');
+    expect(falha.textContent).toContain('Não foi possível buscar no texto.');
+    expect(falha.textContent).not.toMatch(/fetch/i);
+    expect(screen.queryByText(/encontrado\./)).toBeNull();
+    fireEvent.click(within(falha).getByRole('button', { name: 'Tentar novamente' }));
+    expect(screen.getByText('Buscando no texto…')).toBeDefined();
+    await waitFor(() => expect(consultas).toEqual(['primeira', 'segunda', 'segunda']));
+    await act(async () => { pendentes.get('segunda')!.resolver(resposta([])); await Promise.resolve(); });
+    expect(await screen.findByText('Nada encontrado.')).toBeDefined();
+    expect(screen.queryByText('Buscando no texto…')).toBeNull();
   });
 });
 

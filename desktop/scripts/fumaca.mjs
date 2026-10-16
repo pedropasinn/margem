@@ -12,6 +12,9 @@
  *   --acento                                     põe também um "ç" no nome da pasta de teste
  *   --manter                                     não apaga a pasta de teste
  *   --manter-se-falhar                           só não apaga se algo falhar (CI: os registros sobem como artefato)
+ *   --recursos <pasta>                           a pasta recursos/ do app (padrão: ao lado do executável no
+ *                                                Windows e no macOS; no AppImage não há como achar, e as
+ *                                                ferramentas não são executadas)
  *   --app-anterior <executável>                  atualização (J146): a 1ª execução usa este app (uma versão
  *                                                anterior) e a 2ª, o novo, sobre o mesmo userData e a mesma
  *                                                biblioteca: o banco antigo é reaproveitado e migrado
@@ -158,8 +161,61 @@ function subirApp(rotulo, executavel = comando) {
   return { filho, saiu, esperarEvento, eventos, erros: () => erros, arquivoDeParada };
 }
 
-async function pedir(url, inicio) {
-  const resposta = await fetch(url, inicio);
+/**
+ * A pasta recursos/ do app testado (o layout do preparar.mjs, J114): Contents/Resources/recursos no
+ * macOS, resources/recursos no Windows, desktop/recursos/<plataforma> no --dev. No AppImage fica dentro
+ * da imagem montada: null (o passo do .deb no CI executa as ferramentas instaladas).
+ */
+function pastaDosRecursos() {
+  if (opcao('--recursos')) return resolve(opcao('--recursos'));
+  if (modoDev) return join(DESKTOP, 'recursos', `${process.platform}-${process.arch}`);
+  if (process.platform === 'darwin') return resolve(dirname(comando), '..', 'Resources', 'recursos');
+  if (process.platform === 'win32') return join(dirname(comando), 'resources', 'recursos');
+  return null;
+}
+
+/**
+ * As ferramentas de mídia e o Codex embutidos RODAM (J154, auditoria M-03): o estado da instalação só
+ * confere que o arquivo existe e é executável; arquitetura errada, assinatura inválida no macOS ou
+ * biblioteca ausente só aparecem executando. E uma conversão curta: um tom de 1 s em MP3, lido pelo ffprobe.
+ */
+function conferirFerramentasExecutando(pastaDeTeste) {
+  const recursos = pastaDosRecursos();
+  if (recursos === null || !existsSync(join(recursos, 'recursos.json'))) {
+    console.log(`     ferramentas: não executadas (sem recursos.json em ${String(recursos)}; use --recursos)`);
+    return;
+  }
+  const { caminhos } = JSON.parse(readFileSync(join(recursos, 'recursos.json'), 'utf8'));
+  const ambiente = { ...process.env };
+  delete ambiente.ELECTRON_RUN_AS_NODE;
+  const executar = (chave, argumentos) => {
+    const arquivo = join(recursos, caminhos[chave]);
+    const inicio = Date.now();
+    const r = spawnSync(arquivo, argumentos, { encoding: 'utf8', timeout: 180_000, env: ambiente, windowsHide: true });
+    const saida = `${r.stdout ?? ''}${r.stderr ?? ''}`.trim();
+    const linha = r.error ? r.error.message : (saida.split('\n')[0] ?? '');
+    conferir(!r.error && r.status === 0, `1: ${chave} ${argumentos.join(' ')} → ${r.error ? 'erro' : `código ${String(r.status)}`} em ${String(Math.round((Date.now() - inicio) / 100) / 10)} s: ${linha.slice(0, 120)}`);
+    return r;
+  };
+  executar('ffmpeg', ['-hide_banner', '-version']);
+  executar('ffprobe', ['-hide_banner', '-version']);
+  executar('yt_dlp', ['--version']);
+  executar('codex', ['--version']);
+  const tom = join(pastaDeTeste, 'tom de teste.mp3');
+  executar('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', '-c:a', 'libmp3lame', '-y', tom]);
+  const lido = executar('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'json', tom]);
+  let duracao = Number.NaN;
+  try { duracao = Number(JSON.parse(lido.stdout).format.duration); } catch { /* conferido abaixo */ }
+  conferir(duracao > 0.5 && duracao < 1.5, `1: MP3 gerado pelo ffmpeg e lido pelo ffprobe (${String(duracao)} s)`);
+}
+
+/** S-01: a chave local da instalação (`segredos/chave-local` no userData); uma versão anterior não tem. */
+function cabecalhoDaChave() {
+  try { return { Authorization: `Bearer ${readFileSync(join(dadosDoApp, 'segredos', 'chave-local'), 'utf8').trim()}` }; } catch { return {}; }
+}
+
+async function pedir(url, inicio = {}, comChave = true) {
+  const resposta = await fetch(url, { ...inicio, headers: { ...(comChave ? cabecalhoDaChave() : {}), ...(inicio.headers ?? {}) } });
   const texto = await resposta.text();
   return { status: resposta.status, corpo: texto === '' ? null : JSON.parse(texto) };
 }
@@ -224,6 +280,13 @@ try {
     conferir(modo === 0o600, `1: arquivo da senha com modo 0600 (${modo.toString(8)})`);
   }
   const pidBanco1 = await pidDoPostgres();
+  if (anterior === null) {
+    // S-01: chave local no userData, fora da biblioteca, e exigida pela API (a saúde fica pública).
+    conferir(existsSync(join(segredos, 'chave-local')), '1: chave local no userData (segredos/chave-local)');
+    const semChave = await pedir(`${pronta.url}/api/documentos`, {}, false);
+    conferir(semChave.status === 401, `1: sem a chave, GET /api/documentos → ${String(semChave.status)} (401 esperado)`);
+    conferir((await pedir(`${pronta.url}/api/saude`, {}, false)).status === 200, '1: GET /api/saude responde sem a chave');
+  }
 
   const estado = await pedir(`${pronta.url}/api/estado-instalacao`);
   conferir(estado.status === 200, `1: GET /api/estado-instalacao → ${String(estado.status)}`);
@@ -233,6 +296,7 @@ try {
   const ferramentas = estado.corpo?.ferramentas ?? {};
   conferir(['ffmpeg', 'ffprobe', 'yt_dlp', 'codex'].every((n) => ferramentas[n]?.ok === true), `1: ffmpeg, ffprobe, yt-dlp e codex embutidos (${Object.entries(ferramentas).map(([n, f]) => `${n}:${f.origem ?? '?'}`).join(' ')})`);
   if (Array.isArray(estado.corpo?.avisos)) console.log(`     avisos da instalação: ${estado.corpo.avisos.join(' | ')}`);
+  conferirFerramentasExecutando(pasta);
 
   const formulario = new FormData();
   formulario.set('titulo', 'Leitura e memória');

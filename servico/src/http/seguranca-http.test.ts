@@ -10,7 +10,7 @@ import * as documentos from '../repos/documentos.js';
 import { pastaDaVersao } from '../dados.js';
 import type { ConfiguracaoDaLeitura } from '../leitura/manipuladores.js';
 import { criarApi } from './app.js';
-import { corpoDoErro, ErroDaApi } from './erros.js';
+import { corpoDoErro, ErroDaApi, MENSAGEM_SEM_ESPACO } from './erros.js';
 import { servirWeb } from './estatico.js';
 import { criarLimiteDeTaxa, TETO_DE_EVENTOS_ABERTOS, TETOS_POR_MINUTO } from './limite-de-taxa.js';
 import { CSP_DA_PAGINA, lerFormularioLimitado, pareceUmPdf } from './seguranca.js';
@@ -208,4 +208,32 @@ test('API: PDF sem assinatura é 415; cabeçalhos de segurança no JSON, na pág
       if (limiteAnterior === undefined) delete process.env.MARGEM_LIMITE_MIDIA;
       else process.env.MARGEM_LIMITE_MIDIA = limiteAnterior;
     }
+  }));
+
+test('D-13: disco cheio (ENOSPC ou SQLSTATE 53100) vira mensagem em português, não falha interna', () => {
+  for (const erro of [Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' }), Object.assign(new Error('could not extend file'), { code: '53100' }),
+    new Error('envolto', { cause: Object.assign(new Error('x'), { code: 'ENOSPC' }) })]) {
+    expect(corpoDoErro(erro)).toEqual({ status: 507, corpo: { erro: 'sem_espaco', detalhe: MENSAGEM_SEM_ESPACO } });
+  }
+  expect(MENSAGEM_SEM_ESPACO).toMatch(/^Sem espaço no disco/);
+  expect(corpoDoErro(new Error('outra'))).toEqual({ status: 500, corpo: { erro: 'falha_interna' } });
+});
+
+test('I-09: PDF com MIME octet-stream ou vazio é aceito; conteúdo falso continua recusado', async () =>
+  comBanco('api_pdf_mime', async (banco) => {
+    process.env.MARGEM_DADOS = await pastaTemporaria('margem-i09-dados-');
+    const api = criarApi({ banco, leitura: () => configuracaoVazia(banco), intervaloEventosMs: 20 });
+    const enviar = (conteudo: string, tipo: string, nome: string) => {
+      const formulario = new FormData();
+      formulario.set('formato', 'pdf');
+      formulario.set('arquivo', new File([conteudo], nome, { type: tipo }));
+      return api.request('/api/documentos', { method: 'POST', headers: ESCRITA, body: formulario });
+    };
+    expect((await enviar('%PDF-1.7\num', 'application/octet-stream', 'um.pdf')).status).toBe(202);
+    expect((await enviar('%PDF-1.7\ndois', '', 'dois.pdf')).status).toBe(202);
+    expect((await enviar('%PDF-1.7\ntres', 'application/pdf', 'tres.pdf')).status).toBe(202);
+    const falso = await enviar('<html></html>', 'application/octet-stream', 'falso.pdf');
+    expect(falso.status).toBe(415);
+    expect(await falso.json()).toMatchObject({ erro: 'pdf_invalido' });
+    expect((await enviar('%PDF-1.7\nquatro', 'text/html', 'quatro.pdf')).status).toBe(415);
   }));

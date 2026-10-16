@@ -98,7 +98,18 @@ function feedDaAtualizacao(bruto = process.env.MARGEM_FEED_ATUALIZACAO) {
 const feed = feedDaAtualizacao();
 console.log(feed === null ? 'atualização automática: desligada (sem MARGEM_FEED_ATUALIZACAO)' : `atualização automática: ${feed}`);
 
+const temCertificadoDoMac = Boolean(process.env.CSC_LINK || process.env.CSC_NAME);
 const temNotarizacao = Boolean(process.env.APPLE_ID || process.env.APPLE_API_KEY || process.env.APPLE_KEYCHAIN_PROFILE);
+
+/**
+ * PDF e EPUB que o Margem aceita pelo "Abrir com" (U-08), declarados só no macOS e no Linux: no Windows o
+ * NSIS do electron-builder grava a extensão em Software\\Classes e poderia tomar o lugar do leitor padrão;
+ * lá, "Abrir com → Escolher outro aplicativo" passa o caminho na linha de comando, que o app já trata.
+ */
+const ASSOCIACOES = [
+  { ext: 'pdf', name: 'Documento PDF', mimeType: 'application/pdf' },
+  { ext: 'epub', name: 'Livro EPUB', mimeType: 'application/epub+zip' },
+];
 
 /** @type {import('electron-builder').Configuration} */
 const configuracao = {
@@ -117,6 +128,9 @@ const configuracao = {
   // `margem.atualizacao` é lido pelo app (desktop/src/nucleo/atualizacao.ts): a URL do feed, 'github' ou 'desligada'.
   extraMetadata: { version: versao, margem: { atualizacao: feed ?? 'desligada' } },
   asar: true,
+  // R2-6: links margem:// da extensão e do Obsidian abrem na janela do app (Info.plist no macOS, MimeType
+  // x-scheme-handler/margem no .desktop do Linux; no Windows o app registra em HKCU ao abrir).
+  protocols: [{ name: 'Margem', schemes: ['margem'] }],
   // Traduções do Chromium: só as que a interface usa (o resto são ~40 MB de .pak no app aberto).
   electronLanguages: ['pt-BR', 'en-US'],
   npmRebuild: false,
@@ -138,6 +152,9 @@ const configuracao = {
     icon: 'dist/boas-vindas/icones/linux',
     executableArgs: [],
     syncDesktopName: true,
+    // "Abrir com" (U-08): o .desktop ganha MimeType (e o %U), e o Margem aparece na lista do gerenciador de
+    // arquivos; o aplicativo padrão de PDF/EPUB continua o que a pessoa escolheu.
+    fileAssociations: ASSOCIACOES.map(({ ext, name, mimeType }) => ({ ext, name, mimeType })),
   },
   appImage: { artifactName: 'Margem-linux-x86_64.AppImage' },
   deb: { artifactName: 'margem_amd64.deb', packageName: 'margem' },
@@ -155,15 +172,35 @@ const configuracao = {
     shortcutName: 'Margem',
   },
   mac: {
+    // Sem isto o `executableName` global ('margem', o nome do binário no Linux) vira também o nome do
+    // pacote: `margem.app` com `Contents/MacOS/margem`. No Mac fica `Margem.app` e `Contents/MacOS/Margem`.
+    executableName: 'Margem',
     category: 'public.app-category.productivity',
     icon: 'dist/boas-vindas/icones/icone.icns',
+    // O mínimo de todo o conjunto, não só do Electron (J154, conferido em LC_BUILD_VERSION): o Postgres
+    // do zonky pede macOS 13, e o numpy que o pip escolhe no runner (roda de Accelerate, macosx_14_0)
+    // pede 14. O site diz o mesmo (site/src/config.ts, REQUISITO_DO_MAC).
+    minimumSystemVersion: '14.0',
+    darkModeSupport: true,
+    // "Abrir com" (U-08): rank Alternate, o Margem entra no menu do Finder sem virar o app padrão.
+    fileAssociations: ASSOCIACOES.map(({ ext, name }) => ({ ext, name, role: 'Viewer', rank: 'Alternate' })),
     hardenedRuntime: true,
     gatekeeperAssess: false,
     entitlements: 'construcao/entitlements.mac.plist',
     entitlementsInherit: 'construcao/entitlements.mac.plist',
-    // Sem certificado no ambiente, nada de procurar identidade no chaveiro: assinatura ad hoc ('-'),
-    // com o disable-library-validation dos entitlements (o electron-builder avisa que é preciso).
-    ...(process.env.CSC_LINK || process.env.CSC_NAME ? {} : { identity: '-' }),
+    ...(temCertificadoDoMac ? {} : {
+      // Sem certificado no ambiente, nada de procurar identidade no chaveiro: assinatura ad hoc ('-'),
+      // com o disable-library-validation dos entitlements (o electron-builder avisa que é preciso).
+      identity: '-',
+      // Assinatura ad hoc não leva carimbo de tempo (o padrão do @electron/osx-sign é pedir um).
+      timestamp: 'none',
+      // Os binários de recursos/ já saem assinados ad hoc, um a um e de dentro para fora, pelo
+      // recursos/preparar.mjs (recursos/assinar-mac.mjs); e margem/ é só JavaScript e dados. Sem isto o
+      // osx-sign passaria o codesign em cada arquivo binário dali (milhares: fuso horário do Postgres,
+      // _internal do motor), inclusive nos que não são código. O selo do .app cobre tudo do mesmo jeito.
+      // Com Developer ID (notarização) tudo precisa da assinatura dele: aí o osx-sign assina tudo.
+      signIgnore: ['/Contents/Resources/(recursos|margem)/'],
+    }),
     notarize: temNotarizacao,
   },
   dmg: { artifactName: 'Margem-mac-${arch}.dmg' },

@@ -150,6 +150,10 @@ export interface ArvoreDaVersao {
   secoes: NoDaArvore[];
   capitulos: { id: Id; titulo: string }[];
   limites: string[];
+  /** Com `?bloco=`: o capítulo que contém aquele bloco (`null` se ele não é da versão). */
+  capitulo_do_bloco?: Id | null;
+  /** Com o sumário sugerido em uso: capítulos do texto que saíram do sumário, mas ainda abrem por link. */
+  capitulos_ocultos?: Id[];
 }
 
 export interface PerguntasDaSecao {

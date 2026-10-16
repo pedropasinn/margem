@@ -8,6 +8,7 @@
  * - `JanelaDeApagarEmLote`: a confirmação com a contagem de cada lote (do documento ou de um capítulo).
  */
 import { useEffect, useState, type ReactNode } from 'react';
+import { mensagemDeErro } from '../biblioteca/erros';
 import type { SituacaoDaPreparacao } from '../biblioteca/api';
 import { Button } from '../ui/Primitives';
 import { Icon } from '../ui/Icon';
@@ -94,7 +95,7 @@ export function JanelaDeApagarEmLote({ documentoId, quem, secaoId, tituloDoCapit
   useEffect(() => {
     let vivo = true;
     fontes.apagaveis(documentoId, secaoId).then((resposta) => { if (vivo) definirConta(resposta); },
-      (erro: unknown) => { if (vivo) definirFalha(erro instanceof Error ? erro.message : 'Não foi possível contar o que será apagado.'); });
+      (erro: unknown) => { if (vivo) definirFalha(mensagemDeErro(erro, 'Não foi possível contar o que será apagado.')); });
     return () => { vivo = false; };
   }, [documentoId, secaoId, fontes]);
   const linhas = conta === null ? undefined : [

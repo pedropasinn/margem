@@ -40,6 +40,8 @@ tags:
 > Toda certeza começa por uma suspeita
 ^trecho
 
+Com o app de computador, o link de volta é `margem://abrir/ler/<doc>/<capítulo>?bloco=<bloco>`: o sistema o entrega ao app, que abre o trecho na janela dele (no navegador a biblioteca do app pede a chave e não abriria).
+
 ## Anotações
 - [[Parece Agostinho antes de Descartes… · 000010|Impressão — Parece Agostinho…]]
 

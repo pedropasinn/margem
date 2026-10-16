@@ -599,6 +599,19 @@ export function capitulos(canonico: CanonicoV1): Secao[] {
   return [...canonico.secoes].sort((a, b) => a.ordem - b.ordem).filter((secao) => secao.nivel === 1);
 }
 
+/** O capítulo que contém o bloco (a retomada da leitura abre nele, I-04); `null` se o bloco não é da versão. */
+export function capituloDoBloco(canonico: CanonicoV1, blocoId: string): Id | null {
+  const ordem = new Map(canonico.blocos.map((bloco, indice) => [bloco.id, indice]));
+  const alvo = ordem.get(blocoId);
+  if (alvo === undefined) return null;
+  for (const secao of capitulos(canonico)) {
+    const inicio = ordem.get(secao.bloco_inicio);
+    const fim = ordem.get(secao.bloco_fim);
+    if (inicio !== undefined && fim !== undefined && alvo >= inicio && alvo <= fim) return secao.id;
+  }
+  return null;
+}
+
 /** Camadas da versão, da mais recente para a mais antiga, com a contagem no recorte. */
 export async function camadasResumidas(cliente: Transacao, versaoId: Id, blocos?: readonly Id[]): Promise<CamadaResumida[]> {
   const contagem = await camadasRepo.contarMarcas(cliente, versaoId, blocos);

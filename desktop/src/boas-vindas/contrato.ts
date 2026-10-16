@@ -9,9 +9,9 @@ export interface AvaliacaoDaPasta {
   temOutrosArquivos: boolean;
 }
 
-export interface EstadoDoLoginNaJanela { encontrado: boolean; logado: boolean | null; conta: 'chatgpt' | 'chave_api' | null }
+export interface EstadoDoLoginNaJanela { encontrado: boolean; logado: boolean | null; conta: 'chatgpt' | 'chave_api' | null; falha?: { codigo: string; mensagem: string } }
 
-export interface EventoDoLoginNaJanela { tipo: 'link' | 'codigo' | 'concluido' | 'falhou'; valor?: string }
+export interface EventoDoLoginNaJanela { tipo: 'link' | 'codigo' | 'concluido' | 'falhou'; valor?: string; codigo?: string }
 
 export type ResultadoDaConclusao = { ok: true } | { ok: false; mensagem: string };
 

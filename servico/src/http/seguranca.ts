@@ -2,13 +2,15 @@
  * Segurança mínima de um servidor pessoal em loopback.
  *
  * Não há login próprio: a identidade de quem escreve vem do loopback ou do Tailscale Serve
- * (`autenticacao.ts`). Aqui também se defende o navegador do dono contra uma página de
+ * (`autenticacao.ts`). No app de computador, a chave local da instalação (`chave-local.ts`, S-01) separa as
+ * contas do mesmo computador, que dividem o loopback. Aqui também se defende o navegador do dono contra uma página de
  * terceiros — daí conferir `Origin`/`Host` e exigir um cabeçalho que só código de mesma
  * origem consegue enviar.
  */
 import type { Context, MiddlewareHandler } from 'hono';
-import { hostTailscale, hostsAceitos, origensAceitas, origensDeExtensao } from './ambiente.js';
+import { chaveLocal, hostTailscale, hostsAceitos, origensAceitas, origensDeExtensao } from './ambiente.js';
 import { autorizarEscrita } from './autenticacao.js';
+import { chaveDoPedido, conferirChaveLocal, rotaSemChave } from './chave-local.js';
 import { ErroDaApi } from './erros.js';
 
 const METODOS_DE_ESCRITA = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -67,7 +69,7 @@ function permitirExtensao(c: Context, origem: string): void {
   c.header('Vary', 'Origin');
 }
 
-export function seguranca(): MiddlewareHandler {
+export function seguranca(chave: string | undefined = chaveLocal()): MiddlewareHandler {
   return async (c, proximo) => {
     // Em produção o `Host` chega no cabeçalho; num `Request` montado à mão ele mora
     // na própria URL. O valor é o mesmo — e é conferido contra a lista de aceitos.
@@ -85,6 +87,8 @@ export function seguranca(): MiddlewareHandler {
     }
     conferirOrigem(c.req.method, origem, host, caminho);
     if (origem !== undefined && ehOrigemDeExtensao(origem)) permitirExtensao(c, origem);
+    // S-01: com chave local, leitura e escrita exigem a chave (portador ou cookie), depois de Host e Origin.
+    if (chave !== undefined && !rotaSemChave(c.req.method, caminho)) conferirChaveLocal(chave, chaveDoPedido(c));
     if (METODOS_DE_ESCRITA.has(c.req.method)) {
       autorizarEscrita({
         margem: c.req.header('x-margem'), autorizacao: c.req.header('authorization'), host,

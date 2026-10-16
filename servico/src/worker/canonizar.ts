@@ -1,4 +1,5 @@
 import { aoPublicarVersao } from '../tipo-de-texto/identificar.js';
+import { aoPublicarVersaoDoSumario } from '../sumario/conferencia.js';
 import { interpretarJson, lerJsonLimitado, lerTextoLimitado, ORCAMENTOS } from '../entrada-json.js';
 import { reconciliarCanonizacao, finalizarArquivos } from './arquivos-canonizacao.js';
 /**
@@ -22,7 +23,7 @@ import { comandoDoMotor } from '../plataforma/executaveis.js';
 import { encerrarArvore, opcoesDeProcesso } from '../plataforma/processos.js';
 import { comTransacao, type Transacao } from '../db/transacao.js';
 import * as documentos from '../repos/documentos.js';
-import { pastaDaTentativaDeCanonizacao, pastaDoDocumento, raizDoRepositorio } from '../dados.js';
+import { originalDoDocumento, pastaDaTentativaDeCanonizacao, pastaDoDocumento, raizDoRepositorio } from '../dados.js';
 import { entradaDoJob } from './fila-postgres.js';
 import type { ContextoPublicacao } from './fila.js';
 import type { Manipulador, Tarefa } from './worker.js';
@@ -70,9 +71,9 @@ export async function rodarMotor(
   entrada = resolve(raiz, entrada);
   saida = resolve(raiz, saida);
   const argumentos = ['--entrada', entrada, '--formato', formato, '--saida', saida];
-  if (extras.titulo !== undefined && extras.titulo.trim() !== '') argumentos.push('--titulo', extras.titulo);
-  if (extras.tituloReserva) argumentos.push('--titulo-reserva', extras.tituloReserva);
-  if (extras.autor !== undefined && extras.autor !== null && extras.autor.trim() !== '') argumentos.push('--autor', extras.autor);
+  if (extras.titulo !== undefined && extras.titulo.trim() !== '') argumentos.push(`--titulo=${extras.titulo}`);
+  if (extras.tituloReserva) argumentos.push(`--titulo-reserva=${extras.tituloReserva}`);
+  if (extras.autor !== undefined && extras.autor !== null && extras.autor.trim() !== '') argumentos.push(`--autor=${extras.autor}`);
   if (extras.paginas) argumentos.push('--paginas', `${String(extras.paginas.inicio)}-${String(extras.paginas.fim)}`);
   if (extras.poesia === true) argumentos.push('--poesia');
   return new Promise<SaidaDoMotor>((resolver) => {
@@ -150,7 +151,7 @@ export function manipuladorCanonizar(opcoes: OpcoesDaCanonizacao): Manipulador {
       } catch (erro) {
         if (!(erro instanceof Error && 'code' in erro && erro.code === 'ENOENT')) throw erro;
       }
-      const motor = await rodarMotor(raiz, documento.origem_caminho, documento.formato, saida, {
+      const motor = await rodarMotor(raiz, originalDoDocumento(documento), documento.formato, saida, {
         ...(tituloReserva ? { tituloReserva } : { titulo: documento.titulo }), autor: documento.autor,
         paginas: documento.paginas_inicio !== null && documento.paginas_fim !== null
           ? { inicio: documento.paginas_inicio, fim: documento.paginas_fim } : null,
@@ -191,6 +192,8 @@ export async function publicarCanonizacao(
   const versao = await documentos.criarVersao(cliente, entrada.documento_id, canonico, opcoes);
   // Documento ainda sem tipo de texto: o Codex o reconhece (job leve), para a leitura sair no modo certo.
   await aoPublicarVersao(cliente, entrada.documento_id, versao.id, canonico);
+  // EPUB e PDF novos: o sumário passa pelas heurísticas e, se suspeito, por uma conferência leve do Codex (J164).
+  await aoPublicarVersaoDoSumario(cliente, entrada.documento_id, versao, canonico);
   // EPUB e PDF sem título explícito: o título dos metadados substitui o de reserva (nome do arquivo).
   await cliente.query(`UPDATE documento SET
     titulo=CASE WHEN titulo=$2 THEN $3 ELSE titulo END, autor=coalesce(autor,$4)

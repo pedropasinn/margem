@@ -8,6 +8,7 @@ import { recuperarPublicacoes } from './arquivos-canonizacao.js';
  * (ver `servico/src/executor/ambiente.ts`).
  */
 import { pool } from '../db/conexao.js';
+import { BancoMaisNovo, migracoesPendentes } from '../db/migrar.js';
 import { comTransacao } from '../db/transacao.js';
 import { manipuladoresDasNoticias } from '../noticias/pipeline.js';
 import { pedirEdicao } from '../noticias/repositorio.js';
@@ -43,10 +44,12 @@ import { manipuladoresDaLeitura } from './manipuladores-leitura.js';
 import { manipuladoresDaCompreensao } from '../compreensao/manipuladores.js';
 import { comecarLeituraPedida, seguirSemTipo } from '../compreensao/preparacao.js';
 import { esforcoDoTipo, manipuladoresDoTipo } from '../tipo-de-texto/identificar.js';
+import { esforcoDoSumario, manipuladoresDoSumario } from '../sumario/conferencia.js';
 import { manipuladoresDosQuadros } from '../arte/preparo.js';
 import { SLOTS_PADRAO } from './slots.js';
 import { recursosDoAmbiente } from '../recursos.js';
 import { Worker } from './worker.js';
+import { limparAuditoriaAntiga } from './retencao.js';
 import { ouvinteDoPool } from '../http/ouvinte.js';
 import type { Manipulador } from './worker.js';
 import { aoPedirParada, ehPontoDeEntrada } from '../plataforma/processos.js';
@@ -142,6 +145,8 @@ export function todosOsManipuladores(
       banco, executor, modelo: compreensao.modelo, esforco: esforcoDoTipo(ambiente),
       aoConhecerTipo: (cliente, documentoId, pedido) => comecarLeituraPedida(compreensao, cliente, documentoId, pedido),
     }),
+    // Conferência do sumário de EPUB e PDF novos (J164): só quando as heurísticas acham algo, esforço `low`.
+    ...manipuladoresDoSumario({ banco, executor, modelo: compreensao.modelo, esforco: esforcoDoSumario(ambiente) }),
     // Resolução de exercícios (J34): mesmo modelo; resolver com o esforço das leituras, explicar com o do plano.
     ...manipuladoresDaResolucao({
       banco, executor, modelo: compreensao.modelo, esforco: compreensao.esforco,
@@ -210,6 +215,13 @@ export async function pausarNaPartida(partida: Date, banco: typeof pool = pool, 
 }
 
 export async function principal(): Promise<void> {
+  // D-07: banco aberto por versão mais nova (migração desconhecida) recusa o worker antes de qualquer escrita.
+  try { await migracoesPendentes(pool); }
+  catch (erro) {
+    if (erro instanceof BancoMaisNovo) console.error(JSON.stringify({ evento: 'banco_mais_novo', migracoes: erro.desconhecidas }));
+    await pool.end();
+    throw erro;
+  }
   // Por fora da auditoria: a escolha de modelo e esforço por categoria (Configurações → Modelos, V-T10)
   // troca o pedido antes de ele ser registrado, a cada chamada (a mudança vale já no job seguinte).
   const executor = executorComModelos(executorAuditado(await escolherExecutor()), () => lerEscolhas(pool));
@@ -247,6 +259,15 @@ export async function principal(): Promise<void> {
     console.log(JSON.stringify({ evento: 'parada_pedida', sinal, em: new Date().toISOString() }));
     worker.pedirParada();
   });
+  // Retenção da auditoria (30 dias): na partida e uma vez por dia; falha só fica registrada.
+  const limparAuditoria = () => {
+    void limparAuditoriaAntiga(raizDaAuditoria()).then(
+      (apagadas) => { if (apagadas > 0) console.log(JSON.stringify({ evento: 'auditoria_limpa', jobs: apagadas, em: new Date().toISOString() })); },
+      (erro: unknown) => { console.error(JSON.stringify({ evento: 'auditoria_limpeza_falhou', detalhe: erro instanceof Error ? erro.message : String(erro) })); });
+  };
+  limparAuditoria();
+  const retencao = setInterval(limparAuditoria, 86_400_000);
+  retencao.unref?.();
   try {
     // V-F1: o trabalho do Codex parado há horas fica em pausa até a pessoa mandar (Retomar na janela). Antes
     // da primeira volta do laço e do `seguirSemTipo`: nada do que esperava começa sozinho ao abrir o app.
@@ -257,6 +278,7 @@ export async function principal(): Promise<void> {
   } finally {
     clearInterval(agendaNoticias);
     clearInterval(prazoDoTipo);
+    clearInterval(retencao);
     await ouvinte.encerrar();
     await pool.end();
   }

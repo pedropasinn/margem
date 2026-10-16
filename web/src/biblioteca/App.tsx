@@ -4,6 +4,7 @@ import { Assinatura } from '../ui/Assinatura';
 import { Drawer, IconButton } from '../ui/Primitives';
 import { Adicionar } from './Adicionar';
 import { abaDosArquivos, abaPreferida, imagensColadas } from './importacao';
+import { EVENTO_ARQUIVOS_ABERTOS, usarArquivosAbertos } from './abrir-com';
 import { Detalhe } from './Detalhe';
 import { Ler } from './Ler';
 import { Lista, campoEmEdicao, preferencia, guardarPreferencia } from './Lista';
@@ -120,6 +121,11 @@ export function App(): ReactNode {
     window.addEventListener('dragover', arrastar); window.addEventListener('drop', soltar); window.addEventListener('paste', colar);
     return () => { window.removeEventListener('dragover', arrastar); window.removeEventListener('drop', soltar); window.removeEventListener('paste', colar); };
   }, [rota.nome, ir, recursos.ativos]);
+  // "Abrir com" o Margem (U-08): os arquivos vão para Adicionar, na fila, esperando a confirmação.
+  usarArquivosAbertos((arquivos) => {
+    if (rota.nome === 'adicionar') { window.dispatchEvent(new CustomEvent<File[]>(EVENTO_ARQUIVOS_ABERTOS, { detail: arquivos })); return; }
+    definirArquivosSoltos(arquivos); ir({ nome: 'adicionar', aba: 'documento' });
+  });
   // A primeira execução da instalação (J103) vem antes das boas-vindas do onboarding e as substitui.
   const instalacaoPendente = instalacao.estado !== null && !instalacao.estado.primeira_execucao.concluida;
   const primeiraExecucao = instalacao.ativo && mostrarPrimeiraExecucao(instalacao.estado, instalacaoAdiada, lendo) ? instalacao.estado : null;

@@ -7,6 +7,9 @@ biblioteca do Margem. Um código só para Chrome, Edge, Brave e Firefox (Manifes
   **Enviar para o Margem** e **Enviar e abrir**. Atalho: **Alt+Shift+M** (abre o popup).
 - **Menu de contexto**: *Enviar página para o Margem* e, com texto selecionado, *Enviar seleção
   para o Margem*. O resultado aparece numa notificação (clique para abrir) e no selo do ícone.
+- **Abrir**: com o app de computador, *Enviar e abrir* e o clique na notificação usam o link
+  `margem://abrir/documentos/<id>`, que o sistema entrega ao app (o navegador pergunta se pode abri-lo
+  na primeira vez). Com o Margem em Docker ou no Tailscale, abrem o endereço http numa aba.
 - **PDF**: se a aba é um PDF, a extensão baixa o arquivo e envia o original (o Margem abre PDF
   como o original); não extrai texto.
 - **Opções**: endereço do Margem (padrão `http://localhost:8730`, o da instalação no próprio

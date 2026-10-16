@@ -189,3 +189,24 @@ test('capa publicada: JPEG, cache condicional, manifesto, ausência e confinamen
   await symlink(fora, join(pasta, 'capa.jpg'));
   expect((await api.request(url)).status).toBe(404);
 }));
+
+test('D-04: biblioteca movida: o original gerenciado é achado pelo id na raiz atual, sem afrouxar a raiz', async () => comBanco('d04_original', async (banco) => {
+  process.env.MARGEM_DADOS = await temporario();
+  const { api, versao } = await criar(banco);
+  const id = versao.documento_id;
+  // O original no lugar do app, e o registro com o caminho absoluto da biblioteca antiga (outro disco).
+  await mkdir(join(process.env.MARGEM_DADOS, id), { recursive: true });
+  await writeFile(join(process.env.MARGEM_DADOS, id, 'original.pdf'), bytes);
+  await banco.query('UPDATE documento SET origem_caminho=$2 WHERE id=$1', [id, `/media/disco-antigo/Margem/${id}/original.pdf`]);
+  const movido = await api.request(`/api/documentos/${id}/original`);
+  expect(movido.status).toBe(200);
+  expect(await movido.text()).toBe(bytes);
+  // Caminho do Windows de antes da restauração: o mesmo.
+  await banco.query('UPDATE documento SET origem_caminho=$2 WHERE id=$1', [id, `C:\\Users\\outra\\Margem\\${id}\\original.pdf`]);
+  expect((await api.request(`/api/documentos/${id}/original`)).status).toBe(200);
+  // Fora do padrão do app (outro id na pasta, outro nome, fora da raiz): continua recusado.
+  for (const fora of [`/media/disco-antigo/Margem/01ARZ3NDEKTSV4RRFFQ69G5FAV/original.pdf`, `/media/disco-antigo/Margem/${id}/outro.pdf`, '/etc/passwd']) {
+    await banco.query('UPDATE documento SET origem_caminho=$2 WHERE id=$1', [id, fora]);
+    expect((await api.request(`/api/documentos/${id}/original`)).status).toBe(404);
+  }
+}));

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { mensagemDeErro } from './erros';
 import { Input, Select, IconButton, Button } from '../ui/Primitives';
 import { Esqueleto } from '../ui/Esqueleto';
 import { BarraDeProgresso, Icon } from '../ui/Icon';
 import { Capa } from '../ui/Capa';
+import { atalhoNoSistema } from '../ui/teclas';
 import { listarDocumentos, arvoreDaVersao, escrever, buscarNaBiblioteca } from './api';
 import { TrechoMarcado } from '../leitor/BuscaNoDocumento';
 import { fraseDoEstado } from './estado';
@@ -57,7 +59,7 @@ export function usarBiblioteca(carregar = listarDocumentos, arquivados = false, 
   const pedidas = useRef(new Set<string>());
   useEffect(() => {
     let vivo = true; definirErro(null); definir(null);
-    carregar(arquivados).then((r) => { if (vivo) definir(r.documentos); }, (e: unknown) => { if (vivo) definirErro(e instanceof Error ? e.message : 'falha ao carregar'); });
+    carregar(arquivados).then((r) => { if (vivo) definir(r.documentos); }, (e: unknown) => { if (vivo) definirErro(mensagemDeErro(e, 'Não foi possível carregar a biblioteca.')); });
     return () => { vivo = false; };
   }, [carregar, arquivados, revisao]);
   const semContagem = (documentos ?? []).flatMap((d) => d.versao_id && d.texto_disponivel && typeof d.capitulos_total !== 'number' ? [d.versao_id] : []);
@@ -118,16 +120,27 @@ export function Lista({ ir, carregar = listarDocumentos, carregarQuadros, operac
   const [ocupado, ocupar] = useState<string | null>(null);
   const entrada = useRef<HTMLInputElement>(null);
   const lista = useRef<HTMLUListElement>(null);
-  const [noTexto, definirNoTexto] = useState<RespostaDaBusca | null>(null);
+  // U-07: a busca no texto tem estado próprio; só vale a resposta da consulta atual.
+  const [buscaNoTexto, definirBuscaNoTexto] = useState<BuscaNoTexto>({ estado: 'ociosa' });
+  const [tentativaDaBusca, tentarBuscaDeNovo] = useState(0);
+  const termoNoTexto = busca.trim().length >= MINIMO_NO_TEXTO && aba !== 'arquivados' ? busca.trim() : null;
   useEffect(() => {
-    const termo = busca.trim();
-    if (termo.length < MINIMO_NO_TEXTO || aba === 'arquivados') { definirNoTexto(null); return; }
+    if (termoNoTexto === null) { definirBuscaNoTexto({ estado: 'ociosa' }); return undefined; }
+    // O resultado da consulta anterior sai da tela já ao digitar.
+    definirBuscaNoTexto({ estado: 'buscando', termo: termoNoTexto });
     const controle = new AbortController();
     const tempo = setTimeout(() => {
-      buscarTexto(termo, controle.signal).then(definirNoTexto, () => { if (!controle.signal.aborted) definirNoTexto(null); });
+      buscarTexto(termoNoTexto, controle.signal).then(
+        (resposta) => { if (!controle.signal.aborted) definirBuscaNoTexto({ estado: 'pronta', termo: termoNoTexto, resposta }); },
+        () => { if (!controle.signal.aborted) definirBuscaNoTexto({ estado: 'falhou', termo: termoNoTexto }); },
+      );
     }, 300);
     return () => { clearTimeout(tempo); controle.abort(); };
-  }, [busca, aba, buscarTexto]);
+  }, [termoNoTexto, buscarTexto, tentativaDaBusca]);
+  const daConsultaAtual = termoNoTexto !== null && buscaNoTexto.estado !== 'ociosa' && buscaNoTexto.termo === termoNoTexto ? buscaNoTexto : null;
+  const noTexto: RespostaDaBusca | null = daConsultaAtual?.estado === 'pronta' ? daConsultaAtual.resposta : null;
+  const buscandoNoTexto = termoNoTexto !== null && daConsultaAtual?.estado !== 'pronta' && daConsultaAtual?.estado !== 'falhou';
+  const buscaFalhou = daConsultaAtual?.estado === 'falhou';
   const soQuadros = rota?.tipo === 'quadros';
   // Quadros sem nenhuma obra da pessoa (J118): explica e convida a adicionar a primeira, em vez de uma lista muda.
   const semObrasDaPessoa = soQuadros && quadros !== null && !quadros.some((q) => !q.exemplo) && preparando.length === 0 && aba !== 'arquivados' && !busca;
@@ -183,7 +196,7 @@ export function Lista({ ir, carregar = listarDocumentos, carregarQuadros, operac
   async function arquivar(item: ItemDaBiblioteca) {
     ocupar(item.id); definirErroAcao(null);
     try { await escrever(`/api/documentos/${item.id}/${aba === 'arquivados' ? 'desarquivar' : 'arquivar'}`, {}); recarregar((n) => n + 1); }
-    catch (e) { definirErroAcao(e instanceof Error ? e.message : 'Não foi possível arquivar.'); }
+    catch (e) { definirErroAcao(mensagemDeErro(e, 'Não foi possível arquivar.')); }
     finally { ocupar(null); }
   }
   const titulo = rota?.tipo ? descricaoDaCategoria(rota.tipo).rotulo : 'Biblioteca';
@@ -205,7 +218,8 @@ export function Lista({ ir, carregar = listarDocumentos, carregarQuadros, operac
       <div className="biblioteca-ferramentas">{(!soQuadros || arte) && <IconButton className="adicionar-obra-botao" aria-label={soQuadros ? 'Adicionar obra' : rota?.tipo === 'videos' ? 'Adicionar vídeo' : 'Adicionar'} title={soQuadros ? 'Adicionar obra' : rota?.tipo === 'videos' ? 'Adicionar vídeo' : 'Adicionar'} onClick={adicionarAqui}><Icon name="adicionar" size={18} /></IconButton>}<label className="busca-compacta"><Icon name="buscar" size={16} /><Input ref={entrada} type="search" aria-label="Buscar textos" placeholder="Buscar título, autor ou texto" value={busca} onChange={(e) => buscar(e.target.value)} /></label><Select className="ordenacao" aria-label="Ordenação" value={ordem} rotuloFechado={<><Icon name="ordenar" size={16} /><span className="rotulo-da-ordem">{ROTULO_DA_ORDEM[ordem] ?? ROTULO_DA_ORDEM['leitura']}</span></>} onChange={(e) => ordenar(e.target.value)}><option value="leitura">Última leitura</option><option value="adicionados">Adicionados</option><option value="titulo">Título</option></Select></div>
       {!painel && <IconButton className="alternar-painel" aria-label="Abrir informações" title="Abrir informações (])" onClick={alternarPainel}><Icon name="painel" /></IconButton>}
     </header><h2 className="apenas-leitores">{rota?.tipo ? titulo : 'Todos os itens'}</h2>
-    {(erro || erroAcao || acoesDoPreparo.erro) && <p role="alert" className="aviso">{erro ?? erroAcao ?? acoesDoPreparo.erro}</p>}
+    {(erro || erroAcao || acoesDoPreparo.erro) && <div role="alert" className="aviso aviso-da-lista"><span>{erro ?? erroAcao ?? acoesDoPreparo.erro}</span>
+      {erro && <Button variante="ghost" className="small" onClick={() => recarregar((n) => n + 1)}>Tentar novamente</Button>}</div>}
     {(documentos === null && !erro) || (soQuadros && quadros === null) ? <Esqueleto /> : !soQuadros && documentos?.length === 0 && !quadros?.length && !preparando.length ? <ConviteAdicionar ir={ir} arquivados={aba === 'arquivados'} /> : <>
       {semObrasDaPessoa && <QuadrosVazios aoAdicionar={adicionarAqui} />}<ul ref={lista} className="linhas-biblioteca">{entradas.map(({ chave, documento: item, quadro, preparo }) => {
         if (quadro) return <li key={chave}><LinhaDoQuadro quadro={quadro} atual={chave === selecionada?.chave} ordem={ordem} ir={ir} aoFocar={() => focar(chave)} /></li>;
@@ -234,9 +248,12 @@ export function Lista({ ir, carregar = listarDocumentos, carregarQuadros, operac
               <span><TrechoMarcado trecho={resultado.trecho} /></span>
             </a>
           </li>)}</ul>
-          {grupo.resultados.length > TRECHOS_POR_DOCUMENTO && <p className="busca-no-texto-mais">Mais {grupo.resultados.length - TRECHOS_POR_DOCUMENTO} neste texto: abra e use Ctrl F.</p>}
+          {grupo.resultados.length > TRECHOS_POR_DOCUMENTO && <p className="busca-no-texto-mais">Mais {grupo.resultados.length - TRECHOS_POR_DOCUMENTO} neste texto: abra e use {atalhoNoSistema('Ctrl F')}.</p>}
         </li>)}</ul>
-      </section>}{(documentos || quadros) && !semObrasDaPessoa && entradas.length === 0 && gruposNoTexto.length === 0 && <EstadoVazio frase={busca ? `${vazio} encontrado.` : aba === 'lendo' ? `${vazio} em leitura.` : aba === 'novos' ? `${vazio} por abrir.` : rota?.tipo ? `${vazio} na biblioteca.` : 'Nada nesta aba.'} />}</>}
+      </section>}{buscandoNoTexto && <p className="busca-no-texto-estado" role="status">Buscando no texto…</p>}
+      {buscaFalhou && <div className="aviso busca-no-texto-falhou" role="alert"><span>Não foi possível buscar no texto.</span>
+        <Button variante="ghost" className="small" onClick={() => tentarBuscaDeNovo((n) => n + 1)}>Tentar novamente</Button></div>}
+      {(documentos || quadros) && !semObrasDaPessoa && entradas.length === 0 && gruposNoTexto.length === 0 && !buscandoNoTexto && !buscaFalhou && !erro && <EstadoVazio frase={busca ? `${vazio} encontrado.` : aba === 'lendo' ? `${vazio} em leitura.` : aba === 'novos' ? `${vazio} por abrir.` : rota?.tipo ? `${vazio} na biblioteca.` : 'Nada nesta aba.'} />}</>}
     <span className="contagem-biblioteca">{contador}</span>
   </section>{painel && selecionada?.quadro && <PainelDoQuadroNaBiblioteca quadro={selecionada.quadro} ir={ir} fechar={alternarPainel} ocupado={acoesDoPreparo.ocupado === selecionada.quadro.slug}
     aoCorrigir={() => { const q = selecionada.quadro!; identificar({ slug: q.slug, titulo: q.titulo, artista: q.artista, ano: q.ano }); }}
@@ -247,6 +264,13 @@ export function Lista({ ir, carregar = listarDocumentos, carregarQuadros, operac
   {painel && !selecionada?.quadro && !selecionada?.preparo && <PainelDoItem item={selecionado} arvore={arvores[selecionado?.versao_id ?? '']} ir={ir} fechar={alternarPainel} />}
   {identificando && <IdentificarObra quadro={identificando} operacoes={operacoesDosQuadros} aoFechar={() => identificar(null)} aoSalvar={(novo) => { identificar(null); recarregarQuadros(); focar(`preparo:${novo.slug}`); }} />}</div>;
 }
+
+/** A busca no conteúdo (U-07): cada estado diz de qual consulta é. */
+type BuscaNoTexto =
+  | { estado: 'ociosa' }
+  | { estado: 'buscando'; termo: string }
+  | { estado: 'pronta'; termo: string; resposta: RespostaDaBusca }
+  | { estado: 'falhou'; termo: string };
 
 /** Uma linha da Biblioteca: um documento, um quadro pronto ou uma obra da pessoa em preparo. */
 interface Entrada { chave: string; documento: ItemDaBiblioteca | null; quadro: ResumoDoQuadro | null; preparo: QuadroDaPessoaV1 | null; titulo: string; aberto: string | null; criado: string }

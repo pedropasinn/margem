@@ -430,9 +430,11 @@ def principal(argumentos: list[str]) -> None:
     if len(argumentos) != 3 or argumentos[0] not in ("descobrir", "recortar"):
         sys.exit(__doc__)
     if argumentos[0] == "descobrir":
-        json.dump(descobrir(argumentos[1], Path(argumentos[2])), sys.stdout, ensure_ascii=False)
+        # Protocolo por pipe em UTF-8, independente da codepage do sistema (W-03).
+        sys.stdout.buffer.write(json.dumps(descobrir(argumentos[1], Path(argumentos[2])), ensure_ascii=False).encode("utf-8"))
+        sys.stdout.flush()
     else:
-        recortar(argumentos[1], Path(argumentos[2]), json.load(sys.stdin))
+        recortar(argumentos[1], Path(argumentos[2]), json.loads(sys.stdin.buffer.read().decode("utf-8")))
 
 
 if __name__ == "__main__":

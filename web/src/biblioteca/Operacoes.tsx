@@ -1,4 +1,5 @@
 import { Button, Checkbox, Drawer, Input, Switch } from '../ui/Primitives';
+import { mensagemDeErro } from './erros';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { TiposDeTextoV1 } from '@margem/contratos';
 import { AvisoDoCodexCurto } from '../primeira-execucao/PrimeiraExecucao';
@@ -86,7 +87,7 @@ export function usePreparacao(
       novaRodada((atual) => atual + 1);
       return true;
     } catch (falha) {
-      definirErro(falha instanceof Error ? falha.message : 'Não foi possível começar a análise.');
+      definirErro(mensagemDeErro(falha, 'Não foi possível começar a análise.'));
       return false;
     } finally { ocupar(false); }
   }, [documentoId, aplicar]);
@@ -97,7 +98,7 @@ export function usePreparacao(
       aoMudarRef.current?.();
       novaRodada((atual) => atual + 1);
     } catch (falha) {
-      definirErro(falha instanceof Error ? falha.message : 'Não foi possível mudar o tipo do texto.');
+      definirErro(mensagemDeErro(falha, 'Não foi possível mudar o tipo do texto.'));
     } finally { ocupar(false); }
   }, [documentoId, aplicar]);
   const recarregar = useCallback(() => novaRodada((atual) => atual + 1), []);
@@ -222,7 +223,7 @@ export function JanelaDaPreparacao({ preparacao, documentoId, textoUnico, aoFech
     if (doServico.length > 0 && !await preparacao.preparar(todos, doServico)) return;
     if (escolhidos.includes('exercicios')) {
       try { await (fontes.exercicios ?? pedirExercicios)(documentoId); preparacao.recarregar(); }
-      catch (erro) { definirFalha(erro instanceof Error ? `Exercícios: ${erro.message}` : 'Não foi possível pedir os exercícios.'); return; }
+      catch (erro) { definirFalha(mensagemDeErro(erro, 'Não foi possível pedir os exercícios.')); return; }
     }
     aoFechar();
   }
@@ -259,7 +260,7 @@ export function PadraoDaPreparacaoNasConfiguracoes({ fontes = FONTES_DO_PADRAO }
   async function gravar(padrao: CatalogoDaPreparacao['padrao']) {
     ocupar(true); avisar(null);
     try { definirCatalogo(await fontes.gravar(padrao)); avisar('Salvo.'); }
-    catch (erro) { avisar(erro instanceof Error ? erro.message : 'Não foi possível salvar.'); }
+    catch (erro) { avisar(mensagemDeErro(erro, 'Não foi possível salvar.')); }
     finally { ocupar(false); }
   }
   if (catalogo === null) return <section className="card" aria-label="Ao importar"><h2>Ao importar</h2>{aviso && <p className="dados">{aviso}</p>}</section>;
@@ -348,7 +349,7 @@ export function PrimeiroEuDoDocumento({ documentoId }: { documentoId: string }):
   async function mudar(valor: boolean) {
     ocupar(true); definirErro(null);
     try { await gravarPreferenciasDoDocumento(documentoId, { primeiro_eu: valor }); definir(valor); }
-    catch (falha) { definirErro(falha instanceof Error ? falha.message : 'Não foi possível salvar a preferência.'); }
+    catch (falha) { definirErro(mensagemDeErro(falha, 'Não foi possível salvar a preferência.')); }
     finally { ocupar(false); }
   }
   return <div><Switch checked={ativo} disabled={!pronto || ocupado} onChange={(valor) => void mudar(valor)}>Primeiro eu</Switch>{erro && <p role="alert">{erro}</p>}</div>;

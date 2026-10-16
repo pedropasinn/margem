@@ -12,6 +12,7 @@ import type {
 } from '@margem/contratos';
 import { TIPOS_DE_NOTA_DO_OBSIDIAN } from '@margem/contratos';
 import type { Transacao } from '../db/transacao.js';
+import { secoesComTitulosApresentados } from '../sumario/conferencia.js';
 import { listarCartoes } from '../flashcards/repo.js';
 import { modosDeLeitura } from '../modos.js';
 import * as anotacoesRepo from '../repos/anotacoes.js';
@@ -138,7 +139,8 @@ async function entradaV2DaLinha(cliente: Transacao, linha: LinhaDoDocumento & { 
       id: linha.id, titulo: linha.titulo, autor: linha.autor, formato: linha.formato, criado_em: linha.criado_em, fonte_url: linha.fonte_url,
     },
     versao_id: versao.id,
-    secoes: versao.canonico.secoes,
+    // R3-8: os títulos do sumário sugerido em uso, nas mesmas seções do canônico.
+    secoes: await secoesComTitulosApresentados(cliente, versao.id, versao.canonico.secoes),
     blocos: versao.canonico.blocos,
     marcas: incluir.has('grifo') ? marcas : [],
     anotacoes: incluir.has('anotacao') ? anotacoes : [],

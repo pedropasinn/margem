@@ -40,6 +40,15 @@ export function cabecalhosDeEscrita(configuracao: Configuracao): Record<string, 
   return token === '' ? { 'X-Margem': 'extensao' } : { 'X-Margem': token, Authorization: `Bearer ${token}` };
 }
 
+/**
+ * Leitura (o teste de conexão): com token, só o `Authorization`. O app de computador exige a chave da
+ * biblioteca também nas leituras (S-01); o token das opções é essa chave.
+ */
+export function cabecalhosDeLeitura(configuracao: Configuracao): Record<string, string> {
+  const token = configuracao.token.trim();
+  return token === '' ? {} : { Authorization: `Bearer ${token}` };
+}
+
 /** Corpo do contrato ImportacaoWebV1 a partir da captura. */
 export function importacaoDaCaptura(captura: CapturaDeTexto, agora: Date): ImportacaoWeb {
   return {
@@ -83,6 +92,8 @@ const MENSAGENS: Readonly<Record<string, string>> = {
   rota_fora_da_extensao: 'O servidor não deixa a extensão usar esta rota.',
   host_recusado: `O Margem recusou o endereço usado. Use ${SERVIDOR_PADRAO} (ou o endereço exato configurado no Margem, com a mesma porta).`,
   cabecalho_ausente: 'O servidor exigiu o cabeçalho X-Margem e ele não chegou.',
+  chave_local: 'O Margem pediu a chave desta biblioteca. No Margem, abra Configurações, copie a "Chave para a extensão e o '
+    + 'Obsidian" e cole no campo Token das opções da extensão',
   importacao_invalida: 'O servidor recusou a página capturada',
   corpo_grande_demais: 'A página (ou o PDF) passa do limite de tamanho do servidor.',
   formato_nao_suportado: 'Este servidor não aceita o formato enviado.',
@@ -154,6 +165,25 @@ function enviado(configuracao: Configuracao, documentoId: string): Enviado {
   return { documento_id: documentoId, endereco: `${configuracao.servidor}/documentos/${documentoId}` };
 }
 
+/**
+ * R2-6 · No app de computador a API exige a chave local, que o navegador não tem: abrir
+ * `http://127.0.0.1:<porta>/documentos/<id>` numa aba daria 401. Quando quem respondeu é o app
+ * (`app_de_computador` na saúde, que é pública), o endereço para abrir é o link `margem://` que o app
+ * registra e abre na janela dele. Em qualquer outro caso (Docker, Tailscale, saúde sem resposta), fica o http.
+ */
+export const BASE_DO_APP = 'margem://abrir';
+
+export async function enderecoParaAbrir(configuracao: Configuracao, resultado: Enviado, buscar: typeof fetch = (...a) => fetch(...a), prazoMs = 1_500): Promise<Enviado> {
+  try {
+    const resposta = await buscar(`${configuracao.servidor}/api/saude`, { credentials: 'omit', cache: 'no-store', signal: AbortSignal.timeout(prazoMs) });
+    const corpo = await resposta.json() as { servico?: unknown; app_de_computador?: unknown };
+    if (corpo.servico !== 'margem' || corpo.app_de_computador !== true) return resultado;
+    return { ...resultado, endereco: `${BASE_DO_APP}/documentos/${encodeURIComponent(resultado.documento_id)}` };
+  } catch {
+    return resultado;
+  }
+}
+
 export async function enviarTexto(configuracao: Configuracao, captura: CapturaDeTexto, agora = new Date()): Promise<Enviado> {
   const resposta = await pedir(configuracao, '/api/importacoes/web', {
     method: 'POST',
@@ -186,7 +216,7 @@ export interface Conexao {
 }
 
 export async function testarConexao(configuracao: Configuracao): Promise<Conexao> {
-  const resposta = await pedir(configuracao, '/api/importacoes/web', { method: 'GET' });
+  const resposta = await pedir(configuracao, '/api/importacoes/web', { method: 'GET', headers: cabecalhosDeLeitura(configuracao) });
   if (resposta.status === 404) {
     throw new ErroDoServidor('O servidor respondeu, mas não tem a rota de importação web: atualize o Margem.', 'sem_rota');
   }
@@ -223,16 +253,24 @@ export function procuraAutomatica(servidor: string): boolean {
   }
 }
 
-/** `GET /api/saude` numa porta: quem responde como Margem (mesmo com o banco fora, 503). */
+/** Erros com que só o Margem responde à rota de saúde quando recusa a extensão (sem a identificação). */
+const ERROS_DO_MARGEM = new Set(['origem_recusada', 'rota_fora_da_extensao', 'host_recusado']);
+
+/**
+ * `GET /api/saude` numa porta: quem responde como Margem (mesmo com o banco fora, 503). S-06: identificação
+ * completa é `servico: "margem"` com `instancia_id`; uma resposta genérica (`{ "ok": true }`) não conta.
+ * Um Margem que recusou a extensão entra sem identificação, só para o erro dele chegar a quem usa.
+ */
 async function sondar(host: string, porta: number, buscar: typeof fetch, prazoMs: number): Promise<MargemEncontrado | null> {
   const servidor = `http://${host}:${String(porta)}`;
   try {
     const resposta = await buscar(`${servidor}/api/saude`, { credentials: 'omit', cache: 'no-store', signal: AbortSignal.timeout(prazoMs) });
-    const corpo = await resposta.json() as { servico?: unknown; instancia_id?: unknown; app_de_computador?: unknown; erro?: unknown; ok?: unknown };
-    const margem = corpo.servico === 'margem' || typeof corpo.ok === 'boolean'
-      || corpo.erro === 'origem_recusada' || corpo.erro === 'rota_fora_da_extensao' || corpo.erro === 'host_recusado';
-    if (!margem) return null;
-    return { servidor, porta, instancia_id: typeof corpo.instancia_id === 'string' ? corpo.instancia_id : null, app_de_computador: corpo.app_de_computador === true };
+    const corpo = await resposta.json() as { servico?: unknown; instancia_id?: unknown; app_de_computador?: unknown; erro?: unknown };
+    if (corpo.servico === 'margem' && typeof corpo.instancia_id === 'string' && corpo.instancia_id !== '') {
+      return { servidor, porta, instancia_id: corpo.instancia_id, app_de_computador: corpo.app_de_computador === true };
+    }
+    if (typeof corpo.erro === 'string' && ERROS_DO_MARGEM.has(corpo.erro)) return { servidor, porta, instancia_id: null, app_de_computador: false };
+    return null;
   } catch {
     return null;
   }
@@ -246,25 +284,39 @@ export async function procurarMargem(servidor: string, buscar: typeof fetch = (.
 }
 
 /**
- * Qual dos Margens achados usar: o da identificação que a extensão já conhece; senão o app de
- * computador; senão o da menor porta.
+ * Qual dos Margens achados usar. S-06: com uma identificação já conhecida, só ela; se ela não responde, nenhum
+ * (trocar de biblioteca é escolha de quem usa, pelo "Testar conexão" das opções). Sem nenhuma conhecida: o
+ * app de computador identificado; senão o primeiro identificado; senão o que recusou a extensão (o erro dele
+ * explica o que fazer).
  */
 export function escolherMargem(achados: readonly MargemEncontrado[], conhecida: string | null): MargemEncontrado | null {
-  return (conhecida === null ? undefined : achados.find((a) => a.instancia_id === conhecida))
-    ?? achados.find((a) => a.app_de_computador) ?? achados[0] ?? null;
+  if (conhecida !== null) return achados.find((a) => a.instancia_id === conhecida) ?? null;
+  const identificados = achados.filter((a) => a.instancia_id !== null);
+  return identificados.find((a) => a.app_de_computador) ?? identificados[0] ?? achados[0] ?? null;
 }
 
 export interface Resolvido { configuracao: Configuracao; encontrado: MargemEncontrado | null; outros: number }
 
+/** A biblioteca que a extensão conhece não respondeu, mas outra sim: o envio para, sem POST. */
+export function margemConhecidoAusente(conhecida: string): ErroDoServidor {
+  return new ErroDoServidor(`O Margem que esta extensão usa (identificação ${conhecida}) não está aberto, mas outro Margem `
+    + 'respondeu neste computador. Nada foi enviado. Abra o seu Margem e tente de novo; para usar a outra biblioteca, '
+    + 'abra as opções da extensão e clique em "Testar conexão".', 'margem_conhecido_ausente');
+}
+
 /**
  * A configuração com o endereço do Margem achado nas portas locais (quando a procura vale para o
  * endereço configurado). Sem nenhum Margem respondendo, fica o configurado (o erro de rede explica).
+ * Com a identificação conhecida ausente e outro Margem respondendo, recusa (S-06).
  */
 export async function resolverServidor(configuracao: Configuracao, conhecida: string | null, buscar?: typeof fetch): Promise<Resolvido> {
   if (!procuraAutomatica(configuracao.servidor)) return { configuracao, encontrado: null, outros: 0 };
   const achados = await procurarMargem(configuracao.servidor, buscar);
   const escolhido = escolherMargem(achados, conhecida);
-  if (escolhido === null) return { configuracao, encontrado: null, outros: 0 };
+  if (escolhido === null) {
+    if (conhecida !== null && achados.length > 0) throw margemConhecidoAusente(conhecida);
+    return { configuracao, encontrado: null, outros: 0 };
+  }
   return { configuracao: { ...configuracao, servidor: escolhido.servidor }, encontrado: escolhido, outros: achados.length - 1 };
 }
 
