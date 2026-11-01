@@ -2,10 +2,10 @@
 name = "margem-motor"
 version = "0.0.1"
 requires-python = ">=3.12"
-dependencies = ["PyMuPDF==1.28.2"]
+dependencies = ["PyMuPDF==2.0"]
 
 [project.optional-dependencies]
-test = ["pytest==9.1.1"]
+test = ["pytest==9.2.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
